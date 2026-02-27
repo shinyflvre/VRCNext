@@ -1,0 +1,18 @@
+Important Note:
+
+This is a hobby project and also one that goes far beyond my current knowledge of networking, HTML, CSS, JavaScript, and SQLite.
+
+I am aware that I made many mistakes. A lot of classes were written with an initial idea in mind and later became too complex for me to structure properly. There is noticeable redundancy, especially in the JavaScript part of the app. Several animations, effects, and logic blocks were copied and pasted for related UI elements and should be merged into core.js. I plan to clean this up in future updates, but any help with refactoring is appreciated.
+
+For the backend and logic services inside root/service/x.cs, I referenced parts of the VRChat Community API (Unofficial): [https://vrchat.community/]. Their project is licensed under MIT according to their GitHub repository, but I still want to credit their website because it helped me better understand the REST API and WebSocket structure. I did not use their API implementation directly, as I had already started reverse engineering parts of the REST API on my own. In the future, I plan to rewrite my personal API layer and switch to their implementation once I fully understand everything. For now, the project uses VRChatWebsocketService and VRChatApiService for API requests and socket updates. As mentioned above, networking and REST/WebSocket concepts are still new to me, so you may find redundancy and areas that require improvement.
+
+Regarding the database logic: I previously used .json files to store data. A friend pointed out that this was not a good long term solution, and I agree. If users run this application for days, months, or even years, storing everything across multiple .json files would lead to slow load times and potential data corruption. I started learning SQLite and read through some documentation, but I still do not fully understand it. You may find leftover code that still references .json storage from earlier builds. This needs cleanup in future updates. For now, it works, and I have left it as is until I refactor it properly.
+
+Important information about MainForm:
+MainForm currently contains almost all core related logic. It needs to be split into separate classes or partial classes, which will require a significant refactor. I tried to add comments myself and with the help of Copilot, but I often do not document things properly as I work. I will improve documentation and structure in future updates to make the project easier to understand and maintain. For now, I ask for understanding regarding the current state.
+
+I plan to have a few friends and more experienced developers review this project to provide feedback and possibly submit pull requests. Many parts need improvement, especially the JavaScript code, which was partially created with AI assistance. I intend to reduce that dependency and refine the codebase to be more consistent and maintainable.
+
+If you have questions while navigating the project, feel free to open an issue on GitHub or contact me directly on Discord (@shinyflvres). I will help you locate the relevant files and provide clarification where needed.
+
+Please also read the “AI DISCLAIMER” text file. Parts of this project were created with assistance from Claude, particularly the frontend. Since my knowledge of JavaScript, HTML, and CSS is limited, you may encounter areas that require polishing or rewriting. I have basic understanding, but I am not a professional in these technologies.

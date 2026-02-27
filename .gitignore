@@ -1,0 +1,43 @@
+# Build output
+bin/
+obj/
+
+# User
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Visual Studio cache
+.vs/
+*.userprefs
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Runtime
+AppData/
+*.db
+*.db-shm
+*.db-wal
+
+# Logs
+*.log
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# SCR
+*.env
+secrets.json
+appsettings.Local.json
+
+# Build
+make_ico.ps1

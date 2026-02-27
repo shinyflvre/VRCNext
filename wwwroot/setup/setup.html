@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VRCNext Setup</title>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="setup.css">
+</head>
+<body>
+
+    <!-- Background -->
+    <div class="setup-bg">
+        <img src="background.png" onerror="this.style.display='none'">
+        <div class="setup-bg-fade"></div>
+    </div>
+
+    <!-- Titlebar (draggable) -->
+    <div class="setup-titlebar" id="titlebar">
+        <button class="win-btn" onclick="winMin()" title="Minimize"><span class="msi">horizontal_rule</span></button>
+        <button class="win-btn" onclick="winMax()" title="Maximize"><span class="msi">open_in_full</span></button>
+        <button class="win-btn win-close" onclick="winClose()" title="Close"><span class="msi">close</span></button>
+    </div>
+
+    <!-- Setup Card -->
+    <div class="setup-container">
+        <div class="setup-card">
+            <!-- Progress Bar -->
+            <div class="setup-progress"><div class="setup-progress-fill" id="progressFill" style="width:20%"></div></div>
+            <div class="setup-step" id="stepCounter">STEP 1 OF 5</div>
+
+            <!-- ═══ Page 1: Welcome ═══ -->
+            <div class="setup-page active" data-page="0">
+                <div class="setup-icon"><span class="msi">rocket_launch</span></div>
+                <div class="setup-title">Welcome to VRCNext</div>
+                <div class="setup-desc">VRCNext is your VRChat companion app with powerful tools and features to enhance your experience. In this Setup Wizard we'll walk you through the important steps. It is recommended not to skip!</div>
+                <div class="step-list">
+                    <div class="step-item">
+                        <div class="step-num">1</div>
+                        <div class="step-text"><strong>Login to VRChat</strong><br>Connect your account to unlock all features</div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">2</div>
+                        <div class="step-text"><strong>Locate VRChat</strong><br>Set your VRChat installation path for quick launching</div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">3</div>
+                        <div class="step-text"><strong>VRChat Image Library</strong><br>Point VRCNext to your VRChat screenshot folder</div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">4</div>
+                        <div class="step-text"><strong>Camera Settings</strong><br>Enable metadata for photo world tracking</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══ Page 2: Login ═══ -->
+            <div class="setup-page" data-page="1">
+                <div class="setup-icon"><span class="msi">login</span></div>
+                <div class="setup-title">Login to VRChat</div>
+                <div class="setup-desc">First, you need to log in to VRChat in order to use all features of this app. Without logging in, you'll miss out on almost 90% of the functionality. This step is optional, you can skip it if you prefer.</div>
+                <div id="loginBox" class="login-box">
+                    <input type="text" id="loginUser" class="login-input" placeholder="VRChat Username" onkeydown="if(event.key==='Enter')document.getElementById('loginPass').focus()">
+                    <input type="password" id="loginPass" class="login-input" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()">
+                    <button class="login-btn" id="loginBtn" onclick="doLogin()">
+                        <span class="msi" style="font-size:18px;">login</span> Connect
+                    </button>
+                    <div class="login-status" id="loginStatus"></div>
+                </div>
+            </div>
+
+            <!-- ═══ Page 3: VRChat Path ═══ -->
+            <div class="setup-page" data-page="2">
+                <div class="setup-icon"><span class="msi">folder_open</span></div>
+                <div class="setup-title">VRChat Launch Location</div>
+                <div class="setup-desc">Please locate the <strong>launch.exe</strong> in your VRChat root folder. This is usually found in your Steam library folder. If you can't find it, right-click VRChat in Steam → Properties → Installed Files → Browse.</div>
+                <div class="path-row">
+                    <input type="text" id="vrcPathInput" class="path-input" placeholder="C:\Program Files\Steam\steamapps\common\VRChat\launch.exe" readonly>
+                    <button class="browse-btn" onclick="browseVrcPath()">
+                        <span class="msi" style="font-size:16px;">folder_open</span> Browse
+                    </button>
+                </div>
+                <div class="path-hint">
+                    <span class="msi" style="font-size:13px;vertical-align:middle;color:rgba(106,90,249,.5);">info</span>
+                    Default: <code>C:\Program Files (x86)\Steam\steamapps\common\VRChat\launch.exe</code>
+                </div>
+            </div>
+
+            <!-- ═══ Page 4: VRChat Image Library ═══ -->
+            <div class="setup-page" data-page="3">
+                <div class="setup-icon"><span class="msi">photo_library</span></div>
+                <div class="setup-title">VRChat Image Library</div>
+                <div class="setup-desc">Point VRCNext to your VRChat screenshot folder so the app can monitor new photos, show them in your media library, and track which worlds they were taken in.</div>
+                <div class="path-row">
+                    <input type="text" id="photoDirInput" class="path-input" placeholder="C:\Users\YourName\Pictures\VRChat" readonly>
+                    <button class="browse-btn" onclick="browsePhotoDir()">
+                        <span class="msi" style="font-size:16px;">folder_open</span> Browse
+                    </button>
+                </div>
+                <div class="path-hint">
+                    <span class="msi" style="font-size:13px;vertical-align:middle;color:rgba(106,90,249,.5);">info</span>
+                    Default: <code>C:\Users\YourName\Pictures\VRChat</code>
+                </div>
+            </div>
+
+            <!-- ═══ Page 5: Camera ═══ -->
+            <div class="setup-page" data-page="4">
+                <div class="setup-icon"><span class="msi">photo_camera</span></div>
+                <div class="setup-title">Camera Settings</div>
+                <div class="setup-desc">Make sure to enable <strong>Metadata</strong> in your VRChat camera settings. This allows VRCNext to track which world each photo was taken in, so you can easily find that world again, even months later!</div>
+                <div class="cam-steps">
+                    <div class="cam-step">
+                        <div class="cam-step-icon"><span class="msi">photo_camera</span></div>
+                        <div class="cam-step-text">Open the <strong>Camera</strong> in VRChat via the quick menu</div>
+                    </div>
+                    <div class="cam-step">
+                        <div class="cam-step-icon"><span class="msi">settings</span></div>
+                        <div class="cam-step-text">Go to the camera <strong>Settings</strong> panel</div>
+                    </div>
+                    <div class="cam-step">
+                        <div class="cam-step-icon"><span class="msi">toggle_on</span></div>
+                        <div class="cam-step-text">Enable <strong>"Save Metadata to Photo"</strong> which embeds world info into each screenshot</div>
+                    </div>
+                    <div class="cam-step">
+                        <div class="cam-step-icon"><span class="msi">check_circle</span></div>
+                        <div class="cam-step-text"><strong>Done!</strong> VRCNext will automatically read this data and show the world on your photos</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <div class="setup-nav">
+                <button class="btn-skip" id="btnSkip" onclick="skipSetup()">Skip Setup</button>
+                <button class="btn-next" id="btnNext" onclick="nextPage()">Next <span class="msi" style="font-size:16px;vertical-align:middle;">arrow_forward</span></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2FA Modal -->
+    <div class="modal-overlay" id="modal2FA" style="display:none;" onclick="if(event.target===this)this.style.display='none'">
+        <div class="modal-box">
+            <div class="modal-title">Two-Factor Authentication</div>
+            <div class="modal-msg" id="tfaMsg">Enter the 6-digit code from your authenticator app.</div>
+            <input type="text" class="tfa-input" id="tfaCode" maxlength="6" placeholder="000000" autocomplete="one-time-code" onkeydown="if(event.key==='Enter')submit2FA()">
+            <div class="tfa-error" id="tfaError"></div>
+            <div class="modal-btns">
+                <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('modal2FA').style.display='none'">Cancel</button>
+                <button class="modal-btn modal-btn-accent" onclick="submit2FA()">Verify</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="setup.js"></script>
+</body>
+</html>

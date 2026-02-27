@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:api.github.com)",
+      "Bash(dotnet add package Microsoft.Data.Sqlite --version 8.0.0)",
+      "Bash(dotnet build)",
+      "Bash(dotnet build \"VRCNext.csproj\")",
+      "WebFetch(domain:deepwiki.com)",
+      "WebFetch(domain:vrchat.community)",
+      "WebFetch(domain:medium.com)",
+      "Bash(dotnet build VRCNext.csproj)",
+      "WebFetch(domain:www.nuget.org)",
+      "Bash(dotnet build VRCNext.csproj --configuration Debug)",
+      "WebFetch(domain:hexdocs.pm)",
+      "WebFetch(domain:vrchatapi.github.io)",
+      "Bash(find \"c:/Users/Johns/Downloads/VRCNext/VRCNext Stable v2\" -name \"*.cs\" -type f -exec grep -l \"HttpClient\\\\|http\\\\|API\\\\|GetAsync\\\\|PostAsync\" {} ;)",
+      "Bash(dotnet build --no-restore -v quiet)",
+      "Bash(dotnet build VRCNext.csproj --no-restore -v quiet)"
+    ]
+  }
+}

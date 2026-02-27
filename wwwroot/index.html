@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VRCNext</title>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="Styles/styles.css">
+</head>
+<body>
+    <div class="sidebar" id="sidebarEl">
+        <div class="logo"><div class="logo-icon" id="logoIcon">V</div><div class="logo-txt"><div class="logo-text">VRCNext</div><div class="logo-sub">v1.02.0</div></div><button class="sb-toggle" onclick="toggleSidebar()" title="Toggle sidebar"><span class="msi" id="sbIcon">menu_open</span></button></div>
+        <div class="nav">
+            <button class="nav-btn active" onclick="showTab(0)"><span class="ni msi">dashboard</span><span class="nl">Dashboard</span></button>
+            <button class="nav-btn" onclick="showTab(1)"><span class="ni msi">travel_explore</span><span class="nl">Worlds</span></button>
+            <button class="nav-btn" onclick="showTab(2)"><span class="ni msi">groups</span><span class="nl">Groups</span></button>
+            <button class="nav-btn" onclick="showTab(3)"><span class="ni msi">person_search</span><span class="nl">People</span></button>
+            <button class="nav-btn" onclick="showTab(4)"><span class="ni msi">checkroom</span><span class="nl">Avatars</span></button>
+            <button class="nav-btn" onclick="showTab(13)"><span class="ni msi">inventory_2</span><span class="nl">Inventory</span></button>
+            <button class="nav-btn" onclick="showTab(12)"><span class="ni msi">timeline</span><span class="nl">Timeline</span></button>
+            <button class="nav-btn" onclick="showTab(7)"><span class="ni msi">photo_library</span><span class="nl">Media Library</span></button>
+            <div class="nav-group" id="navToolsGroup">
+                <button class="nav-group-btn" onclick="toggleNavGroup('navToolsGroup')"><span class="ni msi">build</span><span class="nl">Tools</span><span class="nav-group-arrow msi nl">expand_more</span></button>
+                <div class="nav-group-items">
+                    <button class="nav-btn nav-sub" onclick="showTab(5)"><span class="ni msi">chat</span><span class="nl">Custom Chatbox</span></button>
+                    <button class="nav-btn nav-sub" onclick="showTab(6)"><span class="ni msi">cell_tower</span><span class="nl">Media Relay</span></button>
+                    <button class="nav-btn nav-sub" onclick="showTab(10)"><span class="ni msi">rocket_launch</span><span class="nl">Space Flight</span></button>
+                    <button class="nav-btn nav-sub" onclick="showTab(11)"><span class="ni msi">tune</span><span class="nl">OSC Tool</span></button>
+                    <button class="nav-btn nav-sub" onclick="showTab(14)"><span class="ni msi">smart_display</span><span class="nl">YouTube Fix</span></button>
+                    <button class="nav-btn nav-sub" onclick="showTab(8)"><span class="ni msi">article</span><span class="nl">Activity Log</span></button>
+                </div>
+            </div>
+            <button class="nav-btn" onclick="showTab(9)"><span class="ni msi">settings</span><span class="nl">Settings</span></button>
+        </div>
+        <div class="play-area"><button class="btn-play" onclick="playVRChat()"><span class="msi" style="font-size:18px;">play_arrow</span><span class="pl">Play VRChat</span></button></div>
+        <div class="clock-area"><div class="clock-time" id="clock">00:00:00</div><div class="clock-date" id="clockDate"></div></div>
+    </div>
+
+    <div class="main">
+        <div class="topbar" id="winDrag">
+            <span class="topbar-title" id="pageTitle">Dashboard</span>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <div class="mini-badge offline" id="badgeRelay"><span class="msi mini-badge-icon">cell_tower</span><span class="mini-badge-label">Relay</span></div>
+                <div class="mini-badge offline" id="badgeChatbox"><span class="msi mini-badge-icon">chat</span><span class="mini-badge-label">Chatbox</span></div>
+                <div class="mini-badge offline" id="badgeSteamVR"><span class="msi mini-badge-icon">rocket_launch</span><span class="mini-badge-label">SteamVR</span></div>
+                <button class="btn-notif" id="btnNotif" onclick="toggleNotifPanel()" title="Notifications"><span class="msi" style="font-size:20px;">notifications</span><span class="notif-count" id="notifBadge" style="display:none;">0</span></button>
+            </div>
+        </div>
+        <!-- Notification panel -->
+        <div class="notif-panel" id="notifPanel" style="display:none;">
+            <div class="notif-panel-header"><span style="font-weight:700;font-size:13px;">Notifications</span><button class="btn-f" onclick="refreshNotifications()" style="padding:2px 8px;font-size:10px;"><span class="msi" style="font-size:14px;">refresh</span></button></div>
+            <div class="notif-panel-list" id="notifList"><div class="empty-msg">No notifications</div></div>
+        </div>
+        <div class="content">
+            <!-- Tab 0: Dashboard -->
+            <div class="tab active" id="tab0">
+                <div class="dash-hero" id="dashHero">
+                    <div class="dash-hero-bg" id="dashHeroBg"></div>
+                    <div class="dash-hero-fade"></div>
+                    <div class="dash-hero-content">
+                        <div class="dash-welcome" id="dashWelcome">Welcome!</div>
+                        <div class="dash-sub" id="dashSub">Connect to VRChat to see your world</div>
+
+                    </div>
+                </div>
+                <div class="dash-section-label">WORLDS</div>
+                <div class="dash-worlds-grid" id="dashFavWorlds"><div class="empty-msg">Login to VRChat to see where friends are</div></div>
+                <div class="dash-section-label">FRIENDS ACTIVITY</div>
+                <div class="dash-friends-feed" id="dashFriendsFeed"><div class="empty-msg">Login to VRChat to see friends</div></div>
+            </div>
+            <!-- Tab 1: Worlds -->
+            <div class="tab" id="tab1">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <button class="btn-fav avatar-filter-btn active" id="worldFilterFav" onclick="setWorldFilter('favorites')"><span class="msi" style="font-size:16px;">star</span> Favorites</button>
+                        <button class="btn-fav avatar-filter-btn" id="worldFilterSearch" onclick="setWorldFilter('search')"><span class="msi" style="font-size:16px;">search</span> Search</button>
+                    </div>
+                </div>
+                <div id="worldSearchArea" style="display:none;">
+                    <div class="search-bar-row"><span class="msi search-ico">search</span><input type="text" id="searchWorldsInput" class="search-input" placeholder="Search worlds..." onkeydown="if(event.key==='Enter')doSearch('worlds')"><button class="btn-f" onclick="doSearch('worlds')">Search</button></div>
+                    <div id="searchWorldsResults" class="search-grid"><div class="empty-msg">Search for VRChat worlds</div></div>
+                </div>
+                <div id="worldFavArea">
+                    <div class="search-bar-row" style="margin-bottom:12px;"><span class="msi search-ico">search</span><input type="text" id="favWorldSearchInput" class="search-input" placeholder="Filter favorite worlds..." oninput="filterFavWorlds()"></div>
+                    <div id="favWorldsGrid" class="search-grid"><div class="empty-msg">Loading favorite worlds...</div></div>
+                </div>
+            </div>
+            <!-- Tab 2: Groups -->
+            <div class="tab" id="tab2">
+                <div class="search-bar-row"><span class="msi search-ico">search</span><input type="text" id="searchGroupsInput" class="search-input" placeholder="Search groups..." onkeydown="if(event.key==='Enter')doSearch('groups')"><button class="btn-f" onclick="doSearch('groups')">Search</button></div>
+                <div class="dash-section-label" id="myGroupsLabel" style="display:none;">MY GROUPS</div>
+                <div id="myGroupsGrid" class="search-grid"></div>
+                <div class="dash-section-label" id="searchGroupsLabel" style="display:none;">SEARCH RESULTS</div>
+                <div id="searchGroupsResults" class="search-grid"></div>
+            </div>
+            <!-- Tab 3: People (Favorites + Search) -->
+            <div class="tab" id="tab3">
+                <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
+                    <button class="btn-fav avatar-filter-btn active" id="peopleFilterFav" onclick="setPeopleFilter('favorites')"><span class="msi" style="font-size:16px;">star</span> Favorites</button>
+                    <button class="btn-fav avatar-filter-btn" id="peopleFilterSearch" onclick="setPeopleFilter('search')"><span class="msi" style="font-size:16px;">search</span> Search</button>
+                </div>
+                <div id="peopleFavArea">
+                    <div class="search-bar-row" style="margin-bottom:12px;"><span class="msi search-ico">search</span><input type="text" id="favFriendSearchInput" class="search-input" placeholder="Filter favorite friends..." oninput="filterFavFriends()"></div>
+                    <div id="favFriendsGrid"><div class="empty-msg">Loading favorite friends...</div></div>
+                </div>
+                <div id="peopleSearchArea" style="display:none;">
+                    <div class="search-bar-row"><span class="msi search-ico">search</span><input type="text" id="searchPeopleInput" class="search-input" placeholder="Search people..." onkeydown="if(event.key==='Enter')doSearch('people')"><button class="btn-f" onclick="doSearch('people')">Search</button></div>
+                    <div id="searchPeopleResults" class="search-grid"><div class="empty-msg">Search for VRChat users</div></div>
+                </div>
+            </div>
+            <!-- Tab 4: Avatars -->
+            <div class="tab" id="tab4">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+                    <div><span style="font-size:14px;font-weight:700;color:var(--tx0);">My Avatars</span><span id="avatarCount" style="font-size:12px;color:var(--tx3);margin-left:10px;"></span></div>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <button class="btn-fav avatar-filter-btn active" id="avatarFilterOwn" onclick="setAvatarFilter('own')"><span class="msi" style="font-size:16px;">person</span> My Avatars</button>
+                        <button class="btn-fav avatar-filter-btn" id="avatarFilterFav" onclick="setAvatarFilter('favorites')"><span class="msi" style="font-size:16px;">star</span> Favorites</button>
+                        <button class="btn-f" onclick="refreshAvatars()"><span class="msi" style="font-size:16px;">refresh</span> Refresh</button>
+                    </div>
+                </div>
+                <div id="avatarGrid" class="avatar-grid"><div class="empty-msg">Login to VRChat to see your avatars</div></div>
+            </div>
+            <!-- Tab 5: Custom Chatbox -->
+            <div class="tab" id="tab5">
+                <div class="sf-card sf-status-card" style="margin-bottom:16px;">
+                    <div class="sf-status-row">
+                        <div class="sf-status"><span class="sf-dot offline" id="cbDot"></span><span id="cbStatusText">Not running</span></div>
+                        <button class="btn-f" id="cbConnBtn" onclick="toggleChatbox()"><span class="msi" style="font-size:16px;">play_arrow</span> Start</button>
+                    </div>
+                </div>
+                <div class="cb-layout">
+                    <!-- Left: Preview + Controls -->
+                    <div class="cb-preview-panel">
+                        <div class="cb-card">
+                            <div class="cb-card-header"><span class="msi" style="font-size:16px;">visibility</span> Live Preview</div>
+                            <div class="cb-preview-box" id="cbPreviewBox">
+                                <div class="cb-preview-text" id="cbPreviewText">Enable chatbox to see preview</div>
+                            </div>
+                            <div class="cb-char-count"><span id="cbCharCount">0</span> / 144 characters</div>
+                        </div>
+
+                        <div class="cb-card">
+                            <div class="cb-card-header"><span class="msi" style="font-size:16px;">music_note</span> Now Playing</div>
+                            <div id="cbMediaInfo">
+                                <div class="cb-media-idle"><span class="msi" style="font-size:16px;vertical-align:middle;">music_off</span> No media playing</div>
+                            </div>
+                        </div>
+
+                        <div class="cb-card">
+                            <div class="cb-card-header"><span class="msi" style="font-size:16px;">power_settings_new</span> Launch</div>
+                            <div class="sf-toggle-row"><span>Start when launching VRCNext</span><label class="toggle"><input type="checkbox" id="setCbAutoStart" onchange="autoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Config -->
+                    <div class="cb-config-panel">
+                        <div class="cb-card">
+                            <div class="cb-card-header"><span class="msi" style="font-size:16px;">toggle_on</span> Modules</div>
+                            <div class="sf-toggle-row"><div style="display:flex;align-items:center;gap:8px;"><span class="msi cb-toggle-icon">schedule</span><span>Local Time</span></div><label class="toggle"><input type="checkbox" id="cbShowTime" checked onchange="updateChatboxConfig()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                            <div class="sf-toggle-row"><div style="display:flex;align-items:center;gap:8px;"><span class="msi cb-toggle-icon">music_note</span><span>Now Playing</span></div><label class="toggle"><input type="checkbox" id="cbShowMedia" checked onchange="updateChatboxConfig()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                            <div class="sf-toggle-row"><div style="display:flex;align-items:center;gap:8px;"><span class="msi cb-toggle-icon">timer</span><span>Song Playtime</span></div><label class="toggle"><input type="checkbox" id="cbShowPlaytime" checked onchange="updateChatboxConfig()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                            <div class="sf-toggle-row"><div style="display:flex;align-items:center;gap:8px;"><span class="msi cb-toggle-icon">memory</span><span>System Stats (CPU/RAM)</span></div><label class="toggle"><input type="checkbox" id="cbShowSystemStats" onchange="updateChatboxConfig()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                            <div class="sf-toggle-row"><div style="display:flex;align-items:center;gap:8px;"><span class="msi cb-toggle-icon">bedtime</span><span>AFK Detection</span></div><label class="toggle"><input type="checkbox" id="cbShowAfk" onchange="updateChatboxConfig()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                            <div class="sf-toggle-row"><div style="display:flex;align-items:center;gap:8px;"><span class="msi cb-toggle-icon">edit_note</span><span>Custom Text</span></div><label class="toggle"><input type="checkbox" id="cbShowCustom" checked onchange="updateChatboxConfig()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                            <div class="sf-toggle-row"><div style="display:flex;align-items:center;gap:8px;"><span class="msi cb-toggle-icon">notifications_off</span><span>Suppress Sound</span></div><label class="toggle"><input type="checkbox" id="cbSuppressSound" checked onchange="updateChatboxConfig()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                        </div>
+
+                        <div class="cb-card" id="cbAfkCard" style="display:none;">
+                            <div class="cb-card-header"><span class="msi" style="font-size:16px;">bedtime</span> AFK Settings</div>
+                            <div class="cb-form-row"><label>Message</label><input type="text" id="cbAfkMessage" class="cb-line-input" value="Currently AFK" oninput="updateChatboxConfig()" style="flex:1;"></div>
+                            <div style="font-size:10px;color:var(--tx3);margin-top:4px;">Shown when VRChat is not the active window. Overrides other modules.</div>
+                        </div>
+
+                        <div class="cb-card">
+                            <div class="cb-card-header"><span class="msi" style="font-size:16px;">tune</span> Format</div>
+                            <div class="cb-form-row"><label>Time</label><select id="cbTimeFormat" class="cb-select" onchange="updateChatboxConfig()"><option value="hh:mm tt">12h (02:45 PM)</option><option value="HH:mm">24h (14:45)</option><option value="hh:mm:ss tt">12h + sec</option><option value="HH:mm:ss">24h + sec</option></select></div>
+                            <div class="cb-form-row"><label>Separator</label><select id="cbSeparator" class="cb-select" onchange="updateChatboxConfig()"><option value=" | "> | pipe</option><option value=" · "> · dot</option><option value=" ♪ "> ♪ note</option><option value=" — "> — dash</option><option value="&#10;">↵ new line</option></select></div>
+                            <div class="cb-form-row"><label>Update Rate</label><select id="cbInterval" class="cb-select" onchange="updateChatboxConfig()"><option value="3000">3s (relaxed)</option><option value="5000">5s (recommended)</option><option value="8000">8s (slow)</option><option value="10000">10s (minimal)</option><option value="15000">15s (very slow)</option></select></div>
+                        </div>
+
+                        <div class="cb-card">
+                            <div class="cb-card-header"><span class="msi" style="font-size:16px;">edit_note</span> Custom Text Lines</div>
+                            <div class="cb-custom-lines" id="cbCustomLines"></div>
+                            <div class="cb-add-line">
+                                <input type="text" id="cbNewLine" class="cb-line-input" placeholder="Type a custom line..." onkeydown="if(event.key==='Enter'){addChatboxLine();}">
+                                <button class="cb-add-btn" onclick="addChatboxLine()"><span class="msi" style="font-size:16px;">add</span></button>
+                            </div>
+                            <div style="font-size:10px;color:var(--tx3);margin-top:6px;">Lines rotate each cycle. Use for status, socials, bio, etc.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Tab 6: Media Relay -->
+            <div class="tab" id="tab6">
+                <div class="sf-card sf-status-card" style="margin-bottom:16px;">
+                    <div class="sf-status-row">
+                        <div class="sf-status"><span class="sf-dot offline" id="relayDot"></span><span id="relayStatusText">Not running</span></div>
+                        <button class="btn-f" id="btnRelay" onclick="toggleRelay()"><span class="msi" style="font-size:16px;">play_arrow</span> Start</button>
+                    </div>
+                </div>
+                <div class="stats-row">
+                    <div class="stat-card"><div class="stat-bar" style="background:var(--ok)"></div><div class="stat-label">ACTIVE STREAMS</div><div class="stat-value" id="statStreams" style="color:var(--ok)">0</div></div>
+                    <div class="stat-card"><div class="stat-bar" style="background:var(--accent)"></div><div class="stat-label">FILES POSTED</div><div class="stat-value" id="statFiles" style="color:var(--accent)">0</div></div>
+                    <div class="stat-card"><div class="stat-bar" style="background:var(--warn)"></div><div class="stat-label">TOTAL SIZE</div><div class="stat-value" id="statSize" style="color:var(--warn)">0 MB</div></div>
+                    <div class="stat-card"><div class="stat-bar" style="background:var(--cyan)"></div><div class="stat-label">UPTIME</div><div class="stat-value" id="statUptime" style="color:var(--accent-lt)">00:00:00</div></div>
+                </div>
+                <div class="cb-card" style="margin-top:16px;">
+                    <div class="cb-card-header"><span class="msi" style="font-size:16px;">cell_tower</span> Relay Control</div>
+                    <div class="sf-toggle-row"><span>Start when launching VRCNext</span><label class="toggle"><input type="checkbox" id="setAutoStart" onchange="autoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                    <div class="sf-toggle-row"><span>Play sound on successful post</span><label class="toggle"><input type="checkbox" id="setNotifySound" onchange="autoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                </div>
+                <div class="sect-label" style="margin-top:20px;">BOT IDENTITY</div>
+                <div class="input-row"><label>Bot Name</label><input type="text" id="setBotName" value="VRCNext"></div>
+                <div class="input-row"><label>Avatar URL</label><input type="text" id="setBotAvatar" value="" placeholder="https://..."></div>
+                <div class="sect-label">WEBHOOK CHANNELS</div>
+                <div id="whCards"></div>
+                <div class="file-list-header"><h3>Posted Files</h3><button class="btn-fd" onclick="showDeleteAllModal()"><span class="msi" style="font-size:16px;">delete</span> Delete All</button></div>
+                <div class="file-table"><div class="file-table-head"><span>FILE</span><span>CHANNEL</span><span>SIZE</span><span>TIME</span><span></span></div><div id="fileList"><div class="empty-msg">No files posted yet</div></div></div>
+            </div>
+            <!-- Tab 7: Media Library -->
+            <div class="tab" id="tab7">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+                    <div><span style="font-size:14px;font-weight:700;color:var(--tx0);">Media Library</span><span id="libCount" style="font-size:12px;color:var(--tx3);margin-left:10px;"></span></div>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <button class="btn-fav" id="libFavBtn" onclick="toggleFavFilter()"><span class="msi" style="font-size:16px;">star</span> Favorites</button>
+                        <select id="libFolderFilter" class="lib-filter-select" onchange="filterLibrary()"><option value="__all__">All Folders</option></select>
+                        <select id="libTypeFilter" class="lib-filter-select" onchange="filterLibrary()"><option value="all">All Media</option><option value="image">Images</option><option value="video">Videos</option></select>
+                        <button class="btn-f" onclick="refreshLibrary()"><span class="msi" style="font-size:16px;">refresh</span> Refresh</button>
+                    </div>
+                </div>
+                <div id="libGrid" class="lib-grid"><div class="empty-msg">Add watch folders in Settings.</div></div>
+            </div>
+            <!-- Tab 8: Activity Log -->
+            <div class="tab" id="tab8">
+                <div class="log-header" style="margin-top:0;">Activity Log</div>
+                <div class="log-area" id="logArea" style="height:calc(100vh - 252px);"></div>
+                <div style="display:flex;gap:8px;margin-top:8px;">
+                    <button class="btn-f" onclick="exportLog()" style="flex:1;justify-content:center;"><span class="msi" style="font-size:16px;">download</span> Export Logs</button>
+                    <button class="btn-f" onclick="clearLog()" style="flex:1;justify-content:center;"><span class="msi" style="font-size:16px;">delete_sweep</span> Clear Logs</button>
+                </div>
+            </div>
+            <!-- Tab 9: Settings -->
+            <div class="tab" id="tab9">
+                <div class="settings-inner">
+                    <div class="sect-label">WATCH FOLDERS</div>
+                    <div class="folder-list" id="folderList"><div class="folder-empty">No folders</div></div>
+                    <div class="folder-btns"><button class="btn-f" onclick="addFolder()"><span class="msi" style="font-size:16px;">create_new_folder</span> Add Folder</button><button class="btn-f" onclick="removeFolder()"><span class="msi" style="font-size:16px;">folder_delete</span> Remove</button></div>
+                    <div class="sect-label">VRCHAT &amp; LAUNCH</div>
+                    <div class="input-row"><label>VRChat Path</label><input type="text" id="setVrcPath" placeholder="C:\...\VRChat.exe"><button class="btn-f" onclick="browseExe('vrchat')" style="margin-left:8px"><span class="msi" style="font-size:16px;">folder_open</span> Browse</button></div>
+                    <div style="font-size:11px;color:var(--tx3);margin-bottom:8px;">Additional apps to launch with VRChat:</div>
+                    <div class="exe-list" id="extraExeList"><div class="folder-empty">None</div></div>
+                    <div class="folder-btns"><button class="btn-f" onclick="browseExe('extra')"><span class="msi" style="font-size:16px;">add</span> Add App</button></div>
+                    <div class="sect-label">VRCHAT API LOGIN</div>
+                    <div class="input-row"><label>Username</label><input type="text" id="setVrcUser" placeholder="VRChat username"></div>
+                    <div class="input-row"><label>Password</label><input type="password" id="setVrcPass" placeholder="VRChat password" style="flex:1;background:var(--bg-input);border:none;border-radius:6px;padding:8px 12px;color:var(--tx1);font-size:13px;font-family:inherit;outline:none;"></div>
+                    <div style="display:flex;gap:8px;margin-bottom:4px;"><button class="btn-f" onclick="vrcLoginFromSettings()" id="btnVrcLogin"><span class="msi" style="font-size:16px;">login</span> Connect</button><button class="btn-f" onclick="vrcLogout()" style="display:none;" id="btnVrcLogout"><span class="msi" style="font-size:16px;">logout</span> Disconnect</button></div>
+                    <div id="vrcLoginStatus" style="font-size:11px;color:var(--tx3);margin-bottom:8px;"></div>
+                    <div class="sect-label">DASHBOARD BACKGROUND</div>
+                    <div class="input-row"><label>Background</label><button class="btn-f" onclick="browseDashBg()" style="margin-right:8px"><span class="msi" style="font-size:16px;">image</span> Choose Image</button><span id="dashBgName" style="font-size:11px;color:var(--tx3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span></div>
+                    <div class="input-row"><label>Overlay Opacity</label><input type="range" id="setDashOpacity" min="0" max="100" value="40" style="flex:1;accent-color:var(--accent);" oninput="document.getElementById('dashOpacityVal').textContent=this.value+'%'"><span id="dashOpacityVal" style="font-size:12px;color:var(--tx2);margin-left:8px;min-width:35px;">40%</span></div>
+                    <label class="opts-row"><input type="checkbox" id="setRandomBg"> Pick random background from watch folders on each launch</label>
+                    <div class="sect-label">DESIGN / THEME</div>
+                    <div class="theme-grid" id="themeGrid"></div>
+                    <div class="sect-label">DEBUG</div>
+                    <button class="btn-f" onclick="sendToCS({action:'resetSetup'})"><span class="msi" style="font-size:16px;">restart_alt</span> Redo Setup Wizard</button>
+                </div>
+            </div>
+            <!-- Tab 10: Space Flight -->
+            <div class="tab" id="tab10">
+                <div class="sf-layout">
+                    <div class="sf-card sf-status-card">
+                        <div class="sf-status-row">
+                            <div class="sf-status"><span class="sf-dot offline" id="sfDot"></span><span id="sfStatusText">Not connected</span></div>
+                            <button class="btn-f" id="sfConnBtn" onclick="sfConnect()"><span class="msi" style="font-size:16px;">link</span> Connect</button>
+                        </div>
+                    </div>
+                    <div class="sf-card">
+                        <div class="sf-card-header"><span class="msi">power_settings_new</span> Launch</div>
+                        <div class="sf-toggle-row"><span>Start when launching VRCNext</span><label class="toggle"><input type="checkbox" id="setSfAutoStart" onchange="sfAutoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                    </div>
+                    <div class="sf-card">
+                        <div class="sf-card-header"><span class="msi">rocket_launch</span> Current Offset</div>
+                        <div class="sf-offset">
+                            <div class="sf-offset-values">
+                                <div class="sf-axis"><span class="sf-axis-label">X</span><span class="sf-axis-val" id="sfOffX">0.000</span></div>
+                                <div class="sf-axis"><span class="sf-axis-label">Y</span><span class="sf-axis-val" id="sfOffY">0.000</span></div>
+                                <div class="sf-axis"><span class="sf-axis-label">Z</span><span class="sf-axis-val" id="sfOffZ">0.000</span></div>
+                            </div>
+                        </div>
+                        <div class="sf-controllers">
+                            <div class="sf-ctrl" id="sfCtrlL"><span class="msi" style="font-size:14px;">back_hand</span> Left</div>
+                            <div class="sf-ctrl" id="sfCtrlR"><span class="msi" style="font-size:14px;">front_hand</span> Right</div>
+                        </div>
+                        <div style="margin-top:10px;">
+                            <button class="btn-f" onclick="sfReset()" style="width:100%;justify-content:center;"><span class="msi" style="font-size:16px;">restart_alt</span> Reset</button>
+                        </div>
+                    </div>
+                    <div class="sf-card">
+                        <div class="sf-card-header"><span class="msi">tune</span> Settings</div>
+                        <div class="sf-row"><label>Drag Multiplier</label><input type="range" id="sfMultiplier" min="0.1" max="100" step="0.1" value="1" oninput="document.getElementById('sfMultVal').textContent=this.value+'x';sfAutoSave()"><span id="sfMultVal" style="font-size:11px;color:var(--tx2);min-width:28px;text-align:right;">1x</span></div>
+                        <div class="sf-section-label">Axis Lock</div>
+                        <div class="sf-toggle-row"><span>Lock X</span><label class="toggle"><input type="checkbox" id="sfLockX" onchange="sfAutoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                        <div class="sf-toggle-row"><span>Lock Y</span><label class="toggle"><input type="checkbox" id="sfLockY" onchange="sfAutoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                        <div class="sf-toggle-row"><span>Lock Z</span><label class="toggle"><input type="checkbox" id="sfLockZ" onchange="sfAutoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                        <div class="sf-section-label">Hands</div>
+                        <div class="sf-toggle-row"><span>Left Hand</span><label class="toggle"><input type="checkbox" id="sfLeftHand" onchange="sfAutoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                        <div class="sf-toggle-row"><span>Right Hand</span><label class="toggle"><input type="checkbox" id="sfRightHand" checked onchange="sfAutoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                        <div class="sf-section-label">Drag Button</div>
+                        <div class="sf-toggle-row"><span>Use Grip</span><label class="toggle"><input type="checkbox" id="sfUseGrip" checked onchange="sfAutoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                    </div>
+                </div>
+            </div>
+            <!-- Tab 11: OSC Tool -->
+            <div class="tab" id="tab11">
+                <div class="sf-layout">
+                    <div class="sf-card sf-status-card">
+                        <div class="sf-status-row">
+                            <div class="sf-status"><span class="sf-dot offline" id="oscDot"></span><span id="oscStatusText">Not connected</span></div>
+                            <button class="btn-f" id="oscConnBtn" onclick="oscConnect()"><span class="msi" style="font-size:16px;">link</span> Connect</button>
+                        </div>
+                    </div>
+                    <div id="oscOutputBanner" class="osc-output-banner" style="display:none;">
+                        <span class="msi" style="font-size:15px;flex-shrink:0;">warning</span>
+                        <span class="osc-banner-text"></span>
+                        <button class="btn-f osc-enable-btn" id="oscEnableBtn" onclick="oscEnableOutputs()"><span class="msi" style="font-size:14px;">output</span> Enable All Outputs</button>
+                    </div>
+                    <div class="sf-card" style="flex:1;min-height:0;display:flex;flex-direction:column;">
+                        <div class="sf-card-header" style="display:flex;align-items:center;justify-content:space-between;">
+                            <span><span class="msi">tune</span> Parameters</span>
+                            <span class="osc-badge-count" id="oscParamCount">0 params</span>
+                        </div>
+                        <div class="search-bar-row" style="margin-bottom:8px;">
+                            <span class="msi search-ico">search</span>
+                            <input type="text" id="oscSearch" class="search-input" placeholder="Search parameters..." oninput="filterOscParams()">
+                        </div>
+                        <div class="osc-param-list" id="oscParamList">
+                            <div class="osc-empty" id="oscEmptyMsg">Connect, then toggle OSC off/on in VRChat's Action Menu to load all parameters.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Tab 12: Timeline -->
+            <div class="tab" id="tab12">
+                <div class="tl-mode-row">
+                    <button class="btn-fav avatar-filter-btn active" id="tlModePersonal" onclick="setTlMode('personal')"><span class="msi" style="font-size:14px;">person</span> Personal</button>
+                    <button class="btn-fav avatar-filter-btn" id="tlModeFriends" onclick="setTlMode('friends')"><span class="msi" style="font-size:14px;">group</span> Friends</button>
+                </div>
+                <div class="tl-topbar">
+                    <div class="search-bar-row" style="flex:1;margin-bottom:0;">
+                        <span class="msi search-ico">search</span>
+                        <input type="text" id="tlSearchInput" class="search-input" placeholder="Search timeline..." oninput="tlMode==='friends'?filterFriendTimeline():filterTimeline()">
+                    </div>
+                    <button class="btn-f" onclick="refreshTimeline()"><span class="msi" style="font-size:16px;">refresh</span> Refresh</button>
+                </div>
+                <div class="tl-filter-row" id="tlPersonalFilters">
+                    <button class="btn-fav avatar-filter-btn active" id="tlFAll" onclick="setTlFilter('all')">All</button>
+                    <button class="btn-fav avatar-filter-btn" id="tlFJoin" onclick="setTlFilter('instance_join')"><span class="msi" style="font-size:14px;">travel_explore</span> Instances</button>
+                    <button class="btn-fav avatar-filter-btn" id="tlFPhoto" onclick="setTlFilter('photo')"><span class="msi" style="font-size:14px;">camera</span> Photos</button>
+                    <button class="btn-fav avatar-filter-btn" id="tlFMeet" onclick="setTlFilter('first_meet')"><span class="msi" style="font-size:14px;">person_add</span> First Meets</button>
+                    <button class="btn-fav avatar-filter-btn" id="tlFMeetAgain" onclick="setTlFilter('meet_again')"><span class="msi" style="font-size:14px;">person_check</span> Meet Again</button>
+                    <button class="btn-fav avatar-filter-btn" id="tlFNotif" onclick="setTlFilter('notification')"><span class="msi" style="font-size:14px;">notifications</span> Notifications</button>
+                </div>
+                <div class="tl-filter-row" id="tlFriendsFilters" style="display:none;">
+                    <button class="btn-fav avatar-filter-btn active" id="ftFAll"     onclick="setFtFilter('all')">All</button>
+                    <button class="btn-fav avatar-filter-btn" id="ftFGps"     onclick="setFtFilter('friend_gps')"><span class="msi" style="font-size:14px;">location_on</span> Location</button>
+                    <button class="btn-fav avatar-filter-btn" id="ftFStatus"  onclick="setFtFilter('friend_status')"><span class="msi" style="font-size:14px;">circle</span> Status</button>
+                    <button class="btn-fav avatar-filter-btn" id="ftFOnline"  onclick="setFtFilter('friend_online')"><span class="msi" style="font-size:14px;">login</span> Online</button>
+                    <button class="btn-fav avatar-filter-btn" id="ftFOffline" onclick="setFtFilter('friend_offline')"><span class="msi" style="font-size:14px;">power_settings_new</span> Offline</button>
+                    <button class="btn-fav avatar-filter-btn" id="ftFBio"     onclick="setFtFilter('friend_bio')"><span class="msi" style="font-size:14px;">edit_note</span> Bio</button>
+                </div>
+                <div class="tl-container" id="tlContainer">
+                    <div class="empty-msg">No timeline events yet. VRChat activity will appear here.</div>
+                </div>
+            </div>
+            <!-- Tab 13: Inventory -->
+            <div class="tab" id="tab13">
+                <div class="inv-topbar">
+                    <div class="inv-filter-row">
+                        <button class="btn-fav avatar-filter-btn active" id="invFPhotos" onclick="switchInvTab('photos')"><span class="msi" style="font-size:14px;">photo_library</span> Photos</button>
+                        <button class="btn-fav avatar-filter-btn" id="invFIcons" onclick="switchInvTab('icons')"><span class="msi" style="font-size:14px;">account_circle</span> Icons</button>
+                        <button class="btn-fav avatar-filter-btn" id="invFEmojis" onclick="switchInvTab('emojis')"><span class="msi" style="font-size:14px;">emoji_emotions</span> Emojis</button>
+                        <button class="btn-fav avatar-filter-btn" id="invFStickers" onclick="switchInvTab('stickers')"><span class="msi" style="font-size:14px;">sticky_note_2</span> Stickers</button>
+                        <button class="btn-fav avatar-filter-btn" id="invFPrints" onclick="switchInvTab('prints')"><span class="msi" style="font-size:14px;">print</span> Prints</button>
+                        <button class="btn-fav avatar-filter-btn" id="invFInventory" onclick="switchInvTab('inventory')"><span class="msi" style="font-size:14px;">inventory_2</span> Inventory</button>
+                    </div>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <span id="invCount" style="font-size:12px;color:var(--tx3);"></span>
+                        <button class="btn-f" id="invUploadBtn" onclick="invBrowseUpload()" style="display:none;"><span class="msi" style="font-size:16px;">upload</span> Upload</button>
+                        <button class="btn-f" onclick="refreshInventory()"><span class="msi" style="font-size:16px;">refresh</span> Refresh</button>
+                    </div>
+                </div>
+                <div id="invGrid" class="inv-grid"><div class="empty-msg">Select a category above</div></div>
+            </div>
+            <!-- Tab 14: YouTube Fix / VRCVideoCacher -->
+            <div class="tab" id="tab14">
+                <div class="sf-card sf-status-card" style="margin-bottom:16px;">
+                    <div class="sf-status-row">
+                        <div class="sf-status"><span class="sf-dot offline" id="vcDot"></span><span id="vcStatusText">Not running</span></div>
+                        <button class="btn-f" id="btnVc" onclick="toggleVc()" disabled><span class="msi" style="font-size:16px;">play_arrow</span> Start</button>
+                    </div>
+                </div>
+                <div class="cb-card" id="vcInstallCard">
+                    <div class="cb-card-header"><span class="msi" style="font-size:16px;">smart_display</span> VRCVideoCacher</div>
+                    <p style="font-size:13px;color:var(--tx2);margin:0 0 4px;">Fixes <b style="color:var(--tx1)">YouTube video errors</b> in VRChat by routing requests through a local proxy. Created by <b style="color:var(--tx1)">Elly</b>.</p>
+                    <p style="font-size:12px;color:var(--tx3);margin:0 0 8px;">The service runs in the background. When you close VRCNext, the process will be terminated.</p>
+                    <p style="font-size:12px;color:var(--tx2);margin:0 0 12px;padding:8px 10px;background:var(--bg2);border-radius:6px;border-left:3px solid var(--accent);">If you are running this service for the first time, please follow the setup instructions that appear when starting it. Also make sure to read the usage guide on the GitHub page: <a href="https://github.com/EllyVR/VRCVideoCacher" target="_blank" style="color:var(--accent);">github.com/EllyVR/VRCVideoCacher</a></p>
+                    <div id="vcProgressWrap" style="display:none;margin-bottom:12px;">
+                        <div style="font-size:12px;color:var(--tx2);margin-bottom:6px;" id="vcProgressLabel">Downloading...</div>
+                        <div style="background:var(--brd);border-radius:4px;height:6px;overflow:hidden;">
+                            <div id="vcProgressBar" style="height:100%;background:var(--accent);width:0%;transition:width .3s;border-radius:4px;"></div>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                        <button class="btn-f" id="btnVcInstall" onclick="vcInstall()"><span class="msi" style="font-size:16px;">download</span> Install / Update</button>
+                        <span id="vcVersionLabel" style="font-size:12px;color:var(--tx3);"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="rsidebar" id="rsidebar">
+        <div class="rsidebar-header"><span class="rsidebar-title">FRIENDS</span><button class="btn-f" onclick="vrcRefresh()" title="Refresh" style="padding:3px 5px;"><span class="msi" style="font-size:14px;">refresh</span></button><div class="win-dots"><button class="win-dot win-dot-min" onclick="sendToCS({action:'windowMinimize'})" title="Minimize"></button><button class="win-dot win-dot-max" onclick="sendToCS({action:'windowMaximize'})" title="Maximize"></button><button class="win-dot win-dot-close" onclick="sendToCS({action:'windowClose'})" title="Close"></button></div></div>
+        <div class="rsidebar-content" id="vrcPanel">
+            <div id="vrcProfileArea"></div>
+            <div id="vrcInstanceArea"></div>
+            <div id="vrcFriendSearch" class="vrc-friend-search" style="display:none;">
+                <span class="msi vrc-fs-icon">search</span>
+                <input type="text" id="vrcFriendSearchInput" class="vrc-fs-input" placeholder="Search friends..." oninput="filterFriendsList()">
+            </div>
+            <div id="vrcFriendsList">
+                <div class="vrc-login-box" id="vrcLoginPrompt">
+                    <div style="font-size:14px;margin-bottom:8px;color:var(--tx3);font-weight:700;">VRChat</div>
+                    <div style="font-size:12px;color:var(--tx2);margin-bottom:12px;">Login to VRChat to see friends online</div>
+                    <input type="text" id="vrcQuickUser" placeholder="Username" onkeydown="if(event.key==='Enter')document.getElementById('vrcQuickPass').focus()">
+                    <input type="password" id="vrcQuickPass" placeholder="Password" onkeydown="if(event.key==='Enter')vrcQuickLogin()">
+                    <button class="btn-f" onclick="vrcQuickLogin()" style="width:100%;justify-content:center;"><span class="msi" style="font-size:16px;">login</span> Connect</button>
+                    <div id="vrcQuickError" style="font-size:11px;color:var(--tx2);margin-top:6px;min-height:16px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2FA Modal -->
+    <div class="modal-overlay" id="modal2FA" style="display:none;" onclick="if(event.target===this)this.style.display='none'">
+        <div class="modal-box" style="max-width:360px;">
+            <div class="modal-icon" style="background:rgba(56,132,255,.1);color:var(--accent);"><span class="msi" style="font-size:22px;">shield</span></div>
+            <div class="modal-title">VRChat 2FA Verification</div>
+            <div class="modal-msg" id="modal2FAMsg">Enter the 6-digit code from your email or authenticator app.</div>
+            <div style="margin:16px 0;"><input type="text" id="modal2FACode" maxlength="6" placeholder="000000" autocomplete="one-time-code" style="width:100%;text-align:center;font-size:24px;letter-spacing:8px;font-weight:700;padding:12px;background:var(--bg-input);border:none;border-radius:8px;color:var(--tx0);outline:none;font-family:inherit;" onkeydown="if(event.key==='Enter')modal2FASubmit()"></div>
+            <div id="modal2FAError" style="font-size:11px;color:var(--err);margin-bottom:8px;min-height:16px;"></div>
+            <div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="document.getElementById('modal2FA').style.display='none'">Cancel</button><button class="modal-btn modal-btn-accent" onclick="modal2FASubmit()">Verify</button></div>
+        </div>
+    </div>
+
+    <!-- Status Change Modal -->
+    <div class="modal-overlay" id="modalStatus" style="display:none;" onclick="if(event.target===this)this.style.display='none'">
+        <div class="modal-box" style="max-width:380px;">
+            <div class="modal-title" style="margin-bottom:14px;">Change Status</div>
+            <div id="statusOptions"></div>
+            <textarea class="status-desc-input" id="statusDescInput" rows="2" maxlength="64" placeholder="Status message..."></textarea>
+            <div style="font-size:10px;color:var(--tx3);margin-top:4px;margin-bottom:14px;text-align:right;" id="statusDescCount">0/64</div>
+            <div class="modal-btns"><button class="modal-btn modal-btn-cancel" onclick="document.getElementById('modalStatus').style.display='none'">Cancel</button><button class="modal-btn modal-btn-accent" onclick="submitStatusChange()">Update</button></div>
+        </div>
+    </div>
+
+    <!-- Friend Detail Modal -->
+    <div class="modal-overlay" id="modalFriendDetail" style="display:none;" onclick="if(event.target===this)closeFriendDetail()">
+        <div class="modal-box wide" id="friendDetailContent" style="position:relative;"><div class="fd-loading">Loading profile...</div></div>
+    </div>
+
+    <!-- World Detail Modal -->
+    <div class="modal-overlay" id="modalWorldDetail" style="display:none;" onclick="if(event.target===this)closeWorldDetail()">
+        <div class="modal-box wide" id="worldDetailContent" style="position:relative;"></div>
+    </div>
+
+    <!-- Universal Detail Modal (search results) -->
+    <div class="modal-overlay" id="modalDetail" style="display:none;" onclick="if(event.target===this)this.style.display='none'">
+        <div class="modal-box wide" id="detailModalContent" style="position:relative;"></div>
+    </div>
+
+    <!-- My Profile Modal -->
+    <div class="modal-overlay" id="modalMyProfile" style="display:none;" onclick="if(event.target===this)closeMyProfile()">
+        <div class="modal-box wide" id="mypBox" style="position:relative;"></div>
+    </div>
+
+    <!-- Multi-Invite Modal -->
+    <div class="modal-overlay" id="modalInvite" style="display:none;" onclick="if(event.target===this)closeInviteModal()">
+        <div class="modal-box inv-box" id="inviteBox"></div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="notifToastArea" class="notif-toast-area"></div>
+
+    <script src="JavaScript/core.js"></script>
+    <script src="JavaScript/settings.js"></script>
+    <script src="JavaScript/library.js"></script>
+    <script src="JavaScript/dashboard.js"></script>
+    <script src="JavaScript/profiles.js"></script>
+    <script src="JavaScript/worlds.js"></script>
+    <script src="JavaScript/groups.js"></script>
+    <script src="JavaScript/search.js"></script>
+    <script src="JavaScript/avatars.js"></script>
+    <script src="JavaScript/notifications.js"></script>
+    <script src="JavaScript/invite.js"></script>
+    <script src="JavaScript/chatbox.js"></script>
+    <script src="JavaScript/steamvr.js"></script>
+    <script src="JavaScript/osc.js"></script>
+    <script src="JavaScript/timeline.js"></script>
+    <script src="JavaScript/inventory.js"></script>
+    <script src="JavaScript/messages.js"></script>
+    <script src="JavaScript/init.js"></script>
+</body>
+</html>
