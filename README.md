@@ -1,5 +1,6 @@
+<img width="1100" height="700" alt="Screenshot 2026-03-01 030814" src="https://github.com/user-attachments/assets/ce84ee52-4281-43e1-9201-dcf33a852fea" />
 
-<img width="1100" height="700" alt="Screenshot 2026-03-01 031034" src="https://github.com/user-attachments/assets/2c92822d-83cc-4bc1-8088-f4b3fe9addd0" />
+# VRCNext
 
 VRCNext is a VRChat Launcher and Management system that aims for simplicity and performance.
 With VRCNext you can check the status of your friends, watch their profiles, see in what world they are and ask them to send you an invite or send them one yourself. You can create an instance before even starting VRChat, manage your friends, remove or add new ones. You can search for worlds and groups, change your avatar before even starting VRChat, and set up a Media Library so all of your VRChat images are in one place. Send images directly to Discord using the Media Relay webhook system. See actual instance information such as which players are currently in your instance. Start VRChat directly through VRCNext and configure other apps to launch alongside it like SlimeVR, VRCVideoCacher, and VRCFaceTracking.
