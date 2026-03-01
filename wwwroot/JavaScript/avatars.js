@@ -31,16 +31,18 @@ function refreshFavAvatars() {
 function setAvatarFilter(filter) {
     avatarFilter = filter;
     document.querySelectorAll('.avatar-filter-btn').forEach(b => b.classList.remove('active'));
-    const btnMap = { own: 'avatarFilterOwn', favorites: 'avatarFilterFav', search: 'avatarFilterSearch' };
+    const btnMap = { own: 'avatarFilterOwn', favorites: 'avatarFilterFav', rose: 'avatarFilterRose', search: 'avatarFilterSearch' };
     const btn = document.getElementById(btnMap[filter]);
     if (btn) btn.classList.add('active');
 
     const ownArea    = document.getElementById('avatarOwnArea');
     const favArea    = document.getElementById('avatarFavArea');
+    const roseArea   = document.getElementById('avatarRoseArea');
     const searchArea = document.getElementById('avatarSearchArea');
 
     if (ownArea)    ownArea.style.display    = filter === 'own'       ? '' : 'none';
     if (favArea)    favArea.style.display    = filter === 'favorites' ? '' : 'none';
+    if (roseArea)   roseArea.style.display   = filter === 'rose'      ? '' : 'none';
     if (searchArea) searchArea.style.display = filter === 'search'    ? '' : 'none';
 
     document.getElementById('avatarCount').textContent = '';
@@ -52,6 +54,8 @@ function setAvatarFilter(filter) {
     } else if (filter === 'favorites') {
         if (favAvatarsData.length === 0) sendToCS({ action: 'vrcGetAvatars', filter: 'favorites' });
         else { updateFavAvatarGroupHeader(); filterFavAvatars(); }
+    } else if (filter === 'rose') {
+        loadRoseDatabase();
     } else {
         document.getElementById('avatarSearchGrid').innerHTML = '<div class="empty-msg">Search for public avatars</div>';
         setTimeout(() => document.getElementById('avatarSearchInput')?.focus(), 50);
@@ -427,6 +431,7 @@ function onAvatarFavoriteResult(data) {
         if (avatarFilter === 'own') renderAvatarGrid();
         else if (avatarFilter === 'search') renderSearchGrid();
         else if (avatarFilter === 'favorites') filterFavAvatars();
+        else if (avatarFilter === 'rose') filterRoseDb();
         _scheduleAvFavRefresh();
     } else {
         const list = document.getElementById('avFavPickerList');
@@ -443,6 +448,7 @@ function onAvatarUnfavoriteResult(data) {
         if (avatarFilter === 'favorites') filterFavAvatars();
         else if (avatarFilter === 'own') renderAvatarGrid();
         else if (avatarFilter === 'search') renderSearchGrid();
+        else if (avatarFilter === 'rose') filterRoseDb();
         _scheduleAvFavRefresh();
     }
 }
@@ -474,4 +480,105 @@ function onAvatarFavoriteGroupUpdated(data) {
     }
     cancelEditAvatarGroupName();
     updateFavAvatarGroupHeader();
+}
+
+/* === Rose Database === */
+let roseDbData   = [];
+let roseDbLoaded = false;
+
+function loadRoseDatabase(forceRefresh) {
+    if (roseDbLoaded && !forceRefresh) { filterRoseDb(); return; }
+    const grid = document.getElementById('roseDbGrid');
+    const btn  = document.getElementById('roseRefreshBtn');
+    if (grid) grid.innerHTML = sk('avatar', 6);
+    if (btn)  { btn.disabled = true; btn.querySelector('.msi').textContent = 'hourglass_empty'; }
+
+    fetch('https://gist.githubusercontent.com/TheZiver/bb99f9facb8d14fd607dbb79e9a99d83/raw')
+        .then(r => r.json())
+        .then(data => {
+            roseDbData   = data.community_avatars || [];
+            roseDbLoaded = true;
+            filterRoseDb();
+        })
+        .catch(() => {
+            if (grid) grid.innerHTML = '<div class="empty-msg">Failed to load Rose Database. Check your connection.</div>';
+        })
+        .finally(() => {
+            if (btn) { btn.disabled = false; btn.querySelector('.msi').textContent = 'refresh'; }
+        });
+}
+
+function filterRoseDb() {
+    const q    = (document.getElementById('roseSearchInput')?.value || '').toLowerCase();
+    const list = q
+        ? roseDbData.filter(a =>
+            (a.avatar_name || '').toLowerCase().includes(q) ||
+            (a.author      || '').toLowerCase().includes(q) ||
+            (a.tags        || []).some(t => t.toLowerCase().includes(q)))
+        : roseDbData;
+    renderRoseGrid(list);
+    document.getElementById('avatarCount').textContent = list.length ? `${list.length} avatar${list.length !== 1 ? 's' : ''}` : '';
+}
+
+function renderRoseGrid(list) {
+    const grid = document.getElementById('roseDbGrid');
+    if (!grid) return;
+    if (!list || list.length === 0) {
+        grid.innerHTML = '<div class="empty-msg">No avatars found</div>';
+        return;
+    }
+    grid.innerHTML = list.map(a => renderRoseAvatarCard(a)).join('');
+}
+
+const ROSE_TAG_ORDER = ['FISH', 'ROSE_FISH', 'ARCADE_FISH', 'VAPOR_FISH', 'CHEESE_FISH', 'COSMIC_FISH'];
+
+const ROSE_TAG_STYLES = {
+    FISH:        { label: 'Fish',   bg: 'rgba(255,255,255,0.15)', color: '#ffffff',              border: '1px solid rgba(255,255,255,0.45)' },
+    ROSE_FISH:   { label: 'Rose',   bg: 'rgba(220,38,38,0.20)',   color: '#f87171',              border: '1px solid rgba(220,38,38,0.50)'   },
+    ARCADE_FISH: { label: 'Arcade', bg: 'linear-gradient(90deg,rgba(236,72,153,0.25),rgba(6,182,212,0.25))', color: '#e879f9', border: '1px solid rgba(167,139,250,0.45)' },
+    VAPOR_FISH:  { label: 'Vapor',  bg: 'rgba(6,182,212,0.20)',   color: '#22d3ee',              border: '1px solid rgba(6,182,212,0.50)'   },
+    CHEESE_FISH: { label: 'Cheese', bg: 'rgba(234,179,8,0.20)',   color: '#facc15',              border: '1px solid rgba(234,179,8,0.50)'   },
+    COSMIC_FISH: { label: 'Cosmic', bg: 'rgba(59,130,246,0.20)',  color: '#60a5fa',              border: '1px solid rgba(59,130,246,0.50)'  },
+};
+
+function _roseTagBadge(rawTag) {
+    const key = rawTag.toUpperCase().replace(/\s+/g, '_');
+    const s   = ROSE_TAG_STYLES[key];
+    if (!s) return `<span class="av-badge" style="background:var(--bg2);color:var(--tx2);font-size:9px;border:1px solid var(--brd-lt);">${esc(rawTag)}</span>`;
+    const bg = s.bg.startsWith('linear') ? s.bg : s.bg;
+    return `<span class="av-badge" style="background:${bg};color:${s.color};font-size:9px;border:${s.border};font-weight:700;">${esc(s.label)}</span>`;
+}
+
+function renderRoseAvatarCard(a) {
+    const thumb  = a.avatar_image_url || '';
+    const aid    = jsq(a.avatar_id || '');
+    const isFav  = favAvatarsData.some(f => f.id === a.avatar_id);
+    const thumbStyle = thumb ? `background-image:url('${cssUrl(thumb)}')` : '';
+
+    // Sort tags in defined order, unknown tags appended at end
+    const rawTags  = (a.tags || []);
+    const sorted   = [
+        ...ROSE_TAG_ORDER.filter(k => rawTags.some(t => t.toUpperCase().replace(/\s+/g,'_') === k)),
+        ...rawTags.filter(t => !ROSE_TAG_ORDER.includes(t.toUpperCase().replace(/\s+/g,'_'))),
+    ];
+    const tags = sorted.map(t => _roseTagBadge(t)).join('');
+
+    return `<div class="av-card" onclick="selectAvatar('${aid}')">
+        <div class="av-thumb" style="${thumbStyle}">
+            <div class="av-thumb-overlay"></div>
+            <div class="av-badges-bottom"><span class="av-badge public"><span class="msi" style="font-size:10px;">public</span> Public</span></div>
+        </div>
+        <div class="av-info" style="display:flex;align-items:center;gap:6px;">
+            <div style="flex:1;min-width:0;">
+                <div class="av-name">${esc(a.avatar_name || 'Unnamed')}</div>
+                <div class="av-author" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                    <span>${esc(a.author || '')}</span>
+                    ${tags ? `<span style="display:inline-flex;gap:3px;flex-wrap:wrap;">${tags}</span>` : ''}
+                </div>
+            </div>
+            <button class="fd-btn fd-btn-fav${isFav ? ' active' : ''}" onclick="event.stopPropagation();openAvFavPicker('${aid}',this)" style="flex-shrink:0;font-size:11px;padding:4px 10px;">
+                <span class="msi" style="font-size:14px;">${isFav ? 'star' : 'star_outline'}</span>${isFav ? 'Unfavorite' : 'Favorite'}
+            </button>
+        </div>
+    </div>`;
 }

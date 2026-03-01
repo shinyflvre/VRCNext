@@ -163,6 +163,7 @@
                     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                         <button class="btn-fav avatar-filter-btn active" id="avatarFilterOwn" onclick="setAvatarFilter('own')"><span class="msi" style="font-size:16px;">person</span> My Avatars</button>
                         <button class="btn-fav avatar-filter-btn" id="avatarFilterFav" onclick="setAvatarFilter('favorites')"><span class="msi" style="font-size:16px;">star</span> Favorites</button>
+                        <button class="btn-fav avatar-filter-btn" id="avatarFilterRose" onclick="setAvatarFilter('rose')"><span class="msi" style="font-size:16px;">local_florist</span> Rose Database</button>
                         <button class="btn-fav avatar-filter-btn" id="avatarFilterSearch" onclick="setAvatarFilter('search')"><span class="msi" style="font-size:16px;">search</span> Search</button>
                     </div>
                     <span id="avatarCount" style="font-size:12px;color:var(--tx3);"></span>
@@ -195,6 +196,14 @@
                         <button id="favAvatarsRefreshBtn" class="btn-f" onclick="refreshFavAvatars()" title="Refresh"><span class="msi" style="font-size:16px;">refresh</span> Refresh</button>
                     </div>
                     <div id="favAvatarsGrid" class="avatar-grid"><div class="empty-msg">Loading favorite avatars...</div></div>
+                </div>
+                <!-- Rose Database -->
+                <div id="avatarRoseArea" style="display:none;">
+                    <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+                        <div class="search-bar-row" style="margin-bottom:0;flex:1;min-width:140px;"><span class="msi search-ico">search</span><input type="text" id="roseSearchInput" class="search-input" placeholder="Filter by name, author or tag..." oninput="filterRoseDb()"></div>
+                        <button class="btn-f" id="roseRefreshBtn" onclick="loadRoseDatabase(true)" title="Refresh"><span class="msi" style="font-size:16px;">refresh</span> Refresh</button>
+                    </div>
+                    <div id="roseDbGrid" class="avatar-grid"><div class="empty-msg">Loading Rose Database...</div></div>
                 </div>
                 <!-- Search -->
                 <div id="avatarSearchArea" style="display:none;">
