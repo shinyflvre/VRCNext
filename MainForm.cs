@@ -669,7 +669,6 @@ public class MainForm : Form
                         try
                         {
                             var worldIds = msg["worldIds"]?.ToObject<List<string>>() ?? new();
-                            var result = new Dictionary<string, object>();
 
                             foreach (var wid in worldIds)
                             {
@@ -678,18 +677,21 @@ public class MainForm : Form
                                     var world = await _vrcApi.GetWorldAsync(wid);
                                     if (world != null)
                                     {
-                                        result[wid] = new
+                                        var single = new Dictionary<string, object>
                                         {
-                                            name = world["name"]?.ToString() ?? "",
-                                            thumbnailImageUrl = world["thumbnailImageUrl"]?.ToString() ?? "",
-                                            imageUrl = world["imageUrl"]?.ToString() ?? ""
+                                            [wid] = new
+                                            {
+                                                name = world["name"]?.ToString() ?? "",
+                                                thumbnailImageUrl = world["thumbnailImageUrl"]?.ToString() ?? "",
+                                                imageUrl = world["imageUrl"]?.ToString() ?? ""
+                                            }
                                         };
+                                        Invoke(() => SendToJS("vrcWorldsResolved", single));
                                     }
+                                    await Task.Delay(250);
                                 }
                                 catch { /* skip failed worlds */ }
                             }
-
-                            Invoke(() => SendToJS("vrcWorldsResolved", result));
                         }
                         catch (Exception ex)
                         {

@@ -234,8 +234,18 @@ function onDiscoveryFeed(json) {
             .filter(id => id.startsWith('wrld_') && !dashWorldCache[id]);
         if (unresolvedIds.length > 0) {
             sendToCS({ action: 'vrcResolveWorlds', worldIds: unresolvedIds });
+            // Wait for vrcWorldsResolved before rendering to avoid flashing raw IDs.
+            // Fallback render after 8s in case the API call fails or user is not logged in.
+            setTimeout(() => {
+                const stillUnresolved = discoveryWorlds.some(w => {
+                    const id = w.WorldID || w.worldId || '';
+                    return id.startsWith('wrld_') && !dashWorldCache[id];
+                });
+                if (stillUnresolved) renderDiscovery();
+            }, 8000);
+        } else {
+            renderDiscovery();
         }
-        renderDiscovery();
     } catch (_) {}
 }
 
