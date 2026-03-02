@@ -283,6 +283,12 @@ if (window.chrome?.webview) {
             case 'vrcLaunchNeeded':
                 showLaunchModal(payload.location, payload.steamVr);
                 break;
+            case 'vrcInviteMessages':
+                handleVrcInviteMessages(payload);
+                break;
+            case 'vrcInviteMessageUpdateFailed':
+                handleVrcInviteMessageUpdateFailed(payload);
+                break;
             case 'updateAvailable':   showUpdateAvailable(payload.version); break;
             case 'updateProgress':    onUpdateProgress(payload); break;
             case 'updateReady':       onUpdateReady(); break;

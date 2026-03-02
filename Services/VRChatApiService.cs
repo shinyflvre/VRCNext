@@ -740,7 +740,7 @@ public class VRChatApiService
     }
 
     // Invite friend to your instance
-    public async Task<bool> InviteFriendAsync(string userId)
+    public async Task<bool> InviteFriendAsync(string userId, int? messageSlot = null)
     {
         if (!IsLoggedIn) return false;
         try
@@ -754,6 +754,7 @@ public class VRChatApiService
             }
             var worldId = loc.Contains(':') ? loc.Split(':')[0] : loc;
             var payload = new JObject { ["instanceId"] = loc, ["worldId"] = worldId };
+            if (messageSlot.HasValue) payload["messageSlot"] = messageSlot.Value;
             var content = new StringContent(payload.ToString(), Encoding.UTF8, "application/json");
             var resp = await _http.PostAsync($"{BASE}/invite/{userId}", content);
             var body = await resp.Content.ReadAsStringAsync();
@@ -761,6 +762,47 @@ public class VRChatApiService
             return resp.IsSuccessStatusCode;
         }
         catch (Exception ex) { Log($"InviteFriend exception: {ex.Message}"); return false; }
+    }
+
+    // Get user's predefined invite message slots (type "message" = outgoing invites)
+    public async Task<JArray?> GetInviteMessagesAsync(string userId)
+    {
+        if (!IsLoggedIn) return null;
+        try
+        {
+            var resp = await _http.GetAsync($"{BASE}/message/{userId}/message");
+            if (!resp.IsSuccessStatusCode) return null;
+            var body = await resp.Content.ReadAsStringAsync();
+            return JArray.Parse(body);
+        }
+        catch (Exception ex) { Log($"GetInviteMessages exception: {ex.Message}"); return null; }
+    }
+
+    // Update a single invite message slot (60-min cooldown per slot)
+    public async Task<(bool ok, JArray? messages, int cooldown)> UpdateInviteMessageAsync(string userId, int slot, string message)
+    {
+        if (!IsLoggedIn) return (false, null, 0);
+        try
+        {
+            var payload = new JObject { ["message"] = message };
+            var content = new StringContent(payload.ToString(), Encoding.UTF8, "application/json");
+            var resp = await _http.PutAsync($"{BASE}/message/{userId}/message/{slot}", content);
+            var body = await resp.Content.ReadAsStringAsync();
+            if (resp.IsSuccessStatusCode)
+            {
+                var arr = JArray.Parse(body);
+                return (true, arr, 0);
+            }
+            if ((int)resp.StatusCode == 429)
+            {
+                // Extract remainingCooldownMinutes from error body if possible
+                try { var err = JObject.Parse(body); return (false, null, err["remainingCooldownMinutes"]?.Value<int>() ?? 60); } catch { }
+                return (false, null, 60);
+            }
+            Log($"UpdateInviteMessage {slot} failed: {(int)resp.StatusCode} {body[..Math.Min(200,body.Length)]}");
+            return (false, null, 0);
+        }
+        catch (Exception ex) { Log($"UpdateInviteMessage exception: {ex.Message}"); return (false, null, 0); }
     }
 
     // Request invite from friend

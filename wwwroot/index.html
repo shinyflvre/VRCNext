@@ -151,9 +151,11 @@
                     <div id="searchPeopleResults" class="search-grid"><div class="empty-msg">Search for VRChat users</div></div>
                 </div>
                 <div id="peopleBlockedArea" style="display:none;">
+                    <div class="search-bar-row" style="margin-bottom:12px;"><span class="msi search-ico">search</span><input type="text" id="blockedSearch" class="search-input" placeholder="Filter blocked users..." oninput="filterModList('block')"></div>
                     <div id="blockedList"><div class="empty-msg">Loading...</div></div>
                 </div>
                 <div id="peopleMutedArea" style="display:none;">
+                    <div class="search-bar-row" style="margin-bottom:12px;"><span class="msi search-ico">search</span><input type="text" id="mutedSearch" class="search-input" placeholder="Filter muted users..." oninput="filterModList('mute')"></div>
                     <div id="mutedList"><div class="empty-msg">Loading...</div></div>
                 </div>
             </div>

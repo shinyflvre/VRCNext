@@ -757,7 +757,7 @@ function renderFriendDetail(d) {
         if (d.canJoin) actionsHtml += `<button class="fd-btn fd-btn-join" onclick="friendAction('join','${loc}','${uid}')">Join</button>`;
         if (d.canRequestInvite) actionsHtml += `<button class="fd-btn" onclick="friendAction('requestInvite','${loc}','${uid}')">Request Invite</button>`;
         const myInInstance = currentInstanceData && currentInstanceData.location && !currentInstanceData.empty && !currentInstanceData.error;
-        if (myInInstance) actionsHtml += `<button class="fd-btn" onclick="friendAction('invite','${loc}','${uid}')">Invite</button>`;
+        if (myInInstance) actionsHtml += `<button class="fd-btn" onclick="openFriendInviteModal('${uid}','${esc(d.displayName).replace(/'/g, "\\'")}')">Invite</button>`;
         const favFid = (d.favFriendId || '').replace(/'/g, "\\'");
         actionsHtml += `<button class="fd-btn fd-btn-fav${d.isFavorited ? ' active' : ''}" id="fdFavBtn" onclick="toggleFavFriend('${uid}','${favFid}',this)" title="${d.isFavorited ? 'Unfavorite' : 'Favorite'}"><span class="msi" style="font-size:16px;">${d.isFavorited ? 'star' : 'star_outline'}</span></button>`;
     } else {
@@ -1026,15 +1026,24 @@ function refreshPeopleTab() {
     if (peopleFilter === 'muted')     sendToCS({ action: 'vrcGetMuted' });
 }
 
+function filterModList(type) {
+    const isBlock = type === 'block';
+    renderModList(isBlock ? 'blockedList' : 'mutedList', isBlock ? (blockedData || []) : (mutedData || []), type);
+}
+
 function renderModList(containerId, list, actionType) {
     const el = document.getElementById(containerId);
     if (!el) return;
-    if (!list || list.length === 0) {
-        el.innerHTML = `<div class="empty-msg">${actionType === 'block' ? 'No blocked users' : 'No muted users'}</div>`;
+    const searchId = actionType === 'block' ? 'blockedSearch' : 'mutedSearch';
+    const query = (document.getElementById(searchId)?.value || '').toLowerCase().trim();
+    const filtered = query ? (list || []).filter(e => (e.targetDisplayName || e.targetUserId || '').toLowerCase().includes(query)) : (list || []);
+    if (!filtered.length) {
+        el.innerHTML = `<div class="empty-msg">${query ? 'No results' : (actionType === 'block' ? 'No blocked users' : 'No muted users')}</div>`;
         return;
     }
+    list = filtered;
     const btnLabel = actionType === 'block' ? 'Unblock' : 'Unmute';
-    const btnClass = actionType === 'block' ? 'fd-btn fd-btn-danger' : 'fd-btn';
+    const btnClass = 'fd-btn fd-btn-unmod';
     el.innerHTML = list.map(entry => {
         const uid = jsq(entry.targetUserId || '');
         const displayName = entry.targetDisplayName || entry.targetUserId || '?';
@@ -1157,3 +1166,163 @@ function filterFavFriends() {
         if (tip) tip.style.opacity = '0';
     });
 }());
+
+/* === Invite Modal === */
+let _invModalUserId = null;
+let _invModalApiMsgs = []; // raw VRChat API objects { slot, message, canBeUpdated, remainingCooldownMinutes }
+let _invModalSelected = -1;
+
+function openFriendInviteModal(userId, displayName) {
+    closeFriendInviteModal();
+    _invModalUserId = userId;
+    _invModalApiMsgs = [];
+    _invModalSelected = -1;
+
+    const thumb = currentInstanceData?.worldThumb || '';
+    const worldName = currentInstanceData?.worldName || 'your instance';
+
+    const el = document.createElement('div');
+    el.className = 'inv-modal-overlay';
+    el.innerHTML = `
+        <div class="inv-single-modal">
+            <div class="inv-world-banner" style="${thumb ? `background-image:url('${cssUrl(thumb)}')` : ''}">
+                <div class="inv-world-fade"></div>
+                <div class="inv-world-info">
+                    <div style="font-size:11px;color:rgba(255,255,255,.65);margin-bottom:2px;">Invite ${esc(displayName)} to</div>
+                    <div class="inv-world-name">${esc(worldName)}</div>
+                </div>
+                <button class="inv-close-btn" onclick="closeFriendInviteModal()"><span class="msi" style="font-size:18px;">close</span></button>
+            </div>
+            <div class="inv-single-body">
+                <div class="inv-single-row">
+                    <button class="inv-action-btn inv-action-primary" onclick="_invModalSendDirect()">Invite Directly</button>
+                    <button class="inv-action-btn" id="invMsgToggleBtn" onclick="_invModalToggleMsgs()">Invite with Message</button>
+                </div>
+                <div id="invMsgList" style="display:none;"></div>
+                <div id="invMsgSendRow" style="display:none;">
+                    <button class="inv-action-btn inv-action-primary inv-action-full" onclick="_invModalSendWithMsg()">Send Invite</button>
+                </div>
+            </div>
+        </div>`;
+    el.addEventListener('click', e => { if (e.target === el) closeFriendInviteModal(); });
+    document.body.appendChild(el);
+    window._inviteModalEl = el;
+}
+
+function _invModalRenderMsgs() {
+    const list = document.getElementById('invMsgList');
+    if (!list) return;
+    if (!_invModalApiMsgs.length) {
+        list.innerHTML = '<div class="inv-msg-loading"><span class="msi" style="font-size:16px;animation:spin 1s linear infinite;">progress_activity</span> Loading messages...</div>';
+        return;
+    }
+    list.innerHTML = _invModalApiMsgs.map(m => {
+        const i = m.slot;
+        const canEdit = m.canBeUpdated;
+        const cooldown = m.remainingCooldownMinutes || 0;
+        const isSelected = _invModalSelected === i;
+        return `
+        <div class="inv-msg-item${isSelected ? ' selected' : ''}" id="invMsg_${i}" onclick="_invModalSelectMsg(${i})">
+            <span class="inv-msg-text" id="invMsgText_${i}">${esc(m.message)}</span>
+            ${canEdit
+                ? `<button class="inv-msg-edit" onclick="event.stopPropagation();_invModalEditMsg(${i})" title="Edit"><span class="msi" style="font-size:14px;">edit</span></button>`
+                : `<span class="inv-msg-cooldown" title="${cooldown} min cooldown"><span class="msi" style="font-size:13px;">schedule</span></span>`}
+        </div>`;
+    }).join('');
+}
+
+function _invModalToggleMsgs() {
+    const list = document.getElementById('invMsgList');
+    const btn = document.getElementById('invMsgToggleBtn');
+    if (!list) return;
+    const open = list.style.display === 'none';
+    list.style.display = open ? '' : 'none';
+    if (btn) btn.classList.toggle('active', open);
+    if (open) {
+        _invModalRenderMsgs();
+        // Fetch real messages from VRChat API
+        sendToCS({ action: 'vrcGetInviteMessages' });
+    } else {
+        _invModalSelected = -1;
+        const sendRow = document.getElementById('invMsgSendRow');
+        if (sendRow) sendRow.style.display = 'none';
+    }
+}
+
+function handleVrcInviteMessages(msgs) {
+    // msgs = array of { slot, message, canBeUpdated, remainingCooldownMinutes, ... }
+    _invModalApiMsgs = (msgs || []).slice().sort((a, b) => a.slot - b.slot);
+    _invModalRenderMsgs();
+}
+
+function handleVrcInviteMessageUpdateFailed(payload) {
+    const itemEl = document.getElementById(`invMsg_${payload.slot}`);
+    if (itemEl) {
+        delete itemEl.dataset.editing;
+        _invModalRenderMsgs();
+    }
+    const cd = payload.cooldown || 60;
+    showInvToast(false, `Cooldown: ${cd} min remaining`);
+}
+
+function _invModalSelectMsg(idx) {
+    _invModalSelected = _invModalSelected === idx ? -1 : idx;
+    document.querySelectorAll('.inv-msg-item').forEach(el => {
+        const slot = parseInt(el.id.replace('invMsg_', ''));
+        el.classList.toggle('selected', slot === _invModalSelected);
+    });
+    const sendRow = document.getElementById('invMsgSendRow');
+    if (sendRow) sendRow.style.display = _invModalSelected >= 0 ? '' : 'none';
+}
+
+function _invModalEditMsg(idx) {
+    const itemEl = document.getElementById(`invMsg_${idx}`);
+    const textEl = document.getElementById(`invMsgText_${idx}`);
+    if (!itemEl || !textEl || itemEl.dataset.editing) return;
+    itemEl.dataset.editing = '1';
+    const cur = (_invModalApiMsgs.find(m => m.slot === idx) || {}).message || '';
+    textEl.outerHTML = `<input class="inv-msg-input" id="invMsgText_${idx}" value="${cur.replace(/"/g, '&quot;')}"
+        onblur="_invModalSaveMsg(${idx},this)"
+        onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this.dataset.cancel='1';this.blur();}">`;
+    const inp = document.getElementById(`invMsgText_${idx}`);
+    if (inp) { inp.focus(); inp.select(); }
+    const icon = itemEl.querySelector('.inv-msg-edit .msi');
+    if (icon) icon.textContent = 'check';
+}
+
+function _invModalSaveMsg(idx, input) {
+    const itemEl = document.getElementById(`invMsg_${idx}`);
+    if (!itemEl) return;
+    delete itemEl.dataset.editing;
+    const m = _invModalApiMsgs.find(x => x.slot === idx);
+    const newText = input.value.trim();
+    // Only call API if text actually changed — avoids unnecessary 60min rate limit
+    if (!input.dataset.cancel && newText && m && newText !== m.message) {
+        sendToCS({ action: 'vrcUpdateInviteMessage', slot: idx, message: newText });
+        m.message = newText;
+        m.canBeUpdated = false;
+        m.remainingCooldownMinutes = 60;
+    }
+    _invModalRenderMsgs();
+}
+
+function _invModalSendDirect() {
+    if (!_invModalUserId) return;
+    sendToCS({ action: 'vrcInviteFriend', userId: _invModalUserId });
+    closeFriendInviteModal();
+}
+
+function _invModalSendWithMsg() {
+    if (!_invModalUserId || _invModalSelected < 0) return;
+    sendToCS({ action: 'vrcInviteFriend', userId: _invModalUserId, messageSlot: _invModalSelected });
+    closeFriendInviteModal();
+}
+
+function closeFriendInviteModal() {
+    const el = window._inviteModalEl;
+    if (!el) return;
+    el.style.opacity = '0';
+    el.style.transition = 'opacity .15s';
+    setTimeout(() => el.remove(), 150);
+    window._inviteModalEl = null;
+}

@@ -827,15 +827,39 @@ public class MainForm : Form
                 // Invite friend
                 case "vrcInviteFriend":
                     var invUserId = msg["userId"]?.ToString();
+                    var invMsgSlot = msg["messageSlot"]?.Value<int?>();
                     if (!string.IsNullOrEmpty(invUserId))
                     {
-                        var ok3 = await _vrcApi.InviteFriendAsync(invUserId);
+                        var ok3 = await _vrcApi.InviteFriendAsync(invUserId, invMsgSlot);
                         SendToJS("vrcActionResult", new
                         {
                             action = "invite",
                             success = ok3,
                             message = ok3 ? "Invite sent!" : "Failed to send invite. Make sure you are in a valid instance."
                         });
+                    }
+                    break;
+
+                case "vrcGetInviteMessages":
+                    var gimUserId = msg["userId"]?.ToString() ?? _vrcApi.CurrentUserId;
+                    if (!string.IsNullOrEmpty(gimUserId))
+                    {
+                        var msgs = await _vrcApi.GetInviteMessagesAsync(gimUserId);
+                        SendToJS("vrcInviteMessages", msgs ?? new Newtonsoft.Json.Linq.JArray());
+                    }
+                    break;
+
+                case "vrcUpdateInviteMessage":
+                    var uimUserId = msg["userId"]?.ToString() ?? _vrcApi.CurrentUserId;
+                    var uimSlot   = msg["slot"]?.Value<int>() ?? -1;
+                    var uimText   = msg["message"]?.ToString() ?? "";
+                    if (!string.IsNullOrEmpty(uimUserId) && uimSlot >= 0 && !string.IsNullOrEmpty(uimText))
+                    {
+                        var (uimOk, uimArr, uimCooldown) = await _vrcApi.UpdateInviteMessageAsync(uimUserId, uimSlot, uimText);
+                        if (uimOk && uimArr != null)
+                            SendToJS("vrcInviteMessages", uimArr);
+                        else
+                            SendToJS("vrcInviteMessageUpdateFailed", new { slot = uimSlot, cooldown = uimCooldown });
                     }
                     break;
 

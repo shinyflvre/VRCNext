@@ -266,6 +266,14 @@ public class AppSettings
 
     public bool SetupComplete { get; set; }
 
+    public List<string> InviteMessages { get; set; } = new()
+    {
+        "Come join us!",
+        "We're here, join!",
+        "You should check this out!",
+        "Join me?"
+    };
+
     public class WebhookSlot
     {
         public string Name { get; set; } = "";
