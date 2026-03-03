@@ -276,9 +276,11 @@ function handleInvUploadResult(payload) {
         if (INV_TABS[activeInvTab]?.tag === tag) {
             renderInvFiles(invFilesCache[tag], activeInvTab);
         }
-        showInvToast(true, 'Uploaded successfully!');
+        iuHandleUploadDone(true);
+        showToast(true, 'Uploaded successfully!');
     } else {
-        showInvToast(false, payload.error || 'Upload failed');
+        iuHandleUploadDone(false);
+        showToast(false, payload.error || 'Upload failed');
     }
 }
 
@@ -338,9 +340,9 @@ function handleInvDeleteResult(payload) {
             invFilesCache[tag] = invFilesCache[tag].filter(f => f.id !== payload.fileId);
             renderInvFiles(invFilesCache[tag], activeInvTab);
         }
-        showInvToast(true, 'Deleted');
+        showToast(true, 'Deleted');
     } else {
-        showInvToast(false, 'Delete failed');
+        showToast(false, 'Delete failed');
     }
 }
 
@@ -351,9 +353,9 @@ function handleInvPrintDeleteResult(payload) {
 
         invPrintsCache = invPrintsCache.filter(p => p.id !== payload.printId);
         renderInvPrints(invPrintsCache);
-        showInvToast(true, 'Print deleted');
+        showToast(true, 'Print deleted');
     } else {
-        showInvToast(false, 'Delete failed');
+        showToast(false, 'Delete failed');
     }
 }
 

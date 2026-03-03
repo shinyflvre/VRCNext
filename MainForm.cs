@@ -2603,6 +2603,57 @@ public class MainForm : Form
                     break;
                 }
 
+                case "invUploadFromData":
+                {
+                    var uploadTag2  = msg["tag"]?.ToString() ?? "gallery";
+                    var dataB64     = msg["data"]?.ToString() ?? "";
+                    var animStyle   = msg["animationStyle"]?.ToString() ?? "";
+                    var maskTagVal  = msg["maskTag"]?.ToString() ?? "";
+
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            // Strip data-URL prefix (data:image/png;base64,...)
+                            var raw = dataB64.Contains(",") ? dataB64.Split(',')[1] : dataB64;
+                            var bytes2 = Convert.FromBase64String(raw);
+
+                            var (ok2, file2, error2) = await _vrcApi.UploadInventoryImageAsync(bytes2, uploadTag2, animStyle, maskTagVal);
+                            if (ok2 && file2 != null)
+                            {
+                                var versions2 = (file2["versions"] as Newtonsoft.Json.Linq.JArray) ?? new Newtonsoft.Json.Linq.JArray();
+                                var latest2   = versions2.OfType<Newtonsoft.Json.Linq.JObject>()
+                                    .LastOrDefault(v => v["status"]?.ToString() == "complete")
+                                    ?? versions2.OfType<Newtonsoft.Json.Linq.JObject>().LastOrDefault();
+                                var fileUrl2    = latest2?["file"]?["url"]?.ToString() ?? "";
+                                var versionId2  = latest2?["version"]?.Value<int>() ?? 1;
+                                var newFile2 = new
+                                {
+                                    id            = file2["id"]?.ToString() ?? "",
+                                    name          = file2["name"]?.ToString() ?? "",
+                                    tags          = (file2["tags"] as Newtonsoft.Json.Linq.JArray)?.ToObject<List<string>>() ?? new List<string>(),
+                                    animationStyle = file2["animationStyle"]?.ToString() ?? "",
+                                    maskTag       = file2["maskTag"]?.ToString() ?? "",
+                                    fileUrl       = fileUrl2,
+                                    versionId     = versionId2,
+                                    sizeBytes     = latest2?["file"]?["sizeInBytes"]?.Value<long>() ?? (long)bytes2.Length,
+                                    createdAt     = DateTime.UtcNow.ToString("o"),
+                                };
+                                Invoke(() => SendToJS("invUploadResult", new { success = true, tag = uploadTag2, file = newFile2 }));
+                            }
+                            else
+                            {
+                                Invoke(() => SendToJS("invUploadResult", new { success = false, tag = uploadTag2, error = error2 }));
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Invoke(() => SendToJS("invUploadResult", new { success = false, tag = uploadTag2, error = ex.Message }));
+                        }
+                    });
+                    break;
+                }
+
                 case "invDeleteFile":
                 {
                     var delFileId = msg["fileId"]?.ToString();

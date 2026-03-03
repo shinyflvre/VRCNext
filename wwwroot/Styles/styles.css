@@ -5882,6 +5882,24 @@ body {
     pointer-events: none;
 }
 
+/* ── Inventory Upload Drop Zone ──────────────────────────────────────────── */
+
+.iu-dropzone {
+    border: 2px dashed var(--bg-hover);
+    border-radius: 10px;
+    padding: 36px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    background: var(--bg-input);
+    user-select: none;
+}
+.iu-dropzone:hover,
+.iu-dropzone.dragover {
+    border-color: var(--accent);
+    background: rgba(56,132,255,.07);
+}
+
 /* ── Custom Dropdown (vn-select) ─────────────────────────────────────────── */
 
 /* Wrapper — transparent, just provides position context + flex passthrough */

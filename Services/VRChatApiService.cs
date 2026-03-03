@@ -1456,13 +1456,17 @@ public class VRChatApiService
     }
 
     /// <summary>Upload a PNG image as icon/gallery/sticker/emoji/emojianimated.</summary>
-    public async Task<(bool ok, JObject? file, string error)> UploadInventoryImageAsync(byte[] bytes, string tag)
+    public async Task<(bool ok, JObject? file, string error)> UploadInventoryImageAsync(byte[] bytes, string tag, string animationStyle = "", string maskTag = "")
     {
         if (!IsLoggedIn) return (false, null, "Not logged in");
         try
         {
             using var form = new System.Net.Http.MultipartFormDataContent();
             form.Add(new StringContent(tag), "tag");
+            if (!string.IsNullOrEmpty(animationStyle))
+                form.Add(new StringContent(animationStyle), "animationStyle");
+            if (!string.IsNullOrEmpty(maskTag))
+                form.Add(new StringContent(maskTag), "maskTag");
             var fileContent = new System.Net.Http.ByteArrayContent(bytes);
             fileContent.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("image/png");
             form.Add(fileContent, "file", "upload.png");
