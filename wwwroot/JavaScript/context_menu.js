@@ -302,6 +302,7 @@
                 actionItems.push(                  { icon: 'send',             label: 'Invite',               action: () => sendToCS({ action: 'vrcInviteFriend', userId: id }) });
                 actionItems.push(                  { icon: 'forward_to_inbox', label: 'Invite with Message',  action: () => { openFriendInviteModal(id, f.displayName || id); _invModalToggleMsgs(); } });
             }
+            actionItems.push({ icon: 'waving_hand', label: 'Boop!', action: () => sendToCS({ action: 'vrcBoop', userId: id }) });
             if (actionItems.length) { items.push('sep'); actionItems.forEach(i => items.push(i)); }
         }
 
@@ -315,12 +316,17 @@
                 : { icon: 'star',        label: 'Favorite',   action: () => sendToCS({ action: 'vrcAddFavoriteFriend',    userId: id }) }
             );
 
-            // Mute / Unfriend
-            const isMuted = Array.isArray(mutedData) && mutedData.some(x => x.targetUserId === id);
+            // Mute / Block / Unfriend
+            const isMuted   = Array.isArray(mutedData)   && mutedData.some(x => x.targetUserId === id);
+            const isBlocked = Array.isArray(blockedData) && blockedData.some(x => x.targetUserId === id);
             items.push('sep');
             items.push(isMuted
-                ? { icon: 'mic',     label: 'Unmute', action: () => sendToCS({ action: 'vrcUnmute', userId: id }) }
-                : { icon: 'mic_off', label: 'Mute',   action: () => sendToCS({ action: 'vrcMute',   userId: id }) }
+                ? { icon: 'mic',       label: 'Unmute',  action: () => sendToCS({ action: 'vrcUnmute',  userId: id }) }
+                : { icon: 'mic_off',   label: 'Mute',    action: () => sendToCS({ action: 'vrcMute',    userId: id }) }
+            );
+            items.push(isBlocked
+                ? { icon: 'lock_open', label: 'Unblock', action: () => sendToCS({ action: 'vrcUnblock', userId: id }) }
+                : { icon: 'block',     label: 'Block',   action: () => sendToCS({ action: 'vrcBlock',   userId: id }), danger: true, confirm: true }
             );
             items.push({ icon: 'person_remove', label: 'Unfriend', action: () => sendToCS({ action: 'vrcUnfriend', userId: id }), danger: true, confirm: true });
         } else {

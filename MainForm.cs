@@ -2084,6 +2084,18 @@ public class MainForm : Form
                     }
                     break;
 
+                case "vrcBoop":
+                    var boopUid = msg["userId"]?.ToString();
+                    if (!string.IsNullOrEmpty(boopUid))
+                    {
+                        _ = Task.Run(async () => {
+                            var ok = await _vrcApi.SendBoopAsync(boopUid);
+                            Invoke(() => SendToJS("vrcActionResult", new { action = "boop", success = ok,
+                                message = ok ? "Booped!" : "Failed to boop" }));
+                        });
+                    }
+                    break;
+
                 // Notifications
                 case "vrcGetNotifications":
                     _ = VrcGetNotificationsAsync();

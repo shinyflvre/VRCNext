@@ -1037,6 +1037,21 @@ public class VRChatApiService
         catch (Exception ex) { Log($"UnmoderateUser({userId},{type}) exception: {ex.Message}"); return false; }
     }
 
+    public async Task<bool> SendBoopAsync(string userId, string? emojiId = null)
+    {
+        if (!IsLoggedIn) return false;
+        try
+        {
+            var url = string.IsNullOrEmpty(emojiId)
+                ? $"{BASE}/users/{userId}/boop"
+                : $"{BASE}/users/{userId}/boop?emojiId={Uri.EscapeDataString(emojiId)}";
+            var resp = await _http.PostAsync(url, new StringContent("{}", Encoding.UTF8, "application/json"));
+            Log($"SendBoop({userId}): {(int)resp.StatusCode}");
+            return resp.IsSuccessStatusCode;
+        }
+        catch (Exception ex) { Log($"SendBoop({userId}) exception: {ex.Message}"); return false; }
+    }
+
     public async Task<JObject?> GetGroupAsync(string groupId)
     {
         if (!IsLoggedIn) return null;
