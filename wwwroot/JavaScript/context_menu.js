@@ -234,6 +234,12 @@
             if (id) return buildAvatarItems(id);
         }
 
+        const memberCard = el.closest('#gdTabMembers .fd-profile-item');
+        if (memberCard && window._currentGroupDetail) {
+            const id = extractId(memberCard, /openFriendDetail\('([^']+)'\)/);
+            if (id) return buildGroupMemberItems(id, window._currentGroupDetail);
+        }
+
         const friendCard = el.closest('.vrc-friend-card, .fd-profile-item, .wd-friend-row, .inst-user-row');
         if (friendCard) {
             const id = extractId(friendCard, /openFriendDetail\('([^']+)'\)/);
@@ -269,6 +275,17 @@
         if (canPost || canEvent) items.push('sep');
         items.push({ icon: 'logout', label: 'Leave Group', action: () => sendToCS({ action: 'vrcLeaveGroup', groupId: id }), danger: true, confirm: true });
         return items;
+    }
+
+    function buildGroupMemberItems(userId, grpCtx) {
+        const modItems = [];
+        if (grpCtx.canKick) modItems.push({ icon: 'person_remove', label: 'Kick from group', danger: true, confirm: true,
+            action: () => sendToCS({ action: 'vrcKickGroupMember', groupId: grpCtx.id, userId }) });
+        if (grpCtx.canBan)  modItems.push({ icon: 'block', label: 'Ban from group', danger: true, confirm: true,
+            action: () => sendToCS({ action: 'vrcBanGroupMember', groupId: grpCtx.id, userId }) });
+        const friendItems = buildFriendItems(userId);
+        if (modItems.length > 0) return [...modItems, 'sep', ...friendItems];
+        return friendItems;
     }
 
     function buildAvatarItems(id) {

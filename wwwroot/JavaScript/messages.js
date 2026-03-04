@@ -164,17 +164,33 @@ if (window.chrome?.webview) {
                     // Update view content inline
                     const dv = document.getElementById('gdescDescView');
                     const rv = document.getElementById('gdescRulesView');
+                    const lnv = document.getElementById('ggrpLinksView');
+                    const lav = document.getElementById('ggrpLangsView');
                     if (dv) dv.innerHTML = payload.description
                         ? `<div class="fd-bio">${esc(payload.description)}</div>`
                         : '<div class="myp-empty">No description</div>';
                     if (rv) rv.innerHTML = payload.rules
                         ? `<div style="font-size:11px;color:var(--tx3);padding:8px;background:var(--bg-input);border-radius:8px;max-height:120px;overflow-y:auto;white-space:pre-wrap;">${esc(payload.rules)}</div>`
                         : '<div class="myp-empty">No rules set</div>';
+                    if (lnv && payload.links != null) {
+                        const links = (payload.links || []).filter(Boolean);
+                        lnv.innerHTML = links.length
+                            ? `<div class="fd-bio-links">${links.map(url => renderBioLink(url)).join('')}</div>`
+                            : '<div class="myp-empty">No links added</div>';
+                    }
+                    if (lav && payload.languages != null) {
+                        const langs = payload.languages || [];
+                        lav.innerHTML = langs.length
+                            ? `<div class="fd-lang-tags">${langs.map(l => `<span class="fd-lang-tag">${esc(LANG_MAP['language_'+l] || l.toUpperCase())}</span>`).join('')}</div>`
+                            : '<div class="myp-empty">No languages set</div>';
+                    }
                     cancelGroupField('desc');
                     cancelGroupField('rules');
+                    cancelGroupField('links');
+                    cancelGroupField('langs');
                     showToast(true, 'Group updated!');
                 } else {
-                    document.querySelectorAll('#gdescDescEdit .myp-save-btn, #gdescRulesEdit .myp-save-btn').forEach(b => b.disabled = false);
+                    document.querySelectorAll('#gdescDescEdit .myp-save-btn, #gdescRulesEdit .myp-save-btn, #ggrpLinksEdit .myp-save-btn, #ggrpLangsEdit .myp-save-btn').forEach(b => b.disabled = false);
                     showToast(false, 'Update failed.');
                 }
                 break;

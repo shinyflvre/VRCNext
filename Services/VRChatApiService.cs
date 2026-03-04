@@ -1317,12 +1317,44 @@ public class VRChatApiService
         catch (Exception ex) { Log($"DeleteGroupPost exception: {ex.Message}"); return false; }
     }
 
-    public async Task<bool> UpdateGroupAsync(string groupId, string description, string rules)
+    public async Task<bool> KickGroupMemberAsync(string groupId, string userId)
     {
         if (!IsLoggedIn) return false;
         try
         {
-            var body = new JObject { ["description"] = description, ["rules"] = rules };
+            var resp = await _http.DeleteAsync($"{BASE}/groups/{groupId}/members/{userId}");
+            Log($"KickGroupMember({groupId}/{userId}): {(int)resp.StatusCode}");
+            if (!resp.IsSuccessStatusCode) Log($"KickGroupMember body: {await resp.Content.ReadAsStringAsync()}");
+            return resp.IsSuccessStatusCode;
+        }
+        catch (Exception ex) { Log($"KickGroupMember exception: {ex.Message}"); return false; }
+    }
+
+    public async Task<bool> BanGroupMemberAsync(string groupId, string userId)
+    {
+        if (!IsLoggedIn) return false;
+        try
+        {
+            var body = new JObject { ["userId"] = userId };
+            var resp = await _http.PostAsync($"{BASE}/groups/{groupId}/bans",
+                new StringContent(body.ToString(Newtonsoft.Json.Formatting.None), Encoding.UTF8, "application/json"));
+            Log($"BanGroupMember({groupId}/{userId}): {(int)resp.StatusCode}");
+            if (!resp.IsSuccessStatusCode) Log($"BanGroupMember body: {await resp.Content.ReadAsStringAsync()}");
+            return resp.IsSuccessStatusCode;
+        }
+        catch (Exception ex) { Log($"BanGroupMember exception: {ex.Message}"); return false; }
+    }
+
+    public async Task<bool> UpdateGroupAsync(string groupId, string? description = null, string? rules = null, List<string>? languages = null, List<string>? links = null)
+    {
+        if (!IsLoggedIn) return false;
+        try
+        {
+            var body = new JObject();
+            if (description != null) body["description"] = description;
+            if (rules       != null) body["rules"]       = rules;
+            if (languages   != null) body["languages"]   = new JArray(languages);
+            if (links       != null) body["links"]       = new JArray(links);
             var resp = await _http.PutAsync($"{BASE}/groups/{groupId}",
                 new StringContent(body.ToString(Newtonsoft.Json.Formatting.None), Encoding.UTF8, "application/json"));
             Log($"UpdateGroup({groupId}): {(int)resp.StatusCode}");

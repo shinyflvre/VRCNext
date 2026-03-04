@@ -31,6 +31,7 @@ function openGroupDetail(groupId) {
 }
 
 function renderGroupDetail(g) {
+    window._currentGroupDetail = { id: g.id, canKick: g.canKick === true, canBan: g.canBan === true, languages: g.languages || [], links: g.links || [] };
     const el = document.getElementById('detailModalContent');
     const banner = g.bannerUrl || g.iconUrl || '';
     const bannerHtml = banner ? `<div class="fd-banner"><img src="${banner}" onerror="this.parentElement.style.display='none'"><div class="fd-banner-fade"></div></div>` : '';
@@ -55,6 +56,14 @@ function renderGroupDetail(g) {
     // Tab: Info
     const canEdit = g.canEdit === true;
     const gid_e = esc(g.id);
+    const grpLangs = (g.languages || []);
+    const grpLinks = (g.links || []).filter(Boolean);
+    const grpLangsViewHtml = grpLangs.length
+        ? `<div class="fd-lang-tags">${grpLangs.map(l => `<span class="fd-lang-tag">${esc(LANG_MAP['language_'+l] || l.toUpperCase())}</span>`).join('')}</div>`
+        : `<div class="myp-empty">No languages set</div>`;
+    const grpLinksViewHtml = grpLinks.length
+        ? `<div class="fd-bio-links">${grpLinks.map(url => renderBioLink(url)).join('')}</div>`
+        : `<div class="myp-empty">No links added</div>`;
     const infoTab = `
         <div class="myp-section">
             <div class="myp-section-header">
@@ -69,6 +78,38 @@ function renderGroupDetail(g) {
                 <div class="myp-edit-actions">
                     <button class="myp-cancel-btn" onclick="cancelGroupField('desc')">Cancel</button>
                     <button class="myp-save-btn" onclick="saveGroupField('desc','${gid_e}')">Save</button>
+                </div>
+            </div>` : ''}
+        </div>
+        <div class="myp-section">
+            <div class="myp-section-header">
+                <span class="myp-section-title">Links</span>
+                ${canEdit ? `<button class="myp-edit-btn" onclick="editGroupField('links')"><span class="msi" style="font-size:14px;">edit</span></button>` : ''}
+            </div>
+            <div id="ggrpLinksView">${grpLinksViewHtml}</div>
+            ${canEdit ? `<div id="ggrpLinksEdit" style="display:none;">
+                <div id="ggrpLinksInputs"></div>
+                <div class="myp-edit-actions">
+                    <button class="myp-cancel-btn" onclick="cancelGroupField('links')">Cancel</button>
+                    <button class="myp-save-btn" onclick="saveGroupField('links','${gid_e}')">Save</button>
+                </div>
+            </div>` : ''}
+        </div>
+        <div class="myp-section">
+            <div class="myp-section-header">
+                <span class="myp-section-title">Languages</span>
+                ${canEdit ? `<button class="myp-edit-btn" onclick="editGroupField('langs')"><span class="msi" style="font-size:14px;">edit</span></button>` : ''}
+            </div>
+            <div id="ggrpLangsView">${grpLangsViewHtml}</div>
+            ${canEdit ? `<div id="ggrpLangsEdit" style="display:none;">
+                <div id="ggrpLangsChips" class="myp-lang-chips"></div>
+                <div class="myp-lang-add-row">
+                    <select id="ggrpLangSelect" class="myp-lang-select"><option value="">Add language...</option></select>
+                    <button class="myp-add-lang-btn" onclick="addGrpLanguage()"><span class="msi" style="font-size:15px;">add</span></button>
+                </div>
+                <div class="myp-edit-actions">
+                    <button class="myp-cancel-btn" onclick="cancelGroupField('langs')">Cancel</button>
+                    <button class="myp-save-btn" onclick="saveGroupField('langs','${gid_e}')">Save</button>
                 </div>
             </div>` : ''}
         </div>
@@ -228,39 +269,107 @@ function renderGroupMemberCard(m) {
     return renderProfileItem(m, `closeDetailModal();openFriendDetail('${jsq(m.id || '')}')`);
 }
 
-function editGroupField(field) {
-    // Close other field if open
-    const other = field === 'desc' ? 'rules' : 'desc';
-    document.getElementById(`gdesc${other === 'desc' ? 'Desc' : 'Rules'}View`).style.display = '';
-    const otherEdit = document.getElementById(`gdesc${other === 'desc' ? 'Desc' : 'Rules'}Edit`);
-    if (otherEdit) otherEdit.style.display = 'none';
+const _grpFieldIds = {
+    desc:  { view: 'gdescDescView',  edit: 'gdescDescEdit'  },
+    rules: { view: 'gdescRulesView', edit: 'gdescRulesEdit' },
+    links: { view: 'ggrpLinksView',  edit: 'ggrpLinksEdit'  },
+    langs: { view: 'ggrpLangsView',  edit: 'ggrpLangsEdit'  },
+};
 
-    const viewId = field === 'desc' ? 'gdescDescView' : 'gdescRulesView';
-    const editId = field === 'desc' ? 'gdescDescEdit' : 'gdescRulesEdit';
-    const inputId = field === 'desc' ? 'gdescDescInput' : 'gdescRulesInput';
-    document.getElementById(viewId).style.display = 'none';
-    document.getElementById(editId).style.display = '';
-    document.getElementById(inputId)?.focus();
+function editGroupField(field) {
+    Object.keys(_grpFieldIds).forEach(f => {
+        if (f === field) return;
+        const ids = _grpFieldIds[f];
+        const v = document.getElementById(ids.view); if (v) v.style.display = '';
+        const e = document.getElementById(ids.edit); if (e) e.style.display = 'none';
+    });
+    const ids = _grpFieldIds[field];
+    if (!ids) return;
+    document.getElementById(ids.view).style.display = 'none';
+    document.getElementById(ids.edit).style.display = '';
+    if (field === 'desc')  document.getElementById('gdescDescInput')?.focus();
+    if (field === 'rules') document.getElementById('gdescRulesInput')?.focus();
+    if (field === 'links') _renderGrpLinksInputs();
+    if (field === 'langs') _renderGrpLangsEdit();
 }
 
 function cancelGroupField(field) {
-    const viewId = field === 'desc' ? 'gdescDescView' : 'gdescRulesView';
-    const editId = field === 'desc' ? 'gdescDescEdit' : 'gdescRulesEdit';
-    document.getElementById(viewId).style.display = '';
-    document.getElementById(editId).style.display = 'none';
+    const ids = _grpFieldIds[field];
+    if (!ids) return;
+    document.getElementById(ids.view).style.display = '';
+    document.getElementById(ids.edit).style.display = 'none';
 }
 
 function saveGroupField(field, groupId) {
-    const inputId = field === 'desc' ? 'gdescDescInput' : 'gdescRulesInput';
-    const editId  = field === 'desc' ? 'gdescDescEdit'  : 'gdescRulesEdit';
-    const value   = document.getElementById(inputId)?.value ?? '';
-    const saveBtn = document.querySelector(`#${editId} .myp-save-btn`);
+    const ids = _grpFieldIds[field];
+    const saveBtn = document.querySelector(`#${ids.edit} .myp-save-btn`);
     if (saveBtn) saveBtn.disabled = true;
 
-    // Read current values of both fields to send together
-    const descVal  = field === 'desc'  ? value : (document.getElementById('gdescDescInput')?.value  ?? document.querySelector('#gdescDescView .fd-bio')?.textContent ?? '');
-    const rulesVal = field === 'rules' ? value : (document.getElementById('gdescRulesInput')?.value ?? document.querySelector('#gdescRulesView div')?.textContent ?? '');
-    sendToCS({ action: 'vrcUpdateGroup', groupId, description: descVal, rules: rulesVal });
+    if (field === 'desc') {
+        sendToCS({ action: 'vrcUpdateGroup', groupId, description: document.getElementById('gdescDescInput')?.value ?? '' });
+    } else if (field === 'rules') {
+        sendToCS({ action: 'vrcUpdateGroup', groupId, rules: document.getElementById('gdescRulesInput')?.value ?? '' });
+    } else if (field === 'links') {
+        const inputs = document.querySelectorAll('#ggrpLinksInputs .myp-link-input');
+        const links = Array.from(inputs).map(i => i.value.trim()).filter(Boolean);
+        sendToCS({ action: 'vrcUpdateGroup', groupId, links });
+    } else if (field === 'langs') {
+        const chips = document.querySelectorAll('#ggrpLangsChips [data-lang]');
+        const languages = Array.from(chips).map(c => c.dataset.lang);
+        sendToCS({ action: 'vrcUpdateGroup', groupId, languages });
+    }
+}
+
+function _renderGrpLinksInputs() {
+    const container = document.getElementById('ggrpLinksInputs');
+    if (!container) return;
+    const links = (window._currentGroupDetail?.links || []).filter(Boolean);
+    container.innerHTML = [0, 1, 2].map(i =>
+        `<div class="myp-link-row">
+            <span class="myp-link-num">${i + 1}</span>
+            <input type="url" class="myp-link-input" placeholder="https://..." value="${esc(links[i]||'')}" maxlength="512">
+        </div>`
+    ).join('');
+}
+
+function _renderGrpLangsEdit() {
+    const selected = (window._currentGroupDetail?.languages || []);
+    _renderGrpLangChips(selected, document.getElementById('ggrpLangsChips'));
+    const sel = document.getElementById('ggrpLangSelect');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Add language...</option>';
+    Object.entries(LANG_MAP).forEach(([key, name]) => {
+        const code = key.replace('language_', '');
+        if (!selected.includes(code))
+            sel.insertAdjacentHTML('beforeend', `<option value="${code}">${esc(name)}</option>`);
+    });
+}
+
+function _renderGrpLangChips(langs, el) {
+    if (!el) return;
+    el.innerHTML = langs.map(code =>
+        `<span class="myp-lang-chip" data-lang="${code}">${esc(LANG_MAP['language_'+code] || code.toUpperCase())}<button class="myp-lang-remove" onclick="removeGrpLanguage('${code}')"><span class="msi" style="font-size:11px;">close</span></button></span>`
+    ).join('');
+}
+
+function addGrpLanguage() {
+    const sel = document.getElementById('ggrpLangSelect');
+    const code = sel?.value;
+    if (!code) return;
+    const chips = Array.from(document.querySelectorAll('#ggrpLangsChips [data-lang]')).map(c => c.dataset.lang);
+    if (chips.includes(code)) return;
+    chips.push(code);
+    _renderGrpLangChips(chips, document.getElementById('ggrpLangsChips'));
+    const opt = sel.querySelector(`option[value="${code}"]`);
+    if (opt) opt.remove();
+    sel.value = '';
+}
+
+function removeGrpLanguage(code) {
+    const chips = Array.from(document.querySelectorAll('#ggrpLangsChips [data-lang]')).map(c => c.dataset.lang).filter(c => c !== code);
+    _renderGrpLangChips(chips, document.getElementById('ggrpLangsChips'));
+    const sel = document.getElementById('ggrpLangSelect');
+    if (sel) sel.insertAdjacentHTML('beforeend', `<option value="${code}">${esc(LANG_MAP['language_'+code] || code.toUpperCase())}</option>`);
 }
 
 function loadMoreGroupMembers() {

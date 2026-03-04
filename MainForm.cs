@@ -1444,6 +1444,8 @@ public class MainForm : Form
                                 var canPost  = myPerms.Any(p => p.ToString() == "*" || p.ToString() == "group-announcement-manage");
                                 var canEvent = myPerms.Any(p => p.ToString() == "*" || p.ToString() == "group-calendar-manage");
                                 var canEdit  = myPerms.Any(p => p.ToString() == "*" || p.ToString() == "group-data-manage");
+                                var canKick  = myPerms.Any(p => p.ToString() == "*" || p.ToString() == "group-members-remove");
+                                var canBan   = myPerms.Any(p => p.ToString() == "*" || p.ToString() == "group-bans-manage");
 
                                 Invoke(() => SendToJS("vrcGroupDetail", new {
                                     id = g["id"]?.ToString() ?? "", name = g["name"]?.ToString() ?? "",
@@ -1451,8 +1453,10 @@ public class MainForm : Form
                                     iconUrl = g["iconUrl"]?.ToString() ?? "", bannerUrl = g["bannerUrl"]?.ToString() ?? "",
                                     memberCount = g["memberCount"]?.Value<int>() ?? 0, privacy = g["privacy"]?.ToString() ?? "",
                                     rules = g["rules"]?.ToString() ?? "",
+                                    languages = (g["languages"] as JArray)?.Select(x => x.ToString()).ToArray() ?? Array.Empty<string>(),
+                                    links     = (g["links"]     as JArray)?.Select(x => x.ToString()).ToArray() ?? Array.Empty<string>(),
                                     isJoined = g["myMember"] != null && g["myMember"].Type != JTokenType.Null,
-                                    canPost, canEvent, canEdit,
+                                    canPost, canEvent, canEdit, canKick, canBan,
                                     posts = posts.Select(p => new {
                                         id = p["id"]?.ToString() ?? "",
                                         title = p["title"]?.ToString() ?? "",
@@ -1651,17 +1655,49 @@ public class MainForm : Form
 
                 case "vrcUpdateGroup":
                 {
-                    var ugGroupId = msg["groupId"]?.ToString() ?? "";
-                    var ugDesc    = msg["description"]?.ToString() ?? "";
-                    var ugRules   = msg["rules"]?.ToString() ?? "";
+                    var ugGroupId   = msg["groupId"]?.ToString() ?? "";
+                    var ugDesc      = msg["description"] != null ? msg["description"]!.ToString() : (string?)null;
+                    var ugRules     = msg["rules"]       != null ? msg["rules"]!.ToString()       : (string?)null;
+                    var ugLanguages = msg["languages"]?.ToObject<List<string>>();
+                    var ugLinks     = msg["links"]?.ToObject<List<string>>();
                     if (!string.IsNullOrEmpty(ugGroupId))
                     {
                         _ = Task.Run(async () =>
                         {
-                            var ok = await _vrcApi.UpdateGroupAsync(ugGroupId, ugDesc, ugRules);
-                            Invoke(() => SendToJS("vrcGroupUpdated", new { success = ok, groupId = ugGroupId, description = ugDesc, rules = ugRules }));
+                            var ok = await _vrcApi.UpdateGroupAsync(ugGroupId, ugDesc, ugRules, ugLanguages, ugLinks);
+                            Invoke(() => SendToJS("vrcGroupUpdated", new {
+                                success = ok, groupId = ugGroupId,
+                                description = ugDesc, rules = ugRules,
+                                languages = ugLanguages, links = ugLinks
+                            }));
                         });
                     }
+                    break;
+                }
+
+                case "vrcKickGroupMember":
+                {
+                    var kmGroupId = msg["groupId"]?.ToString() ?? "";
+                    var kmUserId  = msg["userId"]?.ToString() ?? "";
+                    if (!string.IsNullOrEmpty(kmGroupId) && !string.IsNullOrEmpty(kmUserId))
+                        _ = Task.Run(async () =>
+                        {
+                            var ok = await _vrcApi.KickGroupMemberAsync(kmGroupId, kmUserId);
+                            Invoke(() => SendToJS("vrcActionResult", new { action = "kickGroupMember", success = ok, message = ok ? "Member kicked." : "Kick failed." }));
+                        });
+                    break;
+                }
+
+                case "vrcBanGroupMember":
+                {
+                    var bmGroupId = msg["groupId"]?.ToString() ?? "";
+                    var bmUserId  = msg["userId"]?.ToString() ?? "";
+                    if (!string.IsNullOrEmpty(bmGroupId) && !string.IsNullOrEmpty(bmUserId))
+                        _ = Task.Run(async () =>
+                        {
+                            var ok = await _vrcApi.BanGroupMemberAsync(bmGroupId, bmUserId);
+                            Invoke(() => SendToJS("vrcActionResult", new { action = "banGroupMember", success = ok, message = ok ? "Member banned." : "Ban failed." }));
+                        });
                     break;
                 }
 
