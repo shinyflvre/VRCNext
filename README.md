@@ -7,6 +7,22 @@ With VRCNext you can check the status of your friends, watch their profiles, see
 
 VRCNext is not a replacement for VRCX and never will be. It is a hobby project for a good-looking and useful VRChat launcher with practical features. More features may be added in the future!
 
+> [!WARNING]
+> **VRCNext requires you to log in to VRChat in order to function.**  
+> VRCNext does **not** store any sensitive data and is fully open source, so you can verify this yourself in the source code. You can also build the app manually if you do not trust prebuilt `.exe` files.
+>
+> According to VRChat:
+>
+> *"You should never ask for or store someone's VRChat credentials. This includes usernames, passwords, login or auth tokens, and/or session data.*
+>
+> *Since we do not offer OAuth at this time, we know this offers some serious challenges in developing certain applications. Regardless, please do your best to respect this guideline in order to keep users safe."*
+>
+> This means VRChat asks developers to avoid this wherever possible. However, at this time, applications such as **VRCX** and **VRCNext** require login access in order to function.
+>
+> By using this application, you acknowledge that **VRChat is not responsible** for any issues related to your account that may result from the use of third-party tools like **VRCX** or **VRCNext**.
+>
+> While there is no expectation of problems, it is important to note that tools like these exist in a kind of grey area. **Use them at your own risk.**
+
 ---
 
 ## Feature Overview
