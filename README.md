@@ -39,7 +39,6 @@ VRCNext is not a replacement for VRCX and never will be. It is a hobby project f
 > Use of the application is at the user's own risk.
 
 <img width="218" height="84" alt="image" src="https://github.com/user-attachments/assets/47e584ba-780a-434c-82ff-3004f2e3388a" />
-<img width="218" height="84" alt="image" src="https://github.com/user-attachments/assets/47e584ba-780a-434c-82ff-3004f2e3388a" />
 
 
 ---
