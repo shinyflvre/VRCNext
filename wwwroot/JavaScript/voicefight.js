@@ -61,6 +61,12 @@ function populateVfDevices(p) {
     if (sel._vnRefresh) sel._vnRefresh();
     const stopInput = document.getElementById('vfStopWordInput');
     if (stopInput && p.stopWord != null) stopInput.value = p.stopWord;
+    const muteTalkChk = document.getElementById('vfMuteTalkToggle');
+    if (muteTalkChk && p.muteTalk != null) muteTalkChk.checked = !!p.muteTalk;
+}
+
+function vfSetMuteTalk(enabled) {
+    sendToCS({ action: 'vfSetMuteTalk', enabled: !!enabled });
 }
 
 function vfSetInputDevice(val) {

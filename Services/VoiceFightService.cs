@@ -258,10 +258,7 @@ public sealed class VoiceFightService : IDisposable
                     else
                     {
                         var json = rec.PartialResult();
-                        bool triggered = ProcessResult(json, partial: true);
-                        // Reset recognizer after a partial keyword fires so the
-                        // subsequent final result doesn't double-trigger.
-                        if (triggered) rec.Reset();
+                        ProcessResult(json, partial: true);
                     }
                 }
             }

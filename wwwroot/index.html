@@ -729,16 +729,25 @@
                             <span id="vfRecognizedText" class="vf-recognized-text">—</span>
                         </div>
                     </div>
-                    <!-- Stop Command -->
-                    <div class="sf-card">
-                        <div class="sf-card-header"><span class="msi">stop_circle</span> Stop Command</div>
-                        <div style="display:flex;align-items:center;gap:8px;">
-                            <input id="vfStopWordInput" class="vf-word-input" placeholder="Stop word…"
-                                oninput="vfStopWordChanged(this.value)"
-                                onblur="vfSetStopWord(this.value)">
-                            <button class="vf-btn-icon" onclick="vfStopSound()" title="Stop playback now"><span class="msi">stop</span></button>
+                    <!-- Stop Command + Mute Talk (side by side) -->
+                    <div style="display:flex;gap:12px;">
+                        <div class="sf-card" style="flex:1;margin-bottom:0;">
+                            <div class="sf-card-header"><span class="msi">stop_circle</span> Stop Command</div>
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <input id="vfStopWordInput" class="vf-word-input" placeholder="Stop word…"
+                                    oninput="vfStopWordChanged(this.value)"
+                                    onblur="vfSetStopWord(this.value)">
+                                <button class="vf-btn-icon" onclick="vfStopSound()" title="Stop playback now"><span class="msi">stop</span></button>
+                            </div>
+                            <div style="font-size:11px;color:var(--tx3);margin-top:6px;">Say this word to instantly stop any playing sound.</div>
                         </div>
-                        <div style="font-size:11px;color:var(--tx3);margin-top:6px;">Say this word to instantly stop any playing sound.</div>
+                        <div class="sf-card" style="flex:1;margin-bottom:0;">
+                            <div class="sf-card-header" style="display:flex;align-items:center;justify-content:space-between;">
+                                <span><span class="msi">record_voice_over</span> Mute Talk</span>
+                                <label class="toggle"><input type="checkbox" id="vfMuteTalkToggle" onchange="vfSetMuteTalk(this.checked)"><div class="toggle-track"><div class="toggle-knob"></div></div></label>
+                            </div>
+                            <div style="font-size:11px;color:var(--tx3);margin-top:6px;">Sends recognized speech via OSC as a chatbox message in VRChat, great for muted players.</div>
+                        </div>
                     </div>
                     <!-- Sound Items -->
                     <div class="sf-card">

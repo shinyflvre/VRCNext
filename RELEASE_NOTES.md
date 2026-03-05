@@ -1,3 +1,16 @@
+## What's New in 2026.4.0
+
+### Voice Fight
+
+- **Multi-Sound Items** - Each trigger word can now have multiple sounds assigned. When triggered, a random sound from the list is played. Use the **+ Add Sound** button to add more sounds to an existing item.
+- **Sentence Triggers** - Trigger words now fire even when said inside a full sentence. Saying "Hello my name is Shiny" will correctly trigger the "Shiny" sound.
+- **Multi-Word Triggers** - Trigger phrases can now be multiple words, e.g. "hello kitty" as a trigger phrase.
+- **Stop Command** - A dedicated stop word can be configured. Saying it instantly stops any currently playing sound and plays a confirmation sound (`voice/sounds/stop.wav`).
+- **Mute Talk** - When enabled, all recognized speech is sent to VRChat via OSC as a chatbox message — perfect for muted players who want to communicate using their voice.
+- **Fix: Device Dropdown** - The Input Device dropdown no longer shows "Loading…" on startup. The correct microphone is displayed immediately.
+
+---
+
 ## What's New in 2026.3.6
 
 ### Groups

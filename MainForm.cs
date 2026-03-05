@@ -2071,7 +2071,7 @@ public class MainForm : Form
                 case "vfGetDevices":
                     {
                         var devices = VoiceFightService.GetInputDevices();
-                        SendToJS("vfDevices", new { devices, savedIndex = _vfSettings.InputDeviceIndex, stopWord = _vfSettings.StopWord });
+                        SendToJS("vfDevices", new { devices, savedIndex = _vfSettings.InputDeviceIndex, stopWord = _vfSettings.StopWord, muteTalk = _vfSettings.MuteTalk });
                     }
                     break;
 
@@ -2089,7 +2089,12 @@ public class MainForm : Form
                         _voiceFight = new VoiceFightService();
                         _voiceFight.OnLog += s => Invoke(() => SendToJS("log", new { msg = s, color = "sec" }));
                         _voiceFight.OnKeywordTriggered += word => Invoke(() => SendToJS("vfKeyword", new { word }));
-                        _voiceFight.OnRecognized += (text, isPartial) => Invoke(() => SendToJS("vfRecognized", new { text, isPartial }));
+                        _voiceFight.OnRecognized += (text, isPartial) =>
+                        {
+                            Invoke(() => SendToJS("vfRecognized", new { text, isPartial }));
+                            if (!isPartial && _vfSettings.MuteTalk)
+                                ThreadPool.QueueUserWorkItem(_ => VfSendChatbox(text));
+                        };
                         _voiceFight.SetKeywords(_vfSettings.Items);
                         _voiceFight.SetStopWord(_vfSettings.StopWord);
                         _voiceFight.Start(devIdx);
@@ -2254,6 +2259,11 @@ public class MainForm : Form
                             }
                         }
                     }
+                    break;
+
+                case "vfSetMuteTalk":
+                    _vfSettings.MuteTalk = msg["enabled"]?.Value<bool>() ?? false;
+                    _vfSettings.Save();
                     break;
 
                 case "vfSetInputDevice":
@@ -3817,6 +3827,31 @@ var list = avatars.Select(a => new
                 volumePercent = f.VolumePercent
             }).ToList()
         }).ToList();
+
+    private void VfSendChatbox(string text)
+    {
+        try
+        {
+            using var udp = new System.Net.Sockets.UdpClient();
+            udp.Connect("127.0.0.1", 9000);
+            var buf = new List<byte>();
+            VfOscString(buf, "/chatbox/input");
+            VfOscString(buf, ",sTF"); // string, sendImmediate=true, notifySound=false
+            VfOscString(buf, text.Length > 144 ? text[..144] : text);
+            var pkt = buf.ToArray();
+            udp.Send(pkt, pkt.Length);
+        }
+        catch { }
+    }
+
+    private static void VfOscString(List<byte> buf, string s)
+    {
+        var b = System.Text.Encoding.UTF8.GetBytes(s);
+        buf.AddRange(b);
+        int pad = 4 - (b.Length % 4);
+        if (pad == 0) pad = 4;
+        buf.AddRange(new byte[pad]);
+    }
 
     // Relay Control
     private void StartRelay()
