@@ -23,6 +23,25 @@ VRCNext is not a replacement for VRCX and never will be. It is a hobby project f
 >
 > While there is no expectation of problems, it is important to note that tools like these exist in a kind of grey area. **Use them at your own risk.**
 
+> [!NOTE]
+> **Note for VRChat developers and managers**  
+> This application does not violate copyright and does not manipulate the game in any way. It is essentially a compact launcher-style interface for VRChat.com.
+>
+> The app does not modify VRChat, inject into the game, or alter gameplay or platform behavior. It only communicates with VRChat through the REST API and WebSocket connections needed for its features.
+>
+> Passwords are not stored on the PC. Email addresses are also not stored. The application only stores the cookies required to keep the user logged in after restarting the app.
+>
+> No separate server connection is used. The flow is simply:
+> `VRCNext -> VRChat REST API / WebSocket`
+>
+> The application only uses public information and does not place features behind a paywall or any form of monetization.
+>
+> Use of the application is at the user's own risk.
+
+<img width="218" height="84" alt="image" src="https://github.com/user-attachments/assets/47e584ba-780a-434c-82ff-3004f2e3388a" />
+<img width="218" height="84" alt="image" src="https://github.com/user-attachments/assets/47e584ba-780a-434c-82ff-3004f2e3388a" />
+
+
 ---
 
 ## Feature Overview
