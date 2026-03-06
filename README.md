@@ -57,6 +57,15 @@ VRCNext is not a replacement for VRCX and never will be. It is a hobby project f
 * Change your profile picture / user icon
 * Change your profile banner image
 
+
+### Messenger
+
+Yes, you heard it right. VRCN has a messenger, and the best part is that it uses the VRChat API. More specifically, it uses the InviteMessage and ResponseMessage system of the API.
+You can send simple messages such as: “Hey Shiny! Do you want to play VRChat later?”
+Keep in mind that VRChat rate-limits message changes. Do not spam messages, as you will be rate limited by VRChat. As an additional safety measure, VRCN also applies its own rate limit.
+This is not a full messenger like Discord or WhatsApp. It is intended only for simple messages, such as asking a friend if they want to play together. Use it responsibly.
+
+
 ### Manage Your Friends
 
 * Add notes and read existing notes
