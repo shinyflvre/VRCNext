@@ -36,6 +36,8 @@ public class VRChatLogWatcher : IDisposable
     public event Action<string, string>? WorldChanged;   // worldId, location
     /// <summary>Fires when a player joins during live play (not during log catch-up).</summary>
     public event Action<string, string>? PlayerJoined;   // userId, displayName
+    /// <summary>Fires when a player leaves during live play (not during log catch-up).</summary>
+    public event Action<string, string>? PlayerLeft;     // userId, displayName
 
     private void Log(string msg) => DebugLog?.Invoke(msg);
 
@@ -249,7 +251,11 @@ public class VRChatLogWatcher : IDisposable
                     }
                 }
                 _totalLeftEvents++;
-                if (!catchUp) Log($"LogWatcher: ➖ {name} ({_players.Count} now)");
+                if (!catchUp)
+                {
+                    Log($"LogWatcher: ➖ {name} ({_players.Count} now)");
+                    PlayerLeft?.Invoke(uid, name);
+                }
                 return;
             }
         }

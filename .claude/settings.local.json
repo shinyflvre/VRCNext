@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "WebSearch"
+      "WebSearch",
+      "WebFetch(domain:vrchatapi.github.io)",
+      "Bash(curl -s \"https://vrchatapi.github.io/docs/api/\")"
     ]
   }
 }

@@ -24,7 +24,7 @@ function refreshNotifications() {
 }
 
 function renderNotifications(list) {
-    notifications = list || [];
+    notifications = (list || []).filter(n => n.type !== 'boop'); // boops only in messenger
     const unseen = notifications.filter(n => !n.seen).length;
     const badge = document.getElementById('notifBadge');
     if (unseen > 0) { badge.textContent = unseen; badge.style.display = ''; }
@@ -285,6 +285,16 @@ function renderCurrentInstance(data) {
     <div style="font-size:10px;font-weight:700;color:var(--tx3);padding:8px 0 4px;letter-spacing:.05em;">FRIENDS</div>`;
 }
 
+let _instanceInfoTimer = null;
+let _instancePollInterval = null;
 function requestInstanceInfo() {
-    if (currentVrcUser) sendToCS({ action: 'vrcGetCurrentInstance' });
+    if (!currentVrcUser) return;
+    clearTimeout(_instanceInfoTimer);
+    _instanceInfoTimer = setTimeout(() => sendToCS({ action: 'vrcGetCurrentInstance' }), 500);
+    // Start passive 60s poll if not already running
+    if (!_instancePollInterval) {
+        _instancePollInterval = setInterval(() => {
+            if (currentVrcUser) sendToCS({ action: 'vrcGetCurrentInstance' });
+        }, 60000);
+    }
 }

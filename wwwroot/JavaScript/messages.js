@@ -78,6 +78,12 @@ if (window.chrome?.webview) {
                 { const vp = document.getElementById('badgeVrcPlus');
                   if (vp) { const isVrcPlus = Array.isArray(payload.tags) && payload.tags.includes('system_supporter'); vp.style.display = isVrcPlus ? '' : 'none'; } }
                 break;
+            case 'vrcCredits': {
+                const bc = document.getElementById('badgeVrcCredits');
+                const bl = document.getElementById('badgeVrcCreditsLabel');
+                if (bc && bl) { bl.textContent = 'V ' + payload.balance.toLocaleString(); bc.style.display = ''; }
+                break;
+            }
             case 'vrcFriends':
                 vrcFriendsLoaded = true;
                 if (payload.friends) {
@@ -117,6 +123,7 @@ if (window.chrome?.webview) {
                 break;
             case 'vrcActionResult':
                 if (payload.action === 'sendChatMessage') { if (typeof handleChatActionResult === 'function') handleChatActionResult(payload); break; }
+                if (payload.action === 'boop') { showToast(payload.success, payload.message); break; }
                 if (payload.action === 'deleteGroupEvent') {
                     if (payload.success) {
                         const card = document.querySelector(`.fd-group-card[data-event-id="${payload.eventId}"]`);

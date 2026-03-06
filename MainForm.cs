@@ -47,6 +47,8 @@ public class MainForm : Form
     private readonly Dictionary<string, string> _favoriteFriends = new();
     private ImageCacheService? _imgCache;
     private readonly CacheHandler _cache = new();
+    private readonly SemaphoreSlim _friendsRefreshLock = new(1, 1);
+    private DateTime _wsDisconnectedAt = DateTime.MinValue;
     private static readonly System.Text.RegularExpressions.Regex _vrcImgUrlRegex = new(
         @"""(https://(?:api\.vrchat\.cloud|assets\.vrchat\.com|files\.vrchat\.cloud)[^""]+)""",
         System.Text.RegularExpressions.RegexOptions.Compiled);
@@ -85,6 +87,13 @@ public class MainForm : Form
     private System.Threading.Timer?    _instanceSnapshotTimer;
     private bool                       _logWatcherBootstrapped;
     private string                     _currentVrcUserId = "";
+
+    // Cached instance data — updated by VrcGetCurrentInstanceAsync, used for instant join/leave pushes
+    private string _cachedInstLocation  = "";
+    private string _cachedInstWorldName = "";
+    private string _cachedInstWorldThumb = "";
+    private int    _cachedInstCapacity  = 0;
+    private string _cachedInstType      = "";
 
     // Live friend store — seeded by REST on startup, kept fresh by WebSocket events
     private readonly Dictionary<string, JObject>             _friendStore      = new(); // userId -> latest user JObject
@@ -2586,6 +2595,11 @@ public class MainForm : Form
                     {
                         _ = Task.Run(async () => {
                             var ok = await _vrcApi.SendBoopAsync(boopUid);
+                            if (ok)
+                            {
+                                var boopEntry = StoreChatMessage(boopUid, "me", "💕 Boop!", "boop");
+                                Invoke(() => SendToJS("vrcChatMessage", boopEntry));
+                            }
                             Invoke(() => SendToJS("vrcActionResult", new { action = "boop", success = ok,
                                 message = ok ? "Booped!" : "Failed to boop" }));
                         });
@@ -3918,7 +3932,7 @@ var list = avatars.Select(a => new
                 await semaphore.WaitAsync();
                 try
                 {
-                    var payload = await BuildUserDetailPayloadAsync(uid);
+                    var payload = await BuildUserDetailPayloadAsync(uid, fetchNote: false);
                     if (payload != null)
                     {
                         _userDetailCache[uid] = (payload, DateTime.UtcNow);
@@ -4224,6 +4238,10 @@ var list = avatars.Select(a => new
         {
             try { Invoke(() => HandlePlayerJoinedOnUiThread(uid, name)); } catch { }
         };
+        _logWatcher.PlayerLeft += (uid, name) =>
+        {
+            try { Invoke(() => PushCurrentInstanceFromCache()); } catch { }
+        };
     }
 
     /// <summary>
@@ -4389,8 +4407,20 @@ var list = avatars.Select(a => new
         _timeline.AddLoggedNotif((string)n.id);
 
         // ── VRCN Chat intercept ───────────────────────────────────────────────
-        // invite OR requestInvite whose slot text starts with "msg " are chat messages.
         var nType = (string)n.type;
+
+        // Boop → store as chat entry so it appears in history and inbox
+        if (nType == "boop")
+        {
+            var boopSender = (string?)n.senderUserId ?? "";
+            if (!string.IsNullOrEmpty(boopSender))
+            {
+                var boopEntry = StoreChatMessage(boopSender, boopSender, "💕 Boop!", "boop");
+                Invoke(() => SendToJS("vrcChatMessage", boopEntry));
+            }
+        }
+
+        // invite OR requestInvite whose slot text starts with "msg " are chat messages.
         if (nType == "invite" || nType == "requestInvite")
         {
             var invMsg = "";
@@ -4623,7 +4653,7 @@ var list = avatars.Select(a => new
 
                 var needFetch = playersWithId.Where(p =>
                     !_playerImageCache.TryGetValue(p.UserId, out var c) ||
-                    (DateTime.Now - c.fetched).TotalMinutes > 10
+                    (DateTime.Now - c.fetched).TotalMinutes > 30
                 ).ToList();
 
                 if (needFetch.Count > 0)
@@ -4703,6 +4733,12 @@ var list = avatars.Select(a => new
                 ?? users.Count;
             if (worldCapacity == 0) worldCapacity = inst?["capacity"]?.Value<int>() ?? 0;
 
+            _cachedInstLocation   = loc;
+            _cachedInstWorldName  = worldName;
+            _cachedInstWorldThumb = worldThumb;
+            _cachedInstCapacity   = worldCapacity;
+            _cachedInstType       = parsed.instanceType;
+
             Invoke(() =>
             {
                 SendToJS("log", new { msg = $"Instance: {worldName} — {nUsers} total, {users.Count} tracked ({playerSource})", color = "ok" });
@@ -4723,6 +4759,34 @@ var list = avatars.Select(a => new
             });
         }
     });
+
+    /// <summary>
+    /// Push an updated vrcCurrentInstance to JS using only cached REST data + live LogWatcher list.
+    /// No REST calls — used for instant player join/leave updates.
+    /// </summary>
+    private void PushCurrentInstanceFromCache()
+    {
+        if (string.IsNullOrEmpty(_cachedInstLocation)) return;
+        var parsed = VRChatApiService.ParseLocation(_cachedInstLocation);
+        var logPlayers = _logWatcher.GetCurrentPlayers();
+        var users = logPlayers.Select(p =>
+        {
+            var img = _playerImageCache.TryGetValue(p.UserId ?? "", out var c) ? c.image : "";
+            return (object)new { id = p.UserId, displayName = p.DisplayName, image = img, status = "" };
+        }).ToList();
+
+        SendToJS("vrcCurrentInstance", new {
+            location     = _cachedInstLocation,
+            worldId      = parsed.worldId,
+            worldName    = _cachedInstWorldName,
+            worldThumb   = _cachedInstWorldThumb,
+            instanceType = _cachedInstType,
+            nUsers       = logPlayers.Count,
+            capacity     = _cachedInstCapacity,
+            users,
+            playerSource = "logfile",
+        });
+    }
 
     // WebSocket helpers
 
@@ -4792,8 +4856,10 @@ var list = avatars.Select(a => new
                 SendToJS("wsStatus", new { connected = true });
                 SendToJS("log", new { msg = "[WS] Connected to pipeline.vrchat.cloud", color = "ok" });
             });
-            // Refresh on reconnect; may have missed events during the disconnect window
-            if (_vrcApi.IsLoggedIn)
+            // Only do a full refresh if disconnected long enough to have missed real events.
+            // Brief 90s idle-disconnects from VRChat not sending heartbeats don't need a refresh —
+            // the 5-min fallback timer is the safety net for those.
+            if (_vrcApi.IsLoggedIn && (DateTime.UtcNow - _wsDisconnectedAt).TotalSeconds > 5)
             {
                 _ = VrcRefreshFriendsAsync(true);
                 _ = VrcGetNotificationsAsync();
@@ -4801,11 +4867,14 @@ var list = avatars.Select(a => new
         };
 
         _wsService.Disconnected += (_, _) =>
+        {
+            _wsDisconnectedAt = DateTime.UtcNow;
             Invoke(() =>
             {
                 SendToJS("wsStatus", new { connected = false });
                 SendToJS("log", new { msg = "[WS] Disconnected — reconnecting...", color = "warn" });
             });
+        };
 
         _wsService.ConnectError += (_, err) =>
             Invoke(() => SendToJS("log", new { msg = $"[WS] Error: {err}", color = "err" }));
@@ -4931,11 +5000,20 @@ var list = avatars.Select(a => new
             profilePicOverride    = _imgCache?.Get(user["profilePicOverride"]?.ToString() ?? "") ?? user["profilePicOverride"]?.ToString() ?? "",
             currentAvatarImageUrl = _imgCache?.Get(user["currentAvatarImageUrl"]?.ToString() ?? "") ?? user["currentAvatarImageUrl"]?.ToString() ?? "",
         });
+
+        // Fetch VRChat credit balance and push to JS
+        _ = Task.Run(async () =>
+        {
+            var balance = await _vrcApi.GetBalanceAsync();
+            if (balance >= 0)
+                Invoke(() => SendToJS("vrcCredits", new { balance }));
+        });
     }
 
     private async Task VrcRefreshFriendsAsync(bool silent = false)
     {
         if (!_vrcApi.IsLoggedIn) return;
+        if (!await _friendsRefreshLock.WaitAsync(0)) return; // skip if already running
         try
         {
             var online = await _vrcApi.GetOnlineFriendsAsync();
@@ -5151,6 +5229,10 @@ var list = avatars.Select(a => new
             if (!silent)
                 Invoke(() => SendToJS("log", new { msg = $"VRChat: Friends error — {ex.Message}", color = "err" }));
         }
+        finally
+        {
+            _friendsRefreshLock.Release();
+        }
     }
 
     private async Task VrcUpdateStatusAsync(string status, string statusDescription)
@@ -5271,7 +5353,8 @@ var list = avatars.Select(a => new
     {
         if (!_vrcApi.IsLoggedIn) return;
 
-        // Helper: send a payload, then silently refresh & re-cache in background
+        // Helper: send a payload, then silently refresh & re-cache in background.
+        // Notes are skipped here (rarely change, already in cache) to avoid rate-limiting /users/{id}/notes.
         void ServeAndRefresh(object immediatePayload)
         {
             SendToJS("vrcFriendDetail", immediatePayload);
@@ -5279,7 +5362,7 @@ var list = avatars.Select(a => new
             {
                 try
                 {
-                    var fresh = await BuildUserDetailPayloadAsync(userId);
+                    var fresh = await BuildUserDetailPayloadAsync(userId, fetchNote: false);
                     if (fresh == null) return;
                     Invoke(() =>
                     {
@@ -5345,7 +5428,7 @@ var list = avatars.Select(a => new
         }
     }
 
-    private async Task<object?> BuildUserDetailPayloadAsync(string userId)
+    private async Task<object?> BuildUserDetailPayloadAsync(string userId, bool fetchNote = true)
     {
         // Use live store data if available for location/status (kept fresh by WebSocket events).
         // Always fetch the full user object via REST when store data lacks badges, since the
@@ -5363,23 +5446,20 @@ var list = avatars.Select(a => new
         var (worldId, instanceId, instanceType) = VRChatApiService.ParseLocation(location);
         bool hasWorld = !string.IsNullOrEmpty(worldId) && worldId.StartsWith("wrld_");
 
-        // Launch all secondary fetches in parallel after GetUser completes
-        var worldTask   = hasWorld ? _vrcApi.GetWorldAsync(worldId)    : Task.FromResult<JObject?>(null);
+        // Launch all secondary fetches in parallel after GetUser completes.
+        // Instance response embeds world data (inst["world"]), so no separate GetWorld call needed.
         var instTask    = hasWorld ? _vrcApi.GetInstanceAsync(location) : Task.FromResult<JObject?>(null);
-        var noteTask    = _vrcApi.GetUserNoteAsync(userId);
-        var repGrpTask  = _vrcApi.GetUserRepresentedGroupAsync(userId);
+        var noteTask    = fetchNote ? _vrcApi.GetUserNoteAsync(userId) : Task.FromResult<JObject?>(null);
         var grpsTask    = _vrcApi.GetUserGroupsByIdAsync(userId);
         var worldsTask  = _vrcApi.GetUserWorldsAsync(userId);
         var mutualsTask = _vrcApi.GetUserMutualsAsync(userId);
 
         // Wait for all; ContinueWith swallows individual task exceptions
-        await Task.WhenAll(new Task[] { worldTask, instTask, noteTask, repGrpTask, grpsTask, worldsTask, mutualsTask }
+        await Task.WhenAll(new Task[] { instTask, noteTask, grpsTask, worldsTask, mutualsTask }
             .Select(t => t.ContinueWith(_ => { })));
 
-        var world    = worldTask.IsCompletedSuccessfully   ? worldTask.Result   : null;
         var inst     = instTask.IsCompletedSuccessfully    ? instTask.Result    : null;
         var noteObj  = noteTask.IsCompletedSuccessfully    ? noteTask.Result    : null;
-        var repGroup = repGrpTask.IsCompletedSuccessfully  ? repGrpTask.Result  : null;
         var groups   = grpsTask.IsCompletedSuccessfully    ? grpsTask.Result    : new JArray();
         var worlds   = worldsTask.IsCompletedSuccessfully  ? worldsTask.Result  : new JArray();
         var (mutualsArr, mutualsOptedOut) = mutualsTask.IsCompletedSuccessfully
@@ -5387,9 +5467,11 @@ var list = avatars.Select(a => new
         // Badges come from the full user object via GET /users/{userId} (ensured above)
         var badgesArr = user["badges"] as JArray ?? new JArray();
 
-        string worldName     = world?["name"]?.ToString() ?? "";
-        string worldThumb    = world?["thumbnailImageUrl"]?.ToString() ?? "";
-        int    worldCapacity = world?["capacity"]?.Value<int>() ?? 0;
+        // World data comes from inst["world"] — the instance endpoint embeds it
+        var instWorld = inst?["world"] as JObject;
+        string worldName     = instWorld?["name"]?.ToString() ?? "";
+        string worldThumb    = instWorld?["thumbnailImageUrl"]?.ToString() ?? "";
+        int    worldCapacity = instWorld?["capacity"]?.Value<int>() ?? inst?["capacity"]?.Value<int>() ?? 0;
         int    userCount     = inst?["n_users"]?.Value<int>() ?? inst?["userCount"]?.Value<int>() ?? 0;
         string userNote      = noteObj?["note"]?.ToString() ?? "";
 
@@ -5400,12 +5482,15 @@ var list = avatars.Select(a => new
         bool canRequestInvite = instanceType == "private";
         bool isInWorld = !string.IsNullOrEmpty(worldId) && location != "private" && location != "offline" && location != "traveling";
 
+        // Represented group is derived from the groups list (isRepresenting == true),
+        // so no separate /groups/represented API call is needed.
         object? representedGroup = null;
-        if (repGroup != null && !string.IsNullOrEmpty(repGroup["id"]?.ToString()))
+        var repGroup = groups.OfType<JObject>().FirstOrDefault(g => g["isRepresenting"]?.Value<bool>() == true);
+        if (repGroup != null && !string.IsNullOrEmpty(repGroup["groupId"]?.ToString() ?? repGroup["id"]?.ToString()))
         {
             representedGroup = new
             {
-                id            = repGroup["id"]?.ToString() ?? "",
+                id            = repGroup["groupId"]?.ToString() ?? repGroup["id"]?.ToString() ?? "",
                 name          = repGroup["name"]?.ToString() ?? "",
                 shortCode     = repGroup["shortCode"]?.ToString() ?? "",
                 discriminator = repGroup["discriminator"]?.ToString() ?? "",
@@ -5774,6 +5859,9 @@ var list = avatars.Select(a => new
                 }
             }
         }
+
+        // Instantly push updated player list to JS (no REST call needed)
+        PushCurrentInstanceFromCache();
     }
 
     // Friends Timeline - WebSocket event handlers
@@ -6653,7 +6741,7 @@ var list = avatars.Select(a => new
     private static readonly string _chatDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VRCNext", "chat");
 
-    private record ChatEntry(string id, string from, string text, string time);
+    private record ChatEntry(string id, string from, string text, string time, string? type = null);
 
     private static string ChatFile(string userId) =>
         Path.Combine(_chatDir, $"chat_{userId}.json");
@@ -6670,9 +6758,9 @@ var list = avatars.Select(a => new
         catch { return []; }
     }
 
-    private ChatEntry StoreChatMessage(string userId, string from, string text)
+    private ChatEntry StoreChatMessage(string userId, string from, string text, string? type = null)
     {
-        var entry = new ChatEntry(Guid.NewGuid().ToString(), from, text, DateTime.UtcNow.ToString("o"));
+        var entry = new ChatEntry(Guid.NewGuid().ToString(), from, text, DateTime.UtcNow.ToString("o"), type);
         try
         {
             Directory.CreateDirectory(_chatDir);

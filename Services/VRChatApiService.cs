@@ -30,14 +30,32 @@ public class VRChatApiService
         public JObject? User { get; set; }
     }
 
+    /// <summary>Logs every HTTP request and response status for full visibility.</summary>
+    private class LoggingHandler : DelegatingHandler
+    {
+        private readonly Action<string> _log;
+        public LoggingHandler(HttpMessageHandler inner, Action<string> log) : base(inner) => _log = log;
+
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            var path = request.RequestUri?.PathAndQuery ?? "?";
+            _log($"[REST] {request.Method} {path}");
+            var resp = await base.SendAsync(request, ct);
+            var status = (int)resp.StatusCode;
+            var flag = status >= 400 ? " !!!" : "";
+            _log($"[REST] {request.Method} {path} → {status} {resp.StatusCode}{flag}");
+            return resp;
+        }
+    }
+
     public VRChatApiService()
     {
-        var handler = new HttpClientHandler
+        var inner = new HttpClientHandler
         {
             CookieContainer = _cookies,
             UseCookies = true,
         };
-        _http = new HttpClient(handler);
+        _http = new HttpClient(new LoggingHandler(inner, Log));
         _http.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", UA);
     }
 
@@ -479,10 +497,24 @@ public class VRChatApiService
         return all;
     }
 
-    // Get world info
-    public async Task<JObject?> GetWorldAsync(string worldId)
+    // Get world info — in-flight deduplication prevents the same worldId being fetched multiple times in parallel
+    private readonly Dictionary<string, Task<JObject?>> _worldFetchTasks = new();
+
+    public Task<JObject?> GetWorldAsync(string worldId)
     {
-        if (!IsLoggedIn) return null;
+        if (!IsLoggedIn || string.IsNullOrEmpty(worldId)) return Task.FromResult<JObject?>(null);
+        lock (_worldFetchTasks)
+        {
+            if (_worldFetchTasks.TryGetValue(worldId, out var existing)) return existing;
+            var task = FetchWorldAsync(worldId);
+            _worldFetchTasks[worldId] = task;
+            task.ContinueWith(_ => { lock (_worldFetchTasks) _worldFetchTasks.Remove(worldId); });
+            return task;
+        }
+    }
+
+    private async Task<JObject?> FetchWorldAsync(string worldId)
+    {
         try
         {
             var resp = await _http.GetAsync($"{BASE}/worlds/{worldId}");
@@ -820,12 +852,26 @@ public class VRChatApiService
         try
         {
             var t1 = _http.GetAsync($"{BASE}/message/{CurrentUserId}/message");
-            var t2 = _http.GetAsync($"{BASE}/message/{CurrentUserId}/requestMessage");
-            await Task.WhenAll(t1, t2);
+            Task<HttpResponseMessage>? t2 = _requestMessageSupported
+                ? _http.GetAsync($"{BASE}/message/{CurrentUserId}/requestMessage")
+                : null;
+            if (t2 != null) await Task.WhenAll(t1, t2);
+            else await t1;
 
-            foreach (var (resp, offset) in new[] { (t1.Result, 0), (t2.Result, 12) })
+            var pairs = t2 != null
+                ? new[] { (t1.Result, 0), (t2.Result, 12) }
+                : new[] { (t1.Result, 0) };
+            foreach (var (resp, offset) in pairs)
             {
-                if (!resp.IsSuccessStatusCode) continue;
+                if (!resp.IsSuccessStatusCode)
+                {
+                    if (offset == 12 && (int)resp.StatusCode == 400)
+                    {
+                        _requestMessageSupported = false;
+                        Log("LoadChatSlotStatus: requestMessage returned 400 — disabling endpoint");
+                    }
+                    continue;
+                }
                 var arr = JArray.Parse(await resp.Content.ReadAsStringAsync());
                 foreach (JObject slot in arr.Cast<JObject>())
                 {
@@ -1675,9 +1721,31 @@ public class VRChatApiService
         return new JArray();
     }
 
+    private bool _notifV2Supported = true;
+    private bool _requestMessageSupported = true;
+
+    /// <summary>Returns the user's VRChat credit balance, or -1 on failure.</summary>
+    public async Task<int> GetBalanceAsync()
+    {
+        if (!IsLoggedIn) return -1;
+        try
+        {
+            var resp = await _http.GetAsync($"{BASE}/user/{CurrentUserId}/balance");
+            if (resp.IsSuccessStatusCode)
+            {
+                var obj = JObject.Parse(await resp.Content.ReadAsStringAsync());
+                // SDK field is "VarBalance" serialized as "balance"
+                return obj["balance"]?.Value<int>() ?? obj["varBalance"]?.Value<int>() ?? -1;
+            }
+            Log($"GetBalance failed: {(int)resp.StatusCode} — {await resp.Content.ReadAsStringAsync()}");
+        }
+        catch (Exception ex) { Log($"GetBalance exception: {ex.Message}"); }
+        return -1;
+    }
+
     public async Task<JArray> GetNotificationsV2Async()
     {
-        if (!IsLoggedIn) return new JArray();
+        if (!IsLoggedIn || !_notifV2Supported) return new JArray();
         try
         {
             var resp = await _http.GetAsync($"{BASE}/auth/user/notificationsV2?n=100");
@@ -1686,6 +1754,11 @@ public class VRChatApiService
                 var result = JArray.Parse(await resp.Content.ReadAsStringAsync());
                 Log($"GetNotificationsV2: got {result.Count} notifications");
                 return result;
+            }
+            if (resp.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _notifV2Supported = false;
+                Log("GetNotificationsV2: 404 — endpoint not available for this account, disabling v2");
             }
         }
         catch (Exception ex) { Log($"GetNotificationsV2 exception: {ex.Message}"); }

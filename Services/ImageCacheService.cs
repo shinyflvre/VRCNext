@@ -11,6 +11,7 @@ public class ImageCacheService
     private readonly string _dir;
     private readonly HttpClient _http;
     private readonly HashSet<string> _inFlight = new();
+    private readonly HashSet<string> _permanentFail = new();
     private static readonly TimeSpan TTL = TimeSpan.FromDays(7);
 
     // Amount freed per trim pass (~2 GB)
@@ -46,6 +47,10 @@ public class ImageCacheService
 
         if (File.Exists(filePath) && DateTime.UtcNow - File.GetCreationTimeUtc(filePath) < TTL)
             return $"https://{VirtualHost}/{fileName}";
+
+        // Skip URLs that permanently failed (403, 404, etc.)
+        lock (_permanentFail)
+            if (_permanentFail.Contains(url)) return url;
 
         // Start background download; caller gets original URL this time
         _ = DownloadAsync(url, filePath);
@@ -117,7 +122,14 @@ public class ImageCacheService
         {
             var tmp = filePath + ".tmp";
             using var resp = await _http.GetAsync(url, HttpCompletionOption.ResponseContentRead);
-            if (!resp.IsSuccessStatusCode) return;
+            if (!resp.IsSuccessStatusCode)
+            {
+                var status = (int)resp.StatusCode;
+                // 403/404 won't be fixed by retrying — permanently blacklist
+                if (status == 403 || status == 404)
+                    lock (_permanentFail) _permanentFail.Add(url);
+                return;
+            }
             var bytes = await resp.Content.ReadAsByteArrayAsync();
             await File.WriteAllBytesAsync(tmp, bytes);
             File.Move(tmp, filePath, overwrite: true);

@@ -9,7 +9,7 @@
 </head>
 <body>
     <div class="sidebar" id="sidebarEl">
-        <div class="logo"><div class="logo-icon" id="logoIcon">V</div><div class="logo-txt"><div class="logo-text-row"><div class="logo-text">VRCNext</div><span class="logo-beta-badge">BETA</span></div><div class="logo-sub">v2026.5.0</div></div><button class="sb-toggle" onclick="toggleSidebar()" title="Toggle sidebar"><span class="msi" id="sbIcon">menu_open</span></button></div>
+        <div class="logo"><div class="logo-icon" id="logoIcon">V</div><div class="logo-txt"><div class="logo-text-row"><div class="logo-text">VRCNext</div><span class="logo-beta-badge">BETA</span></div><div class="logo-sub">v2026.5.1</div></div><button class="sb-toggle" onclick="toggleSidebar()" title="Toggle sidebar"><span class="msi" id="sbIcon">menu_open</span></button></div>
         <div class="nav">
             <button class="nav-btn active" onclick="showTab(0)"><span class="ni msi">dashboard</span><span class="nl">Dashboard</span></button>
             <button class="nav-btn" onclick="showTab(1)"><span class="ni msi">travel_explore</span><span class="nl">Worlds</span></button>
@@ -43,12 +43,13 @@
     <div class="main">
         <div class="topbar" id="winDrag">
             <span class="topbar-title" id="pageTitle">Dashboard</span>
-            <div style="display:flex;align-items:center;gap:8px;">
+            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
                 <div class="mini-badge vrcplus" id="badgeVrcPlus" style="display:none;"><span class="mini-badge-label">VRC+</span></div>
-                <div class="mini-badge offline" id="badgeRelay"><span class="msi mini-badge-icon">cell_tower</span><span class="mini-badge-label">Relay</span></div>
-                <div class="mini-badge offline" id="badgeChatbox"><span class="msi mini-badge-icon">chat</span><span class="mini-badge-label">Chatbox</span></div>
-                <div class="mini-badge offline" id="badgeSpace"><span class="msi mini-badge-icon">rocket_launch</span><span class="mini-badge-label">Space</span></div>
-                <div class="mini-badge offline" id="badgeVoice"><span class="msi mini-badge-icon">mic</span><span class="mini-badge-label">Voice</span></div>
+                <div class="mini-badge vcredits" id="badgeVrcCredits" style="display:none;"><span class="mini-badge-label" id="badgeVrcCreditsLabel">V 0</span></div>
+                <div class="mini-badge offline" id="badgeRelay"><span class="msi mini-badge-icon">cell_tower</span><span class="mini-badge-label" data-short="RL">Relay</span></div>
+                <div class="mini-badge offline" id="badgeChatbox"><span class="msi mini-badge-icon">chat</span><span class="mini-badge-label" data-short="CB">Chatbox</span></div>
+                <div class="mini-badge offline" id="badgeSpace"><span class="msi mini-badge-icon">rocket_launch</span><span class="mini-badge-label" data-short="SP">Space</span></div>
+                <div class="mini-badge offline" id="badgeVoice"><span class="msi mini-badge-icon">mic</span><span class="mini-badge-label" data-short="VO">Voice</span></div>
                 <button class="btn-notif" id="btnUpdate" onclick="toggleUpdatePanel()" title="Update available" style="display:none;"><span class="msi" style="font-size:20px;">system_update_alt</span><span class="notif-count" id="updateBadge">1</span></button>
                 <button class="btn-notif" id="btnChat" onclick="toggleChatPanel()" title="Messages"><span class="msi" style="font-size:20px;">forum</span><span class="notif-count" id="chatBadge" style="display:none;">0</span></button>
                 <button class="btn-notif" id="btnNotif" onclick="toggleNotifPanel()" title="Notifications"><span class="msi" style="font-size:20px;">notifications</span><span class="notif-count" id="notifBadge" style="display:none;">0</span></button>

@@ -337,7 +337,7 @@
                 actionItems.push(                  { icon: 'send',             label: 'Invite',               action: () => sendToCS({ action: 'vrcInviteFriend', userId: id }) });
                 actionItems.push(                  { icon: 'forward_to_inbox', label: 'Invite with Message',  action: () => { openFriendInviteModal(id, f.displayName || id); _invModalToggleMsgs(); } });
             }
-            actionItems.push({ icon: 'waving_hand', label: 'Boop!',     action: () => sendToCS({ action: 'vrcBoop', userId: id }) });
+            actionItems.push({ icon: 'waving_hand', label: 'Boop!',     action: () => { if (typeof msgrRegisterBoopSent === 'function') msgrRegisterBoopSent(id); sendToCS({ action: 'vrcBoop', userId: id }); } });
             actionItems.push({ icon: 'chat',        label: 'Messenger', action: () => openMessenger(id, f.displayName || id, f.image || '', f.status || '', f.statusDescription || '') });
             if (actionItems.length) { items.push('sep'); actionItems.forEach(i => items.push(i)); }
         }

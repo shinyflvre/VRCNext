@@ -6,7 +6,7 @@
 const _shownNotifCardIds = new Set();
 
 function showNotificationToasts(notifList) {
-    const fresh = (notifList || []).filter(n => !n.seen && !_shownNotifCardIds.has(n.id));
+    const fresh = (notifList || []).filter(n => !n.seen && !_shownNotifCardIds.has(n.id) && n.type !== 'boop'); // boops only in messenger
     fresh.forEach(n => {
         _shownNotifCardIds.add(n.id);
         _showNotifCard(n);

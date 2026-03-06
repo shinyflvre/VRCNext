@@ -448,16 +448,23 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 14px 0 28px;
+    padding: 0 28px;
+    gap: 8px;
     cursor: default;
     background: transparent;
     z-index: 20;
+    overflow: hidden;
 }
 
 .topbar-title {
     font-size: 17px;
     font-weight: 700;
     color: var(--tx0);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    flex-shrink: 1;
 }
 
 /* ═══ Window controls (borderless) ═══ */
@@ -485,6 +492,20 @@ body {
 .win-btn .msi { font-size: 15px; }
 .win-btn:hover { background: rgba(255,255,255,.1); color: var(--tx0); }
 .win-close:hover { background: rgba(232,17,35,.18) !important; color: #e81123 !important; }
+
+/* ═══ Topbar compact mode (label abbreviations) ═══ */
+.mini-badge-label[data-short] {
+    transition: font-size .15s ease;
+}
+.topbar.compact .mini-badge-label[data-short] {
+    font-size: 0;
+}
+.topbar.compact .mini-badge-label[data-short]::after {
+    content: attr(data-short);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .3px;
+}
 
 /* ═══ Mini status badges (topbar) ═══ */
 .mini-badge {
@@ -542,6 +563,16 @@ body {
 
 .mini-badge.vrcplus .mini-badge-label {
     color: #FFD700;
+}
+
+.mini-badge.vcredits {
+    background: rgba(167,139,250,.1);
+    border-color: rgba(167,139,250,.5);
+}
+
+.mini-badge.vcredits .mini-badge-label {
+    color: #A78BFA;
+    font-variant-numeric: tabular-nums;
 }
 
 @keyframes pulse {
@@ -7194,6 +7225,45 @@ div.vn-select {
 .msgr-mine   .msgr-bubble { background:var(--accent); color:#fff; border-bottom-right-radius:6px; }
 .msgr-theirs .msgr-bubble { background:var(--bg-hover); color:var(--tx1); border-bottom-left-radius:6px; }
 .msgr-time { font-size:10px; color:var(--tx3); margin-top:3px; padding:0 5px; }
+
+/* ── Boop event bubble ── */
+.msgr-boop-event {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    margin: 10px 20px;
+    padding: 14px 20px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(255,100,130,.13), rgba(220,50,100,.07));
+    border: 1px solid rgba(255,100,130,.22);
+    text-align: center;
+    animation: boop-pop .45s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes boop-pop {
+    from { opacity: 0; transform: scale(.65); }
+    to   { opacity: 1; transform: scale(1); }
+}
+.msgr-boop-icon {
+    font-size: 26px;
+    color: #FF6B8A;
+    animation: boop-pulse 1.8s ease-in-out 2;
+}
+@keyframes boop-pulse {
+    0%,100% { transform: scale(1); }
+    40%     { transform: scale(1.25); }
+}
+.msgr-boop-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--tx1);
+    letter-spacing: .2px;
+}
+.msgr-boop-time {
+    font-size: 10px;
+    color: var(--tx3);
+}
+
 #msgrCooldownBar {
     display: flex;
     align-items: center;
@@ -7206,17 +7276,23 @@ div.vn-select {
 }
 #msgrFooter {
     display: flex;
-    flex-direction: column;
-    gap: 0;
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 8px;
     padding: 10px 12px 12px;
     background: var(--bg-side);
     flex-shrink: 0;
+}
+#msgrInputWrap {
+    position: relative;
+    flex: 1;
+    min-width: 0;
 }
 #msgrInput {
     background: var(--bg3, var(--bg-hover));
     border: none;
     border-radius: 14px;
-    padding: 9px 14px;
+    padding: 9px 44px 9px 14px;
     color: var(--tx1);
     font-size: 13px;
     font-family: inherit;
@@ -7232,24 +7308,23 @@ div.vn-select {
     width: 100%;
     box-sizing: border-box;
 }
-#msgrFooterActions {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 8px;
-    margin-top: 8px;
-}
 #msgrCharCount {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
     font-size: 11px;
     color: var(--tx3);
     transition: color .2s;
-    min-width: 28px;
+    min-width: 24px;
     text-align: right;
+    pointer-events: none;
+    line-height: 1;
 }
 #msgrCharCount.msgr-char-low  { color: #FFA726; }
 #msgrCharCount.msgr-char-warn { color: #EF5350; }
 #msgrSendBtn {
-    width: 32px; height: 32px;
+    width: 38px; height: 38px;
     border-radius: 50%;
     background: var(--accent);
     border: none;

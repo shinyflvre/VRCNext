@@ -11,6 +11,11 @@ let _messengerUserId   = null;
 let _messengerName     = '';
 let _messengerCooldown = null;
 let _messengerSlots    = { used: 0, total: 24 };
+let _pendingBoopUserId = null;
+let _msgrCdInterval    = null;
+let _msgrCdEnd         = 0; // Date.now() timestamp when cooldown expires (global, survives close/reopen)
+
+const MSGR_SEND_COOLDOWN = 45; // seconds
 
 // Chat inbox: userId → { userId, displayName, image, status, statusDesc, text, time, count }
 const _chatInbox = new Map();
@@ -121,21 +126,26 @@ function openMessenger(userId, displayName, image, status, statusDesc) {
             <span id="msgrCooldownText"></span>
         </div>
         <div id="msgrFooter">
-            <textarea id="msgrInput" placeholder="Message ${esc(displayName)}…" rows="1" maxlength="${MSGR_MAX_CHARS}"
-                oninput="msgrOnInput(this)"
-                onkeydown="if((event.ctrlKey||event.metaKey)&&event.key==='Enter'){event.preventDefault();messengerSend();}"
-            ></textarea>
-            <div id="msgrFooterActions">
+            <div id="msgrInputWrap">
+                <textarea id="msgrInput" placeholder="Message ${esc(displayName)}…" rows="1" maxlength="${MSGR_MAX_CHARS}"
+                    oninput="msgrOnInput(this)"
+                    onkeydown="if((event.ctrlKey||event.metaKey)&&event.key==='Enter'){event.preventDefault();messengerSend();}"
+                ></textarea>
                 <span id="msgrCharCount">${MSGR_MAX_CHARS}</span>
-                <button id="msgrSendBtn" onclick="messengerSend()">
-                    <span class="msi">arrow_upward</span>
-                </button>
             </div>
+            <button id="msgrSendBtn" onclick="messengerSend()">
+                <span class="msi">arrow_upward</span>
+            </button>
         </div>`;
 
     document.body.appendChild(el);
     sendToCS({ action: 'vrcGetChatHistory', userId });
-    setTimeout(() => el.querySelector('#msgrInput')?.focus(), 80);
+    // Resume cooldown UI if still active from a previous send
+    if (Date.now() < _msgrCdEnd) {
+        setTimeout(_applyCooldownUI, 0);
+    } else {
+        setTimeout(() => el.querySelector('#msgrInput')?.focus(), 80);
+    }
 }
 
 function msgrOnInput(el) {
@@ -158,7 +168,9 @@ function _msgrStatusColor(status) {
 
 function closeMessenger() {
     clearInterval(_messengerCooldown);
+    clearInterval(_msgrCdInterval); // stop UI ticker — _msgrCdEnd timestamp is kept globally
     _messengerCooldown = null;
+    _msgrCdInterval    = null;
     _messengerUserId   = null;
     document.getElementById('messengerPanel')?.remove();
 }
@@ -166,7 +178,7 @@ function closeMessenger() {
 function messengerSend() {
     const input = document.getElementById('msgrInput');
     const text  = input?.value?.trim();
-    if (!text || !_messengerUserId) return;
+    if (!text || !_messengerUserId || Date.now() < _msgrCdEnd) return;
     input.value = '';
     input.style.height = '';
     msgrOnInput(input);
@@ -231,7 +243,46 @@ function handleChatMessage(msg) {
     if (document.getElementById('chatPanel')?.style.display !== 'none') renderChatPanel();
 }
 
+function msgrRegisterBoopSent(userId) {
+    _pendingBoopUserId = userId;
+}
+
+function handleBoopSent() {
+    const uid = _pendingBoopUserId;
+    _pendingBoopUserId = null;
+    // Show bubble if messenger is open with the booped user,
+    // or as fallback if messenger is open but we lost track of the target.
+    if (!document.getElementById('messengerPanel')) return;
+    if (!uid || uid === _messengerUserId) appendBoopBubble(true, _messengerName);
+}
+
+function handleBoopReceived(senderUserId, senderUsername) {
+    if (!document.getElementById('messengerPanel')) return;
+    const idMatch   = senderUserId && senderUserId === _messengerUserId;
+    const nameMatch = senderUsername && senderUsername === _messengerName;
+    if (!idMatch && !nameMatch) return;
+    appendBoopBubble(false, senderUsername || _messengerName);
+}
+
+function appendBoopBubble(isMine, name, isoTime) {
+    const container = document.getElementById('msgrMessages');
+    if (!container) return;
+    const time = isoTime
+        ? new Date(isoTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const text = isMine ? `You booped ${esc(name)}!` : `${esc(name)} booped you!`;
+    const div = document.createElement('div');
+    div.className = 'msgr-boop-event';
+    div.innerHTML = `<span class="msi msgr-boop-icon">favorite</span><span class="msgr-boop-text">${text}</span><span class="msgr-boop-time">${time}</span>`;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+}
+
 function appendChatMessage(msg, scroll) {
+    if (msg.type === 'boop') {
+        appendBoopBubble(msg.from === 'me', _messengerName, msg.time);
+        return;
+    }
     const container = document.getElementById('msgrMessages');
     if (!container) return;
     const isMine = msg.from === 'me';
@@ -247,10 +298,10 @@ function appendChatMessage(msg, scroll) {
 function handleChatActionResult(payload) {
     const input   = document.getElementById('msgrInput');
     const sendBtn = document.getElementById('msgrSendBtn');
-    if (input)   { input.disabled = false; input.focus(); }
-    if (sendBtn) sendBtn.disabled = false;
 
     if (!payload.success) {
+        if (input)   { input.disabled = false; input.focus(); }
+        if (sendBtn) sendBtn.disabled = false;
         const bar  = document.getElementById('msgrCooldownBar');
         const text = document.getElementById('msgrCooldownText');
         if (bar && text) {
@@ -259,5 +310,41 @@ function handleChatActionResult(payload) {
             clearTimeout(_messengerCooldown);
             _messengerCooldown = setTimeout(() => { if (bar) bar.style.display = 'none'; }, 5000);
         }
+        return;
     }
+
+    // Success → start 45s cooldown shown in the input placeholder
+    _startSendCooldown();
+}
+
+function _startSendCooldown() {
+    _msgrCdEnd = Date.now() + MSGR_SEND_COOLDOWN * 1000;
+    _applyCooldownUI();
+}
+
+function _applyCooldownUI() {
+    if (_msgrCdInterval) clearInterval(_msgrCdInterval);
+    const remaining = () => Math.max(0, Math.ceil((_msgrCdEnd - Date.now()) / 1000));
+
+    function tick() {
+        const inp = document.getElementById('msgrInput');
+        const btn = document.getElementById('msgrSendBtn');
+        if (!inp) { clearInterval(_msgrCdInterval); _msgrCdInterval = null; return; }
+        const r = remaining();
+        if (r <= 0) {
+            clearInterval(_msgrCdInterval);
+            _msgrCdInterval   = null;
+            inp.disabled      = false;
+            inp.placeholder   = `Message ${_messengerName}…`;
+            if (btn) btn.disabled = false;
+            inp.focus();
+        } else {
+            inp.disabled      = true;
+            inp.placeholder   = `Cooldown... ${r}`;
+            if (btn) btn.disabled = true;
+        }
+    }
+
+    tick();
+    _msgrCdInterval = setInterval(tick, 1000);
 }

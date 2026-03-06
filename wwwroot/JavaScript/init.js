@@ -103,6 +103,23 @@ sendToCS({ action: 'getTimeline' });
     document.documentElement.addEventListener('tabchange', applyTopbarBg);
 }());
 
+/* === Topbar compact badges === */
+(function () {
+    const topbar = document.getElementById('winDrag');
+    if (!topbar) return;
+    // Use topbar.offsetWidth (stable — unaffected by compact toggle) to avoid
+    // the feedback loop where compact shrinks badges → gap widens → compact
+    // removed → badges grow → gap shrinks → compact added → infinite oscillation.
+    function checkCompact() {
+        const w = topbar.offsetWidth;
+        const isCompact = topbar.classList.contains('compact');
+        if (!isCompact && w < 620) topbar.classList.add('compact');
+        else if (isCompact && w > 700) topbar.classList.remove('compact');
+    }
+    new ResizeObserver(checkCompact).observe(topbar);
+    checkCompact();
+}());
+
 /* === Library top-fade === */
 (function () {
     const content = document.querySelector('.content');

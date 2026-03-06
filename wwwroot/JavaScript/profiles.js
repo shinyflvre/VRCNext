@@ -343,8 +343,9 @@ function renderVrcFriends(friends, counts) {
             const statusEl = document.getElementById('fd-live-status');
             if (statusEl) {
                 const isWeb = lf.presence === 'web';
+                const isOff = lf.presence === 'offline' || lf.location === 'offline';
                 const dotClass = isWeb ? 'vrc-status-ring' : 'vrc-status-dot';
-                statusEl.innerHTML = `<span class="${dotClass} ${statusDotClass(lf.status)}" style="width:8px;height:8px;"></span>${statusLabel(lf.status)}${isWeb ? ' (Web)' : ''}${lf.statusDescription ? ' — ' + esc(lf.statusDescription) : ''}`;
+                statusEl.innerHTML = `<span class="${dotClass} ${isOff ? 's-offline' : statusDotClass(lf.status)}" style="width:8px;height:8px;"></span>${isOff ? 'Offline' : statusLabel(lf.status)}${(!isOff && isWeb) ? ' (Web)' : ''}${(!isOff && lf.statusDescription) ? ' — ' + esc(lf.statusDescription) : ''}`;
             }
             // Merge live status fields into currentFriendDetail so subsequent re-renders are accurate
             currentFriendDetail.status = lf.status;
@@ -432,8 +433,6 @@ function renderVrcFriends(friends, counts) {
     // Re-apply active search filter so live updates don't reset the search bar
     filterFriendsList();
 
-    // Refresh instance info whenever friends update, keeps "who's in your instance" current
-    requestInstanceInfo();
 }
 
 function toggleFriendSection(key) {
@@ -925,7 +924,9 @@ function renderFriendDetail(d) {
     // d.state === 'active' is the reliable web indicator (null = in-game, 'active' = web/mobile).
     const fdIsInGame = fdLocation && fdLocation !== 'offline' && fdLocation !== '' && d.state !== 'active';
     const fdIsWeb = !fdIsInGame && (d.state === 'active' || (d.platform || '').toLowerCase() === 'web') && d.status !== 'offline';
+    const fdIsOffline = !fdIsInGame && !fdIsWeb;
     const fdDotClass = fdIsWeb ? 'vrc-status-ring' : 'vrc-status-dot';
+    const fdStatusDotCls = fdIsOffline ? 's-offline' : statusDotClass(d.status);
 
     const hasGroups = allGroups.length > 0 || repG;
     const hasMutuals = d.mutuals !== undefined;
@@ -956,7 +957,7 @@ function renderFriendDetail(d) {
     });
     worldsContent += `</div>`;
 
-    c.innerHTML = `${bannerHtml}<div class="fd-content${bannerSrc ? ' fd-has-banner' : ''}"><div class="fd-header">${imgTag}<div><div class="fd-name">${esc(d.displayName)}</div>${pronounsHtml}<div class="fd-status" id="fd-live-status"><span class="${fdDotClass} ${statusDotClass(d.status)}" style="width:8px;height:8px;"></span>${statusLabel(d.status)}${fdIsWeb ? ' (Web)' : ''}${d.statusDescription ? ' — ' + esc(d.statusDescription) : ''}</div></div></div>${badgesHtml}${actionsHtml}${tabsHtml}<div id="fdTabInfo">${infoContent}</div><div id="fdTabGroups" style="display:none;">${groupsContent}</div><div id="fdTabMutuals" style="display:none;">${mutualsContent}</div><div id="fdTabWorlds" style="display:none;">${worldsContent}</div><div style="margin-top:10px;text-align:right;"><button class="fd-btn" onclick="closeFriendDetail()">Close</button></div></div>`;
+    c.innerHTML = `${bannerHtml}<div class="fd-content${bannerSrc ? ' fd-has-banner' : ''}"><div class="fd-header">${imgTag}<div><div class="fd-name">${esc(d.displayName)}</div>${pronounsHtml}<div class="fd-status" id="fd-live-status"><span class="${fdDotClass} ${fdStatusDotCls}" style="width:8px;height:8px;"></span>${fdIsOffline ? 'Offline' : statusLabel(d.status)}${(!fdIsOffline && fdIsWeb) ? ' (Web)' : ''}${(!fdIsOffline && d.statusDescription) ? ' — ' + esc(d.statusDescription) : ''}</div></div></div>${badgesHtml}${actionsHtml}${tabsHtml}<div id="fdTabInfo">${infoContent}</div><div id="fdTabGroups" style="display:none;">${groupsContent}</div><div id="fdTabMutuals" style="display:none;">${mutualsContent}</div><div id="fdTabWorlds" style="display:none;">${worldsContent}</div><div style="margin-top:10px;text-align:right;"><button class="fd-btn" onclick="closeFriendDetail()">Close</button></div></div>`;
 
     // Live ticker - only when friend is confirmed in same instance
     if (_fdLiveTimer) { clearInterval(_fdLiveTimer); _fdLiveTimer = null; }
