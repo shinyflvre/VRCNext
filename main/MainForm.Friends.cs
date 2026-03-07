@@ -467,7 +467,7 @@ public partial class MainForm
                     if (fresh == null) return;
                     Invoke(() =>
                     {
-                        _userDetailCache[userId] = (fresh, DateTime.UtcNow);
+                        CacheUserDetail(userId, fresh);
                         if (_settings.FfcEnabled) _cache.Save(CacheHandler.KeyUserProfile(userId), fresh);
                         SendToJS("vrcFriendDetail", fresh);
                     });
@@ -504,7 +504,7 @@ public partial class MainForm
             diskProfile["inSameInstance"]      = false;
             diskProfile["travelingToLocation"] = "";
             diskProfile["state"]               = "";
-            _userDetailCache[userId] = (diskProfile, DateTime.UtcNow);
+            CacheUserDetail(userId, diskProfile);
             ServeAndRefresh(diskProfile);
             return;
         }
@@ -518,7 +518,7 @@ public partial class MainForm
                 SendToJS("vrcFriendDetailError", new { error = "Could not load user profile" });
                 return;
             }
-            _userDetailCache[userId] = (payload, DateTime.UtcNow);
+            CacheUserDetail(userId, payload);
             if (_settings.FfcEnabled) _cache.Save(CacheHandler.KeyUserProfile(userId), payload);
             SendToJS("vrcFriendDetail", payload);
         }

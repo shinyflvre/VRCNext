@@ -121,6 +121,8 @@ public partial class MainForm
         // avatars1 is free; avatars2–6 require VRC+.
         // The API only returns groups that have been renamed or contain items,
         // so we fill in any missing slots so empty groups are still visible.
+        // I wonder why they use more World Groups for worlds but for avatars they expand the slots
+        // VRC please fix ur sh :D
         var slots = new[] {
             ("avatars1", "Avatars 1", "avatar"),
             ("avatars2", "Avatars 2", "avatar"),
@@ -353,7 +355,7 @@ var list = avatars.Select(a => new
                     var payload = await BuildUserDetailPayloadAsync(uid, fetchNote: false);
                     if (payload != null)
                     {
-                        _userDetailCache[uid] = (payload, DateTime.UtcNow);
+                        CacheUserDetail(uid, payload);
                         _cache.Save(CacheHandler.KeyUserProfile(uid), payload);
                     }
                     await Task.Delay(250); // rate-limit gap before next profile

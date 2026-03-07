@@ -139,6 +139,11 @@ public partial class MainForm : Form
         _photoPlayersStore.Dispose();
         _timeTracker.Dispose();
         _worldTimeTracker.Dispose();
+        _vrcPhotoWatcher?.Dispose();
+        _friendsRefreshLock.Dispose();
+        _webhook.Dispose();
+        _logWatcher.Dispose();
+        _webView?.Dispose();
         base.OnFormClosing(e);
     }
 }

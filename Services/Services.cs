@@ -6,7 +6,7 @@ using System.Security.Cryptography;
 namespace VRCNext.Services;
 
 // Webhook Service - posts files to Discord, deletes messages
-public class WebhookService
+public class WebhookService : IDisposable
 {
     private readonly HttpClient _http = new();
 
@@ -56,6 +56,8 @@ public class WebhookService
         }
         catch { return false; }
     }
+
+    public void Dispose() => _http.Dispose();
 }
 
 // File Watcher - monitors folders for new media files

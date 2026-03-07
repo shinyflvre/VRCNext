@@ -116,7 +116,8 @@ sendToCS({ action: 'getTimeline' });
         if (!isCompact && w < 620) topbar.classList.add('compact');
         else if (isCompact && w > 700) topbar.classList.remove('compact');
     }
-    new ResizeObserver(checkCompact).observe(topbar);
+    const _compactObserver = new ResizeObserver(checkCompact);
+    _compactObserver.observe(topbar);
     checkCompact();
 }());
 

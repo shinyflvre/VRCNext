@@ -1,22 +1,29 @@
-## What's New in 2026.5.2
+## What's New in 2026.6.0
 
-### API & Performance
+### Log Levels
 
-- **Reduced API Calls** - Significantly reduced the number of REST requests VRCNext makes to the VRChat API, keeping usage well within VRChat's guidelines.
-- **Profile Caching** - User profiles are now cached properly. Re-opening the same profile no longer triggers redundant API calls.
+- Added more logs to analyze potential issues of users in future.
+- Added logs to see how memory is being used.
+- Added more REST API logs to see how requests are handled.
 
-### Topbar
+### Refactor / Core Changes
 
-- **V Credits Badge** - A new badge next to the VRC+ indicator displays your current VRChat credit balance.
-- **Improved Responsiveness** - The topbar now adapts more reliably to smaller window sizes, ensuring badges and labels are always displayed correctly without flickering.
+- Full refactor of MainForm.cs. The file previously acted as a large bridge between backend services and the wwwroot frontend, which resulted in deeply nested logic and tight coupling between components. The refactor separates responsibilities more clearly and improves the structure of the communication between services and the UI. This makes the codebase easier to read, maintain, and extend for both contributors and myself.
 
-### Profile Card
+### Fixes
 
-- **Status Fix** - Fixed a bug where the profile card could display an incorrect status color and label for offline users.
+This update mainly focuses on performance and stability improvements. Several parts of the application could keep resources alive longer than intended, which over time could increase memory usage or create unnecessary background activity. This update ensures that resources are properly disposed, event handlers are correctly unsubscribed, and background tasks are restarted safely when needed. The goal is to prevent potential leaks and keep the application stable during long sessions.
 
-### Messenger
+- Fixed WS event handler accumulation in StartWebSocket by unsubscribing before resubscribing.
+- Fixed CancellationTokenSource leak in VRChatWebSocketService.Start by disposing the old CTS.
+- Fixed _connectTask zombie by canceling and awaiting the old task before starting a new one.
+- Fixed WaveStream not being disposed in VoiceFightService.OpenAudioFile.
+- Fixed five SemaphoreSlim instances not being disposed by adding Dispose in OnFormClosing.
+- Fixed FileSystemWatcher (_vrcPhotoWatcher) not being disposed in OnFormClosing.
+- Fixed HttpClient not being disposed in WebhookService.
+- Fixed global JavaScript event listeners in init.js not being removed.
+- Fixed _logWatcher not being disposed in OnFormClosing. The object implements IDisposable and runs a background polling timer.
+- Fixed _webView (WebView2) not being disposed in OnFormClosing. The control also had an active WebMessageReceived event handler that is now properly cleaned up during shutdown.
+- Fixed _userDetailCache size cap (max 200 entries) - have to experiment with that though.
 
-- **Refreshed Layout** - The message input, character counter, and send button have been reorganized for a cleaner, more cohesive look.
-- **Boop Support** - Sending or receiving a boop now shows a dedicated event bubble inside the conversation. Boops are stored in chat history and appear correctly whether the messenger is open or not.
-- **Boops Moved Out of Notifications** - Boops no longer appear in the notification panel or as toast cards. They are shown exclusively in the messenger.
-- **Send Cooldown** - After sending a message, a 45-second cooldown is enforced. The input placeholder counts down in real time and the cooldown persists even if the messenger is closed and reopened, preventing API spam.
+These are just some additional fixes. C# is pretty reliable with its GC but however just to be safe we dispose some things. I might need to refactor things once we switch to Photino.NET but for now this will do the trick.

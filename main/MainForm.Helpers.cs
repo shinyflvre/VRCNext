@@ -5,6 +5,17 @@ namespace VRCNext;
 
 public partial class MainForm
 {
+    private const int UserDetailCacheMax = 200;
+    private void CacheUserDetail(string userId, object payload)
+    {
+        _userDetailCache[userId] = (payload, DateTime.UtcNow);
+        if (_userDetailCache.Count > UserDetailCacheMax)
+        {
+            var oldest = _userDetailCache.MinBy(kv => kv.Value.cachedAt).Key;
+            _userDetailCache.Remove(oldest);
+        }
+    }
+
     // Library file cache entry
     private record LibFileEntry(FileInfo Fi, string Host, string Folder);
 

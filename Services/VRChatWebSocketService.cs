@@ -100,13 +100,17 @@ internal sealed class VRChatWebSocketService : IDisposable
     public void Start(string authToken, string tfaToken = "",
                       Func<(string auth, string tfa)>? getTokens = null)
     {
+        var prevTask = _connectTask;
         Stop();
+        _cts.Dispose();
         _authToken  = authToken;
         _tfaToken   = tfaToken;
         _getTokens  = getTokens;
         _running    = true;
         _cts        = new CancellationTokenSource();
         _connectTask = Task.Run(() => ConnectLoopAsync(_cts.Token));
+        // Observe previous task so it doesn't become an unobserved faulted task
+        prevTask?.ContinueWith(t => { _ = t.Exception; }, TaskContinuationOptions.OnlyOnFaulted);
     }
 
     /// <summary>Stop and disconnect. Does not dispose.</summary>
@@ -369,5 +373,6 @@ internal sealed class VRChatWebSocketService : IDisposable
         if (_disposed) return;
         _disposed = true;
         Stop();
+        _cts.Dispose();
     }
 }

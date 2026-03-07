@@ -59,6 +59,7 @@ public sealed class VoiceFightService : IDisposable
 
     // Playback
     private WaveOutEvent? _waveOut;
+    private WaveStream? _currentReader;
     private int _outputDeviceIndex = -1;
     private readonly object _playLock = new();
 
@@ -147,6 +148,8 @@ public sealed class VoiceFightService : IDisposable
             _waveOut?.Stop();
             _waveOut?.Dispose();
             _waveOut = null;
+            _currentReader?.Dispose();
+            _currentReader = null;
         }
 
         _meterLevel = 0f;
@@ -344,7 +347,10 @@ public sealed class VoiceFightService : IDisposable
             if (!File.Exists(StopSoundPath)) return;
             try
             {
+                _currentReader?.Dispose();
+                _currentReader = null;
                 WaveStream reader = OpenAudioFile(StopSoundPath);
+                _currentReader = reader;
                 var vol = new VolumeWaveProvider16(reader) { Volume = 1f };
                 _waveOut.Init(vol);
                 _waveOut.Play();
@@ -441,7 +447,10 @@ public sealed class VoiceFightService : IDisposable
 
             try
             {
+                _currentReader?.Dispose();
+                _currentReader = null;
                 WaveStream reader = OpenAudioFile(filePath);
+                _currentReader = reader;
                 var volume = new VolumeWaveProvider16(reader) { Volume = Math.Clamp(volumePercent / 100f, 0f, 1f) };
                 _waveOut.Init(volume);
                 _waveOut.Play();
