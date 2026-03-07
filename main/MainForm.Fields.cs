@@ -40,6 +40,7 @@ public partial class MainForm
     private readonly PhotoPlayersStore _photoPlayersStore;
     private readonly TimelineService _timeline;
     private readonly UpdateService _updateService = new();
+    private readonly MemoryTrimService _memTrim = new();
     private string _lastTrackedWorldId = "";
     private FileSystemWatcher? _vrcPhotoWatcher;
 

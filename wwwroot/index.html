@@ -9,7 +9,7 @@
 </head>
 <body>
     <div class="sidebar" id="sidebarEl">
-        <div class="logo"><div class="logo-icon" id="logoIcon">V</div><div class="logo-txt"><div class="logo-text-row"><div class="logo-text">VRCNext</div><span class="logo-beta-badge">BETA</span></div><div class="logo-sub">v2026.5.2</div></div><button class="sb-toggle" onclick="toggleSidebar()" title="Toggle sidebar"><span class="msi" id="sbIcon">menu_open</span></button></div>
+        <div class="logo"><div class="logo-icon" id="logoIcon">V</div><div class="logo-txt"><div class="logo-text-row"><div class="logo-text">VRCNext</div><span class="logo-beta-badge">BETA</span></div><div class="logo-sub">v2026.6.0</div></div><button class="sb-toggle" onclick="toggleSidebar()" title="Toggle sidebar"><span class="msi" id="sbIcon">menu_open</span></button></div>
         <div class="nav">
             <button class="nav-btn active" onclick="showTab(0)"><span class="ni msi">dashboard</span><span class="nl">Dashboard</span></button>
             <button class="nav-btn" onclick="showTab(1)"><span class="ni msi">travel_explore</span><span class="nl">Worlds</span></button>
@@ -453,6 +453,11 @@
                             <button class="btn-f" onclick="sendToCS({action:'resetSetup'})"><span class="msi" style="font-size:16px;">restart_alt</span> Redo Setup Wizard</button>
                             <button class="btn-f" id="btnForceFfc" onclick="forceFfcAll()"><span class="msi" style="font-size:16px;">cloud_download</span> Force FFC All</button>
                         </div>
+                        <div class="sf-toggle-row" style="margin-top:14px;">
+                            <span>Enable Memory Trim <span class="set-desc" style="display:inline;font-size:11px;">(auto every 10 min)</span></span>
+                            <label class="toggle"><input type="checkbox" id="setMemoryTrimEnabled" onchange="autoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label>
+                        </div>
+                        <button class="btn-f" style="margin-top:10px;" onclick="sendToCS({action:'forceTrim'})"><span class="msi" style="font-size:16px;">memory</span> Force Memory Trim</button>
                         <div id="ffcProgressWrap" style="display:none;margin-top:12px;">
                             <div style="font-size:12px;color:var(--tx2);margin-bottom:6px;" id="ffcProgressLabel">Caching...</div>
                             <div style="background:var(--brd);border-radius:4px;height:6px;overflow:hidden;">

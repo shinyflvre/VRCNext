@@ -1,5 +1,19 @@
 ## What's New in 2026.6.0
 
+### HOTFIXES
+
+Disposing the VOSK API when disabling "Voice Fight". This cleanup was missing and has now been implemented.
+
+### Memory Trim (Debugging/Devs Only!)
+
+VRCN can temporarily trim memory at intervals to ensure unused resources are released. This feature forces a GC cleanup every 10 minutes. It is disabled by default and was added mainly for testing purposes.
+
+The implementation is mostly reused from one of my older Unity projects. Do not enable this if you are not familiar with what a forced GC or memory trim does.
+
+Can be found in > Settings > Debugging
+- ForceTrim = Forces GC Cleanup / Memory Trim
+- Enable Trim = Enables Memory Trim in intervals 10 Minutes.
+
 ### Log Levels
 
 - Added more logs to analyze potential issues of users in future.

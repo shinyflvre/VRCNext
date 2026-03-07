@@ -227,6 +227,10 @@ public partial class MainForm
             // Fast Fetch Cache
             _settings.FfcEnabled = data["ffcEnabled"]?.Value<bool>() ?? true;
 
+            // Memory Trim
+            _settings.MemoryTrimEnabled = data["memoryTrimEnabled"]?.Value<bool>() ?? false;
+            _memTrim.SetEnabled(_settings.MemoryTrimEnabled);
+
             _settings.Save();
             if (_settings.LastSaveError != null)
                 SendToJS("log", new { msg = $"❌ Save failed: {_settings.LastSaveError}", color = "err" });

@@ -10,6 +10,7 @@ public partial class MainForm : Form
     public MainForm()
     {
         _settings = AppSettings.Load();
+        if (_settings.MemoryTrimEnabled) _memTrim.SetEnabled(true);
         _timeTracker = UserTimeTracker.Load();
         _worldTimeTracker = WorldTimeTracker.Load();
         _photoPlayersStore = PhotoPlayersStore.Load();
@@ -143,6 +144,7 @@ public partial class MainForm : Form
         _friendsRefreshLock.Dispose();
         _webhook.Dispose();
         _logWatcher.Dispose();
+        _memTrim.Dispose();
         _webView?.Dispose();
         base.OnFormClosing(e);
     }

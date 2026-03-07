@@ -153,6 +153,11 @@ public sealed class VoiceFightService : IDisposable
         }
 
         _meterLevel = 0f;
+
+        _model?.Dispose();
+        _model = null;
+        _modelLoaded = false;
+
         Log("Voice Fight: stopped");
     }
 

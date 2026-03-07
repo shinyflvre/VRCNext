@@ -81,6 +81,10 @@ public partial class MainForm
                     });
                     break;
 
+                case "forceTrim":
+                    _memTrim.TrimNow();
+                    break;
+
                 case "resetSetup":
                     _settings.SetupComplete = false;
                     _settings.Save();

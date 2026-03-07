@@ -124,7 +124,8 @@ function saveSettings() {
             sfAutoStart: document.getElementById('setSfAutoStart').checked,
             imgCacheEnabled: document.getElementById('setImgCacheEnabled').checked,
             imgCacheLimitGb: parseInt(document.getElementById('setImgCacheLimit').value) || 5,
-            ffcEnabled: document.getElementById('setFfcEnabled').checked
+            ffcEnabled: document.getElementById('setFfcEnabled').checked,
+            memoryTrimEnabled: document.getElementById('setMemoryTrimEnabled').checked
         }
     };
     sendToCS(payload);
@@ -141,7 +142,7 @@ function initAutoSave() {
     const ids = ['setBotName','setBotAvatar','setVrcPath','setAutoStart','setStartWithWindows',
         'setNotifySound','setDashOpacity','setRandomBg',
         'setVrcUser','setVrcPass','setCbAutoStart','setSfAutoStart',
-        'setImgCacheEnabled','setImgCacheLimit'];
+        'setImgCacheEnabled','setImgCacheLimit','setMemoryTrimEnabled'];
     ids.forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
@@ -251,6 +252,9 @@ function loadSettingsToUI(s) {
 
     // Fast Fetch Cache
     document.getElementById('setFfcEnabled').checked = s.FfcEnabled ?? s.ffcEnabled ?? true;
+
+    // Memory Trim
+    document.getElementById('setMemoryTrimEnabled').checked = s.MemoryTrimEnabled ?? s.memoryTrimEnabled ?? false;
 
     // Sync custom dropdowns to reflect programmatically set values
     document.querySelectorAll('select').forEach(s => s._vnRefresh && s._vnRefresh());

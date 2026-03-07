@@ -267,6 +267,9 @@ public class AppSettings
     // Fast Fetch Cache
     public bool FfcEnabled { get; set; } = true;
 
+    // Memory Trim
+    public bool MemoryTrimEnabled { get; set; } = false;
+
     public bool SetupComplete { get; set; }
 
     public List<string> InviteMessages { get; set; } = new()
