@@ -15,8 +15,8 @@
         <div class="setup-bg-fade"></div>
     </div>
 
-    <!-- Titlebar (draggable) -->
-    <div class="setup-titlebar" id="titlebar">
+    <!-- Titlebar (draggable, Windows only — Linux uses native window frame) -->
+    <div class="setup-titlebar" id="titlebar" data-windows-only>
         <button class="win-btn" onclick="winMin()" title="Minimize"><span class="msi">horizontal_rule</span></button>
         <button class="win-btn" onclick="winMax()" title="Maximize"><span class="msi">open_in_full</span></button>
         <button class="win-btn win-close" onclick="winClose()" title="Close"><span class="msi">close</span></button>

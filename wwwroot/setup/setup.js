@@ -6,11 +6,9 @@ var isLoggedIn = false;
 var loggedInName = '';
 var vrc2faType = 'totp';
 
-// Communication helper - must pass raw object, not JSON.stringify
+// Communication helper
 function sendToCS(obj) {
-    if (window.chrome && window.chrome.webview) {
-        window.chrome.webview.postMessage(obj);
-    }
+    window.external.sendMessage(JSON.stringify(obj));
 }
 
 // Page navigation
@@ -175,13 +173,16 @@ function onBackendMessage(e) {
                 if (pEl && !pEl.value) pEl.value = p.password || '';
             }
             break;
+        case 'setPlatform':
+            if (p && p.isLinux) {
+                document.querySelectorAll('[data-windows-only]').forEach(function(el) { el.style.display = 'none'; });
+            }
+            break;
     }
 }
 
 // Init
-if (window.chrome && window.chrome.webview) {
-    window.chrome.webview.addEventListener('message', onBackendMessage);
-}
+window.external.receiveMessage(rawMsg => { onBackendMessage({ data: JSON.parse(rawMsg) }); });
 
 document.addEventListener('DOMContentLoaded', function() {
     var bar = document.getElementById('titlebar');

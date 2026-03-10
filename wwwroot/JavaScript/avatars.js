@@ -104,7 +104,7 @@ function renderSearchGrid() {
     let html = avatarSearchResults.map(a => renderAvatarCard(a, 'search')).join('');
     if (avatarSearchHasMore) {
         html += `<div style="grid-column:1/-1;text-align:center;margin-top:6px;">
-            <button class="btn-f" onclick="doAvatarSearch(true)">Load More</button>
+            <button class="vrcn-button" onclick="doAvatarSearch(true)">Load More</button>
         </div>`;
     }
     el.innerHTML = html;
@@ -123,7 +123,7 @@ function _avPlatformBadges(a) {
         hasQuest = real.some(p => p.platform === 'android');
     }
     if (!hasPC && !hasQuest) return '';
-    return `<div style="display:flex;gap:3px;">${hasPC ? '<span class="av-badge platform-pc">PC</span>' : ''}${hasQuest ? '<span class="av-badge platform-quest">Quest</span>' : ''}</div>`;
+    return `<div style="display:flex;gap:3px;">${hasPC ? '<span class="vrcn-badge platform-pc">PC</span>' : ''}${hasQuest ? '<span class="vrcn-badge platform-quest">Quest</span>' : ''}</div>`;
 }
 
 function renderAvatarCard(a, context) {
@@ -132,9 +132,9 @@ function renderAvatarCard(a, context) {
     const isPublic = context === 'search' || a.releaseStatus === 'public';
     const isFav = favAvatarsData.some(f => f.id === a.id);
     const statusBadge = isPublic
-        ? '<span class="av-badge public"><span class="msi" style="font-size:10px;">public</span> Public</span>'
-        : '<span class="av-badge private"><span class="msi" style="font-size:10px;">lock</span> Private</span>';
-    const activeBadge = isActive ? '<span class="av-badge current">Current</span>' : '';
+        ? '<span class="vrcn-badge accent"><span class="msi" style="font-size:10px;">public</span> Public</span>'
+        : '<span class="vrcn-badge private"><span class="msi" style="font-size:10px;">lock</span> Private</span>';
+    const activeBadge = isActive ? '<span class="vrcn-badge current">Current</span>' : '';
     const aid = jsq(a.id || '');
     const thumbStyle = thumb ? `background-image:url('${cssUrl(thumb)}')` : '';
     return `<div class="av-card ${isActive ? 'av-active' : ''}" onclick="selectAvatar('${aid}')">
@@ -148,7 +148,7 @@ function renderAvatarCard(a, context) {
                 <div class="av-name">${esc(a.name || 'Unnamed')}</div>
                 <div class="av-author">${esc(a.authorName || '')}</div>
             </div>
-            <button class="fd-btn fd-btn-fav${isFav ? ' active' : ''}" onclick="event.stopPropagation();openAvFavPicker('${aid}',this)" style="flex-shrink:0;font-size:11px;padding:4px 10px;">
+            <button class="vrcn-button-round${isFav ? ' active' : ''}" onclick="event.stopPropagation();openAvFavPicker('${aid}',this)" style="flex-shrink:0;margin-left:auto;">
                 <span class="msi" style="font-size:14px;">${isFav ? 'star' : 'star_outline'}</span>${isFav ? 'Unfavorite' : 'Favorite'}
             </button>
         </div>
@@ -249,7 +249,7 @@ function cancelEditAvatarGroupName() {
     document.getElementById('favAvatarGroupHeader').style.display = 'flex';
     const row = document.getElementById('favAvatarGroupRenameRow');
     if (row) row.style.display = 'none';
-    const saveBtn = document.querySelector('#favAvatarGroupRenameRow .myp-save-btn');
+    const saveBtn = document.querySelector('#favAvatarGroupRenameRow .vrcn-btn-primary');
     if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save'; }
 }
 
@@ -259,7 +259,7 @@ function saveAvatarGroupName() {
     const input = document.getElementById('favAvatarGroupNameInput');
     const newName = (input?.value || '').trim();
     if (!newName) return;
-    const saveBtn = document.querySelector('#favAvatarGroupRenameRow .myp-save-btn');
+    const saveBtn = document.querySelector('#favAvatarGroupRenameRow .vrcn-btn-primary');
     if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving...'; }
     sendToCS({ action: 'vrcUpdateFavoriteGroup', groupType: g.type, groupName: g.name, displayName: newName });
 }
@@ -281,11 +281,11 @@ function filterFavAvatars() {
         const isActive = a.id === currentAvatarId;
         const aid = jsq(a.id || '');
         const fid = jsq(a.favoriteId || '');
-        const activeBadge = isActive ? '<span class="av-badge current">Current</span>' : '';
+        const activeBadge = isActive ? '<span class="vrcn-badge current">Current</span>' : '';
         const isPublic = a.releaseStatus === 'public';
         const statusBadge = isPublic
-            ? '<span class="av-badge public"><span class="msi" style="font-size:10px;">public</span> Public</span>'
-            : '<span class="av-badge private"><span class="msi" style="font-size:10px;">lock</span> Private</span>';
+            ? '<span class="vrcn-badge accent"><span class="msi" style="font-size:10px;">public</span> Public</span>'
+            : '<span class="vrcn-badge private"><span class="msi" style="font-size:10px;">lock</span> Private</span>';
         return `<div class="av-card ${isActive ? 'av-active' : ''}" onclick="selectAvatar('${aid}')">
             <div class="av-thumb" style="${thumbStyle}">
                 <div class="av-thumb-overlay"></div>
@@ -297,7 +297,7 @@ function filterFavAvatars() {
                     <div class="av-name">${esc(a.name || 'Unnamed')}</div>
                     <div class="av-author">${esc(a.authorName || '')}</div>
                 </div>
-                <button class="fd-btn fd-btn-fav active" onclick="event.stopPropagation();removeAvatarFavorite('${aid}','${fid}')" style="flex-shrink:0;font-size:11px;padding:4px 10px;">
+                <button class="vrcn-button-round active" onclick="event.stopPropagation();removeAvatarFavorite('${aid}','${fid}')" style="flex-shrink:0;margin-left:auto;">
                     <span class="msi" style="font-size:14px;">star</span>Unfavorite
                 </button>
             </div>
@@ -310,8 +310,7 @@ let _avFavPickerAvatarId = null;
 
 function openAvFavPicker(avatarId, btnEl) {
     const entry = favAvatarsData.find(f => f.id === avatarId);
-    if (entry && !favAvatarGroups.length) {
-        // Already favorited but no groups loaded — just remove
+    if (entry) {
         removeAvatarFavorite(avatarId, entry.favoriteId);
         return;
     }
@@ -544,9 +543,9 @@ const ROSE_TAG_STYLES = {
 function _roseTagBadge(rawTag) {
     const key = rawTag.toUpperCase().replace(/\s+/g, '_');
     const s   = ROSE_TAG_STYLES[key];
-    if (!s) return `<span class="av-badge" style="background:var(--bg2);color:var(--tx2);font-size:9px;border:1px solid var(--brd-lt);">${esc(rawTag)}</span>`;
+    if (!s) return `<span class="vrcn-badge" style="background:var(--bg2);color:var(--tx2);border:1px solid var(--brd-lt);">${esc(rawTag)}</span>`;
     const bg = s.bg.startsWith('linear') ? s.bg : s.bg;
-    return `<span class="av-badge" style="background:${bg};color:${s.color};font-size:9px;border:${s.border};font-weight:700;">${esc(s.label)}</span>`;
+    return `<span class="vrcn-badge" style="background:${bg};color:${s.color};border:${s.border};">${esc(s.label)}</span>`;
 }
 
 function renderRoseAvatarCard(a) {
@@ -566,7 +565,7 @@ function renderRoseAvatarCard(a) {
     return `<div class="av-card" onclick="selectAvatar('${aid}')">
         <div class="av-thumb" style="${thumbStyle}">
             <div class="av-thumb-overlay"></div>
-            <div class="av-badges-bottom"><span class="av-badge public"><span class="msi" style="font-size:10px;">public</span> Public</span></div>
+            <div class="av-badges-bottom"><span class="vrcn-badge accent"><span class="msi" style="font-size:10px;">public</span> Public</span></div>
         </div>
         <div class="av-info" style="display:flex;align-items:center;gap:6px;">
             <div style="flex:1;min-width:0;">
@@ -576,7 +575,7 @@ function renderRoseAvatarCard(a) {
                     ${tags ? `<span style="display:inline-flex;gap:3px;flex-wrap:wrap;">${tags}</span>` : ''}
                 </div>
             </div>
-            <button class="fd-btn fd-btn-fav${isFav ? ' active' : ''}" onclick="event.stopPropagation();openAvFavPicker('${aid}',this)" style="flex-shrink:0;font-size:11px;padding:4px 10px;">
+            <button class="vrcn-button-round${isFav ? ' active' : ''}" onclick="event.stopPropagation();openAvFavPicker('${aid}',this)" style="flex-shrink:0;margin-left:auto;">
                 <span class="msi" style="font-size:14px;">${isFav ? 'star' : 'star_outline'}</span>${isFav ? 'Unfavorite' : 'Favorite'}
             </button>
         </div>
@@ -584,6 +583,9 @@ function renderRoseAvatarCard(a) {
 }
 
 /* === Avatar Detail Modal === */
+let _avDetailData = null;
+let _avEditTags   = [];
+
 function openAvatarDetail(avatarId) {
     const c = document.getElementById('avatarDetailContent');
     if (c) c.innerHTML = sk('detail');
@@ -593,28 +595,39 @@ function openAvatarDetail(avatarId) {
 
 function closeAvatarDetail() {
     document.getElementById('modalAvatarDetail').style.display = 'none';
+    _avDetailData = null;
 }
 
+const _avFieldIds = {
+    name:       { view: 'avfNameView',       edit: 'avfNameEdit'       },
+    desc:       { view: 'avfDescView',       edit: 'avfDescEdit'       },
+    visibility: { view: 'avfVisView',        edit: 'avfVisEdit'        },
+    tags:       { view: 'avfTagsView',       edit: 'avfTagsEdit'       },
+};
+let _avSavingField = '';
+
 function renderAvatarDetail(a) {
+    _avDetailData = a;
     const c = document.getElementById('avatarDetailContent');
     if (!c) return;
 
-    const thumb = a.thumbnailImageUrl || a.imageUrl || '';
+    const thumb  = a.thumbnailImageUrl || a.imageUrl || '';
+    const isOwn  = currentVrcUser && a.authorId === currentVrcUser.id;
+    const aid    = jsq(a.id || '');
 
     function platBadge(label, cssClass, icon, perf) {
         const perfHtml = perf ? `<span style="opacity:.8;font-weight:400;"> · ${esc(perf)}</span>` : '';
-        return `<span class="av-badge ${cssClass}"><span class="msi" style="font-size:10px;">${icon}</span>${label}${perfHtml}</span>`;
+        return `<span class="vrcn-badge ${cssClass}"><span class="msi" style="font-size:10px;">${icon}</span>${label}${perfHtml}</span>`;
     }
 
-    const isPublic = a.releaseStatus === 'public';
+    const isPublic    = a.releaseStatus === 'public';
     const statusBadge = isPublic
-        ? '<span class="av-badge public"><span class="msi" style="font-size:10px;">public</span> Public</span>'
-        : '<span class="av-badge private"><span class="msi" style="font-size:10px;">lock</span> Private</span>';
-
-    const pcBadge       = a.hasPC    ? platBadge('PC',    'platform-pc',    'computer', a.pcPerf)    : '';
-    const questBadge    = a.hasQuest ? platBadge('Quest', 'platform-quest', 'android',  a.questPerf) : '';
+        ? '<span class="vrcn-badge accent"><span class="msi" style="font-size:10px;">public</span> Public</span>'
+        : '<span class="vrcn-badge private"><span class="msi" style="font-size:10px;">lock</span> Private</span>';
+    const pcBadge       = a.hasPC      ? platBadge('PC',    'platform-pc',    'computer', a.pcPerf)    : '';
+    const questBadge    = a.hasQuest   ? platBadge('Quest', 'platform-quest', 'android',  a.questPerf) : '';
     const impostorBadge = a.hasImpostor
-        ? '<span class="av-badge" style="background:rgba(138,43,226,.18);color:#b47aff;"><span class="msi" style="font-size:10px;">smart_toy</span> Impostor</span>'
+        ? '<span class="vrcn-badge" style="background:rgba(138,43,226,.18);color:#b47aff;"><span class="msi" style="font-size:10px;">smart_toy</span> Impostor</span>'
         : '';
 
     function fmtDate(iso) {
@@ -635,26 +648,216 @@ function renderAvatarDetail(a) {
         a.version ? `<div class="fd-meta-row"><span class="fd-meta-label">Version</span><span>v${a.version}</span></div>` : '',
     ].join('');
 
-    const descHtml = a.description
-        ? `<div style="font-size:12px;color:var(--tx2);margin-bottom:14px;max-height:120px;overflow-y:auto;line-height:1.5;white-space:pre-wrap;">${esc(a.description)}</div>`
-        : '';
+    // Tags view
+    const tagsViewHtml = (a.tags && a.tags.length)
+        ? `<div class="fd-lang-tags">${a.tags.map(t => `<span class="vrcn-badge">${esc(t)}</span>`).join('')}</div>`
+        : `<div class="myp-empty">No tags</div>`;
 
     c.innerHTML = `
         ${thumb ? `<div class="fd-banner"><img src="${thumb}" onerror="this.parentElement.style.display='none'"><div class="fd-banner-fade"></div></div>` : ''}
-        <div class="fd-content${thumb ? ' fd-has-banner' : ''}" style="padding:20px;">
-            <h2 style="margin:0 0 4px;color:var(--tx0);font-size:18px;">${esc(a.name || 'Unnamed Avatar')}</h2>
-            <div style="font-size:12px;color:var(--tx3);margin-bottom:12px;">by ${authorHtml}</div>
-            <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px;">
-                ${statusBadge}${pcBadge}${questBadge}${impostorBadge}
+        <div class="fd-content${thumb ? ' fd-has-banner' : ''}">
+
+            <!-- Name -->
+            <div id="avfNameView" style="display:flex;align-items:center;gap:6px;padding:20px 20px 0;">
+                <h2 style="margin:0;color:var(--tx0);font-size:18px;flex:1;min-width:0;">${esc(a.name || 'Unnamed Avatar')}</h2>
+                ${isOwn ? `<button class="myp-edit-btn" onclick="editAvField('name')" title="Edit name"><span class="msi" style="font-size:14px;">edit</span></button>` : ''}
             </div>
-            <div style="margin-bottom:12px;">${idBadge(a.id)}</div>
-            ${descHtml}
-            <div class="fd-meta" style="margin-bottom:14px;">${metaRows}</div>
-            <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:14px;">
-                <button class="fd-btn fd-btn-join" onclick="selectAvatar('${jsq(a.id)}');closeAvatarDetail()">
-                    <span class="msi" style="font-size:14px;">checkroom</span> Use Avatar
-                </button>
-                <button class="fd-btn" onclick="closeAvatarDetail()">Close</button>
+            ${isOwn ? `<div id="avfNameEdit" style="display:none;padding:8px 20px 0;">
+                <input id="avNameInput" class="vrcn-edit-field" value="${esc(a.name || '')}" maxlength="64" style="width:100%;">
+                <div class="myp-edit-actions">
+                    <button class="vrcn-button" onclick="cancelAvField('name')">Cancel</button>
+                    <button class="vrcn-button vrcn-btn-primary" onclick="saveAvField('name','${aid}')">Save</button>
+                </div>
+            </div>` : ''}
+
+            <!-- Author + badges -->
+            <div style="padding:4px 20px 12px;">
+                <div style="font-size:12px;color:var(--tx3);margin-bottom:10px;">by ${authorHtml}</div>
+                <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;">
+                    ${statusBadge}${pcBadge}${questBadge}${impostorBadge}
+                </div>
+                ${idBadge(a.id)}
+            </div>
+
+            <div style="padding:0 20px 20px;">
+                <!-- Description -->
+                <div class="myp-section">
+                    <div class="myp-section-header">
+                        <span class="myp-section-title">Description</span>
+                        ${isOwn ? `<button class="myp-edit-btn" onclick="editAvField('desc')"><span class="msi" style="font-size:14px;">edit</span></button>` : ''}
+                    </div>
+                    <div id="avfDescView">
+                        ${a.description ? `<div class="fd-bio">${esc(a.description)}</div>` : '<div class="myp-empty">No description</div>'}
+                    </div>
+                    ${isOwn ? `<div id="avfDescEdit" style="display:none;">
+                        <textarea id="avDescInput" class="myp-textarea" rows="4" maxlength="2000" placeholder="Avatar description...">${esc(a.description||'')}</textarea>
+                        <div class="myp-edit-actions">
+                            <button class="vrcn-button" onclick="cancelAvField('desc')">Cancel</button>
+                            <button class="vrcn-button vrcn-btn-primary" onclick="saveAvField('desc','${aid}')">Save</button>
+                        </div>
+                    </div>` : ''}
+                </div>
+
+                <!-- Visibility -->
+                <div class="myp-section">
+                    <div class="myp-section-header">
+                        <span class="myp-section-title">Visibility</span>
+                        ${isOwn ? `<button class="myp-edit-btn" onclick="editAvField('visibility')"><span class="msi" style="font-size:14px;">edit</span></button>` : ''}
+                    </div>
+                    <div id="avfVisView">${statusBadge}</div>
+                    ${isOwn ? `<div id="avfVisEdit" style="display:none;">
+                        <div style="display:flex;gap:6px;margin-bottom:8px;">
+                            <button id="avVisPublicBtn" class="vrcn-button-round${isPublic ? ' active' : ''}" onclick="avVisToggle('public',this)">
+                                <span class="msi" style="font-size:14px;">public</span> Public
+                            </button>
+                            <button id="avVisPrivateBtn" class="vrcn-button-round${!isPublic ? ' active' : ''}" onclick="avVisToggle('private',this)">
+                                <span class="msi" style="font-size:14px;">lock</span> Private
+                            </button>
+                        </div>
+                        <div class="myp-edit-actions">
+                            <button class="vrcn-button" onclick="cancelAvField('visibility')">Cancel</button>
+                            <button class="vrcn-button vrcn-btn-primary" onclick="saveAvField('visibility','${aid}')">Save</button>
+                        </div>
+                    </div>` : ''}
+                </div>
+
+                <!-- Tags -->
+                <div class="myp-section">
+                    <div class="myp-section-header">
+                        <span class="myp-section-title">Tags</span>
+                        ${isOwn ? `<button class="myp-edit-btn" onclick="editAvField('tags')"><span class="msi" style="font-size:14px;">edit</span></button>` : ''}
+                    </div>
+                    <div id="avfTagsView">${tagsViewHtml}</div>
+                    ${isOwn ? `<div id="avfTagsEdit" style="display:none;">
+                        <div id="avTagsChips" class="myp-lang-chips" style="margin-bottom:6px;"></div>
+                        <div style="display:flex;gap:6px;margin-bottom:8px;">
+                            <input id="avTagInput" class="vrcn-edit-field" placeholder="Add tag…" style="flex:1;"
+                                onkeydown="if(event.key==='Enter'){event.preventDefault();avAddTag();}">
+                            <button class="myp-add-lang-btn" onclick="avAddTag()"><span class="msi" style="font-size:15px;">add</span></button>
+                        </div>
+                        <div class="myp-edit-actions">
+                            <button class="vrcn-button" onclick="cancelAvField('tags')">Cancel</button>
+                            <button class="vrcn-button vrcn-btn-primary" onclick="saveAvField('tags','${aid}')">Save</button>
+                        </div>
+                    </div>` : ''}
+                </div>
+
+                <!-- Meta -->
+                <div class="fd-meta" style="margin-bottom:14px;">${metaRows}</div>
+
+                <!-- Actions -->
+                <div style="display:flex;justify-content:flex-end;gap:6px;">
+                    <button class="vrcn-button-round vrcn-btn-join" onclick="selectAvatar('${aid}');closeAvatarDetail()">
+                        <span class="msi" style="font-size:14px;">checkroom</span> Use Avatar
+                    </button>
+                    <button class="vrcn-button-round" onclick="closeAvatarDetail()">Close</button>
+                </div>
             </div>
         </div>`;
+}
+
+/* === Avatar inline edit === */
+let _avVisState = 'public';
+
+function editAvField(field) {
+    Object.keys(_avFieldIds).forEach(f => {
+        if (f === field) return;
+        const ids = _avFieldIds[f];
+        const v = document.getElementById(ids.view); if (v) v.style.display = '';
+        const e = document.getElementById(ids.edit); if (e) e.style.display = 'none';
+    });
+    const ids = _avFieldIds[field];
+    if (!ids) return;
+    const v = document.getElementById(ids.view); if (v) v.style.display = 'none';
+    const e = document.getElementById(ids.edit); if (e) e.style.display = '';
+
+    if (field === 'name') {
+        document.getElementById('avNameInput')?.focus();
+    } else if (field === 'desc') {
+        document.getElementById('avDescInput')?.focus();
+    } else if (field === 'visibility') {
+        _avVisState = (_avDetailData?.releaseStatus === 'public') ? 'public' : 'private';
+    } else if (field === 'tags') {
+        _avEditTags = [...(_avDetailData?.tags || [])];
+        avRenderTagChips();
+        document.getElementById('avTagInput')?.focus();
+    }
+}
+
+function cancelAvField(field) {
+    const ids = _avFieldIds[field];
+    if (!ids) return;
+    const v = document.getElementById(ids.view); if (v) v.style.display = '';
+    const e = document.getElementById(ids.edit); if (e) e.style.display = 'none';
+}
+
+function saveAvField(field, avatarId) {
+    const a = _avDetailData;
+    if (!a) return;
+    _avSavingField = field;
+    const ids = _avFieldIds[field];
+    const saveBtn = document.querySelector(`#${ids.edit} .vrcn-btn-primary`);
+    if (saveBtn) saveBtn.disabled = true;
+
+    // Build payload — always send all four fields, only the edited one changes
+    const name          = field === 'name'       ? (document.getElementById('avNameInput')?.value.trim() || '') : (a.name || '');
+    const description   = field === 'desc'       ? (document.getElementById('avDescInput')?.value ?? '') : (a.description || '');
+    const releaseStatus = field === 'visibility' ? _avVisState : (a.releaseStatus || 'private');
+    const tags          = field === 'tags'       ? [..._avEditTags] : (a.tags || []);
+
+    sendToCS({ action: 'vrcUpdateAvatar', avatarId, name, description, releaseStatus, tags });
+}
+
+function avVisToggle(state, btn) {
+    _avVisState = state;
+    document.querySelectorAll('#avVisPublicBtn,#avVisPrivateBtn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+
+function avRenderTagChips() {
+    const container = document.getElementById('avTagsChips');
+    if (!container) return;
+    container.innerHTML = _avEditTags.length
+        ? _avEditTags.map((t, i) =>
+            `<span class="myp-lang-chip" data-idx="${i}">${esc(t)}<span class="myp-lang-remove" onclick="avRemoveTag(${i})">×</span></span>`
+          ).join('')
+        : `<div class="myp-empty">No tags</div>`;
+}
+
+function avAddTag() {
+    const inp = document.getElementById('avTagInput');
+    if (!inp) return;
+    const val = inp.value.trim();
+    if (val && !_avEditTags.includes(val)) {
+        _avEditTags.push(val);
+        avRenderTagChips();
+    }
+    inp.value = '';
+    inp.focus();
+}
+
+function avRemoveTag(idx) {
+    _avEditTags.splice(idx, 1);
+    avRenderTagChips();
+}
+
+function onAvatarUpdateResult(data) {
+    const fieldLabels = { name: 'Avatar name', desc: 'Description', visibility: 'Visibility', tags: 'Tags' };
+    if (data.ok) {
+        if (_avDetailData) {
+            if (data.name          != null) _avDetailData.name          = data.name;
+            if (data.description   != null) _avDetailData.description   = data.description;
+            if (data.releaseStatus != null) _avDetailData.releaseStatus = data.releaseStatus;
+            if (data.tags          != null) _avDetailData.tags          = data.tags;
+        }
+        const label = fieldLabels[_avSavingField] || 'Avatar';
+        showToast(true, `${label} saved`);
+        renderAvatarDetail(_avDetailData);
+        if (avatarFilter === 'own') filterOwnAvatars();
+    } else {
+        showToast(false, data.error || 'Update failed');
+        const ids = _avSavingField ? _avFieldIds[_avSavingField] : null;
+        const saveBtn = ids ? document.querySelector(`#${ids.edit} .vrcn-btn-primary`) : null;
+        if (saveBtn) saveBtn.disabled = false;
+    }
 }

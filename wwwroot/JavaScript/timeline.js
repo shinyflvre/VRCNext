@@ -5,10 +5,26 @@
 let _tlScrollTarget = null;
 
 // Personal Timeline pagination state
-let tlOffset = 0, tlLoading = false, tlHasMore = false, tlObserver = null;
+let tlOffset = 0, tlLoading = false, tlHasMore = false;
+// Total count from server (for accurate paginator)
+let tlTotal = 0;
+// Timeline view: how many events to render (Load More adds 100)
+let tlRenderedCount = 100;
+// List view: current page (0-indexed, 100 per page)
+let tlListPage = 0;
+// When set, next renderTimeline call replaces timelineEvents with the fetched page
+let _tlPendingListPage = null;
 
 // Friends Timeline pagination state
-let ftlOffset = 0, ftlLoading = false, ftlHasMore = false, ftlObserver = null;
+let ftlOffset = 0, ftlLoading = false, ftlHasMore = false;
+// Total count from server (for accurate paginator)
+let ftlTotal = 0;
+// Timeline view: how many events to render (Load More adds 100)
+let ftlRenderedCount = 100;
+// List view: current page (0-indexed, 100 per page)
+let ftlListPage = 0;
+// When set, next renderFriendTimeline call replaces friendTimelineEvents with the fetched page
+let _ftlPendingListPage = null;
 
 // Active date filter (ISO string like "2026-03-01", empty = no filter)
 let tlDateFilter = '';
@@ -18,18 +34,22 @@ let tlTabInited  = false;
 let tlViewMode = localStorage.getItem('tlViewMode') || 'timeline';
 
 // Server-side search state – Personal Timeline
-let _tlSearchTimer = null;
-let _tlSearchMode  = false;
-let _tlSearchEvents = [];
+let _tlSearchTimer  = null;
+let _tlSearchMode   = false;
+let _tlSearchEvents = [];   // current search page's events (max 100)
 let _tlSearchQuery  = '';
 let _tlSearchDate   = '';
+let _tlSearchTotal  = 0;    // real total count from DB (COUNT query)
+let _tlSearchPage   = 0;    // current search page (0-indexed)
 
 // Server-side search state – Friends Timeline
-let _ftlSearchTimer = null;
-let _ftlSearchMode  = false;
+let _ftlSearchTimer  = null;
+let _ftlSearchMode   = false;
 let _ftlSearchEvents = [];
 let _ftlSearchQuery  = '';
 let _ftlSearchDate   = '';
+let _ftlSearchTotal  = 0;
+let _ftlSearchPage   = 0;
 
 // Filter button map
 const TL_FILTER_IDS = {
@@ -39,6 +59,8 @@ const TL_FILTER_IDS = {
     first_meet:    'tlFMeet',
     meet_again:    'tlFMeetAgain',
     notification:  'tlFNotif',
+    avatar_switch: 'tlFAvatar',
+    video_url:     'tlFUrl',
 };
 
 // Type colours
@@ -48,6 +70,8 @@ const TL_TYPE_COLOR = {
     first_meet:    'var(--cyan)',
     meet_again:    '#AB47BC',
     notification:  'var(--warn)',
+    avatar_switch: '#FF7043',
+    video_url:     '#29B6F6',
 };
 
 // Type labels and icons
@@ -57,6 +81,8 @@ const TL_TYPE_META = {
     first_meet:    { icon: 'person_add',     label: 'First Meet'    },
     meet_again:    { icon: 'person_check',   label: 'Meet Again'    },
     notification:  { icon: 'notifications',  label: 'Notification'  },
+    avatar_switch: { icon: 'checkroom',      label: 'Avatar Switch' },
+    video_url:     { icon: 'link',           label: 'URL'           },
 };
 
 // Notification type labels
@@ -107,6 +133,13 @@ function setTlMode(mode) {
     const ff = document.getElementById('tlFriendsFilters');
     if (pf) pf.style.display = mode === 'personal' ? '' : 'none';
     if (ff) ff.style.display = mode === 'friends'  ? '' : 'none';
+    _tlSearchMode = false; _tlSearchQuery = ''; _tlSearchDate = '';
+    _ftlSearchMode = false; _ftlSearchQuery = ''; _ftlSearchDate = '';
+    const activeSearch = (document.getElementById('tlSearchInput')?.value ?? '').trim();
+    if (activeSearch) {
+        if (mode === 'friends') { filterFriendTimeline(); return; }
+        else { filterTimeline(); return; }
+    }
     refreshTimeline();
 }
 
@@ -139,30 +172,52 @@ function refreshTimeline() {
         filterTimeline();
         return;
     }
-    timelineEvents = [];
-    tlOffset  = 0;
-    tlHasMore = false;
-    tlLoading = false;
+    timelineEvents  = [];
+    tlOffset        = 0;
+    tlHasMore       = false;
+    tlLoading       = false;
+    tlRenderedCount = 100;
+    tlListPage      = 0;
+    tlTotal         = 0;
     // If search is active, keep showing existing results during refresh instead of a loading flash
     const activeSearch = (document.getElementById('tlSearchInput')?.value ?? '').trim();
-    disconnectTlObserver();
     const c = document.getElementById('tlContainer');
     if (c && !(_tlSearchMode && activeSearch)) {
         c.innerHTML = '<div class="tl-loading"><div class="tl-sk-line"></div><div class="tl-sk-line tl-sk-short"></div><div class="tl-sk-line"></div><div class="tl-sk-line tl-sk-short"></div><div class="tl-sk-line"></div></div>';
     }
-    if (tlDateFilter) sendToCS({ action: 'getTimelineByDate', date: tlDateFilter });
-    else              sendToCS({ action: 'getTimeline' });
+    const typeParam = tlFilter === 'all' ? '' : tlFilter;
+    if (tlDateFilter) sendToCS({ action: 'getTimelineByDate', date: tlDateFilter, type: typeParam });
+    else              sendToCS({ action: 'getTimeline', type: typeParam });
 }
 
 function renderTimeline(payload) {
     const events  = Array.isArray(payload) ? payload : (payload?.events  ?? []);
     const hasMore = Array.isArray(payload) ? false   : (payload?.hasMore ?? false);
     const offset  = Array.isArray(payload) ? 0       : (payload?.offset  ?? 0);
+    const total   = Array.isArray(payload) ? 0       : (payload?.total   ?? 0);
 
-    if (offset === 0) {
-        timelineEvents = events;
+    // Discard stale response if filter was switched while this request was in-flight
+    if (!Array.isArray(payload) && payload?.type !== undefined) {
+        const expectedType = tlFilter === 'all' ? '' : tlFilter;
+        if (payload.type !== expectedType) return;
+    }
+
+    if (total > 0) tlTotal = total;
+
+    if (_tlPendingListPage !== null) {
+        // Direct page navigation: replace current events with this page's data
+        timelineEvents     = events;
+        tlListPage         = _tlPendingListPage;
+        tlRenderedCount    = events.length;
+        _tlPendingListPage = null;
+    } else if (offset === 0) {
+        timelineEvents  = events;
+        tlRenderedCount = 100;
+        tlListPage      = 0;
     } else {
-        timelineEvents = timelineEvents.concat(events);
+        // Load More append (timeline/card view)
+        timelineEvents  = timelineEvents.concat(events);
+        tlRenderedCount += events.length;
     }
     tlOffset  = offset + events.length;
     tlHasMore = hasMore;
@@ -173,6 +228,8 @@ function renderTimeline(payload) {
 
 function handleTimelineEvent(ev) {
     if (!ev || !ev.id) return;
+    // If a type filter is active, only inject events that match it to avoid polluting the view
+    if (tlFilter !== 'all' && ev.type !== tlFilter) return;
     const idx = timelineEvents.findIndex(e => e.id === ev.id);
     if (idx >= 0) timelineEvents[idx] = ev;
     else timelineEvents.unshift(ev);
@@ -184,11 +241,26 @@ function handleTimelineEvent(ev) {
 }
 
 function setTlFilter(f) {
-    tlFilter = f;
+    tlFilter        = f;
+    tlListPage      = 0;
+    tlRenderedCount = 100;
+    tlTotal         = 0;
     document.querySelectorAll('#tlPersonalFilters .sub-tab-btn').forEach(b => b.classList.remove('active'));
     const btn = document.getElementById(TL_FILTER_IDS[f]);
     if (btn) btn.classList.add('active');
-    filterTimeline();
+    // Reset and re-fetch from server with type filter (server-side filtering)
+    timelineEvents = [];
+    tlOffset   = 0;
+    tlHasMore  = false;
+    tlLoading  = false;
+    _tlSearchMode = false; _tlSearchQuery = ''; _tlSearchDate = '';
+    const activeSearch = (document.getElementById('tlSearchInput')?.value ?? '').trim();
+    if (activeSearch) { filterTimeline(); return; }
+    const c = document.getElementById('tlContainer');
+    if (c) c.innerHTML = '<div class="tl-loading"><div class="tl-sk-line"></div><div class="tl-sk-line tl-sk-short"></div><div class="tl-sk-line"></div><div class="tl-sk-line tl-sk-short"></div><div class="tl-sk-line"></div></div>';
+    const typeParam = f === 'all' ? '' : f;
+    if (tlDateFilter) sendToCS({ action: 'getTimelineByDate', date: tlDateFilter, type: typeParam });
+    else              sendToCS({ action: 'getTimeline', type: typeParam });
 }
 
 function filterTimeline() {
@@ -203,15 +275,18 @@ function filterTimeline() {
             return;
         }
         // Query or date changed → clear stale state, show loading, debounce
-        _tlSearchMode  = false;
-        _tlSearchQuery = '';
-        _tlSearchDate  = '';
-        disconnectTlObserver();
+        _tlSearchMode   = false;
+        _tlSearchQuery  = '';
+        _tlSearchDate   = '';
+        tlListPage      = 0;
+        tlRenderedCount = 100;
         const c = document.getElementById('tlContainer');
         if (c) c.innerHTML = '<div class="tl-loading"><div class="tl-sk-line"></div><div class="tl-sk-line tl-sk-short"></div><div class="tl-sk-line"></div></div>';
+        _setTlPaginator('');
         clearTimeout(_tlSearchTimer);
         _tlSearchTimer = setTimeout(() => {
-            sendToCS({ action: 'searchTimeline', query: search, date: tlDateFilter });
+            const typeParam = tlFilter === 'all' ? '' : tlFilter;
+            sendToCS({ action: 'searchTimeline', query: search, date: tlDateFilter, offset: 0, type: typeParam });
         }, 300);
         return;
     }
@@ -220,30 +295,29 @@ function filterTimeline() {
     _tlSearchMode   = false;
     _tlSearchEvents = [];
 
-    let filtered = timelineEvents;
-    if (tlFilter !== 'all')
-        filtered = filtered.filter(e => e.type === tlFilter);
-
     const c = document.getElementById('tlContainer');
     if (!c) return;
 
-    if (!filtered.length && !tlLoading) {
-        c.innerHTML = '<div class="empty-msg">No timeline events match your filter.</div>';
+    if (!timelineEvents.length && !tlLoading) {
+        // Events cleared (e.g. filter switched while searching) — reload from server
+        refreshTimeline();
         return;
     }
 
     const prevScrollTop = c.scrollTop;
-    let html = tlViewMode === 'list' ? buildPersonalListHtml(filtered) : buildTimelineHtml(filtered);
 
-    if (tlHasMore) {
-        html += '<div id="tlSentinel" style="height:40px;display:flex;align-items:center;justify-content:center;">'
-              + '<span style="font-size:11px;color:var(--tx3);">Loading more…</span></div>';
-    }
+    // Both views use server-side pagination — timelineEvents holds current page only
+    const totalPages = tlTotal > 0
+        ? Math.ceil(tlTotal / 100)
+        : Math.max(tlListPage + 1, 1) + (tlHasMore ? 1 : 0);
 
-    c.innerHTML = html;
+    const contentHtml = tlViewMode === 'list'
+        ? buildPersonalListHtml(timelineEvents)
+        : buildTimelineHtml(timelineEvents);
+    c.innerHTML = contentHtml;
+    _setTlPaginator(buildTlPagination(tlListPage, totalPages, tlHasMore));
+
     if (prevScrollTop > 0) c.scrollTop = prevScrollTop;
-
-    if (tlHasMore) setupTlObserver(c);
 
     // Scroll to and highlight a specific card if requested (e.g. from friend detail preview).
     // Only consume _tlScrollTarget if the card is actually in the newly-built DOM.
@@ -268,18 +342,21 @@ function _renderTlSearchResults(search) {
     const c = document.getElementById('tlContainer');
     if (!c) return;
 
-    // Apply type filter client-side on the server results
-    let events = _tlSearchEvents;
-    if (tlFilter !== 'all') events = events.filter(e => e.type === tlFilter);
+    const events = _tlSearchEvents; // already type-filtered by server (type sent in request)
 
     if (!events.length) {
         c.innerHTML = `<div class="empty-msg">No results for "<b>${esc(search)}</b>".</div>`;
+        _setTlPaginator('');
         return;
     }
 
+    const total      = _tlSearchTotal;
+    const totalPages = total > 0 ? Math.ceil(total / 100) : 1;
     const banner = `<div style="padding:6px 12px;font-size:11px;color:var(--tx3);border-bottom:1px solid var(--brd);">`
-        + `${events.length} result${events.length !== 1 ? 's' : ''} for "<b>${esc(search)}</b>"</div>`;
-    c.innerHTML = banner + (tlViewMode === 'list' ? buildPersonalListHtml(events) : buildTimelineHtml(events));
+        + `${total.toLocaleString()} result${total !== 1 ? 's' : ''} for "<b>${esc(search)}</b>"</div>`;
+    let html = banner + (tlViewMode === 'list' ? buildPersonalListHtml(events) : buildTimelineHtml(events));
+    c.innerHTML = html;
+    _setTlPaginator(buildSearchPagination(_tlSearchPage, totalPages, 'tlGoSearchPage'));
 }
 
 // Called when backend delivers search results
@@ -289,33 +366,109 @@ function handleTlSearchResults(payload) {
     const currentSearch = (document.getElementById('tlSearchInput')?.value ?? '').toLowerCase().trim();
     if (q !== currentSearch) return;
     if ((payload.date || '') !== tlDateFilter) return;
+    const offset = payload.offset ?? 0;
+    // Always replace — each page nav fetches the exact page, no appending
+    _tlSearchEvents = payload.events || [];
+    _tlSearchTotal  = payload.total ?? 0;
+    _tlSearchPage   = Math.floor(offset / 100);
     _tlSearchMode   = true;
     _tlSearchQuery  = q;
     _tlSearchDate   = payload.date || '';
-    _tlSearchEvents = payload.events || [];
     filterTimeline();
+}
+
+function tlGoSearchPage(page) {
+    if (page < 0) return;
+    const typeParam = tlFilter === 'all' ? '' : tlFilter;
+    sendToCS({ action: 'searchTimeline', query: _tlSearchQuery, date: _tlSearchDate, offset: page * 100, type: typeParam });
+}
+
+function buildSearchPagination(page, totalPages, onPageFn) {
+    if (totalPages <= 1) return '';
+    const delta = 3;
+    const range = [];
+    for (let i = 0; i < totalPages; i++) {
+        if (i === 0 || i === totalPages - 1 || (i >= page - delta && i <= page + delta))
+            range.push(i);
+    }
+    let btns = '';
+    let prev = -1;
+    range.forEach(i => {
+        if (prev !== -1 && i > prev + 1) btns += `<span style="padding:0 4px;color:var(--tx3);">…</span>`;
+        const active = i === page ? 'style="background:var(--accent);color:#fff;"' : '';
+        btns += `<button class="vrcn-button" ${active} onclick="${onPageFn}(${i})">${i + 1}</button>`;
+        prev = i;
+    });
+    const prevDis = page === 0 ? 'disabled' : '';
+    const nextDis = page >= totalPages - 1 ? 'disabled' : '';
+    return `<button class="vrcn-button" ${prevDis} onclick="${onPageFn}(${page - 1})"><span class="msi" style="font-size:16px;">chevron_left</span></button>
+        ${btns}
+        <button class="vrcn-button" ${nextDis} onclick="${onPageFn}(${page + 1})"><span class="msi" style="font-size:16px;">chevron_right</span></button>`;
 }
 
 // Personal Timeline pagination helpers
 
 function loadMoreTimeline() {
-    if (tlLoading || !tlHasMore) return;
+    if (tlLoading) return;
+    // Drain already-loaded pool first (timeline/card view)
+    if (timelineEvents.length > tlRenderedCount) {
+        tlRenderedCount += 100;
+        filterTimeline();
+        return;
+    }
+    if (!tlHasMore) return;
     tlLoading = true;
-    sendToCS({ action: 'getTimelinePage', offset: tlOffset });
+    const btn = document.getElementById('tlLoadMoreBtn');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="msi" style="font-size:16px;">hourglass_empty</span> Loading…'; }
+    sendToCS({ action: 'getTimelinePage', offset: tlOffset, type: tlFilter === 'all' ? '' : tlFilter });
 }
 
-function setupTlObserver(container) {
-    disconnectTlObserver();
-    const sentinel = document.getElementById('tlSentinel');
-    if (!sentinel) return;
-    tlObserver = new IntersectionObserver(entries => {
-        if (entries[0].isIntersecting && !tlLoading && tlHasMore) loadMoreTimeline();
-    }, { root: container, threshold: 0.1 });
-    tlObserver.observe(sentinel);
+function _setTlPaginator(html) {
+    const bar = document.getElementById('tlPaginatorBar');
+    if (bar) bar.innerHTML = html;
 }
 
-function disconnectTlObserver() {
-    if (tlObserver) { tlObserver.disconnect(); tlObserver = null; }
+function buildTlPagination(page, totalPages, hasMore) {
+    if (totalPages <= 1 && !hasMore) return '';
+    const delta = 3;
+    const range = [];
+    for (let i = 0; i < totalPages; i++) {
+        if (i === 0 || i === totalPages - 1 || (i >= page - delta && i <= page + delta))
+            range.push(i);
+    }
+    let btns = '';
+    let prev = -1;
+    range.forEach(i => {
+        if (prev !== -1 && i > prev + 1) btns += `<span style="padding:0 4px;color:var(--tx3);">…</span>`;
+        const active = i === page ? 'style="background:var(--accent);color:#fff;"' : '';
+        btns += `<button class="vrcn-button" ${active} onclick="tlGoPage(${i})">${i + 1}</button>`;
+        prev = i;
+    });
+    const prevDis = page === 0 ? 'disabled' : '';
+    const nextDis = (page >= totalPages - 1 && !hasMore) ? 'disabled' : '';
+    const countInfo = tlTotal > 0 ? `<span style="font-size:11px;color:var(--tx3);padding:0 8px;">${tlTotal.toLocaleString()} total</span>` : '';
+    return `<button class="vrcn-button" ${prevDis} onclick="tlGoPage(${page - 1})"><span class="msi" style="font-size:16px;">chevron_left</span></button>
+        ${btns}
+        <button class="vrcn-button" ${nextDis} onclick="tlGoPage(${page + 1})"><span class="msi" style="font-size:16px;">chevron_right</span></button>
+        ${countInfo}`;
+}
+
+function tlGoPage(page) {
+    if (page < 0) return;
+    const totalPages = tlTotal > 0 ? Math.ceil(tlTotal / 100) : null;
+    if (totalPages !== null && page >= totalPages) return;
+    if (page === tlListPage && _tlPendingListPage === null && !tlLoading) {
+        // Already on this page — just scroll top
+        const c = document.getElementById('tlContainer');
+        if (c) c.scrollTop = 0;
+        return;
+    }
+    // Fetch this page directly from DB at absolute offset
+    _tlPendingListPage = page;
+    tlLoading = true;
+    sendToCS({ action: 'getTimelinePage', offset: page * 100, type: tlFilter === 'all' ? '' : tlFilter });
+    const c = document.getElementById('tlContainer');
+    if (c) c.scrollTop = 0;
 }
 
 // Date filter
@@ -447,17 +600,25 @@ function applyTlDateFilter(dateStr) {
     if (btn)   btn.classList.add('dp-active');
 
     // Reset state and reload for current mode
+    const activeSearch = (document.getElementById('tlSearchInput')?.value ?? '').trim();
     if (tlMode === 'friends') {
         friendTimelineEvents = [];
         ftlOffset = 0; ftlHasMore = false; ftlLoading = false;
-        disconnectFtlObserver();
+        ftlListPage = 0; ftlRenderedCount = 100;
+        _ftlSearchMode = false; _ftlSearchQuery = ''; _ftlSearchDate = '';
+        if (activeSearch) { filterFriendTimeline(); return; }
         const c = document.getElementById('tlContainer');
         if (c) c.innerHTML = '<div class="tl-loading"><div class="tl-sk-line"></div><div class="tl-sk-line tl-sk-short"></div><div class="tl-sk-line"></div><div class="tl-sk-line tl-sk-short"></div><div class="tl-sk-line"></div></div>';
         sendToCS({ action: 'getFriendTimelineByDate', date: dateStr, type: ftFilter === 'all' ? '' : ftFilter });
     } else {
-        timelineEvents = [];
-        tlOffset = 0; tlHasMore = false; tlLoading = false;
-        disconnectTlObserver();
+        timelineEvents  = [];
+        tlOffset        = 0;
+        tlHasMore       = false;
+        tlLoading       = false;
+        tlRenderedCount = 100;
+        tlListPage      = 0;
+        _tlSearchMode = false; _tlSearchQuery = ''; _tlSearchDate = '';
+        if (activeSearch) { filterTimeline(); return; }
         const c = document.getElementById('tlContainer');
         if (c) c.innerHTML = '<div class="tl-loading"><div class="tl-sk-line"></div><div class="tl-sk-line tl-sk-short"></div><div class="tl-sk-line"></div><div class="tl-sk-line tl-sk-short"></div><div class="tl-sk-line"></div></div>';
         sendToCS({ action: 'getTimelineByDate', date: dateStr });
@@ -540,9 +701,11 @@ function renderTlCard(ev) {
     const color = TL_TYPE_COLOR[ev.type] ?? 'var(--tx3)';
     const ei    = jsq(ev.id);
 
+    const meetCount = ev.type === 'meet_again' ? (ev.meetCount || 0) : 0;
+    const typeLabel = meetCount > 0 ? `${meta.label} (${meetCount})` : meta.label;
     const header = `<div class="tl-card-header">
         <span class="msi tl-type-icon" style="color:${color}">${meta.icon}</span>
-        <span class="tl-type-label">${esc(meta.label)}</span>
+        <span class="tl-type-label">${esc(typeLabel)}</span>
         <div class="tl-time-col"><span class="tl-time">${esc(time)}</span><span class="tl-date">${esc(date)}</span></div>
     </div>`;
 
@@ -553,6 +716,8 @@ function renderTlCard(ev) {
         case 'first_meet':    body = renderTlMeetBody(ev);      break;
         case 'meet_again':    body = renderTlMeetAgainBody(ev); break;
         case 'notification':  body = renderTlNotifBody(ev);     break;
+        case 'avatar_switch': body = renderTlAvatarBody(ev);    break;
+        case 'video_url':     body = renderTlUrlBody(ev);       break;
     }
 
     return `<div class="tl-card" data-tlid="${esc(ev.id)}" onclick="openTlDetail('${ei}')">${header}${body}</div>`;
@@ -615,6 +780,45 @@ function renderTlNotifBody(ev) {
     return `<div class="tl-card-body">${av}<div class="tl-card-info"><div class="tl-main-label">${esc(ev.senderName || typeLabel)}</div><div class="tl-type-chip">${esc(typeLabel)}</div>${titleCtx}${sub}</div></div>`;
 }
 
+// Platform detection for URLs
+function _urlPlatform(url) {
+    try {
+        const h = new URL(url).hostname.replace(/^www\./, '');
+        if (h.includes('youtube.com') || h.includes('youtu.be'))  return { name: 'YouTube',    color: '#FF0000', favicon: 'youtube.com'    };
+        if (h.includes('soundcloud.com'))                          return { name: 'SoundCloud', color: '#FF5500', favicon: 'soundcloud.com' };
+        if (h.includes('twitch.tv'))                               return { name: 'Twitch',     color: '#9146FF', favicon: 'twitch.tv'      };
+        if (h.includes('spotify.com'))                             return { name: 'Spotify',    color: '#1DB954', favicon: 'open.spotify.com' };
+        if (h.includes('nicovideo.jp'))                            return { name: 'NicoNico',   color: '#E6001F', favicon: 'nicovideo.jp'   };
+        if (h.includes('bilibili.com'))                            return { name: 'Bilibili',   color: '#00A1D6', favicon: 'bilibili.com'   };
+        if (h.includes('vimeo.com'))                               return { name: 'Vimeo',      color: '#1AB7EA', favicon: 'vimeo.com'      };
+        return { name: h, color: '#29B6F6', favicon: h };
+    } catch { return { name: 'URL', color: '#29B6F6', favicon: null }; }
+}
+
+function _urlFaviconHtml(plat) {
+    if (!plat.favicon) return `<span class="msi" style="font-size:22px;color:${plat.color};">link</span>`;
+    return `<img src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(plat.favicon)}&sz=64"
+        style="width:32px;height:32px;border-radius:6px;object-fit:contain;"
+        onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'msi',textContent:'link',style:'font-size:22px;color:${plat.color}'}))">`;
+}
+
+function renderTlUrlBody(ev) {
+    const url  = ev.message || '';
+    const plat = _urlPlatform(url);
+    const icon = `<div class="tl-av" style="display:flex;align-items:center;justify-content:center;background:var(--bg2);">${_urlFaviconHtml(plat)}</div>`;
+    const label = plat.name !== new URL(url).hostname.replace(/^www\./,'') ? plat.name : '';
+    const sub  = ev.worldName ? `<div class="tl-sub-label">${esc(ev.worldName)}</div>` : '';
+    const disp = url.length > 60 ? url.slice(0, 60) + '…' : url;
+    return `<div class="tl-card-body">${icon}<div class="tl-card-info"><div class="tl-main-label">${label ? esc(label) : esc(disp)}</div>${label ? `<div class="tl-sub-label" style="word-break:break-all;">${esc(disp)}</div>` : ''}${sub}</div></div>`;
+}
+
+function renderTlAvatarBody(ev) {
+    const thumb = ev.userImage
+        ? `<div class="tl-av" style="background-image:url('${cssUrl(ev.userImage)}')"></div>`
+        : `<div class="tl-av tl-av-letter"><span class="msi" style="font-size:18px;">checkroom</span></div>`;
+    return `<div class="tl-card-body">${thumb}<div class="tl-card-info"><div class="tl-main-label">${esc(ev.userName || 'Unknown Avatar')}</div></div></div>`;
+}
+
 function tlPlayerAvatars(players, max) {
     return (players || []).slice(0, max).map(p => {
         return p.image
@@ -624,6 +828,24 @@ function tlPlayerAvatars(players, max) {
 }
 
 // Detail modals (reuses #modalDetail / #detailModalContent)
+
+function copyInstanceLink(location) {
+    if (!location) return;
+    const colon = location.indexOf(':');
+    if (colon <= 0) return;
+    const worldId    = location.slice(0, colon);
+    const instanceId = location.slice(colon + 1);
+    if (!worldId.startsWith('wrld_')) return;
+    const url = `https://vrchat.com/home/launch?worldId=${encodeURIComponent(worldId)}&instanceId=${encodeURIComponent(instanceId)}`;
+    navigator.clipboard.writeText(url)
+        .then(() => showToast(true, 'Instance link copied!'))
+        .catch(() => showToast(false, 'Failed to copy'));
+}
+
+function _instanceLinkBtn(location, closeJs) {
+    if (!location || location.indexOf(':') <= 0 || !location.startsWith('wrld_')) return '';
+    return `<button class="vrcn-button-round" onclick="${closeJs ? closeJs + ';' : ''}copyInstanceLink('${jsq(location)}')"><span class="msi" style="font-size:14px;">content_copy</span> Copy Instance Link</button>`;
+}
 
 function openTlDetail(id) {
     const ev = timelineEvents.find(e => e.id === id)
@@ -638,6 +860,8 @@ function openTlDetail(id) {
         case 'first_meet':    renderTlDetailMeet(ev, el);      break;
         case 'meet_again':    renderTlDetailMeetAgain(ev, el); break;
         case 'notification':  renderTlDetailNotif(ev, el);     break;
+        case 'avatar_switch': renderTlDetailAvatar(ev, el);    break;
+        case 'video_url':     renderTlDetailUrl(ev, el);       break;
     }
 
     document.getElementById('modalDetail').style.display = 'flex';
@@ -699,8 +923,9 @@ function renderTlDetailJoin(ev, el) {
             ${ev.worldId ? `<div class="fd-meta-row"${worldClick}><span class="fd-meta-label">World</span><span style="color:var(--accent-lt);">${esc(ev.worldName || ev.worldId)}</span></div>` : ''}
         </div>
         ${playersHtml}
-        <div style="margin-top:14px;text-align:right;">
-            <button class="fd-btn" onclick="document.getElementById('modalDetail').style.display='none'">Close</button>
+        <div style="margin-top:14px;display:flex;gap:8px;justify-content:flex-end;">
+            ${_instanceLinkBtn(ev.location, '')}
+            <button class="vrcn-button-round" onclick="document.getElementById('modalDetail').style.display='none'">Close</button>
         </div>
     </div>`;
 }
@@ -740,8 +965,8 @@ function renderTlDetailPhoto(ev, el) {
         </div>
         ${playersHtml}
         <div style="margin-top:14px;display:flex;gap:8px;justify-content:flex-end;">
-            ${ev.photoUrl ? `<button class="fd-btn fd-btn-join" onclick="openLightbox('${photoJs}','image')"><span class="msi" style="font-size:14px;">open_in_full</span> Full Size</button>` : ''}
-            <button class="fd-btn" onclick="document.getElementById('modalDetail').style.display='none'">Close</button>
+            ${ev.photoUrl ? `<button class="vrcn-button-round vrcn-btn-join" onclick="openLightbox('${photoJs}','image')"><span class="msi" style="font-size:14px;">open_in_full</span> Full Size</button>` : ''}
+            <button class="vrcn-button-round" onclick="document.getElementById('modalDetail').style.display='none'">Close</button>
         </div>
     </div>`;
 }
@@ -771,8 +996,8 @@ function renderTlDetailMeet(ev, el) {
             ${ev.worldId ? `<div class="fd-meta-row"${worldClickMeet}><span class="fd-meta-label">World</span><span style="color:var(--accent-lt);">${esc(ev.worldName || ev.worldId)}</span></div>` : ''}
         </div>
         <div style="margin-top:14px;display:flex;gap:8px;justify-content:flex-end;">
-            ${ev.userId ? `<button class="fd-btn fd-btn-join" onclick="document.getElementById('modalDetail').style.display='none';openFriendDetail('${esc(ev.userId)}')">View Profile</button>` : ''}
-            <button class="fd-btn" onclick="document.getElementById('modalDetail').style.display='none'">Close</button>
+            ${ev.userId ? `<button class="vrcn-button-round vrcn-btn-join" onclick="document.getElementById('modalDetail').style.display='none';openFriendDetail('${esc(ev.userId)}')">View Profile</button>` : ''}
+            <button class="vrcn-button-round" onclick="document.getElementById('modalDetail').style.display='none'">Close</button>
         </div>
     </div>`;
 }
@@ -802,8 +1027,8 @@ function renderTlDetailMeetAgain(ev, el) {
             ${ev.worldId ? `<div class="fd-meta-row"${worldClickAgain}><span class="fd-meta-label">World</span><span style="color:var(--accent-lt);">${esc(ev.worldName || ev.worldId)}</span></div>` : ''}
         </div>
         <div style="margin-top:14px;display:flex;gap:8px;justify-content:flex-end;">
-            ${ev.userId ? `<button class="fd-btn fd-btn-join" onclick="document.getElementById('modalDetail').style.display='none';openFriendDetail('${esc(ev.userId)}')">View Profile</button>` : ''}
-            <button class="fd-btn" onclick="document.getElementById('modalDetail').style.display='none'">Close</button>
+            ${ev.userId ? `<button class="vrcn-button-round vrcn-btn-join" onclick="document.getElementById('modalDetail').style.display='none';openFriendDetail('${esc(ev.userId)}')">View Profile</button>` : ''}
+            <button class="vrcn-button-round" onclick="document.getElementById('modalDetail').style.display='none'">Close</button>
         </div>
     </div>`;
 }
@@ -835,8 +1060,69 @@ function renderTlDetailNotif(ev, el) {
             ${ev.message ? `<div class="fd-meta-row"><span class="fd-meta-label">Message</span><span>${esc(ev.message)}</span></div>` : ''}
         </div>
         <div style="margin-top:14px;display:flex;gap:8px;justify-content:flex-end;">
-            ${ev.senderId ? `<button class="fd-btn fd-btn-join" onclick="document.getElementById('modalDetail').style.display='none';openFriendDetail('${esc(ev.senderId)}')">View Profile</button>` : ''}
-            <button class="fd-btn" onclick="document.getElementById('modalDetail').style.display='none'">Close</button>
+            ${ev.senderId ? `<button class="vrcn-button-round vrcn-btn-join" onclick="document.getElementById('modalDetail').style.display='none';openFriendDetail('${esc(ev.senderId)}')">View Profile</button>` : ''}
+            <button class="vrcn-button-round" onclick="document.getElementById('modalDetail').style.display='none'">Close</button>
+        </div>
+    </div>`;
+}
+
+// Detail: avatar switch
+
+function renderTlDetailAvatar(ev, el) {
+    const d       = new Date(ev.timestamp);
+    const dateStr = d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const timeStr = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    const banner  = ev.userImage
+        ? `<div class="fd-banner"><img src="${ev.userImage}" onerror="this.parentElement.style.display='none'"><div class="fd-banner-fade"></div></div>`
+        : '';
+    const openBtn = ev.userId
+        ? `<button class="vrcn-button-round vrcn-btn-join" onclick="document.getElementById('modalDetail').style.display='none';openAvatarDetail('${jsq(ev.userId)}')">View Avatar</button>`
+        : '';
+    el.innerHTML = `${banner}<div class="fd-content${banner ? ' fd-has-banner' : ''}" style="padding:20px;">
+        <h2 style="margin:0 0 12px;color:var(--tx0);font-size:16px;">${esc(ev.userName || 'Unknown Avatar')}</h2>
+        <div class="fd-meta">
+            <div class="fd-meta-row"><span class="fd-meta-label">Avatar</span><span>${esc(ev.userName || 'Unknown')}</span></div>
+            <div class="fd-meta-row"><span class="fd-meta-label">Date</span><span>${esc(dateStr)}</span></div>
+            <div class="fd-meta-row"><span class="fd-meta-label">Time</span><span>${esc(timeStr)}</span></div>
+            ${ev.userId ? `<div class="fd-meta-row"><span class="fd-meta-label">Avatar ID</span><span style="font-size:11px;color:var(--tx3);">${esc(ev.userId)}</span></div>` : ''}
+        </div>
+        <div style="margin-top:14px;display:flex;gap:8px;justify-content:flex-end;">
+            ${openBtn}
+            <button class="vrcn-button-round" onclick="document.getElementById('modalDetail').style.display='none'">Close</button>
+        </div>
+    </div>`;
+}
+
+// Detail: video URL
+
+function renderTlDetailUrl(ev, el) {
+    const d       = new Date(ev.timestamp);
+    const dateStr = d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const timeStr = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    const url     = ev.message || '';
+    const plat    = _urlPlatform(url);
+    const favicon = `<div style="display:flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:12px;background:var(--bg2);">${_urlFaviconHtml(plat)}</div>`;
+    const worldClick = ev.worldId
+        ? ` style="cursor:pointer;" onclick="document.getElementById('modalDetail').style.display='none';openWorldSearchDetail('${esc(ev.worldId)}')"` : '';
+
+    el.innerHTML = `<div class="fd-content" style="padding:20px;">
+        <div style="display:flex;gap:16px;align-items:center;margin-bottom:20px;">
+            ${favicon}
+            <div>
+                <h2 style="margin:0 0 4px;color:var(--tx0);font-size:18px;">${esc(plat.name)}</h2>
+                <div style="font-size:11px;color:${plat.color};font-weight:700;letter-spacing:.05em;">VIDEO URL</div>
+            </div>
+        </div>
+        <div class="fd-meta">
+            <div class="fd-meta-row"><span class="fd-meta-label">Date</span><span>${esc(dateStr)}</span></div>
+            <div class="fd-meta-row"><span class="fd-meta-label">Time</span><span>${esc(timeStr)}</span></div>
+            ${ev.worldName ? `<div class="fd-meta-row"${worldClick}><span class="fd-meta-label">World</span><span style="color:var(--accent-lt);">${esc(ev.worldName)}</span></div>` : ''}
+            <div class="fd-meta-row" style="align-items:flex-start;"><span class="fd-meta-label">URL</span><span style="word-break:break-all;font-size:11px;color:var(--tx2);">${esc(url)}</span></div>
+        </div>
+        <div style="margin-top:14px;display:flex;gap:8px;justify-content:flex-end;">
+            <button class="vrcn-button-round vrcn-btn-join" onclick="sendToCS({action:'openUrl',url:'${jsq(url)}'})">Open URL</button>
+            <button class="vrcn-button-round" onclick="navigator.clipboard.writeText('${jsq(url)}').then(()=>showToast(true,'Copied!'))">Copy</button>
+            <button class="vrcn-button-round" onclick="document.getElementById('modalDetail').style.display='none'">Close</button>
         </div>
     </div>`;
 }
@@ -887,11 +1173,13 @@ function statusCssClass(s) {
 
 function refreshFriendTimeline() {
     friendTimelineEvents = [];
-    ftlOffset  = 0;
-    ftlHasMore = false;
-    ftlLoading = false;
+    ftlOffset        = 0;
+    ftlHasMore       = false;
+    ftlLoading       = false;
+    ftlRenderedCount = 100;
+    ftlListPage      = 0;
+    ftlTotal         = 0;
     const activeSearch = (document.getElementById('tlSearchInput')?.value ?? '').trim();
-    disconnectFtlObserver();
     const c = document.getElementById('tlContainer');
     if (c && !(_ftlSearchMode && activeSearch)) {
         c.innerHTML = '<div class="tl-loading"><div class="tl-sk-line"></div><div class="tl-sk-line tl-sk-short"></div><div class="tl-sk-line"></div><div class="tl-sk-line tl-sk-short"></div><div class="tl-sk-line"></div></div>';
@@ -904,11 +1192,30 @@ function renderFriendTimeline(payload) {
     const events  = Array.isArray(payload) ? payload : (payload?.events  ?? []);
     const hasMore = Array.isArray(payload) ? false   : (payload?.hasMore ?? false);
     const offset  = Array.isArray(payload) ? 0       : (payload?.offset  ?? 0);
+    const total   = Array.isArray(payload) ? 0       : (payload?.total   ?? 0);
 
-    if (offset === 0) {
+    // Discard stale response if filter was switched while this request was in-flight
+    if (!Array.isArray(payload) && payload?.type !== undefined) {
+        const expectedType = ftFilter === 'all' ? '' : ftFilter;
+        if (payload.type !== expectedType) return;
+    }
+
+    if (total > 0) ftlTotal = total;
+
+    if (_ftlPendingListPage !== null) {
+        // Direct page navigation: replace current events with this page's data
+        friendTimelineEvents  = events;
+        ftlListPage           = _ftlPendingListPage;
+        ftlRenderedCount      = events.length;
+        _ftlPendingListPage   = null;
+    } else if (offset === 0) {
         friendTimelineEvents = events;
+        ftlRenderedCount = 100;
+        ftlListPage      = 0;
     } else {
+        // Load More append (timeline/card view)
         friendTimelineEvents = friendTimelineEvents.concat(events);
+        ftlRenderedCount    += events.length;
     }
     ftlOffset  = offset + events.length;
     ftlHasMore = hasMore;
@@ -918,6 +1225,8 @@ function renderFriendTimeline(payload) {
 
 function handleFriendTimelineEvent(ev) {
     if (!ev || !ev.id) return;
+    // If a type filter is active, only inject events that match it to avoid polluting the view
+    if (typeof ftFilter !== 'undefined' && ftFilter !== 'all' && ev.type !== ftFilter) return;
     const idx = friendTimelineEvents.findIndex(e => e.id === ev.id);
     if (idx >= 0) friendTimelineEvents[idx] = ev;
     else friendTimelineEvents.unshift(ev);
@@ -932,10 +1241,15 @@ function setFtFilter(f) {
     if (btn) btn.classList.add('active');
     // Reset pagination and reload from server with new type filter
     friendTimelineEvents = [];
-    ftlOffset  = 0;
-    ftlHasMore = false;
-    ftlLoading = false;
-    disconnectFtlObserver();
+    ftlOffset        = 0;
+    ftlHasMore       = false;
+    ftlLoading       = false;
+    ftlRenderedCount = 100;
+    ftlListPage      = 0;
+    ftlTotal         = 0;
+    _ftlSearchMode = false; _ftlSearchQuery = ''; _ftlSearchDate = '';
+    const activeSearch = (document.getElementById('tlSearchInput')?.value ?? '').trim();
+    if (activeSearch) { filterFriendTimeline(); return; }
     const c = document.getElementById('tlContainer');
     if (c) c.innerHTML = '<div class="tl-loading"><div class="tl-sk-line"></div><div class="tl-sk-line tl-sk-short"></div><div class="tl-sk-line"></div><div class="tl-sk-line tl-sk-short"></div><div class="tl-sk-line"></div></div>';
     if (tlDateFilter) sendToCS({ action: 'getFriendTimelineByDate', date: tlDateFilter, type: f === 'all' ? '' : f });
@@ -955,57 +1269,86 @@ function filterFriendTimeline() {
         _ftlSearchMode  = false;
         _ftlSearchQuery = '';
         _ftlSearchDate  = '';
-        disconnectFtlObserver();
+        ftlListPage = 0; ftlRenderedCount = 100;
         c.innerHTML = '<div class="tl-loading"><div class="tl-sk-line"></div><div class="tl-sk-line tl-sk-short"></div><div class="tl-sk-line"></div></div>';
+        _setTlPaginator('');
         clearTimeout(_ftlSearchTimer);
         _ftlSearchTimer = setTimeout(() => {
-            sendToCS({ action: 'searchFriendTimeline', query: search, date: tlDateFilter });
+            sendToCS({ action: 'searchFriendTimeline', query: search, date: tlDateFilter, offset: 0, type: ftFilter === 'all' ? '' : ftFilter });
         }, 300);
         return;
     }
 
     // No search – clear search mode and show paginated events
-    _ftlSearchMode  = false;
+    _ftlSearchMode   = false;
     _ftlSearchEvents = [];
 
-    let filtered = ftFilter === 'all'
-        ? friendTimelineEvents
-        : friendTimelineEvents.filter(e => e.type === ftFilter);
-
-    if (!filtered.length && !ftlLoading) {
-        c.innerHTML = '<div class="empty-msg">No friend activity logged yet. Events appear here as friends move, change status, etc.</div>';
+    if (!friendTimelineEvents.length && !ftlLoading) {
+        // Events cleared (e.g. filter switched while searching) — reload from server
+        refreshFriendTimeline();
         return;
     }
 
     const prevScrollTop = c.scrollTop;
-    let html = tlViewMode === 'list' ? buildFriendListHtml(filtered) : buildFriendTimelineHtml(filtered);
 
-    if (ftlHasMore) {
-        html += '<div id="ftlSentinel" style="height:40px;display:flex;align-items:center;justify-content:center;">'
-              + '<span style="font-size:11px;color:var(--tx3);">Loading more…</span></div>';
-    }
+    // Both views use server-side pagination — friendTimelineEvents holds current page only
+    const totalPages = ftlTotal > 0
+        ? Math.ceil(ftlTotal / 100)
+        : Math.max(ftlListPage + 1, 1) + (ftlHasMore ? 1 : 0);
 
-    c.innerHTML = html;
+    const contentHtml = tlViewMode === 'list'
+        ? buildFriendListHtml(friendTimelineEvents)
+        : buildFriendTimelineHtml(friendTimelineEvents);
+    c.innerHTML = contentHtml;
+    _setTlPaginator(buildFtlPagination(ftlListPage, totalPages, ftlHasMore));
+
     if (prevScrollTop > 0) c.scrollTop = prevScrollTop;
+}
 
-    if (ftlHasMore) setupFtlObserver(c);
+function buildFtlPagination(page, totalPages, hasMore) {
+    if (totalPages <= 1 && !hasMore) return '';
+    const delta = 3;
+    const range = [];
+    for (let i = 0; i < totalPages; i++) {
+        if (i === 0 || i === totalPages - 1 || (i >= page - delta && i <= page + delta))
+            range.push(i);
+    }
+    let btns = '';
+    let prev = -1;
+    range.forEach(i => {
+        if (prev !== -1 && i > prev + 1) btns += `<span style="padding:0 4px;color:var(--tx3);">…</span>`;
+        const active = i === page ? 'style="background:var(--accent);color:#fff;"' : '';
+        btns += `<button class="vrcn-button" ${active} onclick="ftlGoPage(${i})">${i + 1}</button>`;
+        prev = i;
+    });
+    const prevDis = page === 0 ? 'disabled' : '';
+    const nextDis = (page >= totalPages - 1 && !hasMore) ? 'disabled' : '';
+    const countInfo = ftlTotal > 0 ? `<span style="font-size:11px;color:var(--tx3);padding:0 8px;">${ftlTotal.toLocaleString()} total</span>` : '';
+    return `<button class="vrcn-button" ${prevDis} onclick="ftlGoPage(${page - 1})"><span class="msi" style="font-size:16px;">chevron_left</span></button>
+        ${btns}
+        <button class="vrcn-button" ${nextDis} onclick="ftlGoPage(${page + 1})"><span class="msi" style="font-size:16px;">chevron_right</span></button>
+        ${countInfo}`;
 }
 
 function _renderFtlSearchResults(search) {
     const c = document.getElementById('tlContainer');
     if (!c) return;
 
-    let events = _ftlSearchEvents;
-    if (ftFilter !== 'all') events = events.filter(e => e.type === ftFilter);
+    const events = _ftlSearchEvents;
 
     if (!events.length) {
         c.innerHTML = `<div class="empty-msg">No results for "<b>${esc(search)}</b>".</div>`;
+        _setTlPaginator('');
         return;
     }
 
+    const total      = _ftlSearchTotal;
+    const totalPages = total > 0 ? Math.ceil(total / 100) : 1;
     const banner = `<div style="padding:6px 12px;font-size:11px;color:var(--tx3);border-bottom:1px solid var(--brd);">`
-        + `${events.length} result${events.length !== 1 ? 's' : ''} for "<b>${esc(search)}</b>"</div>`;
-    c.innerHTML = banner + (tlViewMode === 'list' ? buildFriendListHtml(events) : buildFriendTimelineHtml(events));
+        + `${total.toLocaleString()} result${total !== 1 ? 's' : ''} for "<b>${esc(search)}</b>"</div>`;
+    let html = banner + (tlViewMode === 'list' ? buildFriendListHtml(events) : buildFriendTimelineHtml(events));
+    c.innerHTML = html;
+    _setTlPaginator(buildSearchPagination(_ftlSearchPage, totalPages, 'ftlGoSearchPage'));
 }
 
 function handleFtlSearchResults(payload) {
@@ -1013,11 +1356,20 @@ function handleFtlSearchResults(payload) {
     const currentSearch = (document.getElementById('tlSearchInput')?.value ?? '').toLowerCase().trim();
     if (q !== currentSearch) return;
     if ((payload.date || '') !== tlDateFilter) return;
+    const offset = payload.offset ?? 0;
+    // Always replace — each page nav fetches the exact page, no appending
+    _ftlSearchEvents = payload.events || [];
+    _ftlSearchTotal  = payload.total ?? 0;
+    _ftlSearchPage   = Math.floor(offset / 100);
     _ftlSearchMode   = true;
     _ftlSearchQuery  = q;
     _ftlSearchDate   = payload.date || '';
-    _ftlSearchEvents = payload.events || [];
     filterFriendTimeline();
+}
+
+function ftlGoSearchPage(page) {
+    if (page < 0) return;
+    sendToCS({ action: 'searchFriendTimeline', query: _ftlSearchQuery, date: _ftlSearchDate, offset: page * 100, type: ftFilter === 'all' ? '' : ftFilter });
 }
 
 function ftSearchable(e) {
@@ -1028,23 +1380,36 @@ function ftSearchable(e) {
 // Friends Timeline pagination helpers
 
 function loadMoreFriendTimeline() {
-    if (ftlLoading || !ftlHasMore) return;
+    if (ftlLoading) return;
+    // Drain already-loaded pool first (timeline/card view)
+    if (friendTimelineEvents.length > ftlRenderedCount) {
+        ftlRenderedCount += 100;
+        filterFriendTimeline();
+        return;
+    }
+    if (!ftlHasMore) return;
     ftlLoading = true;
+    const btn = document.getElementById('ftlLoadMoreBtn');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="msi" style="font-size:16px;">hourglass_empty</span> Loading…'; }
     sendToCS({ action: 'getFriendTimelinePage', offset: ftlOffset, type: ftFilter === 'all' ? '' : ftFilter });
 }
 
-function setupFtlObserver(container) {
-    disconnectFtlObserver();
-    const sentinel = document.getElementById('ftlSentinel');
-    if (!sentinel) return;
-    ftlObserver = new IntersectionObserver(entries => {
-        if (entries[0].isIntersecting && !ftlLoading && ftlHasMore) loadMoreFriendTimeline();
-    }, { root: container, threshold: 0.1 });
-    ftlObserver.observe(sentinel);
-}
-
-function disconnectFtlObserver() {
-    if (ftlObserver) { ftlObserver.disconnect(); ftlObserver = null; }
+function ftlGoPage(page) {
+    if (page < 0) return;
+    const totalPages = ftlTotal > 0 ? Math.ceil(ftlTotal / 100) : null;
+    if (totalPages !== null && page >= totalPages) return;
+    if (page === ftlListPage && _ftlPendingListPage === null && !ftlLoading) {
+        // Already on this page — just scroll top
+        const c = document.getElementById('tlContainer');
+        if (c) c.scrollTop = 0;
+        return;
+    }
+    // Fetch this page directly from DB at absolute offset
+    _ftlPendingListPage = page;
+    ftlLoading = true;
+    sendToCS({ action: 'getFriendTimelinePage', offset: page * 100, type: ftFilter === 'all' ? '' : ftFilter });
+    const c = document.getElementById('tlContainer');
+    if (c) c.scrollTop = 0;
 }
 
 // Rendering
@@ -1196,7 +1561,8 @@ function renderFtBioBody(ev) {
 
 /* === Friend GPS Instance Log Modal === */
 function openFtGpsDetail(evId) {
-    const ev = friendTimelineEvents.find(e => e.id === evId);
+    const ev = friendTimelineEvents.find(e => e.id === evId)
+             || _ftlSearchEvents.find(e => e.id === evId);
     if (!ev) return;
     renderFtGpsDetailModal(ev);
     document.getElementById('modalFtGpsDetail').style.display = 'flex';
@@ -1227,59 +1593,59 @@ function renderFtGpsDetailModal(ev) {
         : '';
     const worldName = ev.worldName || ev.worldId || 'Unknown World';
 
-    // Was Also Here: other friends who were logged in the same instance
-    const stripNonce = l => (l || '').replace(/~nonce\([^)]*\)/g, '');
-    const evLocStripped = stripNonce(loc);
-    const alsoMap = {};
-    friendTimelineEvents.forEach(e => {
-        if (e.type !== 'friend_gps' || e.id === ev.id || !e.friendId || !e.location) return;
-        if (evLocStripped && stripNonce(e.location) === evLocStripped) {
-            if (!alsoMap[e.friendId]) alsoMap[e.friendId] = e;
-        }
-    });
-    const alsoList = Object.values(alsoMap);
+    // Was Also Here: populated async from server (covers all pages, not just loaded memory)
+    const alsoList = [];
 
     const infoHtml = `<div class="fd-meta">
         <div class="fd-meta-row"><span class="fd-meta-label">Date</span><span>${esc(dateStr)}</span></div>
         <div class="fd-meta-row"><span class="fd-meta-label">Time</span><span>${esc(timeStr)}</span></div>
-        <div class="fd-meta-row"><span class="fd-meta-label">Instance Type</span><span class="fd-instance-badge ${instCls}">${instLabel}</span></div>
+        <div class="fd-meta-row"><span class="fd-meta-label">Instance Type</span><span class="vrcn-badge ${instCls}">${instLabel}</span></div>
         ${instanceId ? `<div class="fd-meta-row"><span class="fd-meta-label">Instance ID</span><span style="font-family:monospace;font-size:12px;color:var(--tx2);">#${esc(instanceId)}</span></div>` : ''}
         <div class="fd-meta-row"><span class="fd-meta-label">Event</span><span style="color:var(--tx2);">${esc(ev.friendName || 'Unknown')} joined this world</span></div>
     </div>`;
 
-    let alsoHtml;
-    if (alsoList.length === 0) {
-        alsoHtml = '<div style="font-size:12px;color:var(--tx3);padding:12px 0;">No other friends tracked in this instance.</div>';
-    } else {
-        alsoHtml = alsoList.map(e => {
-            const { timeStr: fTime } = ftDetailDatetime(e);
-            return renderProfileItemSmall(
-                { id: e.friendId, displayName: e.friendName || 'Unknown', image: e.friendImage, subtitle: fTime || '' },
-                `closeFtGpsDetail();openFriendDetail('${jsq(e.friendId)}')`
-            );
-        }).join('');
-    }
-
-    const alsoCount = alsoList.length > 0 ? ` (${alsoList.length})` : '';
     const el = document.getElementById('ftGpsDetailContent');
     el.innerHTML = `${banner}<div class="fd-content${banner ? ' fd-has-banner' : ''}" style="padding:16px;">
         <h2 style="margin:0 0 4px;color:var(--tx0);font-size:18px;">${esc(worldName)}</h2>
         <div style="margin-bottom:12px;">${idBadge(ev.worldId || '')}</div>
         <div class="fd-tabs" style="margin-bottom:14px;">
             <button class="fd-tab active ftgps-tab-btn" data-tab="info" onclick="switchFtGpsTab('info')">Info</button>
-            <button class="fd-tab ftgps-tab-btn" data-tab="also" onclick="switchFtGpsTab('also')">Was also here${esc(alsoCount)}</button>
+            <button class="fd-tab ftgps-tab-btn" data-tab="also" id="ftGpsAlsoTab" onclick="switchFtGpsTab('also')">Was also here</button>
         </div>
         <div id="ftGpsTabInfo">${infoHtml}</div>
-        <div id="ftGpsTabAlso" style="display:none;">${alsoHtml}</div>
+        <div id="ftGpsTabAlso" style="display:none;"><div style="font-size:12px;color:var(--tx3);padding:12px 0;">Loading...</div></div>
         <div style="margin-top:14px;display:flex;gap:8px;justify-content:flex-end;">
-            ${ev.worldId ? `<button class="fd-btn fd-btn-join" onclick="closeFtGpsDetail();openWorldSearchDetail('${esc(ev.worldId)}')"><span class="msi" style="font-size:14px;">travel_explore</span> Open World</button>` : ''}
-            <button class="fd-btn" onclick="closeFtGpsDetail()">Close</button>
+            ${_instanceLinkBtn(loc, '')}
+            ${ev.worldId ? `<button class="vrcn-button-round vrcn-btn-join" onclick="closeFtGpsDetail();openWorldSearchDetail('${esc(ev.worldId)}')"><span class="msi" style="font-size:14px;">travel_explore</span> Open World</button>` : ''}
+            <button class="vrcn-button-round" onclick="closeFtGpsDetail()">Close</button>
         </div>
     </div>`;
+
+    // Async: ask server for all friends at this location (searches full DB, not just loaded page)
+    sendToCS({ action: 'getFtAlsoWasHere', location: loc, excludeId: ev.id });
+}
+
+function renderFtAlsoWasHereResult(payload) {
+    const tab = document.getElementById('ftGpsTabAlso');
+    const tabBtn = document.getElementById('ftGpsAlsoTab');
+    if (!tab) return;
+    const friends = payload?.friends ?? [];
+    if (friends.length === 0) {
+        tab.innerHTML = '<div style="font-size:12px;color:var(--tx3);padding:12px 0;">No other friends tracked in this instance.</div>';
+    } else {
+        tab.innerHTML = friends.map(f =>
+            renderProfileItemSmall(
+                { id: f.friendId, displayName: f.friendName || 'Unknown', image: f.friendImage },
+                `closeFtGpsDetail();openFriendDetail('${jsq(f.friendId)}')`
+            )
+        ).join('');
+    }
+    if (tabBtn && friends.length > 0) tabBtn.textContent = `Was also here (${friends.length})`;
 }
 
 function openFtDetail(id) {
-    const ev = friendTimelineEvents.find(e => e.id === id);
+    const ev = friendTimelineEvents.find(e => e.id === id)
+             || _ftlSearchEvents.find(e => e.id === id);
     if (!ev) return;
     const el = document.getElementById('detailModalContent');
     if (!el) return;
@@ -1315,12 +1681,12 @@ function ftDetailAvRow(ev) {
 }
 
 function ftDetailClose() {
-    return `<button class="fd-btn" onclick="document.getElementById('modalDetail').style.display='none'">Close</button>`;
+    return `<button class="vrcn-button-round" onclick="document.getElementById('modalDetail').style.display='none'">Close</button>`;
 }
 
 function ftDetailViewProfile(ev) {
     return ev.friendId
-        ? `<button class="fd-btn fd-btn-join" onclick="document.getElementById('modalDetail').style.display='none';openFriendDetail('${esc(ev.friendId)}')">View Profile</button>`
+        ? `<button class="vrcn-button-round vrcn-btn-join" onclick="document.getElementById('modalDetail').style.display='none';openFriendDetail('${esc(ev.friendId)}')">View Profile</button>`
         : '';
 }
 
@@ -1341,7 +1707,7 @@ function renderFtDetailGps(ev, el) {
             <div class="fd-meta-row"${worldClick}><span class="fd-meta-label">World</span><span style="color:var(--accent-lt);">${esc(wname)}</span></div>
         </div>
         <div style="margin-top:14px;display:flex;gap:8px;justify-content:flex-end;">
-            ${ev.worldId ? `<button class="fd-btn fd-btn-join" onclick="document.getElementById('modalDetail').style.display='none';openWorldDetail('${esc(ev.worldId)}')"><span class="msi" style="font-size:14px;">travel_explore</span> Open World</button>` : ''}
+            ${ev.worldId ? `<button class="vrcn-button-round vrcn-btn-join" onclick="document.getElementById('modalDetail').style.display='none';openWorldDetail('${esc(ev.worldId)}')"><span class="msi" style="font-size:14px;">travel_explore</span> Open World</button>` : ''}
             ${ftDetailViewProfile(ev)}
             ${ftDetailClose()}
         </div>
@@ -1454,10 +1820,12 @@ function buildPersonalListHtml(events) {
         const color = TL_TYPE_COLOR[ev.type] ?? 'var(--tx3)';
         const ei    = jsq(ev.id);
         const { userHtml, detail } = _tlListData(ev);
+        const listMeetCount = ev.type === 'meet_again' ? (ev.meetCount || 0) : 0;
+        const listTypeLabel = listMeetCount > 0 ? `${meta.label} (${listMeetCount})` : meta.label;
 
         rows += `<tr class="tl-list-row" onclick="openTlDetail('${ei}')">
             <td class="tl-list-dt">${esc(dt)}</td>
-            <td class="tl-list-type"><span class="msi tl-list-icon" style="color:${color}">${meta.icon}</span><span>${esc(meta.label)}</span></td>
+            <td class="tl-list-type"><span class="msi tl-list-icon" style="color:${color}">${meta.icon}</span><span>${esc(listTypeLabel)}</span></td>
             <td class="tl-list-user">${userHtml || '<span class="tl-list-na">—</span>'}</td>
             <td class="tl-list-detail">${detail || '<span class="tl-list-na">—</span>'}</td>
         </tr>`;
@@ -1505,6 +1873,13 @@ function _tlListData(ev) {
                 ? ` — ${esc(ev.message.slice(0, 80))}${ev.message.length > 80 ? '…' : ''}`
                 : '';
             return { userHtml: ev.senderName ? esc(ev.senderName) : '', detail: esc(typeLabel) + sender + msg };
+        }
+        case 'avatar_switch':
+            return { userHtml: '', detail: esc(ev.userName || '') };
+        case 'video_url': {
+            const url = ev.message || '';
+            const short = url.length > 60 ? url.slice(0, 60) + '…' : url;
+            return { userHtml: '', detail: esc(short) };
         }
         default:
             return { userHtml: '', detail: '' };

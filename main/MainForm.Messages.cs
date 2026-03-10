@@ -1,7 +1,6 @@
-using Microsoft.Web.WebView2.WinForms;
-using Microsoft.Web.WebView2.Core;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using NativeFileDialogSharp;
 using VRCNext.Services;
 using System.Diagnostics;
 
@@ -10,18 +9,40 @@ namespace VRCNext;
 public partial class MainForm
 {
     // JS to C# message handler
-    private async void OnWebMessage(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
+    private async Task OnWebMessage(string rawMessage)
     {
         try
         {
             JObject msg;
-            using (var _jr = new Newtonsoft.Json.JsonTextReader(new System.IO.StringReader(e.WebMessageAsJson)) { DateParseHandling = Newtonsoft.Json.DateParseHandling.None })
+            using (var _jr = new Newtonsoft.Json.JsonTextReader(new System.IO.StringReader(rawMessage)) { DateParseHandling = Newtonsoft.Json.DateParseHandling.None })
                 msg = JObject.Load(_jr);
             var action = msg["action"]?.ToString() ?? "";
 
             switch (action)
             {
                 case "ready":
+                    // Signal platform to JS (hides Windows-only tabs on Linux)
+                    SendToJS("setPlatform", new { isLinux = !OperatingSystem.IsWindows() });
+#if WINDOWS
+                    { var hWnd = _window.WindowHandle;
+                      // Subclass FIRST — WM_NCCALCSIZE handler must be active before SWP_FRAMECHANGED
+                      // so the title bar is never rendered even for a single frame
+                      InstallWndProcSubclass(hWnd);
+                      // Full OVERLAPPEDWINDOW styles → snap/tile/Win11 snap layouts all work
+                      const int GWL_STYLE      = -16;
+                      const int WS_THICKFRAME  = 0x00040000;
+                      const int WS_CAPTION     = 0x00C00000;
+                      const int WS_SYSMENU     = 0x00080000;
+                      const int WS_MINIMIZEBOX = 0x00020000;
+                      const int WS_MAXIMIZEBOX = 0x00010000;
+                      SetWindowLong(hWnd, GWL_STYLE,
+                          GetWindowLong(hWnd, GWL_STYLE) | WS_THICKFRAME | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
+                      // SWP_FRAMECHANGED triggers WM_NCCALCSIZE — subclass returns 0 → no NC area drawn
+                      SetWindowPos(hWnd, 0, 0, 0, 0, 0, 0x0020 | 0x0001 | 0x0002 | 0x0004);
+                      // Win11 rounded corners
+                      int cornerPref = 2;
+                      _ = DwmSetWindowAttribute(hWnd, 33, ref cornerPref, 4); }
+#endif
                     // Debug: show what Load() did
                     if (AppSettings.LastLoadError != null)
                         SendToJS("log", new { msg = $"[LOAD ERROR] {AppSettings.LastLoadError}", color = "err" });
@@ -42,6 +63,7 @@ public partial class MainForm
 
                 // Setup Wizard
                 case "setupReady":
+                    SendToJS("setPlatform", new { isLinux = !OperatingSystem.IsWindows() });
                     // Auto-detect VRChat path if not already set
                     var detectedPath = _settings.VrcPath;
                     if (string.IsNullOrWhiteSpace(detectedPath) || !File.Exists(detectedPath))
@@ -74,11 +96,7 @@ public partial class MainForm
                 case "setupDone":
                     _settings.SetupComplete = true;
                     _settings.Save();
-                    Invoke(() =>
-                    {
-                        var mainHtml = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "wwwroot", "index.html");
-                        _webView.CoreWebView2.Navigate(new Uri(mainHtml).AbsoluteUri);
-                    });
+                    _window.Load(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "wwwroot", "index.html"));
                     break;
 
                 case "forceTrim":
@@ -88,12 +106,8 @@ public partial class MainForm
                 case "resetSetup":
                     _settings.SetupComplete = false;
                     _settings.Save();
-                    Invoke(() =>
-                    {
-                        var setupHtml = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "wwwroot", "setup", "setup.html");
-                        if (File.Exists(setupHtml))
-                            _webView.CoreWebView2.Navigate(new Uri(setupHtml).AbsoluteUri);
-                    });
+                    var setupHtml = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "wwwroot", "setup", "setup.html");
+                    if (File.Exists(setupHtml)) _window.Load(setupHtml);
                     break;
 
                 case "clearImgCache":
@@ -139,41 +153,37 @@ public partial class MainForm
                     break;
 
                 case "setupBrowsePhotoDir":
-                    Invoke(() =>
                     {
-                        using var dlg = new FolderBrowserDialog();
-                        dlg.Description = "Select your VRChat Photos folder";
-                        var defPath = Path.Combine(
-                            Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), "VRChat");
-                        if (Directory.Exists(defPath)) dlg.SelectedPath = defPath;
-                        if (dlg.ShowDialog() == DialogResult.OK)
-                            SendToJS("setupPhotoDirResult", dlg.SelectedPath);
-                    });
+                        var r = Dialog.FolderPicker(Path.Combine(
+                            Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), "VRChat"));
+                        if (r.IsOk) SendToJS("setupPhotoDirResult", r.Path);
+                    }
                     break;
 
                 // Window chrome (borderless)
                 case "windowMinimize":
-                    WindowState = FormWindowState.Minimized;
+                    _window.SetMinimized(true);
                     break;
                 case "windowMaximize":
-                    if (WindowState == FormWindowState.Maximized)
-                        WindowState = FormWindowState.Normal;
-                    else
-                        WindowState = FormWindowState.Maximized;
-                    SendToJS("windowMaxState", WindowState == FormWindowState.Maximized);
+                    var nowMax = _window.Maximized;
+                    _window.SetMaximized(!nowMax);
+                    SendToJS("windowMaxState", !nowMax);
                     break;
                 case "windowClose":
-                    Close();
+                    _window.Close();
                     break;
                 case "windowDragStart":
+#if WINDOWS
                     // SC_MOVE on a maximized window: Windows natively restores+repositions on drag.
                     // Do NOT manually restore here — that would break double-click restore.
                     ReleaseCapture();
-                    SendMessage(Handle, 0x0112, 0xF012, 0); // WM_SYSCOMMAND SC_MOVE
+                    SendMessage(_window.WindowHandle, 0x0112, 0xF012, 0); // WM_SYSCOMMAND SC_MOVE
+#endif
                     break;
 
                 case "windowResizeStart":
-                    if (WindowState != FormWindowState.Maximized)
+#if WINDOWS
+                    if (!_window.Maximized)
                     {
                         var htCode = msg["direction"]?.ToString() switch {
                             "w"  => 10, // HTLEFT
@@ -186,8 +196,9 @@ public partial class MainForm
                             "se" => 17, // HTBOTTOMRIGHT
                             _    => 0
                         };
-                        if (htCode != 0) { ReleaseCapture(); SendMessage(Handle, 0x00A1, htCode, 0); }
+                        if (htCode != 0) { ReleaseCapture(); SendMessage(_window.WindowHandle, 0x00A1, htCode, 0); }
                     }
+#endif
                     break;
 
                 case "startRelay":
@@ -204,12 +215,19 @@ public partial class MainForm
                     break;
 
                 case "addFolder":
-                    Invoke(() =>
                     {
-                        using var dlg = new FolderBrowserDialog();
-                        if (dlg.ShowDialog() == DialogResult.OK)
-                            SendToJS("folderAdded", dlg.SelectedPath);
-                    });
+                        var r = Dialog.FolderPicker();
+                        if (r.IsOk) SendToJS("folderAdded", r.Path);
+                    }
+                    break;
+
+                case "importVrcxSelect":
+                    _ = Task.Run(() => VrcxSelectAndPreview());
+                    break;
+
+                case "importVrcxStart":
+                    if (!string.IsNullOrEmpty(_vrcxImportPath))
+                        _ = Task.Run(() => ImportVrcxAsync(_vrcxImportPath));
                     break;
 
                 case "deletePost":
@@ -297,6 +315,29 @@ public partial class MainForm
                     }
                     break;
 
+                case "copyImageToClipboard":
+                    {
+                        var clipPath = msg["path"]?.ToString() ?? "";
+                        if (!string.IsNullOrEmpty(clipPath) && File.Exists(clipPath))
+                        {
+                            try
+                            {
+                                // Use PowerShell to copy image to clipboard natively
+                                var escaped = clipPath.Replace("'", "''");
+                                var psi = new System.Diagnostics.ProcessStartInfo("powershell",
+                                    $"-NonInteractive -WindowStyle Hidden -Command \"Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.Clipboard]::SetImage([System.Drawing.Image]::FromFile('{escaped}'))\"")
+                                { CreateNoWindow = true, UseShellExecute = false };
+                                System.Diagnostics.Process.Start(psi);
+                                SendToJS("toast", new { ok = true, msg = "Image copied to clipboard" });
+                            }
+                            catch (Exception ex)
+                            {
+                                SendToJS("toast", new { ok = false, msg = $"Clipboard failed: {ex.Message}" });
+                            }
+                        }
+                    }
+                    break;
+
                 case "addFavorite":
                     var favPath = msg["path"]?.ToString();
                     if (!string.IsNullOrEmpty(favPath) && !_settings.Favorites.Contains(favPath))
@@ -316,42 +357,31 @@ public partial class MainForm
                     break;
 
                 case "browseExe":
-                    var target = msg["target"]?.ToString() ?? "extra";
-                    Invoke(() =>
                     {
-                        using var dlg = new OpenFileDialog
+                        var target = msg["target"]?.ToString() ?? "extra";
+                        var r = Dialog.FileOpen("exe");
+                        if (r.IsOk)
                         {
-                            Filter = "Executables (*.exe)|*.exe|All files (*.*)|*.*",
-                            Title = target == "vrchat" ? "Select VRChat executable" : "Select application"
-                        };
-                        if (dlg.ShowDialog() == DialogResult.OK)
-                        {
-                            SendToJS("exeAdded", new { target, path = dlg.FileName });
-                            // Persist VRC path immediately (works for both setup and main UI)
+                            SendToJS("exeAdded", new { target, path = r.Path });
                             if (target == "vrchat")
                             {
-                                _settings.VrcPath = dlg.FileName;
+                                _settings.VrcPath = r.Path;
                                 _settings.Save();
                             }
                         }
-                    });
+                    }
                     break;
 
                 // Dashboard background image picker
                 case "browseDashBg":
-                    Invoke(() =>
                     {
-                        using var dlg = new OpenFileDialog
-                        {
-                            Filter = "Images (*.png;*.jpg;*.jpeg;*.bmp;*.webp;*.gif)|*.png;*.jpg;*.jpeg;*.bmp;*.webp;*.gif|All files (*.*)|*.*",
-                            Title = "Choose Dashboard Background"
-                        };
-                        if (dlg.ShowDialog() == DialogResult.OK)
+                        var r = Dialog.FileOpen("png,jpg,jpeg,bmp,webp,gif");
+                        if (r.IsOk)
                         {
                             try
                             {
-                                var bytes = File.ReadAllBytes(dlg.FileName);
-                                var ext2 = Path.GetExtension(dlg.FileName).ToLower();
+                                var bytes = File.ReadAllBytes(r.Path);
+                                var ext2 = Path.GetExtension(r.Path).ToLower();
                                 var mime = ext2 switch
                                 {
                                     ".png" => "image/png",
@@ -362,14 +392,14 @@ public partial class MainForm
                                     _ => "image/png"
                                 };
                                 var dataUri = $"data:{mime};base64,{Convert.ToBase64String(bytes)}";
-                                SendToJS("dashBgSelected", new { path = dlg.FileName, dataUri });
+                                SendToJS("dashBgSelected", new { path = r.Path, dataUri });
                             }
                             catch (Exception ex)
                             {
                                 SendToJS("log", new { msg = $"Background image error: {ex.Message}", color = "err" });
                             }
                         }
-                    });
+                    }
                     break;
 
                 // Load dashboard bg on startup (convert saved path to base64)
@@ -465,33 +495,31 @@ public partial class MainForm
                         try
                         {
                             var worldIds = msg["worldIds"]?.ToObject<List<string>>() ?? new();
-
-                            foreach (var wid in worldIds)
+                            var tasks = worldIds.Select(async wid =>
                             {
                                 try
                                 {
                                     var world = await _vrcApi.GetWorldAsync(wid);
-                                    if (world != null)
+                                    if (world == null) return (wid, null as object);
+                                    return (wid, (object)new
                                     {
-                                        var single = new Dictionary<string, object>
-                                        {
-                                            [wid] = new
-                                            {
-                                                name = world["name"]?.ToString() ?? "",
-                                                thumbnailImageUrl = world["thumbnailImageUrl"]?.ToString() ?? "",
-                                                imageUrl = world["imageUrl"]?.ToString() ?? ""
-                                            }
-                                        };
-                                        Invoke(() => SendToJS("vrcWorldsResolved", single));
-                                    }
-                                    await Task.Delay(250);
+                                        name             = world["name"]?.ToString() ?? "",
+                                        thumbnailImageUrl = world["thumbnailImageUrl"]?.ToString() ?? "",
+                                        imageUrl         = world["imageUrl"]?.ToString() ?? ""
+                                    });
                                 }
-                                catch { /* skip failed worlds */ }
-                            }
+                                catch { return (wid, null as object); }
+                            });
+                            var results = await Task.WhenAll(tasks);
+                            var dict = results
+                                .Where(r => r.Item2 != null)
+                                .ToDictionary(r => r.wid, r => r.Item2!);
+                            if (dict.Count > 0)
+                                SendToJS("vrcWorldsResolved", dict);
                         }
                         catch (Exception ex)
                         {
-                            Invoke(() => SendToJS("log", new { msg = $"World resolve error: {ex.Message}", color = "err" }));
+                            SendToJS("log", new { msg = $"World resolve error: {ex.Message}", color = "err" });
                         }
                     });
                     break;
@@ -561,8 +589,8 @@ public partial class MainForm
                     var upPronouns = msg["pronouns"] != null ? msg["pronouns"]!.ToString() : (string?)null;
                     var upBioLinks = msg["bioLinks"]?.ToObject<List<string>>();
                     var upTags = msg["tags"]?.ToObject<List<string>>();
-                    var upUserIcon = msg["userIcon"]            != null ? msg["userIcon"]!.ToString()            : (string?)null;
-                    var upBanner   = msg["profilePicOverride"]  != null ? msg["profilePicOverride"]!.ToString()  : (string?)null;
+                    var upUserIcon = msg["userIcon"]           != null ? _imgCache?.GetOriginalUrl(msg["userIcon"]!.ToString())           ?? msg["userIcon"]!.ToString()           : (string?)null;
+                    var upBanner   = msg["profilePicOverride"] != null ? _imgCache?.GetOriginalUrl(msg["profilePicOverride"]!.ToString()) ?? msg["profilePicOverride"]!.ToString() : (string?)null;
                     _ = Task.Run(async () =>
                     {
                         var updUser = await _vrcApi.UpdateProfileAsync(upBio, upPronouns, upBioLinks, upTags, upUserIcon, upBanner);
@@ -586,23 +614,91 @@ public partial class MainForm
                 // Multi-Invite: invite mehrere Freunde zur eigenen Instanz
                 case "vrcBatchInvite":
                     var batchIds = msg["userIds"]?.ToObject<List<string>>() ?? new List<string>();
+                    var batchLocOverride = msg["location"]?.ToString();
                     if (batchIds.Count > 0)
                     {
                         _ = Task.Run(async () =>
                         {
                             int bDone = 0, bSuccess = 0, bFail = 0;
                             int bTotal = batchIds.Count;
+                            var bLoc = !string.IsNullOrEmpty(batchLocOverride) ? batchLocOverride : (_logWatcher.CurrentLocation ?? "");
                             foreach (var bUid in batchIds)
                             {
-                                var bOk = await _vrcApi.InviteFriendAsync(bUid);
+                                var bOk = await _vrcApi.InviteFriendAsync(bUid, bLoc);
                                 bDone++;
                                 if (bOk) bSuccess++; else bFail++;
                                 Invoke(() => SendToJS("vrcBatchInviteProgress", new { done = bDone, total = bTotal, success = bSuccess, fail = bFail }));
                                 if (bDone < bTotal)
-                                    await Task.Delay(1500); // 1.5s Abstand (Rate Limit)
+                                    await Task.Delay(1500);
                             }
                         });
                     }
+                    break;
+
+                case "vrcGetMyInstances":
+                    _ = Task.Run(async () =>
+                    {
+                        var myId = _vrcApi.CurrentUserId ?? "";
+
+                        // Helper: check if a location string is owned by current user
+                        static bool IsOwnedLocation(string loc, string userId)
+                        {
+                            if (string.IsNullOrEmpty(loc) || !loc.Contains(':') || string.IsNullOrEmpty(userId)) return false;
+                            var m = System.Text.RegularExpressions.Regex.Match(loc, @"~(?:friends|hidden|private|group)\(([^)]+)\)");
+                            return m.Success && m.Groups[1].Value == userId;
+                        }
+
+                        // 1. Get fresh location from VRChat API (not just log file)
+                        var apiLoc = await _vrcApi.GetCurrentUserLocationAsync() ?? "";
+                        if (!string.IsNullOrEmpty(apiLoc) && IsOwnedLocation(apiLoc, myId)
+                            && !_settings.MyInstances.Contains(apiLoc)
+                            && !_recentlyClosedLocs.Contains(apiLoc))
+                        {
+                            _settings.MyInstances.Insert(0, apiLoc);
+                            _settings.Save();
+                        }
+
+                        // 2. Verify all stored instances via API — remove dead ones, keep active
+                        var miResults = new List<object>();
+                        var miDead = new List<string>();
+                        foreach (var instLoc in _settings.MyInstances.ToList())
+                        {
+                            var inst = await _vrcApi.GetInstanceAsync(instLoc);
+                            // Dead if API returns null OR if user is no longer listed as owner
+                            if (inst == null) { miDead.Add(instLoc); continue; }
+                            var apiOwnerId = inst["ownerId"]?.ToString() ?? "";
+                            if (!string.IsNullOrEmpty(myId) && !string.IsNullOrEmpty(apiOwnerId)
+                                && apiOwnerId != myId) { miDead.Add(instLoc); continue; }
+                            var iType = ParseInstanceTypeFromLoc(instLoc);
+                            if (iType == "private" && inst["canRequestInvite"]?.Value<bool>() == true) iType = "invite_plus";
+                            miResults.Add(new
+                            {
+                                location   = instLoc,
+                                worldId    = inst["worldId"]?.ToString() ?? "",
+                                worldName  = inst["world"]?["name"]?.ToString() ?? "",
+                                worldThumb = inst["world"]?["thumbnailImageUrl"]?.ToString() ?? "",
+                                instanceType = iType,
+                                userCount  = inst["userCount"]?.Value<int>() ?? 0,
+                                capacity   = inst["capacity"]?.Value<int>() ?? 0,
+                                region     = inst["region"]?.ToString() ?? ParseRegionFromLoc(instLoc),
+                            });
+                        }
+                        foreach (var d in miDead) _settings.MyInstances.Remove(d);
+                        if (miDead.Count > 0) _settings.Save();
+                        SendToJS("myInstances", miResults);
+                    });
+                    break;
+
+                case "vrcRemoveMyInstance":
+                    _ = Task.Run(async () =>
+                    {
+                        var rmInstLoc = msg["location"]?.ToString() ?? "";
+                        if (string.IsNullOrEmpty(rmInstLoc)) return;
+                        // Close instance via VRChat API (DELETE)
+                        await _vrcApi.CloseInstanceAsync(rmInstLoc);
+                        _settings.MyInstances.Remove(rmInstLoc);
+                        _settings.Save();
+                    });
                     break;
 
                 // Get friend detail
@@ -663,7 +759,7 @@ public partial class MainForm
                     var invMsgSlot = msg["messageSlot"]?.Value<int?>();
                     if (!string.IsNullOrEmpty(invUserId))
                     {
-                        var ok3 = await _vrcApi.InviteFriendAsync(invUserId, invMsgSlot);
+                        var ok3 = await _vrcApi.InviteFriendAsync(invUserId, _logWatcher.CurrentLocation ?? "", invMsgSlot);
                         SendToJS("vrcActionResult", new
                         {
                             action = "invite",
@@ -721,6 +817,12 @@ public partial class MainForm
                         {
                             var location = _vrcApi.BuildInstanceLocation(ciWorldId, ciType, ciRegion);
                             var ok = await _vrcApi.InviteSelfAsync(location);
+                            if (ok)
+                            {
+                                _settings.MyInstances.Remove(location);
+                                _settings.MyInstances.Insert(0, location);
+                                _settings.Save();
+                            }
                             Invoke(() =>
                             {
                                 SendToJS("vrcActionResult", new
@@ -917,6 +1019,8 @@ public partial class MainForm
                                         var instId = pair[0]?.ToString() ?? "";
                                         var users = pair[1]?.Value<int>() ?? 0;
                                         var (_, _, instType) = VRChatApiService.ParseLocation($"{wdId}:{instId}");
+                                        // ~canRequestInvite in raw instance IDs (from world's instances array) is the instance type flag
+                                        if (instType == "private" && instId.Contains("~canRequestInvite")) instType = "invite_plus";
                                         var regionMatch = System.Text.RegularExpressions.Regex.Match(instId, @"region\(([^)]+)\)");
                                         var region = regionMatch.Success ? regionMatch.Groups[1].Value : "us";
                                         var loc = $"{wdId}:{instId}";
@@ -947,9 +1051,11 @@ public partial class MainForm
                                     var instData = instResults[i];
                                     var nUsers = instData?["n_users"]?.Value<int>() ?? instData?["userCount"]?.Value<int>() ?? 0;
                                     var (_, instId2, instType2) = VRChatApiService.ParseLocation(loc);
+                                    // Use instance API canRequestInvite to distinguish Invite from Invite+
+                                    var instType2Final = instType2 == "private" && instData?["canRequestInvite"]?.Value<bool>() == true ? "invite_plus" : instType2;
                                     var regionMatch2 = System.Text.RegularExpressions.Regex.Match(instId2, @"region\(([^)]+)\)");
                                     var region2 = regionMatch2.Success ? regionMatch2.Groups[1].Value : "us";
-                                    rawInstances.Add((instId2, nUsers, instType2, region2, loc, ParseOwnerId(instId2)));
+                                    rawInstances.Add((instId2, nUsers, instType2Final, region2, loc, ParseOwnerId(instId2)));
                                 }
                             }
 
@@ -1004,6 +1110,39 @@ public partial class MainForm
                         });
                     }
                     break;
+
+                case "vrcGetOnlineCount":
+                    _ = Task.Run(async () =>
+                    {
+                        var count = await _vrcApi.GetOnlineCountAsync();
+                        if (count > 0)
+                            Invoke(() => SendToJS("vrcOnlineCount", new { count }));
+                    });
+                    break;
+
+                case "vrcUpdateAvatar":
+                {
+                    var avId     = msg["avatarId"]?.ToString()             ?? "";
+                    var avName   = msg["name"]?.ToString()                 ?? "";
+                    var avDesc   = msg["description"]?.ToString()          ?? "";
+                    var avStatus = msg["releaseStatus"]?.ToString()        ?? "private";
+                    var avTags   = msg["tags"]?.ToObject<List<string>>()   ?? new();
+                    if (!string.IsNullOrEmpty(avId))
+                        _ = Task.Run(async () =>
+                        {
+                            var (ok, error) = await _vrcApi.UpdateAvatarAsync(avId, avName, avDesc, avStatus, avTags);
+                            Invoke(() => SendToJS("vrcAvatarUpdateResult", new
+                            {
+                                ok,
+                                error,
+                                name          = ok ? avName   : (string?)null,
+                                description   = ok ? avDesc   : (string?)null,
+                                releaseStatus = ok ? avStatus : (string?)null,
+                                tags          = ok ? avTags   : (List<string>?)null,
+                            }));
+                        });
+                    break;
+                }
 
                 case "vrcGetAvatarDetail":
                 {
@@ -1794,6 +1933,12 @@ public partial class MainForm
                             if (!string.IsNullOrEmpty(location))
                             {
                                 var ok = await _vrcApi.InviteSelfAsync(location);
+                                if (ok)
+                                {
+                                    _settings.MyInstances.Remove(location);
+                                    _settings.MyInstances.Insert(0, location);
+                                    _settings.Save();
+                                }
                                 Invoke(() => SendToJS("vrcActionResult", new
                                 {
                                     action = "createInstance",
@@ -1933,43 +2078,38 @@ public partial class MainForm
                         _voiceFight.SetKeywords(_vfSettings.Items);
                         _voiceFight.SetStopWord(_vfSettings.StopWord);
                         _voiceFight.Start(devIdx, outIdx);
-                        if (!_uptimeTimer.Enabled) _uptimeTimer.Start();
                         SendToJS("vfState", new { running = true });
                     }
                     break;
 
                 case "vfStop":
                     _voiceFight?.Stop();
-                    if (!_relayRunning) _uptimeTimer.Stop();
                     SendToJS("vfState", new { running = false });
                     SendToJS("vfMeter", new { level = 0f });
                     break;
 
                 case "vfAddSound":
                     // Creates a new item (group) with one sound file
-                    Invoke(() =>
                     {
-                        using var dlg = new OpenFileDialog
+                        var r = Dialog.FileOpen("wav,mp3,ogg");
+                        if (r.IsOk)
                         {
-                            Filter = "Audio files (*.wav;*.mp3;*.ogg)|*.wav;*.mp3;*.ogg|All files (*.*)|*.*",
-                            Title = "Add Sound"
-                        };
-                        if (dlg.ShowDialog() != DialogResult.OK) return;
-                        var path = dlg.FileName;
-                        var duration = VoiceFightService.GetDuration(path);
-                        var file = new VoiceFightSettings.VfSoundItem.VfSoundFile { FilePath = path, VolumePercent = 100f };
-                        var item = new VoiceFightSettings.VfSoundItem { Word = "", Files = new() { file } };
-                        _vfSettings.Items.Add(item);
-                        _vfSettings.Save();
-                        _voiceFight?.SetKeywords(_vfSettings.Items);
-                        int newIdx = _vfSettings.Items.Count - 1;
-                        SendToJS("vfItemAdded", new
-                        {
-                            index = newIdx,
-                            word = "",
-                            files = new[] { new { soundIndex = 0, filePath = path, fileName = Path.GetFileName(path), durationMs = (int)duration.TotalMilliseconds, volumePercent = 100f } }
-                        });
-                    });
+                            var path = r.Path;
+                            var duration = VoiceFightService.GetDuration(path);
+                            var file = new VoiceFightSettings.VfSoundItem.VfSoundFile { FilePath = path, VolumePercent = 100f };
+                            var item = new VoiceFightSettings.VfSoundItem { Word = "", Files = new() { file } };
+                            _vfSettings.Items.Add(item);
+                            _vfSettings.Save();
+                            _voiceFight?.SetKeywords(_vfSettings.Items);
+                            int newIdx = _vfSettings.Items.Count - 1;
+                            SendToJS("vfItemAdded", new
+                            {
+                                index = newIdx,
+                                word = "",
+                                files = new[] { new { soundIndex = 0, filePath = path, fileName = Path.GetFileName(path), durationMs = (int)duration.TotalMilliseconds, volumePercent = 100f } }
+                            });
+                        }
+                    }
                     break;
 
                 case "vfAddSoundToItem":
@@ -1978,15 +2118,10 @@ public partial class MainForm
                         int itemIdx = msg["itemIndex"]?.Value<int>() ?? -1;
                         if (itemIdx >= 0 && itemIdx < _vfSettings.Items.Count)
                         {
-                            Invoke(() =>
+                            var r = Dialog.FileOpen("wav,mp3,ogg");
+                            if (r.IsOk)
                             {
-                                using var dlg = new OpenFileDialog
-                                {
-                                    Filter = "Audio files (*.wav;*.mp3;*.ogg)|*.wav;*.mp3;*.ogg|All files (*.*)|*.*",
-                                    Title = "Add Sound"
-                                };
-                                if (dlg.ShowDialog() != DialogResult.OK) return;
-                                var path = dlg.FileName;
+                                var path = r.Path;
                                 var duration = VoiceFightService.GetDuration(path);
                                 var file = new VoiceFightSettings.VfSoundItem.VfSoundFile { FilePath = path, VolumePercent = 100f };
                                 _vfSettings.Items[itemIdx].Files.Add(file);
@@ -2001,7 +2136,7 @@ public partial class MainForm
                                     durationMs = (int)duration.TotalMilliseconds,
                                     volumePercent = 100f
                                 });
-                            });
+                            }
                         }
                     }
                     break;
@@ -2582,7 +2717,7 @@ public partial class MainForm
                             _ = Task.Run(async () => {
                                 bool ok = false;
                                 if (!string.IsNullOrEmpty(requesterId))
-                                    ok = await _vrcApi.InviteFriendAsync(requesterId);
+                                    ok = await _vrcApi.InviteFriendAsync(requesterId, _logWatcher.CurrentLocation ?? "");
                                 // fallback: try notification accept endpoint
                                 if (!ok)
                                     ok = await _vrcApi.AcceptNotificationAsync(anId);
@@ -2750,27 +2885,36 @@ public partial class MainForm
 
                 // Timeline
                 case "getTimeline":
+                    _tlFetchCts.Cancel();
+                    _tlFetchCts = new System.Threading.CancellationTokenSource();
+                    var tlCt = _tlFetchCts.Token;
                     _ = Task.Run(async () =>
                     {
                         try
                         {
                             // Import any existing photos from PhotoPlayersStore not yet in timeline
                             await BootstrapPhotoTimeline();
+                            if (tlCt.IsCancellationRequested) return;
 
-                            var (events, hasMore) = _timeline.GetEventsPaged(100, 0);
+                            var tlTypeFilter = msg["type"]?.ToString() ?? "";
+                            var (events, hasMore) = _timeline.GetEventsPaged(100, 0, tlTypeFilter);
+                            var total   = _timeline.GetEventCount(tlTypeFilter);
                             var payload = events.Select(e => BuildTimelinePayload(e)).ToList();
-                            Invoke(() => SendToJS("timelineData", new { events = payload, hasMore, offset = 0 }));
+                            Invoke(() => SendToJS("timelineData", new { events = payload, hasMore, offset = 0, total, type = tlTypeFilter }));
 
                             if (!_vrcApi.IsLoggedIn) return;
+                            if (tlCt.IsCancellationRequested) return;
                             bool anyResolved = false;
 
-                            // 1) Resolve missing world names (first page only)
+                            // 1) Resolve missing world thumbs (session-cached: skip known 404s and already-resolved worlds)
                             var unknownWorlds = events
-                                .Where(e => !string.IsNullOrEmpty(e.WorldId) && string.IsNullOrEmpty(e.WorldName))
+                                .Where(e => !string.IsNullOrEmpty(e.WorldId) && string.IsNullOrEmpty(e.WorldThumb)
+                                    && !_tlWorldThumbCache.ContainsKey(e.WorldId))
                                 .Select(e => e.WorldId).Distinct().Take(20).ToList();
 
                             foreach (var wid in unknownWorlds)
                             {
+                                if (tlCt.IsCancellationRequested) return;
                                 try
                                 {
                                     var w = await _vrcApi.GetWorldAsync(wid);
@@ -2778,8 +2922,9 @@ public partial class MainForm
                                     {
                                         var wName  = w["name"]?.ToString()              ?? "";
                                         var wThumb = w["thumbnailImageUrl"]?.ToString() ?? "";
+                                        _tlWorldThumbCache[wid] = wThumb;
                                         foreach (var ev in events
-                                            .Where(e => e.WorldId == wid && string.IsNullOrEmpty(e.WorldName)))
+                                            .Where(e => e.WorldId == wid && string.IsNullOrEmpty(e.WorldThumb)))
                                         {
                                             _timeline.UpdateEvent(ev.Id, e => { e.WorldName = wName; e.WorldThumb = wThumb; });
                                             ev.WorldName  = wName;
@@ -2787,8 +2932,16 @@ public partial class MainForm
                                             anyResolved = true;
                                         }
                                     }
+                                    else _tlWorldThumbCache[wid] = ""; // cache 404 so we don't retry
                                 }
-                                catch { }
+                                catch { _tlWorldThumbCache[wid] = ""; }
+                            }
+                            // Apply session-cached world thumbs to any events that still have empty thumbs
+                            foreach (var ev in events.Where(e => !string.IsNullOrEmpty(e.WorldId) && string.IsNullOrEmpty(e.WorldThumb)
+                                && _tlWorldThumbCache.TryGetValue(e.WorldId, out var ct) && !string.IsNullOrEmpty(ct)))
+                            {
+                                if (_tlWorldThumbCache.TryGetValue(ev.WorldId, out var cachedThumb) && !string.IsNullOrEmpty(cachedThumb))
+                                { ev.WorldThumb = cachedThumb; anyResolved = true; }
                             }
 
                             // 2) Resolve missing user / player images (first page only)
@@ -2827,17 +2980,18 @@ public partial class MainForm
                                     await sem.WaitAsync();
                                     try
                                     {
+                                        if (tlCt.IsCancellationRequested) return;
+                                        // Session cache first — avoids repeated API calls for the same user
+                                        if (_tlPlayerImageCache.TryGetValue(uid, out var ci) && !string.IsNullOrEmpty(ci))
+                                        { fetchedImgs[uid] = ci; return; }
                                         if (_friendNameImg.TryGetValue(uid, out var fi) && !string.IsNullOrEmpty(fi.image))
-                                        {
-                                            fetchedImgs[uid] = fi.image;
-                                            return;
-                                        }
+                                        { fetchedImgs[uid] = fi.image; _tlPlayerImageCache[uid] = fi.image; return; }
                                         var profile = await _vrcApi.GetUserAsync(uid);
                                         if (profile != null)
                                         {
                                             var img = VRChatApiService.GetUserImage(profile);
                                             if (!string.IsNullOrEmpty(img))
-                                                fetchedImgs[uid] = img;
+                                            { fetchedImgs[uid] = img; _tlPlayerImageCache[uid] = img; }
                                         }
                                         await Task.Delay(250);
                                     }
@@ -2879,7 +3033,7 @@ public partial class MainForm
                             if (anyResolved)
                             {
                                 var updated = events.Select(e => BuildTimelinePayload(e)).ToList();
-                                Invoke(() => SendToJS("timelineData", new { events = updated, hasMore, offset = 0 }));
+                                Invoke(() => SendToJS("timelineData", new { events = updated, hasMore, offset = 0, total, type = tlTypeFilter }));
                             }
                         }
                         catch (Exception ex)
@@ -2890,14 +3044,17 @@ public partial class MainForm
                     break;
 
                 case "getTimelinePage":
+                    // Single DB fetch — no async enrichment so page content never changes after load
                     _ = Task.Run(() =>
                     {
                         try
                         {
-                            var pageOffset = msg["offset"]?.Value<int>() ?? 0;
-                            var (events, hasMore) = _timeline.GetEventsPaged(100, pageOffset);
+                            var pageOffset   = msg["offset"]?.Value<int>() ?? 0;
+                            var tlTypeFilter = msg["type"]?.ToString() ?? "";
+                            var (events, hasMore) = _timeline.GetEventsPaged(100, pageOffset, tlTypeFilter);
+                            var total   = _timeline.GetEventCount(tlTypeFilter);
                             var payload = events.Select(e => BuildTimelinePayload(e)).ToList();
-                            Invoke(() => SendToJS("timelineData", new { events = payload, hasMore, offset = pageOffset }));
+                            Invoke(() => SendToJS("timelineData", new { events = payload, hasMore, offset = pageOffset, total, type = tlTypeFilter }));
                         }
                         catch { }
                     });
@@ -2908,11 +3065,14 @@ public partial class MainForm
                     {
                         try
                         {
-                            var srchQuery = msg["query"]?.ToString() ?? "";
-                            var srchDate  = msg["date"]?.ToString() ?? "";
-                            var events    = _timeline.SearchEvents(srchQuery, "", srchDate);
-                            var payload   = events.Select(e => BuildTimelinePayload(e)).ToList();
-                            Invoke(() => SendToJS("timelineSearchResults", new { events = payload, query = srchQuery, date = srchDate }));
+                            var srchQuery  = msg["query"]?.ToString() ?? "";
+                            var srchDate   = msg["date"]?.ToString() ?? "";
+                            var srchOffset = msg["offset"]?.Value<int>() ?? 0;
+                            var srchType   = msg["type"]?.ToString() ?? "";
+                            var (events, _) = _timeline.SearchEvents(srchQuery, srchType, srchDate, srchOffset);
+                            var total   = _timeline.SearchEventsCount(srchQuery, srchType, srchDate);
+                            var payload = events.Select(e => BuildTimelinePayload(e)).ToList();
+                            Invoke(() => SendToJS("timelineSearchResults", new { events = payload, query = srchQuery, date = srchDate, total, offset = srchOffset }));
                         }
                         catch { }
                     });
@@ -2923,51 +3083,114 @@ public partial class MainForm
                     {
                         try
                         {
-                            var srchQuery = msg["query"]?.ToString() ?? "";
-                            var srchDate  = msg["date"]?.ToString() ?? "";
-                            var events    = _timeline.SearchFriendEvents(srchQuery, srchDate);
-                            var payload   = events.Select(e => BuildFriendTimelinePayload(e)).ToList();
-                            Invoke(() => SendToJS("friendTimelineSearchResults", new { events = payload, query = srchQuery, date = srchDate }));
+                            var srchQuery  = msg["query"]?.ToString() ?? "";
+                            var srchDate   = msg["date"]?.ToString() ?? "";
+                            var srchOffset = msg["offset"]?.Value<int>() ?? 0;
+                            var srchType   = msg["type"]?.ToString() ?? "";
+                            var (events, _) = _timeline.SearchFriendEvents(srchQuery, srchDate, srchOffset, srchType);
+                            var total   = _timeline.SearchFriendEventsCount(srchQuery, srchDate, srchType);
+                            var payload = events.Select(e => BuildFriendTimelinePayload(e)).ToList();
+                            Invoke(() => SendToJS("friendTimelineSearchResults", new { events = payload, query = srchQuery, date = srchDate, total, offset = srchOffset }));
                         }
                         catch { }
                     });
                     break;
 
                 case "getFriendTimeline":
+                    _ftlFetchCts.Cancel();
+                    _ftlFetchCts = new System.Threading.CancellationTokenSource();
+                    var ftlCt = _ftlFetchCts.Token;
                     _ = Task.Run(async () =>
                     {
                         try
                         {
                             var typeFilter = msg["type"]?.ToString() ?? "";
                             var (fevents, hasMore) = _timeline.GetFriendEventsPaged(100, 0, typeFilter);
+                            var ftTotal  = _timeline.GetFriendEventCount(typeFilter);
                             var fpayload = fevents.Select(e => BuildFriendTimelinePayload(e)).ToList();
-                            Invoke(() => SendToJS("friendTimelineData", new { events = fpayload, hasMore, offset = 0 }));
+                            Invoke(() => SendToJS("friendTimelineData", new { events = fpayload, hasMore, offset = 0, total = ftTotal, type = typeFilter }));
 
                             if (!_vrcApi.IsLoggedIn) return;
+                            if (ftlCt.IsCancellationRequested) return;
 
-                            // Resolve world names for GPS events that have worldId but no worldName (first page only)
+                            // Resolve world thumbs for GPS events (session-cached)
                             var unknownGpsWorlds = fevents
-                                .Where(e => e.Type == "friend_gps" && !string.IsNullOrEmpty(e.WorldId) && string.IsNullOrEmpty(e.WorldName))
+                                .Where(e => e.Type == "friend_gps" && !string.IsNullOrEmpty(e.WorldId) && string.IsNullOrEmpty(e.WorldThumb)
+                                    && !_tlWorldThumbCache.ContainsKey(e.WorldId))
                                 .Select(e => e.WorldId).Distinct().Take(20).ToList();
 
+                            bool anyFevResolved = false;
                             foreach (var wid in unknownGpsWorlds)
                             {
+                                if (ftlCt.IsCancellationRequested) return;
                                 try
                                 {
                                     var w = await _vrcApi.GetWorldAsync(wid);
-                                    if (w == null) continue;
+                                    if (w == null) { _tlWorldThumbCache[wid] = ""; continue; }
                                     var wName  = w["name"]?.ToString()              ?? "";
                                     var wThumb = w["thumbnailImageUrl"]?.ToString() ?? "";
-                                    foreach (var ev in fevents.Where(e => e.WorldId == wid && string.IsNullOrEmpty(e.WorldName)))
+                                    _tlWorldThumbCache[wid] = wThumb;
+                                    foreach (var ev in fevents.Where(e => e.WorldId == wid && string.IsNullOrEmpty(e.WorldThumb)))
                                     {
                                         _timeline.UpdateFriendEventWorld(ev.Id, wName, wThumb);
                                         ev.WorldName  = wName;
                                         ev.WorldThumb = wThumb;
-                                        var evCopy = ev;
-                                        Invoke(() => SendToJS("friendTimelineEvent", BuildFriendTimelinePayload(evCopy)));
+                                        anyFevResolved = true;
                                     }
                                 }
-                                catch { }
+                                catch { _tlWorldThumbCache[wid] = ""; }
+                            }
+
+                            // Resolve missing friend images from cache, then API
+                            var missingFriendIds = fevents
+                                .Where(e => !string.IsNullOrEmpty(e.FriendId) && string.IsNullOrEmpty(e.FriendImage))
+                                .Select(e => e.FriendId).Distinct().ToList();
+
+                            var fetchedFriendImgs = new Dictionary<string, string>();
+                            foreach (var fid in missingFriendIds)
+                            {
+                                if (_tlPlayerImageCache.TryGetValue(fid, out var ci) && !string.IsNullOrEmpty(ci))
+                                    fetchedFriendImgs[fid] = ci;
+                                else if (_friendNameImg.TryGetValue(fid, out var fi) && !string.IsNullOrEmpty(fi.image))
+                                { fetchedFriendImgs[fid] = fi.image; _tlPlayerImageCache[fid] = fi.image; }
+                            }
+
+                            var needApiImg = missingFriendIds.Where(fid => !fetchedFriendImgs.ContainsKey(fid)).Take(20).ToList();
+                            if (needApiImg.Count > 0)
+                            {
+                                var semFi = new SemaphoreSlim(3);
+                                var fiTasks = needApiImg.Select(async fid =>
+                                {
+                                    await semFi.WaitAsync();
+                                    try
+                                    {
+                                        if (ftlCt.IsCancellationRequested) return;
+                                        var profile = await _vrcApi.GetUserAsync(fid);
+                                        if (profile != null)
+                                        {
+                                            var img = VRChatApiService.GetUserImage(profile);
+                                            if (!string.IsNullOrEmpty(img))
+                                            { fetchedFriendImgs[fid] = img; _tlPlayerImageCache[fid] = img; }
+                                        }
+                                        await Task.Delay(250);
+                                    }
+                                    finally { semFi.Release(); }
+                                });
+                                await Task.WhenAll(fiTasks);
+                            }
+
+                            foreach (var (fid, img) in fetchedFriendImgs)
+                                foreach (var ev in fevents.Where(e => e.FriendId == fid && string.IsNullOrEmpty(e.FriendImage)))
+                                {
+                                    _timeline.UpdateFriendEventImage(ev.Id, img);
+                                    ev.FriendImage = img;
+                                    anyFevResolved = true;
+                                }
+
+                            if (anyFevResolved)
+                            {
+                                var updated = fevents.Select(e => BuildFriendTimelinePayload(e)).ToList();
+                                Invoke(() => SendToJS("friendTimelineData", new { events = updated, hasMore, offset = 0, total = ftTotal, type = typeFilter }));
                             }
                         }
                         catch (Exception ex)
@@ -2978,6 +3201,7 @@ public partial class MainForm
                     break;
 
                 case "getFriendTimelinePage":
+                    // Single DB fetch — no async enrichment so page content never changes after load
                     _ = Task.Run(() =>
                     {
                         try
@@ -2985,8 +3209,29 @@ public partial class MainForm
                             var pageOffset = msg["offset"]?.Value<int>() ?? 0;
                             var typeFilter = msg["type"]?.ToString() ?? "";
                             var (fevents, hasMore) = _timeline.GetFriendEventsPaged(100, pageOffset, typeFilter);
+                            var ftTotal  = _timeline.GetFriendEventCount(typeFilter);
                             var fpayload = fevents.Select(e => BuildFriendTimelinePayload(e)).ToList();
-                            Invoke(() => SendToJS("friendTimelineData", new { events = fpayload, hasMore, offset = pageOffset }));
+                            Invoke(() => SendToJS("friendTimelineData", new { events = fpayload, hasMore, offset = pageOffset, total = ftTotal, type = typeFilter }));
+                        }
+                        catch { }
+                    });
+                    break;
+
+                case "getFtAlsoWasHere":
+                    _ = Task.Run(() =>
+                    {
+                        try
+                        {
+                            var location  = msg["location"]?.ToString() ?? "";
+                            var excludeId = msg["excludeId"]?.ToString() ?? "";
+                            var colocated = _timeline.GetFriendGpsColocated(location, excludeId);
+                            var payload   = colocated.Select(e => new
+                            {
+                                friendId    = e.FriendId,
+                                friendName  = e.FriendName,
+                                friendImage = ResolvePlayerImage(e.FriendId, e.FriendImage),
+                            }).ToList();
+                            Invoke(() => SendToJS("ftAlsoWasHere", new { excludeId, friends = payload }));
                         }
                         catch { }
                     });
@@ -2997,12 +3242,17 @@ public partial class MainForm
                     {
                         try
                         {
-                            var dateStr = msg["date"]?.ToString() ?? "";
+                            var dateStr    = msg["date"]?.ToString() ?? "";
+                            var typeFilter = msg["type"]?.ToString() ?? "";
                             if (!DateTime.TryParse(dateStr, out var localDate)) return;
                             localDate = DateTime.SpecifyKind(localDate, DateTimeKind.Local);
                             var events  = _timeline.GetEventsByDate(localDate);
+                            // Apply type filter in-memory (date views have limited event counts)
+                            if (!string.IsNullOrEmpty(typeFilter))
+                                events = events.Where(e => e.Type == typeFilter).ToList();
+                            var total   = events.Count;
                             var payload = events.Select(e => BuildTimelinePayload(e)).ToList();
-                            Invoke(() => SendToJS("timelineData", new { events = payload, hasMore = false, offset = 0 }));
+                            Invoke(() => SendToJS("timelineData", new { events = payload, hasMore = false, offset = 0, total, type = typeFilter }));
                         }
                         catch { }
                     });
@@ -3019,7 +3269,7 @@ public partial class MainForm
                             localDate = DateTime.SpecifyKind(localDate, DateTimeKind.Local);
                             var fevents  = _timeline.GetFriendEventsByDate(localDate, typeFilter);
                             var fpayload = fevents.Select(e => BuildFriendTimelinePayload(e)).ToList();
-                            Invoke(() => SendToJS("friendTimelineData", new { events = fpayload, hasMore = false, offset = 0 }));
+                            Invoke(() => SendToJS("friendTimelineData", new { events = fpayload, hasMore = false, offset = 0, type = typeFilter }));
                         }
                         catch { }
                     });
@@ -3079,56 +3329,49 @@ public partial class MainForm
                 case "invBrowseUpload":
                 {
                     var uploadTag = msg["tag"]?.ToString() ?? "gallery";
-                    Invoke(() =>
+                    var r = Dialog.FileOpen("png");
+                    if (r.IsOk)
                     {
-                        using var dlg = new OpenFileDialog
+                        var path = r.Path;
+                        _ = Task.Run(async () =>
                         {
-                            Filter = "PNG Images (*.png)|*.png",
-                            Title = $"Upload {uploadTag} image"
-                        };
-                        if (dlg.ShowDialog() == DialogResult.OK)
-                        {
-                            var path = dlg.FileName;
-                            _ = Task.Run(async () =>
+                            try
                             {
-                                try
+                                var bytes = System.IO.File.ReadAllBytes(path);
+                                var (ok, file, error) = await _vrcApi.UploadInventoryImageAsync(bytes, uploadTag);
+                                if (ok && file != null)
                                 {
-                                    var bytes = System.IO.File.ReadAllBytes(path);
-                                    var (ok, file, error) = await _vrcApi.UploadInventoryImageAsync(bytes, uploadTag);
-                                    if (ok && file != null)
+                                    var versions = (file["versions"] as Newtonsoft.Json.Linq.JArray) ?? new Newtonsoft.Json.Linq.JArray();
+                                    var latest = versions.OfType<Newtonsoft.Json.Linq.JObject>()
+                                        .LastOrDefault(v => v["status"]?.ToString() == "complete")
+                                        ?? versions.OfType<Newtonsoft.Json.Linq.JObject>().LastOrDefault();
+                                    var fileUrl = latest?["file"]?["url"]?.ToString() ?? "";
+                                    var versionId = latest?["version"]?.Value<int>() ?? 1;
+                                    var newFile = new
                                     {
-                                        var versions = (file["versions"] as Newtonsoft.Json.Linq.JArray) ?? new Newtonsoft.Json.Linq.JArray();
-                                        var latest = versions.OfType<Newtonsoft.Json.Linq.JObject>()
-                                            .LastOrDefault(v => v["status"]?.ToString() == "complete")
-                                            ?? versions.OfType<Newtonsoft.Json.Linq.JObject>().LastOrDefault();
-                                        var fileUrl = latest?["file"]?["url"]?.ToString() ?? "";
-                                        var versionId = latest?["version"]?.Value<int>() ?? 1;
-                                        var newFile = new
-                                        {
-                                            id = file["id"]?.ToString() ?? "",
-                                            name = file["name"]?.ToString() ?? "",
-                                            tags = (file["tags"] as Newtonsoft.Json.Linq.JArray)?.ToObject<List<string>>() ?? new List<string>(),
-                                            animationStyle = file["animationStyle"]?.ToString() ?? "",
-                                            maskTag = file["maskTag"]?.ToString() ?? "",
-                                            fileUrl,
-                                            versionId,
-                                            sizeBytes = latest?["file"]?["sizeInBytes"]?.Value<long>() ?? (long)bytes.Length,
-                                            createdAt = DateTime.UtcNow.ToString("o"),
-                                        };
-                                        Invoke(() => SendToJS("invUploadResult", new { success = true, tag = uploadTag, file = newFile }));
-                                    }
-                                    else
-                                    {
-                                        Invoke(() => SendToJS("invUploadResult", new { success = false, tag = uploadTag, error }));
-                                    }
+                                        id = file["id"]?.ToString() ?? "",
+                                        name = file["name"]?.ToString() ?? "",
+                                        tags = (file["tags"] as Newtonsoft.Json.Linq.JArray)?.ToObject<List<string>>() ?? new List<string>(),
+                                        animationStyle = file["animationStyle"]?.ToString() ?? "",
+                                        maskTag = file["maskTag"]?.ToString() ?? "",
+                                        fileUrl,
+                                        versionId,
+                                        sizeBytes = latest?["file"]?["sizeInBytes"]?.Value<long>() ?? (long)bytes.Length,
+                                        createdAt = DateTime.UtcNow.ToString("o"),
+                                    };
+                                    SendToJS("invUploadResult", new { success = true, tag = uploadTag, file = newFile });
                                 }
-                                catch (Exception ex)
+                                else
                                 {
-                                    Invoke(() => SendToJS("invUploadResult", new { success = false, tag = uploadTag, error = ex.Message }));
+                                    SendToJS("invUploadResult", new { success = false, tag = uploadTag, error });
                                 }
-                            });
-                        }
-                    });
+                            }
+                            catch (Exception ex)
+                            {
+                                SendToJS("invUploadResult", new { success = false, tag = uploadTag, error = ex.Message });
+                            }
+                        });
+                    }
                     break;
                 }
 
@@ -3291,40 +3534,32 @@ public partial class MainForm
                     var dlFileName = msg["fileName"]?.ToString() ?? "download.png";
                     if (!string.IsNullOrEmpty(dlUrl))
                     {
-                        Invoke(() =>
+                        var rs = Dialog.FileSave("png");
+                        if (rs.IsOk)
                         {
-                            using var saveDlg = new SaveFileDialog
+                            var savePath = rs.Path;
+                            _ = Task.Run(async () =>
                             {
-                                FileName = System.IO.Path.GetFileName(dlFileName),
-                                Filter = "PNG Image (*.png)|*.png|All Files (*.*)|*.*",
-                                Title = "Save image"
-                            };
-                            if (saveDlg.ShowDialog() == DialogResult.OK)
-                            {
-                                var savePath = saveDlg.FileName;
-                                _ = Task.Run(async () =>
+                                try
                                 {
-                                    try
+                                    var resp = await _vrcApi.GetHttpClient().GetAsync(dlUrl);
+                                    if (resp.IsSuccessStatusCode)
                                     {
-                                        var resp = await _vrcApi.GetHttpClient().GetAsync(dlUrl);
-                                        if (resp.IsSuccessStatusCode)
-                                        {
-                                            var bytes = await resp.Content.ReadAsByteArrayAsync();
-                                            System.IO.File.WriteAllBytes(savePath, bytes);
-                                            Invoke(() => SendToJS("log", new { msg = $"Saved: {savePath}", color = "ok" }));
-                                        }
-                                        else
-                                        {
-                                            Invoke(() => SendToJS("log", new { msg = $"Download failed: HTTP {(int)resp.StatusCode}", color = "err" }));
-                                        }
+                                        var bytes = await resp.Content.ReadAsByteArrayAsync();
+                                        System.IO.File.WriteAllBytes(savePath, bytes);
+                                        SendToJS("log", new { msg = $"Saved: {savePath}", color = "ok" });
                                     }
-                                    catch (Exception ex)
+                                    else
                                     {
-                                        Invoke(() => SendToJS("log", new { msg = $"Download error: {ex.Message}", color = "err" }));
+                                        SendToJS("log", new { msg = $"Download failed: HTTP {(int)resp.StatusCode}", color = "err" });
                                     }
-                                });
-                            }
-                        });
+                                }
+                                catch (Exception ex)
+                                {
+                                    SendToJS("log", new { msg = $"Download error: {ex.Message}", color = "err" });
+                                }
+                            });
+                        }
                     }
                     break;
                 }

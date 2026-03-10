@@ -1,4 +1,5 @@
 /* === Init === */
+document.addEventListener('contextmenu', e => e.preventDefault());
 
 // Restore nav group collapsed states (default: collapsed)
 (function() {

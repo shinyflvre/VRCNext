@@ -40,7 +40,7 @@ function renderMyWorlds(worlds) {
 
 function _wdGroupOptionLabel(g) {
     const count = favWorldsData.filter(w => w.favoriteGroup === g.name).length;
-    const cap   = g.capacity || 32;
+    const cap   = Math.max(g.capacity || 100, 100);
     const isVrcPlus = g.type === 'vrcPlusWorld';
     return `${esc(g.displayName || g.name)} ${count}/${cap}${isVrcPlus ? ' [VRC+]' : ''}`;
 }
@@ -112,7 +112,7 @@ function cancelEditWorldGroupName() {
     document.getElementById('favWorldGroupHeader').style.display = 'flex';
     const row = document.getElementById('favWorldGroupRenameRow');
     if (row) row.style.display = 'none';
-    const saveBtn = document.querySelector('#favWorldGroupRenameRow .myp-save-btn');
+    const saveBtn = document.querySelector('#favWorldGroupRenameRow .vrcn-btn-primary');
     if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save'; }
 }
 
@@ -122,7 +122,7 @@ function saveWorldGroupName() {
     const input = document.getElementById('favWorldGroupNameInput');
     const newName = (input?.value || '').trim();
     if (!newName) return;
-    const saveBtn = document.querySelector('#favWorldGroupRenameRow .myp-save-btn');
+    const saveBtn = document.querySelector('#favWorldGroupRenameRow .vrcn-btn-primary');
     if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving...'; }
     sendToCS({ action: 'vrcUpdateFavoriteGroup', groupType: g.type, groupName: g.name, displayName: newName });
 }
@@ -146,7 +146,7 @@ function renderWorldCard(w) {
     const thumb = w.thumbnailImageUrl || w.imageUrl || '';
     const desc = w.description ? w.description.substring(0, 100) + (w.description.length > 100 ? '...' : '') : '';
     const tags = (w.tags || []).filter(t => t.startsWith('author_tag_')).map(t => t.replace('author_tag_','')).slice(0,4);
-    const tagsHtml = tags.length ? `<div class="s-card-tags">${tags.map(t => `<span class="s-tag">${esc(t)}</span>`).join('')}</div>` : '';
+    const tagsHtml = tags.length ? `<div class="s-card-tags">${tags.map(t => `<span class="vrcn-badge">${esc(t)}</span>`).join('')}</div>` : '';
     const wid = jsq(w.id);
     const ts = w.worldTimeSeconds || 0;
     const timeBadge = ts > 0 ? `<div class="s-card-time-badge"><span class="msi" style="font-size:11px;">schedule</span> ${formatDuration(ts)}</div>` : '';
@@ -193,7 +193,7 @@ function renderWorldSearchDetail(w) {
     let tagsHtml = '';
     if (authorTags.length || systemTags.length) {
         const allTags = [...authorTags, ...systemTags].slice(0, 12);
-        tagsHtml = `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">${allTags.map(t => `<span class="s-tag">${esc(t)}</span>`).join('')}</div>`;
+        tagsHtml = `<div class="fd-lang-tags">${allTags.map(t => `<span class="vrcn-badge">${esc(t)}</span>`).join('')}</div>`;
     }
 
     // Active instances HTML
@@ -265,6 +265,7 @@ function renderWorldSearchDetail(w) {
                 <option value="public">Public</option>
                 <option value="friends">Friends</option>
                 <option value="hidden">Friends+</option>
+                <option value="invite_plus">Invite+</option>
                 <option value="private">Invite</option>
                 <optgroup label="─────────"></optgroup>
                 <option value="group_public">Group Public</option>
@@ -277,7 +278,7 @@ function renderWorldSearchDetail(w) {
                 <option value="use">US East</option>
                 <option value="jp">Japan</option>
             </select>
-            <button class="btn-p" id="ciBtn" onclick="createWorldInstance('${esc(w.id)}')" style="padding:6px 14px;font-size:11px;"><span class="msi" style="font-size:14px;">add</span> Create & Join</button>
+            <button class="vrcn-button" id="ciBtn" onclick="createWorldInstance('${esc(w.id)}')" style="background:var(--accent);color:#fff;"><span class="msi" style="font-size:14px;">add</span> Create & Join</button>
         </div>
         <div id="ciGroupRow" style="display:none;margin-top:8px;">
             <div style="font-size:11px;color:var(--tx3);margin-bottom:6px;">Select group for this instance:</div>
@@ -295,12 +296,12 @@ function renderWorldSearchDetail(w) {
         <h2 style="margin:0 0 4px;color:var(--tx0);font-size:18px;">${esc(w.name)}</h2>
         <div style="font-size:12px;color:var(--tx3);margin-bottom:12px;">by ${w.authorId ? `<span onclick="document.getElementById('modalDetail').style.display='none';openFriendDetail('${esc(w.authorId)}')" style="display:inline-flex;align-items:center;padding:1px 8px;border-radius:20px;background:var(--bg-hover);font-size:11px;font-weight:600;color:var(--tx1);cursor:pointer;line-height:1.8;">${esc(w.authorName)}</span>` : esc(w.authorName)}</div>
         <div class="fd-badges-row">
-            <span class="fd-badge"><span class="msi" style="font-size:11px;">person</span> ${w.occupants} Active</span>
-            <span class="fd-badge"><span class="msi" style="font-size:11px;">star</span> ${w.favorites}</span>
-            <span class="fd-badge"><span class="msi" style="font-size:11px;">visibility</span> ${w.visits}</span>
+            <span class="vrcn-badge"><span class="msi" style="font-size:11px;">person</span> ${w.occupants} Active</span>
+            <span class="vrcn-badge"><span class="msi" style="font-size:11px;">star</span> ${w.favorites}</span>
+            <span class="vrcn-badge"><span class="msi" style="font-size:11px;">visibility</span> ${w.visits}</span>
         </div>
         <div style="margin:10px 0 6px;">
-            <button class="fd-btn fd-btn-fav${isFavWorld ? ' active' : ''}" id="wdFavBtn" onclick="toggleWorldFavPicker('${wid}')">${favBtnLabel}</button>
+            <button class="vrcn-button-round${isFavWorld ? ' active' : ''}" id="wdFavBtn" onclick="toggleWorldFavPicker('${wid}')" style="margin-left:auto;">${favBtnLabel}</button>
         </div>
         <div id="wdFavPicker" style="display:none;margin-bottom:14px;">
             <div class="wd-section-label" style="margin-bottom:6px;">ADD TO FAVORITE GROUP</div>
@@ -316,7 +317,7 @@ function renderWorldSearchDetail(w) {
         </div>
         ${instancesHtml}
         ${createHtml}
-        <div style="margin-top:14px;text-align:right;"><button class="fd-btn" onclick="closeWorldSearchDetail()">Close</button></div>
+        <div style="margin-top:14px;text-align:right;"><button class="vrcn-button-round" onclick="closeWorldSearchDetail()">Close</button></div>
         </div>`;
 
     document.querySelectorAll('#ciType, #ciRegion').forEach(initVnSelect);
@@ -562,8 +563,15 @@ function openWorldDetail(worldId) {
     const m = document.getElementById('modalWorldDetail');
     const c = document.getElementById('worldDetailContent');
 
+    // Enrich friends whose location is hidden but are known to be in our current instance
+    const _instLoc = currentInstanceData?.worldId === worldId ? currentInstanceData.location : null;
+    const _instUserIds = _instLoc ? new Set((currentInstanceData.users || []).map(u => u.id).filter(Boolean)) : new Set();
+    const friendsRaw = vrcFriendsData.map(f =>
+        (_instUserIds.has(f.id) && (!f.location || f.location === 'private')) ? { ...f, location: _instLoc } : f
+    );
+
     // Find all friends in this world
-    const friends = vrcFriendsData.filter(f => {
+    const friends = friendsRaw.filter(f => {
         const { worldId: wid } = parseFriendLocation(f.location);
         return wid === worldId;
     });
@@ -586,22 +594,76 @@ function openWorldDetail(worldId) {
     const instanceList = Object.values(instanceMap);
     const multiInstance = instanceList.length > 1;
 
+    // Resolve myInst early — needed for instance separation below
+    const myInst = (typeof _myInstancesData !== 'undefined')
+        ? _myInstancesData.find(i => i.worldId === worldId)
+        : null;
+
     // Build header with banner fade (matching profiles/groups)
     const bannerHtml = thumb
         ? `<div class="fd-banner"><img src="${thumb}" onerror="this.parentElement.style.display='none'"><div class="fd-banner-fade"></div></div>`
         : '';
 
-    // Build friends list grouped by instance
-    let friendsHtml = `<div class="wd-friends-label">${multiInstance ? `FRIENDS IN THIS WORLD (${instanceList.length} instances)` : 'FRIENDS IN THIS INSTANCE'}</div>`;
+    // Separate friends in MY instance from friends in other instances
+    const myInstNum = myInst ? (myInst.location?.match(/:(\d+)/)?.[1] || '') : '';
+    let myInstFriends = [];
+    const otherInstMap = {};
     instanceList.forEach(inst => {
-        const { cls: iCls, label: iLabel } = getInstanceBadge(inst.instanceType);
-        const canJoinInst = inst.instanceType !== 'private';
-        const instLoc = inst.location.replace(/'/g, "\\'");
-        if (multiInstance) {
+        if (myInstNum && inst.instanceNum === myInstNum) {
+            myInstFriends = inst.friends;
+        } else {
+            otherInstMap[inst.location] = inst;
+        }
+    });
+    const otherInstList = Object.values(otherInstMap);
+    const totalSections = (myInst ? 1 : 0) + otherInstList.length;
+
+    let friendsHtml = `<div class="wd-friends-label">${totalSections > 1 ? `FRIENDS IN THIS WORLD (${totalSections} instances)` : 'FRIENDS IN THIS INSTANCE'}</div>`;
+
+    // Render MY instance first (always, if it exists)
+    if (myInst) {
+        const { cls: iCls, label: iLabel } = getInstanceBadge(myInst.instanceType);
+        const mnum = myInstNum;
+        const mCopyBadge = mnum
+            ? `<span class="vrcn-id-clip" style="font-size:10px;" onclick="copyInstanceLink('${jsq(myInst.location)}')"><span class="msi" style="font-size:10px;">content_copy</span>#${esc(mnum)}</span>`
+            : '';
+        if (totalSections > 1) {
             friendsHtml += `<div class="wd-instance-header">
-                <span class="fd-instance-badge ${iCls}" style="font-size:9px;">${iLabel}</span>
-                ${inst.instanceNum ? `<span style="font-size:10px;color:var(--tx3);">#${inst.instanceNum}</span>` : ''}
-                ${canJoinInst ? `<button class="fd-btn fd-btn-join" style="padding:2px 10px;font-size:10px;margin-left:auto;" onclick="worldJoinAction('${instLoc}')">Join</button>` : ''}
+                <span class="vrcn-badge ${iCls}">${iLabel}</span>
+                ${mCopyBadge}
+            </div>`;
+        }
+        friendsHtml += '<div class="wd-friends-list">';
+        if (myInstFriends.length > 0) {
+            myInstFriends.forEach(f => {
+                friendsHtml += renderProfileItem(f, `closeWorldDetail();openFriendDetail('${jsq(f.id || '')}')`);
+            });
+        } else {
+            friendsHtml += `<div class="vrcn-profile-item" style="pointer-events:none;opacity:0.55;">
+                <div class="fd-profile-item-avatar" style="display:flex;align-items:center;justify-content:center;"><span class="msi" style="font-size:20px;color:var(--tx3);">person</span></div>
+                <div class="fd-profile-item-info">
+                    <div class="fd-profile-item-name">No friends here yet!</div>
+                    <div class="fd-profile-item-status">Invite friends to this instance!</div>
+                </div>
+            </div>`;
+        }
+        friendsHtml += '</div>';
+    }
+
+    // Render other instances
+    otherInstList.forEach(inst => {
+        let iResolvedType = inst.instanceType;
+        const { cls: iCls, label: iLabel } = getInstanceBadge(iResolvedType);
+        const canJoinInst = iResolvedType !== 'private' && iResolvedType !== 'invite_plus';
+        const instLoc = inst.location.replace(/'/g, "\\'");
+        const instCopyBadge = inst.instanceNum
+            ? `<span class="vrcn-id-clip" style="font-size:10px;" onclick="copyInstanceLink('${jsq(inst.location)}')"><span class="msi" style="font-size:10px;">content_copy</span>#${esc(inst.instanceNum)}</span>`
+            : '';
+        if (totalSections > 1) {
+            friendsHtml += `<div class="wd-instance-header">
+                <span class="vrcn-badge ${iCls}">${iLabel}</span>
+                ${instCopyBadge}
+                ${canJoinInst ? `<button class="vrcn-button-round vrcn-btn-join" style="margin-left:auto;" onclick="worldJoinAction('${instLoc}')">Join</button>` : ''}
             </div>`;
         }
         friendsHtml += '<div class="wd-friends-list">';
@@ -612,22 +674,31 @@ function openWorldDetail(worldId) {
     });
 
     // Actions — single instance: show Join World button; multi-instance: join buttons are per-instance above
-    const anyLoc = instanceList.length > 0 ? instanceList[0].location : '';
-    const anyInstType = instanceList.length > 0 ? instanceList[0].instanceType : 'public';
-    const { cls: instClass, label: instLabel } = getInstanceBadge(anyInstType);
-    const loc = anyLoc.replace(/'/g, "\\'");
-    const canJoin = !multiInstance && anyLoc && anyInstType !== 'private';
+    const anyLoc = otherInstList.length > 0 ? otherInstList[0].location : '';
+    const anyInstType = otherInstList.length > 0 ? otherInstList[0].instanceType : 'public';
     const wid = worldId.replace(/'/g, "\\'");
+    // Use myInst.instanceType (API-verified) when available — parseFriendLocation cannot detect Invite+
+    const displayInstType = myInst?.instanceType || anyInstType;
+    const { cls: instClass, label: instLabel } = getInstanceBadge(displayInstType);
+    const loc = anyLoc.replace(/'/g, "\\'");
+    const canJoin = !myInst && !multiInstance && anyLoc && anyInstType !== 'private' && anyInstType !== 'invite_plus';
+
+    // Single-instance copy badge — shown in fd-badges-row
+    const instanceLoc = myInst?.location || anyLoc;
+    const singleInstNum = instanceLoc.match(/:(\d+)/)?.[1] || '';
+    const singleInstCopy = singleInstNum
+        ? `<span class="vrcn-id-clip" onclick="copyInstanceLink('${jsq(instanceLoc)}')"><span class="msi" style="font-size:12px;">content_copy</span>#${esc(singleInstNum)}</span>`
+        : '';
+
     let actionsHtml = '<div class="fd-actions">';
-    if (canJoin) actionsHtml += `<button class="fd-btn fd-btn-join" onclick="worldJoinAction('${loc}')">Join World</button>`;
-    actionsHtml += `<button class="fd-btn" onclick="closeWorldDetail();openWorldSearchDetail('${wid}')">Open World</button>`;
-    actionsHtml += `<button class="fd-btn" onclick="closeWorldDetail()">Close</button>`;
+    if (canJoin) actionsHtml += `<button class="vrcn-button-round vrcn-btn-join" onclick="worldJoinAction('${loc}')">Join World</button>`;
+    actionsHtml += `<button class="vrcn-button-round" onclick="closeWorldDetail();openWorldSearchDetail('${wid}')">Open World</button>`;
+    actionsHtml += `<button class="vrcn-button-round" style="margin-left:auto;" onclick="closeWorldDetail()">Close</button>`;
     actionsHtml += '</div>';
 
     c.innerHTML = `${bannerHtml}<div class="fd-content${thumb ? ' fd-has-banner' : ''}" style="padding:16px;">
         <h2 style="margin:0 0 4px;color:var(--tx0);font-size:18px;">${esc(worldName)}</h2>
-        <div style="margin-bottom:8px;">${idBadge(worldId)}</div>
-        <div class="fd-badges-row">${multiInstance ? '' : `<span class="fd-instance-badge ${instClass}">${instLabel}</span>`}</div>
+        <div class="fd-badges-row">${(myInst || multiInstance) ? '' : `<span class="vrcn-badge ${instClass}">${instLabel}</span>${singleInstCopy}`}</div>
         ${friendsHtml}${actionsHtml}</div>`;
     m.style.display = 'flex';
 }

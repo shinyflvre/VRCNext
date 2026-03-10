@@ -23,7 +23,7 @@ function renderWebhookCards(w) {
     const e = document.getElementById('whCards'), s = (w || []).slice(0, 4);
     while (s.length < 4) s.push({});
     e.innerHTML = s.map((w, i) =>
-        `<div class="wh-card"><div class="wh-top"><span class="wh-num">#${i + 1}</span><input class="wh-name-input" id="whName${i}" value="${esc(w.Name || w.name || '')}" placeholder="Channel ${i + 1}"><label class="toggle"><input type="checkbox" id="whOn${i}" ${(w.Enabled || w.enabled) ? 'checked' : ''}><div class="toggle-track"><div class="toggle-knob"></div></div></label></div><input class="wh-url-input" id="whUrl${i}" value="${esc(w.Url || w.url || '')}" placeholder="https://discord.com/api/webhooks/..."></div>`
+        `<div class="wh-card"><div class="wh-top"><span class="wh-num">#${i + 1}</span><input class="vrcn-edit-field" id="whName${i}" value="${esc(w.Name || w.name || '')}" placeholder="Channel ${i + 1}" style="width:120px;"><label class="toggle"><input type="checkbox" id="whOn${i}" ${(w.Enabled || w.enabled) ? 'checked' : ''}><div class="toggle-track"><div class="toggle-knob"></div></div></label></div><input class="vrcn-edit-field" id="whUrl${i}" value="${esc(w.Url || w.url || '')}" placeholder="https://discord.com/api/webhooks/..." style="width:100%;"></div>`
     ).join('');
 }
 
@@ -266,4 +266,101 @@ function loadSettingsToUI(s) {
 function updateImgCacheUi() {
     const enabled = document.getElementById('setImgCacheEnabled').checked;
     document.getElementById('imgCacheLimitRow').style.display = enabled ? '' : 'none';
+}
+
+// ── VRCX Import ──────────────────────────────────────────────────────────────
+
+function vrcxSelectFile() {
+    const btn = document.getElementById('vrcxSelectBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="msi" style="font-size:16px;">hourglass_empty</span> Selecting...';
+    sendToCS({ action: 'importVrcxSelect' });
+}
+
+function vrcxReset() {
+    document.getElementById('vrcxPreviewBox').style.display = 'none';
+    document.getElementById('vrcxProgressWrap').style.display = 'none';
+    document.getElementById('vrcxSuccessCard').style.display = 'none';
+    document.getElementById('vrcxImportError').style.display = 'none';
+    document.getElementById('vrcxActionBtns').style.display = 'flex';
+    document.getElementById('vrcxDoneBtn').style.display = 'none';
+    const btn = document.getElementById('vrcxSelectBtn');
+    btn.style.display = '';
+    btn.disabled = false;
+    btn.innerHTML = '<span class="msi" style="font-size:16px;">storage</span> Select VRCX Database';
+    const start = document.getElementById('vrcxStartBtn');
+    start.disabled = false;
+    start.innerHTML = '<span class="msi" style="font-size:16px;">upload</span> Start Import';
+}
+
+function vrcxShowPreview(p) {
+    document.getElementById('vrcxSelectBtn').style.display = 'none';
+    document.getElementById('vrcxFileName').textContent = p.path || 'VRCX.sqlite3';
+    const rows = [
+        ['Worlds tracked',    p.worlds],
+        ['Location visits',   p.locations],
+        ['Friends (time)',    p.friendTimes],
+        ['GPS events',        p.gps],
+        ['Online / Offline',  p.onlineOffline],
+        ['Status changes',    p.statuses],
+        ['Bio changes',       p.bios],
+    ];
+    document.getElementById('vrcxPreviewRows').innerHTML = rows.map(([label, val]) =>
+        `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 8px;background:var(--bg-input);border-radius:6px;">
+            <span style="font-size:12px;opacity:.7;">${label}</span>
+            <span style="font-size:12px;font-weight:600;">${(val ?? 0).toLocaleString()}</span>
+        </div>`
+    ).join('');
+    document.getElementById('vrcxProgressWrap').style.display = 'none';
+    document.getElementById('vrcxSuccessCard').style.display = 'none';
+    document.getElementById('vrcxImportError').style.display = 'none';
+    document.getElementById('vrcxActionBtns').style.display = 'flex';
+    document.getElementById('vrcxDoneBtn').style.display = 'none';
+    const start = document.getElementById('vrcxStartBtn');
+    start.disabled = false;
+    start.innerHTML = '<span class="msi" style="font-size:16px;">upload</span> Start Import';
+    document.getElementById('vrcxPreviewBox').style.display = '';
+}
+
+function vrcxStartImport() {
+    document.getElementById('vrcxActionBtns').style.display = 'none';
+    document.getElementById('vrcxImportError').style.display = 'none';
+    _vrcxSetProgress(5, 'Reading database...');
+    document.getElementById('vrcxProgressWrap').style.display = '';
+    sendToCS({ action: 'importVrcxStart' });
+}
+
+function _vrcxSetProgress(pct, label) {
+    document.getElementById('vrcxProgressBar').style.width = pct + '%';
+    document.getElementById('vrcxProgressLabel').textContent = label || '';
+}
+
+function vrcxShowProgress(p) {
+    _vrcxSetProgress(p.percent ?? 0, p.status ?? '');
+}
+
+function vrcxShowDone(p) {
+    _vrcxSetProgress(100, 'Done');
+    setTimeout(() => {
+        document.getElementById('vrcxProgressWrap').style.display = 'none';
+        document.getElementById('vrcxSuccessDetail').innerHTML =
+            `${(p.worlds ?? 0).toLocaleString()} worlds &nbsp;·&nbsp; ` +
+            `${(p.friends ?? 0).toLocaleString()} friends &nbsp;·&nbsp; ` +
+            `${(p.timelineJoins ?? 0).toLocaleString()} joins &nbsp;·&nbsp; ` +
+            `${(p.friendEvents ?? 0).toLocaleString()} friend events &nbsp;·&nbsp; ` +
+            `${(p.meetEvents ?? 0).toLocaleString()} meets`;
+        document.getElementById('vrcxSuccessCard').style.display = '';
+        document.getElementById('vrcxDoneBtn').style.display = '';
+    }, 400);
+}
+
+function vrcxShowError(err) {
+    document.getElementById('vrcxProgressWrap').style.display = 'none';
+    const el = document.getElementById('vrcxImportError');
+    el.textContent = 'Error: ' + (err || 'Unknown error');
+    el.style.display = '';
+    document.getElementById('vrcxActionBtns').style.display = 'flex';
+    const start = document.getElementById('vrcxStartBtn');
+    start.disabled = false;
+    start.innerHTML = '<span class="msi" style="font-size:16px;">upload</span> Retry Import';
 }

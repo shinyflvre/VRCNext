@@ -68,7 +68,7 @@ echo  ISCC: %ISCC%
 echo  vpk:  %VPK%
 echo.
 
-set "PUBLISH_DIR=bin\Release\net10.0-windows10.0.22621.0\win-x64\publish"
+set "PUBLISH_DIR=bin\Release\net9.0\win-x64\publish"
 
 :: ── 0. Patch version in index.html ────────────────────────────────────────────
 powershell -NoProfile -Command ^

@@ -1,19 +1,24 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net10.0-windows10.0.22621.0</TargetFramework>
-    <UseWindowsForms>true</UseWindowsForms>
+    <TargetFramework>net9.0</TargetFramework>
     <RootNamespace>VRCNext</RootNamespace>
     <AssemblyName>VRCNext</AssemblyName>
-    <ApplicationIcon>logo.ico</ApplicationIcon>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationIcon>logo.ico</ApplicationIcon>
+  </PropertyGroup>
+  <!-- Define WINDOWS when targeting Windows (RID win-*), or when building on Windows without a specific RID (local dev build) -->
+  <PropertyGroup Condition="$(RuntimeIdentifier.StartsWith('win')) OR ($([MSBuild]::IsOSPlatform('Windows')) AND '$(RuntimeIdentifier)' == '')">
+    <DefineConstants>$(DefineConstants);WINDOWS</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.3" />
-    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2903.40" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Photino.NET" Version="4.0.16" />
+    <PackageReference Include="NativeFileDialogSharp" Version="0.5.0" />
     <PackageReference Include="VRChat.API" Version="2.20.7" />
+    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="9.0.0" />
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="9.0.0" />
     <PackageReference Include="Velopack" Version="0.0.915" />
     <PackageReference Include="Vosk" Version="0.3.38" />
@@ -32,4 +37,12 @@
     <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
   </None>
 </ItemGroup>
+
+  <!-- Embed custom icon into apphost (VRCNext.exe) after each build on Windows -->
+  <Target Name="StampIconIntoAppHost" AfterTargets="Build"
+          Condition="$([MSBuild]::IsOSPlatform('Windows'))">
+    <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\tools\stamp_icon.ps1&quot; -exe &quot;$(OutputPath)$(AssemblyName).exe&quot; -ico &quot;$(MSBuildProjectDirectory)\logo.ico&quot;"
+          ContinueOnError="true" />
+  </Target>
+
 </Project>

@@ -3,9 +3,9 @@
 // Upload requirements per tab
 const INV_UPLOAD_REQS = {
     photos:   { maxMB: 8,  ratioW: null, ratioH: null, minPx: 64, maxPx: 2048, hint: 'PNG • max 8 MB • 64×64 to 2048×2048 • any aspect ratio' },
-    icons:    { maxMB: 1,  ratioW: 1, ratioH: 1, targetW: 1024, targetH: 1024, hint: 'PNG • max 1 MB • 1024×1024 • aspect ratio 1:1 • requires VRC+' },
-    emojis:   { maxMB: 1,  ratioW: 1, ratioH: 1, targetW: 1024, targetH: 1024, hint: 'PNG • max 1 MB • 1024×1024 • aspect ratio 1:1 • max 18 • requires VRC+', hasAnimStyle: true },
-    stickers: { maxMB: 1,  ratioW: 1, ratioH: 1, targetW: 1024, targetH: 1024, hint: 'PNG • max 1 MB • max 1024×1024 • aspect ratio 1:1 • max 18 • requires VRC+' },
+    icons:    { maxMB: 8,  ratioW: 1, ratioH: 1, minPx: 64, maxPx: 2048, hint: 'PNG • max 8 MB • 64×64 to 2048×2048 • aspect ratio 1:1 • requires VRC+' },
+    emojis:   { maxMB: 8,  ratioW: 1, ratioH: 1, targetW: 1024, targetH: 1024, hint: 'PNG • max 8 MB • 1024×1024 • aspect ratio 1:1 • max 18 • requires VRC+', hasAnimStyle: true },
+    stickers: { maxMB: 8,  ratioW: 1, ratioH: 1, targetW: 1024, targetH: 1024, hint: 'PNG • max 8 MB • max 1024×1024 • aspect ratio 1:1 • max 18 • requires VRC+' },
 };
 
 // All 27 VRChat emoji particle/animation styles
@@ -47,6 +47,7 @@ let _iuTab        = '';
 let _iuFile       = null;
 let _iuImg        = null;
 let _iuAnimStyle  = 'aura';
+let _iuTooBig     = false; // file exceeded maxMB — image still loaded for compression
 
 // Canvas editor state
 let _iuCanvas     = null;
@@ -71,6 +72,7 @@ function openInvUploadModal() {
     _iuAnimStyle = 'aura';
     _iuCanvas    = null;
     _iuCtx       = null;
+    _iuTooBig    = false;
 
     const existing = document.getElementById('invUploadModal');
     if (existing) existing.remove();
@@ -108,7 +110,7 @@ function _iuBuildHTML(tab) {
         <div id="iuEmojiOptions" style="display:none;margin-top:14px;">
             <div style="font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:8px;">Particle style</div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;" id="iuAnimBtns">
-                ${IU_ANIM_STYLES.map(s => `<button class="btn-fav sub-tab-btn${s.value === 'aura' ? ' active' : ''}" onclick="iuSetAnimStyle('${s.value}',this)">${esc(s.label)}</button>`).join('')}
+                ${IU_ANIM_STYLES.map(s => `<button class="vrcn-button sub-tab-btn${s.value === 'aura' ? ' active' : ''}" onclick="iuSetAnimStyle('${s.value}',this)">${esc(s.label)}</button>`).join('')}
             </div>
         </div>` : '';
 
@@ -124,18 +126,18 @@ function _iuBuildHTML(tab) {
             ondrop="iuDrop(event)">
             <span class="msi" style="font-size:40px;color:var(--tx3);display:block;margin-bottom:10px;pointer-events:none;">upload_file</span>
             <div style="font-size:14px;font-weight:600;color:var(--tx1);pointer-events:none;">
-                Drop PNG here or <span style="color:var(--accent);">browse</span>
+                Drop image here or <span style="color:var(--accent);">browse</span>
             </div>
-            <div style="font-size:11px;color:var(--tx3);margin-top:6px;pointer-events:none;">PNG files only</div>
-            <input type="file" id="iuFileInput" accept="image/png" style="display:none;" onchange="iuHandleFileInput(this)">
+            <div style="font-size:11px;color:var(--tx3);margin-top:6px;pointer-events:none;">PNG, JPG, JPEG</div>
+            <input type="file" id="iuFileInput" accept="image/png,image/jpeg" style="display:none;" onchange="iuHandleFileInput(this)">
         </div>
         <div id="iuEditorArea" style="display:none;"></div>
         <div id="iuPreviewArea" style="display:none;"></div>
         ${emojiHtml}
         <div id="iuError" style="display:none;margin-top:10px;padding:10px 14px;background:rgba(220,50,50,.12);border-radius:8px;font-size:12px;color:#e05252;"></div>
         <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end;">
-            <button class="fd-btn" onclick="closeInvUploadModal()">Cancel</button>
-            <button class="fd-btn fd-btn-join" id="iuUploadBtn" style="display:none;" onclick="iuDoUpload()">
+            <button class="vrcn-button-round" onclick="closeInvUploadModal()">Cancel</button>
+            <button class="vrcn-button-round vrcn-btn-join" id="iuUploadBtn" style="display:none;" onclick="iuDoUpload()">
                 <span class="msi" style="font-size:14px;">upload</span> Upload
             </button>
         </div>
@@ -161,27 +163,36 @@ function iuHandleFileInput(input) {
 }
 
 function iuHandleFile(file) {
-    _iuFile = null;
-    _iuImg  = null;
+    _iuFile   = null;
+    _iuImg    = null;
+    _iuTooBig = false;
     iuClearError();
 
-    if (!file.type.includes('png') && !file.name.toLowerCase().endsWith('.png')) {
-        iuShowError('Only PNG files are supported.');
+    const nameLower = file.name.toLowerCase();
+    const validType = file.type.includes('png') || file.type.includes('jpeg') ||
+                      nameLower.endsWith('.png') || nameLower.endsWith('.jpg') || nameLower.endsWith('.jpeg');
+    if (!validType) {
+        iuShowError('Only PNG, JPG, and JPEG files are supported.');
         return;
     }
 
     const req = INV_UPLOAD_REQS[_iuTab];
-    if (req && file.size > req.maxMB * 1024 * 1024) {
-        iuShowError(`File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum is ${req.maxMB} MB.`);
-        return;
-    }
+    const isTooBig = req && file.size > req.maxMB * 1024 * 1024;
 
     const reader = new FileReader();
     reader.onload = e => {
         const img = new Image();
         img.onload = () => {
-            _iuFile = file;
-            _iuImg  = img;
+            _iuFile   = file;
+            _iuImg    = img;
+            _iuTooBig = isTooBig;
+            if (isTooBig) {
+                iuShowError(
+                    `File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum is ${req.maxMB} MB.`,
+                    `<button class="vrcn-button-round" style="margin-top:8px;font-size:12px;" onclick="iuCompressAndContinue()"><span class="msi" style="font-size:13px;vertical-align:-2px;">compress</span> Compress Image</button>`
+                );
+                return;
+            }
             _iuValidateAndShow(img, file, req);
         };
         img.onerror = () => iuShowError('Failed to load image.');
@@ -199,7 +210,7 @@ function _iuValidateAndShow(img, file, req) {
         return;
     }
     if (req.maxPx != null && (img.naturalWidth > req.maxPx || img.naturalHeight > req.maxPx)) {
-        iuShowError(`Image too large. Maximum size is ${req.maxPx}×${req.maxPx} px.`);
+        _iuAutoResize(img, req);
         return;
     }
 
@@ -219,7 +230,7 @@ function _iuValidateAndShow(img, file, req) {
 
 // ── Preview ───────────────────────────────────────────────────────────────────
 
-function _iuShowPreview(img, file, wasCropped) {
+function _iuShowPreview(img, file, wasCropped, wasCompressed, wasResized) {
     const dz        = document.getElementById('iuDropZone');
     const ea        = document.getElementById('iuEditorArea');
     const pa        = document.getElementById('iuPreviewArea');
@@ -245,9 +256,11 @@ function _iuShowPreview(img, file, wasCropped) {
             <div style="flex:1;min-width:0;">
                 <div style="font-weight:600;color:var(--tx1);margin-bottom:4px;word-break:break-all;">${esc(file.name)}</div>
                 <div style="font-size:12px;color:var(--tx3);margin-bottom:4px;">${dimStr} • ${sizeStr}</div>
-                ${wasCropped ? '<div style="font-size:12px;color:var(--accent);margin-bottom:4px;"><span class="msi" style="font-size:13px;vertical-align:-3px;">crop</span> Cropped to fit</div>' : ''}
+                ${wasCropped    ? '<div style="font-size:12px;color:var(--accent);margin-bottom:4px;"><span class="msi" style="font-size:13px;vertical-align:-3px;">crop</span> Cropped to fit</div>' : ''}
+                ${wasResized    ? '<div style="font-size:12px;color:var(--accent);margin-bottom:4px;"><span class="msi" style="font-size:13px;vertical-align:-3px;">photo_size_select_large</span> Resized to fit</div>' : ''}
+                ${wasCompressed ? '<div style="font-size:12px;color:var(--accent);margin-bottom:4px;"><span class="msi" style="font-size:13px;vertical-align:-3px;">compress</span> Compressed</div>' : ''}
                 <div style="font-size:12px;color:#4caf50;"><span class="msi" style="font-size:13px;vertical-align:-3px;">check_circle</span> Ready to upload</div>
-                <button class="fd-btn" style="margin-top:10px;font-size:11px;padding:4px 10px;" onclick="iuReset()">Choose different</button>
+                <button class="vrcn-button-round" style="margin-top:10px;" onclick="iuReset()">Choose different</button>
             </div>`;
     }
 
@@ -283,8 +296,8 @@ function _iuShowEditor(img, req) {
             <span class="msi" style="color:var(--tx3);font-size:16px;">zoom_in</span>
         </div>
         <div style="display:flex;gap:8px;margin-top:10px;justify-content:flex-end;">
-            <button class="fd-btn" style="font-size:12px;" onclick="iuReset()">Choose different</button>
-            <button class="fd-btn fd-btn-join" onclick="iuCropAndContinue()">
+            <button class="vrcn-button-round" style="font-size:12px;" onclick="iuReset()">Choose different</button>
+            <button class="vrcn-button-round vrcn-btn-join" onclick="iuCropAndContinue()">
                 <span class="msi" style="font-size:14px;">crop</span> Crop & continue
             </button>
         </div>`;
@@ -480,6 +493,102 @@ function iuCropAndContinue() {
     }, 'image/png');
 }
 
+// ── Auto-resize (dimensions exceed maxPx) ─────────────────────────────────────
+
+function _iuAutoResize(img, req) {
+    const maxPx  = req.maxPx;
+    const scale  = maxPx / Math.max(img.naturalWidth, img.naturalHeight);
+    const newW   = Math.round(img.naturalWidth  * scale);
+    const newH   = Math.round(img.naturalHeight * scale);
+
+    const out = document.createElement('canvas');
+    out.width = newW; out.height = newH;
+    out.getContext('2d').drawImage(img, 0, 0, newW, newH);
+
+    out.toBlob(blob => {
+        if (!blob) { iuShowError('Failed to resize image.'); return; }
+        const url = URL.createObjectURL(blob);
+        const resized = new Image();
+        resized.onload = () => {
+            _iuImg  = resized;
+            _iuFile = new File([blob], _iuFile?.name || 'resized.png', { type: 'image/png' });
+            // Continue with ratio check (ratio may still require crop)
+            if (req.ratioW != null) {
+                const imgRatio    = resized.naturalWidth / resized.naturalHeight;
+                const targetRatio = req.ratioW / req.ratioH;
+                if (Math.abs(imgRatio - targetRatio) < 0.02) _iuShowPreview(resized, _iuFile, false, false, true);
+                else _iuShowEditor(resized, req);
+            } else {
+                _iuShowPreview(resized, _iuFile, false, false, true);
+            }
+        };
+        resized.src = url;
+    }, 'image/png');
+}
+
+// ── Compress oversized file ────────────────────────────────────────────────────
+
+async function iuCompressAndContinue() {
+    if (!_iuImg) return;
+    const req      = INV_UPLOAD_REQS[_iuTab];
+    const maxBytes = (req?.maxMB || 8) * 1024 * 1024;
+
+    // Scale dimensions down to maxPx first if needed
+    const maxPx = req?.maxPx;
+    let w = _iuImg.naturalWidth;
+    let h = _iuImg.naturalHeight;
+    if (maxPx && (w > maxPx || h > maxPx)) {
+        const s = maxPx / Math.max(w, h);
+        w = Math.round(w * s);
+        h = Math.round(h * s);
+    }
+
+    // Try progressively lower JPEG quality
+    for (const quality of [0.85, 0.75, 0.60, 0.45, 0.30]) {
+        const blob = await new Promise(resolve => {
+            const out = document.createElement('canvas');
+            out.width = w; out.height = h;
+            out.getContext('2d').drawImage(_iuImg, 0, 0, w, h);
+            out.toBlob(resolve, 'image/jpeg', quality);
+        });
+        if (blob && blob.size <= maxBytes) {
+            _iuApplyCompressed(blob);
+            return;
+        }
+    }
+
+    // Still too large — shrink dimensions further
+    for (const scale of [0.75, 0.5, 0.4]) {
+        const sw = Math.round(_iuImg.naturalWidth * scale);
+        const sh = Math.round(_iuImg.naturalHeight * scale);
+        const blob = await new Promise(resolve => {
+            const out = document.createElement('canvas');
+            out.width = sw; out.height = sh;
+            out.getContext('2d').drawImage(_iuImg, 0, 0, sw, sh);
+            out.toBlob(resolve, 'image/jpeg', 0.45);
+        });
+        if (blob && blob.size <= maxBytes) {
+            _iuApplyCompressed(blob);
+            return;
+        }
+    }
+
+    iuShowError('Could not compress the image enough. Please use a smaller image.');
+}
+
+function _iuApplyCompressed(blob) {
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+        _iuImg    = img;
+        _iuFile   = new File([blob], (_iuFile?.name?.replace(/\.[^.]+$/, '') || 'image') + '.jpg', { type: 'image/jpeg' });
+        _iuTooBig = false;
+        iuClearError();
+        _iuShowPreview(img, _iuFile, false, true, false);
+    };
+    img.src = url;
+}
+
 // ── Emoji options ─────────────────────────────────────────────────────────────
 
 function iuSetAnimStyle(value, btn) {
@@ -496,6 +605,7 @@ function iuReset() {
     _iuImg    = null;
     _iuCanvas = null;
     _iuCtx    = null;
+    _iuTooBig = false;
 
     const dz        = document.getElementById('iuDropZone');
     const ea        = document.getElementById('iuEditorArea');
@@ -556,9 +666,9 @@ function iuHandleUploadDone(success) {
 
 // ── Error helpers ─────────────────────────────────────────────────────────────
 
-function iuShowError(msg) {
+function iuShowError(msg, extraHtml = '') {
     const el = document.getElementById('iuError');
-    if (el) { el.style.display = ''; el.textContent = msg; }
+    if (el) { el.style.display = ''; el.innerHTML = esc(msg) + (extraHtml ? '<br>' + extraHtml : ''); }
     const ub = document.getElementById('iuUploadBtn');
     if (ub) { ub.disabled = false; ub.innerHTML = '<span class="msi" style="font-size:14px;">upload</span> Upload'; }
 }

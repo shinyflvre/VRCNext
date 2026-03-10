@@ -216,132 +216,50 @@ public class VRChatApiService
         }
     }
 
-    // Friends
-    public async Task<List<JObject>> GetOnlineFriendsAsync()
-    {
-        var all = new List<JObject>();
-        if (!IsLoggedIn) { Log("GetFriends: not logged in"); return all; }
+    // Friends — 3 parallel workers, no artificial delays
+    public Task<List<JObject>> GetOnlineFriendsAsync()  => FetchFriendsParallelAsync(offline: false);
+    public Task<List<JObject>> GetOfflineFriendsAsync() => FetchFriendsParallelAsync(offline: true);
 
-        try
+    private async Task<List<JObject>> FetchFriendsParallelAsync(bool offline)
+    {
+        var all  = new List<JObject>();
+        if (!IsLoggedIn) { if (!offline) Log("GetFriends: not logged in"); return all; }
+
+        const int pageSize   = 50;
+        const int concurrency = 3;
+        var nextOffset = 0;
+        var done       = false;
+        var lck        = new object();
+
+        async Task Worker()
         {
-            int offset = 0;
             while (true)
             {
-                var url = $"{BASE}/auth/user/friends?offline=false&n=50&offset={offset}";
-                Log($"Fetching friends: offset={offset}");
-                var resp = await _http.GetAsync(url);
-                var body = await resp.Content.ReadAsStringAsync();
-                Log($"Friends response: {(int)resp.StatusCode}  length={body.Length}");
-
-                if (!resp.IsSuccessStatusCode)
+                int myOffset;
+                lock (lck) { if (done) return; myOffset = nextOffset; nextOffset += pageSize; }
+                try
                 {
-                    Log($"Friends error: {body[..Math.Min(200, body.Length)]}");
-                    break;
+                    var flag = offline ? "true" : "false";
+                    var resp = await _http.GetAsync($"{BASE}/auth/user/friends?offline={flag}&n={pageSize}&offset={myOffset}");
+                    var body = await resp.Content.ReadAsStringAsync();
+                    Log($"Fetching {(offline ? "offline" : "online")} friends: offset={myOffset} → {(int)resp.StatusCode}");
+                    if (!resp.IsSuccessStatusCode)
+                    {
+                        Log($"Friends error: {body[..Math.Min(200, body.Length)]}");
+                        lock (lck) done = true; return;
+                    }
+                    var batch = JArray.Parse(body);
+                    Log($"Friends batch at {myOffset}: {batch.Count}");
+                    lock (all) foreach (var x in batch) all.Add((JObject)x);
+                    if (batch.Count < pageSize) { lock (lck) done = true; return; }
                 }
-
-                var batch = JArray.Parse(body);
-                Log($"Friends batch: {batch.Count} items");
-
-                if (batch.Count == 0) break;
-                foreach (var item in batch)
-                    all.Add((JObject)item);
-
-                if (batch.Count < 50) break;
-                offset += 50;
-                await Task.Delay(1100);
+                catch (Exception ex) { Log($"Friends worker: {ex.Message}"); lock (lck) done = true; return; }
             }
         }
-        catch (Exception ex)
-        {
-            Log($"Friends exception: {ex.Message}");
-        }
 
-        Log($"Total online friends: {all.Count}");
+        await Task.WhenAll(Enumerable.Range(0, concurrency).Select(_ => Worker()));
+        Log($"Total {(offline ? "offline" : "online")} friends: {all.Count}");
         return all;
-    }
-
-    public async Task<List<JObject>> GetOfflineFriendsAsync()
-    {
-        var all = new List<JObject>();
-        if (!IsLoggedIn) return all;
-
-        try
-        {
-            int offset = 0;
-            while (true)
-            {
-                var url = $"{BASE}/auth/user/friends?offline=true&n=50&offset={offset}";
-                Log($"Fetching offline friends: offset={offset}");
-                var resp = await _http.GetAsync(url);
-                var body = await resp.Content.ReadAsStringAsync();
-
-                if (!resp.IsSuccessStatusCode) break;
-
-                var batch = JArray.Parse(body);
-                if (batch.Count == 0) break;
-                foreach (var item in batch)
-                    all.Add((JObject)item);
-
-                if (batch.Count < 50) break;
-                offset += 50;
-                await Task.Delay(1100);
-            }
-        }
-        catch (Exception ex)
-        {
-            Log($"Offline friends exception: {ex.Message}");
-        }
-
-        Log($"Total offline friends: {all.Count}");
-        return all;
-    }
-
-    // Friends (enriched with world info for dashboard)
-    public async Task<List<JObject>> GetOnlineFriendsEnrichedAsync()
-    {
-        var friends = await GetOnlineFriendsAsync();
-        if (friends.Count == 0) return friends;
-
-        // Collect unique worldIds from locations
-        var worldIds = new HashSet<string>();
-        foreach (var f in friends)
-        {
-            var loc = f["location"]?.ToString();
-            if (string.IsNullOrEmpty(loc) || loc == "private" || loc == "offline" || loc == "traveling") continue;
-            var (worldId, _, _) = ParseLocation(loc);
-            if (!string.IsNullOrEmpty(worldId)) worldIds.Add(worldId);
-        }
-
-        // Fetch world info for each unique worldId
-        var worldCache = new Dictionary<string, JObject>();
-        foreach (var wid in worldIds)
-        {
-            try
-            {
-                var world = await GetWorldAsync(wid);
-                if (world != null) worldCache[wid] = world;
-                await Task.Delay(300); // rate limit
-            }
-            catch (Exception ex) { Log($"EnrichFriends world fetch error: {ex.Message}"); }
-        }
-
-        // Attach world info to each friend
-        foreach (var f in friends)
-        {
-            var loc = f["location"]?.ToString();
-            if (string.IsNullOrEmpty(loc) || loc == "private" || loc == "offline" || loc == "traveling") continue;
-            var (worldId, _, instanceType) = ParseLocation(loc);
-            if (!string.IsNullOrEmpty(worldId) && worldCache.TryGetValue(worldId, out var world))
-            {
-                f["worldName"] = world["name"]?.ToString() ?? "";
-                f["worldThumb"] = world["thumbnailImageUrl"]?.ToString() ?? "";
-                f["worldCapacity"] = world["capacity"]?.Value<int>() ?? 0;
-                f["instanceType"] = instanceType;
-            }
-        }
-
-        Log($"Enriched {friends.Count} friends with {worldCache.Count} worlds");
-        return friends;
     }
 
     // Update own status and statusDescription
@@ -411,10 +329,24 @@ public class VRChatApiService
         return null;
     }
 
-    // Get user profile by ID
-    public async Task<JObject?> GetUserAsync(string userId)
+    // Get user profile by ID — in-flight deduplication (same userId → shared Task)
+    private readonly Dictionary<string, Task<JObject?>> _userFetchTasks = new();
+
+    public Task<JObject?> GetUserAsync(string userId)
     {
-        if (!IsLoggedIn) return null;
+        if (!IsLoggedIn || string.IsNullOrEmpty(userId)) return Task.FromResult<JObject?>(null);
+        lock (_userFetchTasks)
+        {
+            if (_userFetchTasks.TryGetValue(userId, out var existing)) return existing;
+            var task = FetchUserAsync(userId);
+            _userFetchTasks[userId] = task;
+            task.ContinueWith(_ => { lock (_userFetchTasks) _userFetchTasks.Remove(userId); });
+            return task;
+        }
+    }
+
+    private async Task<JObject?> FetchUserAsync(string userId)
+    {
         try
         {
             var resp = await _http.GetAsync($"{BASE}/users/{userId}");
@@ -497,12 +429,15 @@ public class VRChatApiService
         return all;
     }
 
-    // Get world info — in-flight deduplication prevents the same worldId being fetched multiple times in parallel
+    // Get world info — session cache + in-flight deduplication
     private readonly Dictionary<string, Task<JObject?>> _worldFetchTasks = new();
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, JObject> _worldCache = new();
 
     public Task<JObject?> GetWorldAsync(string worldId)
     {
         if (!IsLoggedIn || string.IsNullOrEmpty(worldId)) return Task.FromResult<JObject?>(null);
+        // Session cache hit — no API call needed
+        if (_worldCache.TryGetValue(worldId, out var cached)) return Task.FromResult<JObject?>(cached);
         lock (_worldFetchTasks)
         {
             if (_worldFetchTasks.TryGetValue(worldId, out var existing)) return existing;
@@ -519,7 +454,12 @@ public class VRChatApiService
         {
             var resp = await _http.GetAsync($"{BASE}/worlds/{worldId}");
             var body = await resp.Content.ReadAsStringAsync();
-            if (resp.IsSuccessStatusCode) return JObject.Parse(body);
+            if (resp.IsSuccessStatusCode)
+            {
+                var world = JObject.Parse(body);
+                _worldCache[worldId] = world;
+                return world;
+            }
         }
         catch (Exception ex) { Log($"GetWorld exception: {ex.Message}"); }
         return null;
@@ -538,6 +478,79 @@ public class VRChatApiService
         }
         catch (Exception ex) { Log($"GetAvatar exception: {ex.Message}"); }
         return null;
+    }
+
+    public async Task<int> GetOnlineCountAsync()
+    {
+        try
+        {
+            var resp = await _http.GetAsync($"{BASE}/visits");
+            var body = await resp.Content.ReadAsStringAsync();
+            if (resp.IsSuccessStatusCode && int.TryParse(body.Trim(), out var count))
+                return count;
+        }
+        catch (Exception ex) { Log($"GetOnlineCount exception: {ex.Message}"); }
+        return 0;
+    }
+
+    public async Task<(bool ok, string error)> UpdateAvatarAsync(string avatarId, string name, string description, string releaseStatus, List<string> tags)
+    {
+        if (!IsLoggedIn) return (false, "Not logged in");
+        try
+        {
+            var body = JsonConvert.SerializeObject(new { name, description, releaseStatus, tags });
+            var content = new StringContent(body, System.Text.Encoding.UTF8, "application/json");
+            var resp = await _http.PutAsync($"{BASE}/avatars/{avatarId}", content);
+            var respBody = await resp.Content.ReadAsStringAsync();
+            if (resp.IsSuccessStatusCode) return (true, "");
+            Log($"UpdateAvatar {(int)resp.StatusCode}: {respBody[..Math.Min(200, respBody.Length)]}");
+            return (false, $"API error {(int)resp.StatusCode}");
+        }
+        catch (Exception ex) { Log($"UpdateAvatar exception: {ex.Message}"); return (false, ex.Message); }
+    }
+
+    // Close (delete) a VRChat instance via API — owner only
+    // Fetches full instance ID (with nonce) first, then sends DELETE with hardClose=true
+    public async Task<bool> CloseInstanceAsync(string location)
+    {
+        if (!IsLoggedIn || string.IsNullOrEmpty(location)) return false;
+        try
+        {
+            // Fetch the live instance to get the full id (includes ~nonce(...))
+            var inst = await GetInstanceAsync(location);
+            if (inst == null)
+            {
+                Log("CloseInstance: instance not found (already gone)");
+                return true; // Already gone, treat as success
+            }
+            // inst["location"] = "wrld_xxx:12345~hidden(...)~nonce(...)" — split at first colon
+            var fullLoc = inst["location"]?.ToString() ?? "";
+            var colonIdx = fullLoc.IndexOf(':');
+            if (colonIdx < 0) return false;
+            var worldId    = fullLoc[..colonIdx];
+            var instanceId = fullLoc[(colonIdx + 1)..];  // "12345~hidden(...)~region(eu)~nonce(xxx)"
+            var resp = await _http.DeleteAsync($"{BASE}/instances/{worldId}:{instanceId}?hardClose=true");
+            var body = await resp.Content.ReadAsStringAsync();
+            Log($"CloseInstance {(int)resp.StatusCode}: {body[..Math.Min(120, body.Length)]}");
+            if ((int)resp.StatusCode == 403 && body.Contains("already closed")) return true;
+            return resp.IsSuccessStatusCode;
+        }
+        catch (Exception ex) { Log($"CloseInstance exception: {ex.Message}"); return false; }
+    }
+
+    // Get fresh current user location from API (more reliable than log watcher alone)
+    public async Task<string?> GetCurrentUserLocationAsync()
+    {
+        if (!IsLoggedIn) return null;
+        try
+        {
+            var resp = await _http.GetAsync($"{BASE}/auth/user");
+            if (!resp.IsSuccessStatusCode) return null;
+            var obj = JObject.Parse(await resp.Content.ReadAsStringAsync());
+            CurrentUserRaw = obj; // keep CurrentUserRaw fresh
+            return obj["currentLocation"]?.ToString();
+        }
+        catch { return null; }
     }
 
     // Get instance info
@@ -625,11 +638,14 @@ public class VRChatApiService
             case "friends":
                 instanceId = $"{instanceNum}~friends({userId})~region({region})~nonce({nonce})";
                 break;
-            case "hidden": // invite+
+            case "hidden": // friends+
                 instanceId = $"{instanceNum}~hidden({userId})~region({region})~nonce({nonce})";
                 break;
-            case "private": // invite
+            case "invite_plus": // invite+
                 instanceId = $"{instanceNum}~private({userId})~canRequestInvite~region({region})~nonce({nonce})";
+                break;
+            case "private": // invite
+                instanceId = $"{instanceNum}~private({userId})~region({region})~nonce({nonce})";
                 break;
             default: // public
                 instanceId = $"{instanceNum}~region({region})";
@@ -803,13 +819,12 @@ public class VRChatApiService
     }
 
     // Invite friend to your instance
-    public async Task<bool> InviteFriendAsync(string userId, int? messageSlot = null)
+    public async Task<bool> InviteFriendAsync(string userId, string myLocation, int? messageSlot = null)
     {
         if (!IsLoggedIn) return false;
         try
         {
-            // Use GetMyLocationAsync for reliable location; /auth/user often returns null
-            var loc = await GetMyLocationAsync();
+            var loc = myLocation;
             if (string.IsNullOrEmpty(loc) || loc == "offline" || loc == "traveling")
             {
                 Log("InviteFriend: no valid instance to invite to");
@@ -1856,41 +1871,6 @@ public class VRChatApiService
         }
         catch (Exception ex) { Log($"RefreshCurrentUser exception: {ex.Message}"); }
         return CurrentUserRaw;
-    }
-
-    /// <summary>
-    /// Gets the current user's real-time location by fetching /users/{id}.
-    /// /auth/user does NOT reliably return location (often null).
-    /// /users/{id} returns the actual live location.
-    /// </summary>
-    public async Task<string?> GetMyLocationAsync()
-    {
-        if (!IsLoggedIn || CurrentUserId == null) return null;
-        try
-        {
-            Log($"GetMyLocation: GET /users/{CurrentUserId}");
-            var resp = await _http.GetAsync($"{BASE}/users/{CurrentUserId}");
-            var body = await resp.Content.ReadAsStringAsync();
-            if (resp.IsSuccessStatusCode)
-            {
-                var json = JObject.Parse(body);
-                var loc = json["location"]?.ToString();
-                Log($"GetMyLocation: location=[{loc ?? "NULL"}]");
-                return loc;
-            }
-            Log($"GetMyLocation: HTTP {(int)resp.StatusCode}");
-        }
-        catch (Exception ex) { Log($"GetMyLocation exception: {ex.Message}"); }
-        return null;
-    }
-
-    // Current instance details
-    public async Task<JObject?> GetCurrentInstanceAsync()
-    {
-        if (!IsLoggedIn) return null;
-        var loc = await GetMyLocationAsync();
-        if (string.IsNullOrEmpty(loc) || loc == "offline" || loc == "private" || loc == "traveling") return null;
-        return await GetInstanceAsync(loc);
     }
 
     // User Notes

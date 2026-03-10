@@ -80,13 +80,13 @@ function _initCalUI() {
     tab.innerHTML = `<div id="calInner">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:8px;">
             <div style="display:flex;align-items:center;gap:4px;">
-                <button class="btn-f" onclick="_calNavMonth(-1)" style="padding:5px 10px;"><span class="msi" style="font-size:18px;">chevron_left</span></button>
+                <button class="vrcn-button" onclick="_calNavMonth(-1)"><span class="msi" style="font-size:18px;">chevron_left</span></button>
                 <span id="calMonthLabel" style="min-width:140px;text-align:center;font-size:14px;font-weight:700;color:var(--tx0);"></span>
-                <button class="btn-f" onclick="_calNavMonth(1)"  style="padding:5px 10px;"><span class="msi" style="font-size:18px;">chevron_right</span></button>
-                <button class="btn-fav sub-tab-btn cal-filter-btn active" data-filter="all"      onclick="setCalFilter('all')"><span class="msi" style="font-size:14px;">calendar_month</span> All</button>
-                <button class="btn-fav sub-tab-btn cal-filter-btn"        data-filter="featured"  onclick="setCalFilter('featured')"><span class="msi" style="font-size:14px;">star</span> Featured</button>
-                <button class="btn-fav sub-tab-btn cal-filter-btn"        data-filter="following" onclick="setCalFilter('following')"><span class="msi" style="font-size:14px;">notifications_active</span> Following</button>
-                <button class="btn-f" id="calRefreshBtn" onclick="refreshCalendar()" title="Refresh" style="padding:5px 10px;"><span class="msi" style="font-size:18px;">refresh</span></button>
+                <button class="vrcn-button" onclick="_calNavMonth(1)"><span class="msi" style="font-size:18px;">chevron_right</span></button>
+                <button class="vrcn-button sub-tab-btn cal-filter-btn active" data-filter="all"      onclick="setCalFilter('all')"><span class="msi" style="font-size:14px;">calendar_month</span> All</button>
+                <button class="vrcn-button sub-tab-btn cal-filter-btn"        data-filter="featured"  onclick="setCalFilter('featured')"><span class="msi" style="font-size:14px;">star</span> Featured</button>
+                <button class="vrcn-button sub-tab-btn cal-filter-btn"        data-filter="following" onclick="setCalFilter('following')"><span class="msi" style="font-size:14px;">notifications_active</span> Following</button>
+                <button class="vrcn-button" id="calRefreshBtn" onclick="refreshCalendar()" title="Refresh"><span class="msi" style="font-size:18px;">refresh</span></button>
             </div>
         </div>
         <div id="calGridArea"></div>
@@ -256,7 +256,7 @@ function _buildDayPanel(events, key) {
             const tags = Array.isArray(e.tags) ? e.tags : [];
             const tagHtml = tags.slice(0,4).map(t => {
                 const ft = /featured/i.test(t);
-                return `<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:${ft?'rgba(245,158,11,.18)':'rgba(139,92,246,.15)'};color:${ft?'#f6c265':'#b4a0f5'};">${esc(t)}</span>`;
+                return `<span class="vrcn-badge${ft ? ' warn' : ''}">${esc(t)}</span>`;
             }).join('');
             const imgHtml = e.imageUrl
                 ? `<img class="cal-evlist-thumb" src="${e.imageUrl}" onerror="this.style.display='none'">`
@@ -274,7 +274,7 @@ function _buildDayPanel(events, key) {
     el.innerHTML = `<div class="cal-day-panel">
         <div class="cal-day-panel-hdr">
             <span class="msi" style="font-size:16px;color:var(--accent-lt);">calendar_today</span>${esc(dayLabel)}
-            <button class="btn-f" onclick="_calClickDay('${key}')" style="margin-left:auto;padding:2px 8px;font-size:11px;">✕</button>
+            <button class="vrcn-button" onclick="_calClickDay('${key}')" style="margin-left:auto;padding:2px 8px;font-size:11px;">✕</button>
         </div>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;">${cards}</div>
     </div>`;

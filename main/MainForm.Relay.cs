@@ -66,7 +66,6 @@ public partial class MainForm
         _fileWatcher.Start(folders);
         _relayRunning = true;
         _relayStart = DateTime.Now;
-        _uptimeTimer.Start();
 
         SendToJS("relayState", new { running = true, streams = whs.Count });
         SendToJS("log", new { msg = "Relay started successfully", color = "ok" });
@@ -80,7 +79,6 @@ public partial class MainForm
     {
         _fileWatcher.Stop();
         _relayRunning = false;
-        _uptimeTimer.Stop();
 
         SendToJS("relayState", new { running = false, streams = 0 });
         SendToJS("log", new { msg = "Relay stopped", color = "warn" });

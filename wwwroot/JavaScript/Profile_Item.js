@@ -29,5 +29,5 @@ function renderProfileItem(user, onclick) {
         ? `<div class="fd-profile-item-status"><span class="${indicator} ${statusDotClass(status)}" style="width:6px;height:6px;flex-shrink:0;"></span>${statusLabel(status)}${statusDesc ? ' — ' + esc(statusDesc) : ''}</div>`
         : '';
 
-    return `<div class="fd-profile-item" onclick="${onclick}">${img}<div class="fd-profile-item-info"><div class="fd-profile-item-name">${esc(name)}</div>${statusLine}</div></div>`;
+    return `<div class="vrcn-profile-item" onclick="${onclick}">${img}<div class="fd-profile-item-info"><div class="fd-profile-item-name">${esc(name)}</div>${statusLine}</div></div>`;
 }

@@ -4,10 +4,10 @@ namespace VRCNext;
 
 public partial class MainForm
 {
-    /// <summary>Converts a local file path to a virtual-host URL usable in WebView2.</summary>
+    /// <summary>Converts a local file path to an HttpListener URL.</summary>
     private string GetVirtualMediaUrl(string filePath)
     {
-        // Check watch-folder virtual hosts first
+        // Check watch-folder routes first
         for (int i = 0; i < _settings.WatchFolders.Count; i++)
         {
             var folder = _settings.WatchFolders[i];
@@ -15,15 +15,15 @@ public partial class MainForm
             if (filePath.StartsWith(folder, StringComparison.OrdinalIgnoreCase))
             {
                 var rel = filePath.Substring(folder.Length).TrimStart('\\', '/').Replace('\\', '/');
-                return $"http://localmedia{i}.vrcnext.local/{rel}";
+                return $"http://localhost:{_httpPort}/media{i}/{Uri.EscapeDataString(rel)}";
             }
         }
-        // Fallback: VRChat screenshot virtual host
+        // Fallback: VRChat screenshot folder
         var vrcPhotoDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), "VRChat");
         if (filePath.StartsWith(vrcPhotoDir, StringComparison.OrdinalIgnoreCase))
         {
             var rel = filePath.Substring(vrcPhotoDir.Length).TrimStart('\\', '/').Replace('\\', '/');
-            return $"http://vrcphotos.vrcnext.local/{rel}";
+            return $"http://localhost:{_httpPort}/vrcphotos/{Uri.EscapeDataString(rel)}";
         }
         return "";
     }
@@ -126,8 +126,6 @@ public partial class MainForm
     // File Watcher - Post to Discord
     private async void OnNewFile(object? sender, FileWatcherService.FileArg e)
     {
-        if (InvokeRequired) { Invoke(() => OnNewFile(sender, e)); return; }
-
         // Snapshot players for VRChat screenshots
         SnapshotPhotoPlayers(e.FilePath);
 
@@ -150,13 +148,8 @@ public partial class MainForm
             catch { return; }
         }
 
-        // Register virtual host so WebView2 can load VRChat screenshots
-        try
-        {
-            _webView.CoreWebView2?.SetVirtualHostNameToFolderMapping(
-                "vrcphotos.vrcnext.local", vrcPhotoDir, Microsoft.Web.WebView2.Core.CoreWebView2HostResourceAccessKind.Allow);
-        }
-        catch { }
+        // Store for HttpListener /vrcphotos/ route
+        _vrcPhotoDir = vrcPhotoDir;
 
         _vrcPhotoWatcher = new FileSystemWatcher(vrcPhotoDir)
         {
@@ -344,14 +337,13 @@ public partial class MainForm
                 {
                     var folder = _settings.WatchFolders[fi];
                     if (!Directory.Exists(folder)) continue;
-                    var host = $"localmedia{fi}.vrcnext.local";
                     try
                     {
                         new DirectoryInfo(folder)
                             .EnumerateFiles("*.*", SearchOption.AllDirectories)
                             .Where(f => allExts.Contains(f.Extension))
                             .ToList()
-                            .ForEach(f => entries.Add(new LibFileEntry(f, host, folder)));
+                            .ForEach(f => entries.Add(new LibFileEntry(f, fi, folder)));
                     }
                     catch { }
                 }
@@ -387,7 +379,7 @@ public partial class MainForm
             var isImg = FileWatcherService.ImgExt.Contains(f.Extension);
             var sizeMB = f.Length / 1048576.0;
             var relPath = Path.GetRelativePath(e.Folder, f.FullName).Replace('\\', '/');
-            var virtualUrl = $"https://{e.Host}/{Uri.EscapeDataString(relPath).Replace("%2F", "/")}";
+            var virtualUrl = $"http://localhost:{_httpPort}/media{e.FolderIndex}/{Uri.EscapeDataString(relPath).Replace("%2F", "/")}";
 
             string? photoWorldId = null;
             List<object>? photoPlayers = null;

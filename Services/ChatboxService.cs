@@ -8,16 +8,17 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Windows.Media.Control;
 
 namespace VRCNext
 {
     public class ChatboxService : IDisposable
     {
+#if WINDOWS
         [DllImport("user32.dll")]
         private static extern IntPtr GetForegroundWindow();
         [DllImport("user32.dll")]
         private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
+#endif
 
         private const string OSC_IP = "127.0.0.1";
         private const int OSC_PORT = 9000;
@@ -52,7 +53,9 @@ namespace VRCNext
         public bool IsPlaying { get; private set; }
 
         // System stats
+#if WINDOWS
         private PerformanceCounter? _cpuCounter;
+#endif
         private float _cpuPercent;
         private float _ramUsedGB;
         private float _ramTotalGB;
@@ -90,9 +93,10 @@ namespace VRCNext
 
         private async Task RunLoopAsync(CancellationToken ct)
         {
+#if WINDOWS
             try { _cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total", true); _cpuCounter.NextValue(); }
             catch (Exception ex) { _log($"[Chatbox] CPU counter init: {ex.Message}"); }
-
+#endif
             try { var gi = GC.GetGCMemoryInfo(); _ramTotalGB = gi.TotalAvailableMemoryBytes / (1024f * 1024f * 1024f); }
             catch { _ramTotalGB = 0; }
 
@@ -121,7 +125,9 @@ namespace VRCNext
                 catch (TaskCanceledException) { break; }
                 catch (Exception ex) { _log($"[Chatbox] Error: {ex.Message}"); await Task.Delay(2000, ct); }
             }
+#if WINDOWS
             _cpuCounter?.Dispose(); _cpuCounter = null;
+#endif
         }
 
         private string BuildChatboxText()
@@ -170,6 +176,7 @@ namespace VRCNext
 
         private void UpdateSystemStats()
         {
+#if WINDOWS
             try
             {
                 if (_cpuCounter != null) _cpuPercent = _cpuCounter.NextValue();
@@ -178,10 +185,12 @@ namespace VRCNext
                 _ramUsedGB = (_ramTotalGB * 1024f - availMB) / 1024f;
             }
             catch { }
+#endif
         }
 
         private void UpdateAfkState()
         {
+#if WINDOWS
             try
             {
                 bool focused = false;
@@ -196,22 +205,14 @@ namespace VRCNext
                 else if (focused) _isAfk = false;
             }
             catch { _isAfk = false; }
+#endif
         }
 
-        private async Task UpdateMediaInfoAsync()
+        private Task UpdateMediaInfoAsync()
         {
-            try
-            {
-                var mgr = await GlobalSystemMediaTransportControlsSessionManager.RequestAsync();
-                var s = mgr.GetCurrentSession();
-                if (s == null) { IsPlaying = false; CurrentTitle = ""; CurrentArtist = ""; return; }
-                IsPlaying = s.GetPlaybackInfo()?.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing;
-                var p = await s.TryGetMediaPropertiesAsync();
-                if (p != null) { CurrentTitle = p.Title ?? ""; CurrentArtist = p.Artist ?? ""; }
-                var tl = s.GetTimelineProperties();
-                if (tl != null) { CurrentPosition = tl.Position; CurrentDuration = tl.EndTime - tl.StartTime; }
-            }
-            catch { IsPlaying = false; }
+            // Windows Media Control (WinRT) not available on Linux
+            IsPlaying = false;
+            return Task.CompletedTask;
         }
 
         private void SendOscChatbox(string text, bool suppressSound = true)

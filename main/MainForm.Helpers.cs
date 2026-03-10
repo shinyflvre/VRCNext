@@ -5,8 +5,28 @@ namespace VRCNext;
 
 public partial class MainForm
 {
+    // Photino compatibility shim: SendWebMessage is thread-safe, so Invoke is a direct call
+    private static void Invoke(Action action) => action();
+    private static T Invoke<T>(Func<T> func) => func();
+
+
+    private static string ParseInstanceTypeFromLoc(string loc)
+    {
+        if (loc.Contains("~private(")) return loc.Contains("~canRequestInvite") ? "invite_plus" : "private";
+        if (loc.Contains("~friends(")) return "friends";
+        if (loc.Contains("~hidden("))  return "hidden";
+        if (loc.Contains("~group("))   return "group";
+        return "public";
+    }
+
+    private static string ParseRegionFromLoc(string loc)
+    {
+        var m = System.Text.RegularExpressions.Regex.Match(loc, @"~region\(([^)]+)\)");
+        return m.Success ? m.Groups[1].Value : "eu";
+    }
+
     // Library file cache entry
-    private record LibFileEntry(FileInfo Fi, string Host, string Folder);
+    private record LibFileEntry(FileInfo Fi, int FolderIndex, string Folder);
 
     // Helper: always returns ISO 8601 date string from a JToken
     private static string IsoDate(JToken? t)

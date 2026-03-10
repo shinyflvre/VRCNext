@@ -104,7 +104,7 @@ function _buildLibCard(x) {
     const iF = favorites.has(x.path), fc = iF ? ' active' : '';
     const iH = hiddenMedia.has(x.path), hc = iH ? ' active' : '';
     const ac = ['lib-actions', iF ? 'has-fav' : '', iH ? 'has-hidden' : ''].filter(Boolean).join(' ');
-    const acts = `<div class="${ac}"><button class="lib-act-btn lib-btn-clip" onclick="event.stopPropagation();copyToClipboard('${suJs}','${sp}','${x.type}')" title="Copy to clipboard"><span class="msi" style="font-size:16px;">content_copy</span></button><button class="lib-act-btn lib-btn-fav${fc}" onclick="event.stopPropagation();toggleFavorite('${sp}')" title="Favorite"><span class="msi" style="font-size:16px;">star</span></button><button class="lib-act-btn lib-btn-hide${hc}" onclick="event.stopPropagation();toggleHidden('${sp}')" title="${iH ? 'Unhide' : 'Hide'}"><span class="msi" style="font-size:16px;">${iH ? 'visibility' : 'visibility_off'}</span></button><button class="lib-act-btn lib-btn-del" onclick="event.stopPropagation();showDeleteModal('${sp}','${sn}')"><span class="msi" style="font-size:16px;">delete</span></button></div>`;
+    const acts = `<div class="${ac}"><button class="vrcn-lib-button clip" onclick="event.stopPropagation();copyToClipboard('${suJs}','${sp}','${x.type}')" title="Copy to clipboard"><span class="msi" style="font-size:16px;">content_copy</span></button><button class="vrcn-lib-button fav${fc}" onclick="event.stopPropagation();toggleFavorite('${sp}')" title="Favorite"><span class="msi" style="font-size:16px;">star</span></button><button class="vrcn-lib-button hide${hc}" onclick="event.stopPropagation();toggleHidden('${sp}')" title="${iH ? 'Unhide' : 'Hide'}"><span class="msi" style="font-size:16px;">${iH ? 'visibility' : 'visibility_off'}</span></button><button class="vrcn-lib-button del" onclick="event.stopPropagation();showDeleteModal('${sp}','${sn}')"><span class="msi" style="font-size:16px;">delete</span></button></div>`;
     const blurClass = iH ? ' lib-blurred' : '';
     const idx = libraryFiles.indexOf(x);
     if (x.type === 'image') {
@@ -329,7 +329,7 @@ function openPhotoDetail(idx) {
     el.innerHTML = `${bannerHtml}<div class="fd-content${imgUrl ? ' fd-has-banner' : ''}" style="padding:20px;">
         <h2 style="margin:0 0 12px;color:var(--tx0);font-size:16px;">${esc(x.name)}</h2>
         ${metaHtml}${playersHtml}
-        <div style="margin-top:14px;text-align:right;"><button class="fd-btn" onclick="document.getElementById('modalDetail').style.display='none'">Close</button></div>
+        <div style="margin-top:14px;text-align:right;"><button class="vrcn-button-round" onclick="document.getElementById('modalDetail').style.display='none'">Close</button></div>
     </div>`;
     document.getElementById('modalDetail').style.display = 'flex';
 }
@@ -364,7 +364,7 @@ function showDeleteModal(fp, fn) {
     o.className = 'modal-overlay';
     o.id = 'deleteModal';
     o.onclick = e => { if (e.target === o) closeDeleteModal(); };
-    o.innerHTML = `<div class="modal-box"><div class="modal-icon danger"><span class="msi" style="font-size:22px;">delete</span></div><div class="modal-title">Delete File</div><div class="modal-msg">Permanently delete from disk:<br><span class="modal-fname">${esc(fn)}</span></div><div class="modal-btns"><button id="libDelCancelBtn" class="fd-btn" onclick="closeDeleteModal()">Cancel</button><button class="fd-btn fd-btn-danger" onclick="confirmDelete()">Delete</button></div></div>`;
+    o.innerHTML = `<div class="modal-box"><div class="modal-icon danger"><span class="msi" style="font-size:22px;">delete</span></div><div class="modal-title">Delete File</div><div class="modal-msg">Permanently delete from disk:<br><span class="modal-fname">${esc(fn)}</span></div><div class="modal-btns"><button id="libDelCancelBtn" class="vrcn-button-round" onclick="closeDeleteModal()">Cancel</button><button class="vrcn-button-round vrcn-btn-danger" onclick="confirmDelete()">Delete</button></div></div>`;
     document.body.appendChild(o);
     o.querySelector('#libDelCancelBtn').focus();
     const ok = e => {
@@ -396,7 +396,7 @@ function showDeleteAllModal() {
     o.className = 'modal-overlay';
     o.id = 'deleteModal';
     o.onclick = e => { if (e.target === o) closeDeleteModal(); };
-    o.innerHTML = `<div class="modal-box"><div class="modal-icon danger"><span class="msi" style="font-size:22px;">delete</span></div><div class="modal-title">Delete All Posts</div><div class="modal-msg">Delete all <strong>${postedFiles.length}</strong> post(s) from Discord?</div><div class="modal-btns"><button class="fd-btn" onclick="closeDeleteModal()">Cancel</button><button class="fd-btn fd-btn-danger" onclick="confirmDeleteAll()">Delete All</button></div></div>`;
+    o.innerHTML = `<div class="modal-box"><div class="modal-icon danger"><span class="msi" style="font-size:22px;">delete</span></div><div class="modal-title">Delete All Posts</div><div class="modal-msg">Delete all <strong>${postedFiles.length}</strong> post(s) from Discord?</div><div class="modal-btns"><button class="vrcn-button-round" onclick="closeDeleteModal()">Cancel</button><button class="vrcn-button-round vrcn-btn-danger" onclick="confirmDeleteAll()">Delete All</button></div></div>`;
     document.body.appendChild(o);
 }
 
@@ -407,18 +407,13 @@ function confirmDeleteAll() {
     closeDeleteModal();
 }
 
-async function copyToClipboard(url, path, type) {
-    try {
-        if (type === 'image') {
-            const resp = await fetch(url);
-            const blob = await resp.blob();
-            await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
-            showToast(true, 'Image copied to clipboard');
-        } else {
-            await navigator.clipboard.writeText(path);
-            showToast(true, 'Path copied to clipboard');
-        }
-    } catch {
-        showToast(false, 'Clipboard copy failed');
+function copyToClipboard(url, path, type) {
+    if (type === 'image') {
+        sendToCS({ action: 'copyImageToClipboard', path });
+    } else {
+        navigator.clipboard.writeText(path).then(
+            () => showToast(true, 'Path copied to clipboard'),
+            () => showToast(false, 'Clipboard copy failed')
+        );
     }
 }

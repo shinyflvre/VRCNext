@@ -163,7 +163,7 @@ function _insertOscParamRow(name, type, value, live) {
 function _oscRowHtml(name, type, value, live) {
     const esc_name = esc(name);
     const jsName = jsq(name);
-    const badgeClass = 'osc-badge-' + type;
+    const badgeClass = 'osc-' + type;
     const pendingClass = live ? '' : ' osc-row-pending';
 
     let ctrl = '';
@@ -189,7 +189,7 @@ function _oscRowHtml(name, type, value, live) {
 
     return `<div class="osc-row${pendingClass}" data-osc-param="${esc_name}">
         <div class="osc-row-left">
-            <span class="osc-type-badge ${badgeClass}">${type.toUpperCase()}</span>
+            <span class="vrcn-badge ${badgeClass}">${type.toUpperCase()}</span>
             <span class="osc-param-name" title="${esc_name}">${esc_name}</span>
         </div>
         <div class="osc-ctrl">${ctrl}</div>

@@ -115,11 +115,11 @@ function buildInvFileCard(f, _tab) {
 
     // Animated badge
     const isAnim = (f.tags || []).includes('emojianimated');
-    const animBadge = isAnim ? '<span class="inv-anim-badge">ANIM</span>' : '';
+    const animBadge = isAnim ? '<span class="inv-anim-badge vrcn-badge accent">ANIM</span>' : '';
 
     const acts = `<div class="lib-actions">
-        <button class="lib-act-btn lib-btn-clip" onclick="event.stopPropagation();invDownload('${imgJs}','${fileName}')" title="Download"><span class="msi" style="font-size:16px;">download</span></button>
-        <button class="lib-act-btn lib-btn-del" onclick="event.stopPropagation();invConfirmDeleteFile('${fileId}')" title="Delete"><span class="msi" style="font-size:16px;">delete</span></button>
+        <button class="vrcn-lib-button clip" onclick="event.stopPropagation();invDownload('${imgJs}','${fileName}')" title="Download"><span class="msi" style="font-size:16px;">download</span></button>
+        <button class="vrcn-lib-button del" onclick="event.stopPropagation();invConfirmDeleteFile('${fileId}')" title="Delete"><span class="msi" style="font-size:16px;">delete</span></button>
     </div>`;
 
     return `<div class="lib-card inv-card">
@@ -186,8 +186,8 @@ function buildInvPrintCard(p) {
     const note = esc(p.note || '');
 
     const acts = `<div class="lib-actions">
-        ${imgUrl ? `<button class="lib-act-btn lib-btn-clip" onclick="event.stopPropagation();invDownload('${imgJs}','print.png')" title="Download"><span class="msi" style="font-size:16px;">download</span></button>` : ''}
-        <button class="lib-act-btn lib-btn-del" onclick="event.stopPropagation();invConfirmDeletePrint('${printId}')" title="Delete"><span class="msi" style="font-size:16px;">delete</span></button>
+        ${imgUrl ? `<button class="vrcn-lib-button clip" onclick="event.stopPropagation();invDownload('${imgJs}','print.png')" title="Download"><span class="msi" style="font-size:16px;">download</span></button>` : ''}
+        <button class="vrcn-lib-button del" onclick="event.stopPropagation();invConfirmDeletePrint('${printId}')" title="Delete"><span class="msi" style="font-size:16px;">delete</span></button>
     </div>`;
 
     const metaParts = [];
@@ -242,7 +242,7 @@ function buildInvItemCard(item) {
                 ? `<img class="lib-thumb" src="${imgAttr}" loading="lazy" onerror="this.outerHTML='<div class=\\'inv-no-preview\\'>No Preview</div>'">`
                 : '<div class="inv-no-preview">No Preview</div>'
             }
-            ${typeLabel ? `<span class="inv-anim-badge">${typeLabel.toUpperCase()}</span>` : ''}
+            ${typeLabel ? `<span class="inv-anim-badge vrcn-badge accent">${typeLabel.toUpperCase()}</span>` : ''}
         </div>
         <div class="lib-info">
             <div class="lib-name">${nameDisp}</div>
@@ -305,7 +305,7 @@ function showInvDeleteModal(type, id, versionId, name) {
     o.className = 'modal-overlay';
     o.id = 'invDeleteModal';
     o.onclick = e => { if (e.target === o) closeInvDeleteModal(); };
-    o.innerHTML = `<div class="modal-box"><div class="modal-icon danger"><span class="msi" style="font-size:22px;">delete</span></div><div class="modal-title">Delete Item</div><div class="modal-msg">Permanently delete from VRChat:<br><span class="modal-fname">${esc(name)}</span><br><span style="font-size:11px;color:var(--tx3);">This cannot be undone.</span></div><div class="modal-btns"><button id="invDelCancelBtn" class="fd-btn" onclick="closeInvDeleteModal()">Cancel</button><button class="fd-btn fd-btn-danger" onclick="confirmInvDelete()">Delete</button></div></div>`;
+    o.innerHTML = `<div class="modal-box"><div class="modal-icon danger"><span class="msi" style="font-size:22px;">delete</span></div><div class="modal-title">Delete Item</div><div class="modal-msg">Permanently delete from VRChat:<br><span class="modal-fname">${esc(name)}</span><br><span style="font-size:11px;color:var(--tx3);">This cannot be undone.</span></div><div class="modal-btns"><button id="invDelCancelBtn" class="vrcn-button-round" onclick="closeInvDeleteModal()">Cancel</button><button class="vrcn-button-round vrcn-btn-danger" onclick="confirmInvDelete()">Delete</button></div></div>`;
     document.body.appendChild(o);
     o.querySelector('#invDelCancelBtn').focus();
     const handler = e => {

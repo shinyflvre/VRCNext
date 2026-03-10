@@ -9,8 +9,8 @@ public partial class MainForm
     {
         try
         {
-            // Step 1: Get live location via /users/{id} (not /auth/user which returns null)
-            var loc = await _vrcApi.GetMyLocationAsync();
+            // Step 1: Location from log watcher — no API call. If VRChat not running, treat as offline.
+            var loc = IsVrcRunning() ? _logWatcher.CurrentLocation : null;
             if (string.IsNullOrEmpty(loc) || loc == "offline" || loc == "private" || loc == "traveling")
             {
                 Invoke(() => SendToJS("vrcCurrentInstance", new { empty = true }));
@@ -56,7 +56,8 @@ public partial class MainForm
                 var userProfiles  = new Dictionary<string, JObject>();
 
                 var needFetch = playersWithId.Where(p =>
-                    !_friendNameImg.ContainsKey(p.UserId)
+                    !_friendNameImg.ContainsKey(p.UserId) &&
+                    !_tlPlayerImageCache.ContainsKey(p.UserId)
                 ).ToList();
 
                 if (needFetch.Count > 0)
@@ -71,6 +72,8 @@ public partial class MainForm
                             if (profile != null)
                             {
                                 var img = VRChatApiService.GetUserImage(profile);
+                                if (!string.IsNullOrEmpty(img))
+                                    _tlPlayerImageCache[p.UserId] = img;
                                 lock (userProfiles)
                                     userProfiles[p.UserId] = profile;
                             }
@@ -97,6 +100,10 @@ public partial class MainForm
                         else if (_friendNameImg.TryGetValue(p.UserId, out var fi) && !string.IsNullOrEmpty(fi.image))
                         {
                             img = fi.image;
+                        }
+                        else if (_tlPlayerImageCache.TryGetValue(p.UserId, out var ci) && !string.IsNullOrEmpty(ci))
+                        {
+                            img = ci;
                         }
                     }
                     users.Add(new { id = p.UserId, displayName = p.DisplayName, image = img, status });
@@ -161,7 +168,13 @@ public partial class MainForm
         var logPlayers = _logWatcher.GetCurrentPlayers();
         var users = logPlayers.Select(p =>
         {
-            var img = _friendNameImg.TryGetValue(p.UserId ?? "", out var fi) ? fi.image : "";
+            string img;
+            if (_friendNameImg.TryGetValue(p.UserId ?? "", out var fi) && !string.IsNullOrEmpty(fi.image))
+                img = fi.image;
+            else if (_tlPlayerImageCache.TryGetValue(p.UserId ?? "", out var ci) && !string.IsNullOrEmpty(ci))
+                img = ci;
+            else
+                img = "";
             return (object)new { id = p.UserId, displayName = p.DisplayName, image = img, status = "" };
         }).ToList();
 
@@ -248,8 +261,8 @@ public partial class MainForm
                             var world = await _vrcApi.GetWorldAsync(worldId);
                             if (world != null)
                             {
-                                wName  = world["name"]?.ToString()                ?? "";
-                                wThumb = world["thumbnailImageUrl"]?.ToString()   ?? "";
+                                wName  = world["name"]?.ToString() ?? "";
+                                wThumb = world["thumbnailImageUrl"]?.ToString() ?? "";
                             }
                         }
 
@@ -394,6 +407,27 @@ public partial class MainForm
 
     // Timeline - helpers
 
+    private string FixLocalUrl(string url)
+    {
+        if (string.IsNullOrEmpty(url) || !url.StartsWith("http://localhost:")) return url;
+        var slash = url.IndexOf('/', "http://localhost:".Length);
+        return slash < 0 ? url : $"http://localhost:{_httpPort}{url[slash..]}";
+    }
+
+    /// <summary>
+    /// If url is an original CDN URL → serve via imgcache (cached locally or original as fallback).
+    /// If url is already a localhost URL (legacy stored) → fix the port.
+    /// </summary>
+    private string ResolveAndCache(string url, bool longTtl = false)
+    {
+        if (string.IsNullOrEmpty(url)) return url;
+        // Old record stored as localhost URL → just fix the port, file is already on disk
+        if (url.StartsWith("http://localhost:")) return FixLocalUrl(url);
+        // New record stored as original CDN URL → serve via imgcache (downloads if needed, falls back to CDN URL)
+        if (_imgCache == null) return url;
+        return longTtl ? _imgCache.GetWorld(url) : _imgCache.Get(url);
+    }
+
     private object BuildTimelinePayload(TimelineService.TimelineEvent ev) => new
     {
         id          = ev.Id,
@@ -401,20 +435,21 @@ public partial class MainForm
         timestamp   = ev.Timestamp,
         worldId     = ev.WorldId,
         worldName   = ev.WorldName,
-        worldThumb  = ev.WorldThumb,
+        worldThumb  = ResolveAndCache(ev.WorldThumb, longTtl: true),
         location    = ev.Location,
-        players     = ev.Players.Select(p => new { userId = p.UserId, displayName = p.DisplayName, image = ResolvePlayerImage(p.UserId, p.Image) }).ToList(),
+        players     = ev.Players.Select(p => new { userId = p.UserId, displayName = p.DisplayName, image = ResolveAndCache(ResolvePlayerImage(p.UserId, p.Image)) }).ToList(),
         photoPath   = ev.PhotoPath,
-        photoUrl    = ev.PhotoUrl,
+        photoUrl    = !string.IsNullOrEmpty(ev.PhotoPath) ? GetVirtualMediaUrl(ev.PhotoPath) : FixLocalUrl(ev.PhotoUrl),
         userId      = ev.UserId,
         userName    = ev.UserName,
-        userImage   = ResolvePlayerImage(ev.UserId, ev.UserImage),
+        userImage   = ResolveAndCache(ResolvePlayerImage(ev.UserId, ev.UserImage)),
+        meetCount   = ev.Type == "meet_again" ? _timeline.GetMeetAgainCount(ev.UserId) : 0,
         notifId     = ev.NotifId,
         notifType   = ev.NotifType,
         notifTitle  = ev.NotifTitle,
         senderName  = ev.SenderName,
         senderId    = ev.SenderId,
-        senderImage = ResolvePlayerImage(ev.SenderId, ev.SenderImage),
+        senderImage = ResolveAndCache(ResolvePlayerImage(ev.SenderId, ev.SenderImage)),
         message     = ev.Message,
     };
 
@@ -425,10 +460,10 @@ public partial class MainForm
         timestamp   = ev.Timestamp,
         friendId    = ev.FriendId,
         friendName  = ev.FriendName,
-        friendImage = ResolvePlayerImage(ev.FriendId, ev.FriendImage),
+        friendImage = ResolveAndCache(ResolvePlayerImage(ev.FriendId, ev.FriendImage)),
         worldId     = ev.WorldId,
         worldName   = ev.WorldName,
-        worldThumb  = ev.WorldThumb,
+        worldThumb  = ResolveAndCache(ev.WorldThumb, longTtl: true),
         location    = ev.Location,
         oldValue    = ev.OldValue,
         newValue    = ev.NewValue,
@@ -444,6 +479,8 @@ public partial class MainForm
         {
             if (_friendNameImg.TryGetValue(userId, out var fi) && !string.IsNullOrEmpty(fi.image))
                 return fi.image;
+            if (_tlPlayerImageCache.TryGetValue(userId, out var ci) && !string.IsNullOrEmpty(ci))
+                return ci;
         }
         return storedImage ?? "";
     }

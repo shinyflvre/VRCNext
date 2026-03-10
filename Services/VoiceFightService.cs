@@ -3,11 +3,37 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+#if WINDOWS
 using NAudio.Wave;
 using NAudio.Vorbis;
 using Vosk;
+using System.Runtime.InteropServices;
+#endif
 
 namespace VRCNext.Services;
+
+#if !WINDOWS
+/// <summary>Stub for non-Windows platforms — VoiceFight requires Windows audio APIs.</summary>
+public sealed class VoiceFightService : IDisposable
+{
+    public event Action<string>? OnKeywordTriggered;
+    public event Action<string, string, bool>? OnRecognized;
+    public event Action<string>? OnLog;
+    public bool IsRunning => false;
+    public float MeterLevel => 0f;
+    public void SetKeywords(List<VoiceFightSettings.VfSoundItem> items) { }
+    public void SetStopWord(string word) { }
+    public void Start(int inputDeviceIndex, int outputDeviceIndex) { }
+    public void Stop() { }
+    public static List<string> GetInputDevices() => new();
+    public static List<string> GetOutputDevices() => new();
+    public static TimeSpan GetDuration(string filePath) => TimeSpan.Zero;
+    public void PlayFile(string filePath, float volumePercent) { }
+    public void StopPlayback() { }
+    public void ReloadBlockList() { }
+    public void Dispose() { }
+}
+#else
 
 /// <summary>
 /// Voice-triggered soundboard using VOSK offline speech recognition and NAudio.
@@ -70,21 +96,39 @@ public sealed class VoiceFightService : IDisposable
     public bool IsRunning => _waveIn != null;
     public bool ModelOk => _modelLoaded;
 
+    [DllImport("winmm.dll")]
+    private static extern int waveOutGetNumDevs();
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+    private struct WAVEOUTCAPS
+    {
+        public ushort wMid, wPid;
+        public uint vDriverVersion;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string szPname;
+        public uint dwFormats;
+        public ushort wChannels, wReserved1;
+        public uint dwSupport;
+    }
+    [DllImport("winmm.dll", CharSet = CharSet.Ansi)]
+    private static extern int waveOutGetDevCaps(IntPtr deviceID, out WAVEOUTCAPS caps, int size);
+
     public static string[] GetInputDevices()
     {
-        int count = WaveIn.DeviceCount;
+        int count = WaveInEvent.DeviceCount;
         var names = new string[count];
         for (int i = 0; i < count; i++)
-            names[i] = WaveIn.GetCapabilities(i).ProductName;
+            names[i] = WaveInEvent.GetCapabilities(i).ProductName;
         return names;
     }
 
     public static string[] GetOutputDevices()
     {
-        int count = WaveOut.DeviceCount;
+        int count = waveOutGetNumDevs();
         var names = new string[count];
         for (int i = 0; i < count; i++)
-            names[i] = WaveOut.GetCapabilities(i).ProductName;
+        {
+            waveOutGetDevCaps(new IntPtr(i), out var caps, Marshal.SizeOf<WAVEOUTCAPS>());
+            names[i] = caps.szPname ?? "";
+        }
         return names;
     }
 
@@ -574,3 +618,4 @@ public sealed class VoiceFightService : IDisposable
         _workerEvent.Dispose();
     }
 }
+#endif

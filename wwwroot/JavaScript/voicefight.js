@@ -135,7 +135,7 @@ function buildVfItemHtml(item, i) {
     const filesHtml = files.map((f, si) => buildVfSoundHtml(f, i, si)).join('');
     return `<div class="vf-item" data-idx="${i}">
   <div class="vf-item-header">
-    <input class="vf-word-input" placeholder="Trigger word…" value="${word}"
+    <input class="vrcn-edit-field" style="flex:1;" placeholder="Trigger word…" value="${word}"
       oninput="vfWordChanged(${i}, this.value)"
       onblur="vfSetWord(${i}, this.value)">
     <button class="vf-btn-icon vf-btn-del" onclick="vfDeleteItem(${i})" title="Remove item"><span class="msi">delete</span></button>

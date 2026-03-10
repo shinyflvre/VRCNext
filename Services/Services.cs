@@ -183,7 +183,10 @@ public class AppSettings
         new() { Name = "Channel 3" },
         new() { Name = "Channel 4" },
     };
+    /// <summary>Persistent HTTP server port — reused across restarts so stored localhost URLs stay valid.</summary>
+    public int LocalHttpPort { get; set; } = 0;
     public List<string> WatchFolders { get; set; } = new();
+    public List<string> MyInstances { get; set; } = new();
     public List<string> Favorites { get; set; } = new();
     public string VrcPath { get; set; } = "";
     public List<string> ExtraExe { get; set; } = new();
@@ -214,9 +217,14 @@ public class AppSettings
         if (string.IsNullOrEmpty(plain)) return "";
         try
         {
+#if WINDOWS
             var enc = ProtectedData.Protect(
                 System.Text.Encoding.UTF8.GetBytes(plain), null, DataProtectionScope.CurrentUser);
             return Convert.ToBase64String(enc);
+#else
+            // Linux: no DPAPI — store as Base64 (file is protected by OS file permissions)
+            return Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(plain));
+#endif
         }
         catch { return ""; }
     }
@@ -226,9 +234,13 @@ public class AppSettings
         if (string.IsNullOrEmpty(cipher)) return "";
         try
         {
+#if WINDOWS
             var dec = ProtectedData.Unprotect(
                 Convert.FromBase64String(cipher), null, DataProtectionScope.CurrentUser);
             return System.Text.Encoding.UTF8.GetString(dec);
+#else
+            return System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(cipher));
+#endif
         }
         catch { return ""; }
     }
@@ -666,6 +678,41 @@ public class UserTimeTracker : IDisposable
         return (total, rec.LastSeen);
     }
 
+    /// <summary>Merges imported friend-time data (e.g. from VRCX) into the tracker. Adds to existing totals.</summary>
+    public void BulkMerge(IEnumerable<(string userId, string displayName, long seconds, string lastSeen)> entries)
+    {
+        try
+        {
+            using var tx  = _db.BeginTransaction();
+            using var cmd = _db.CreateCommand();
+            cmd.Transaction = tx;
+            cmd.CommandText = @"INSERT INTO user_tracking(user_id,total_seconds,last_seen,last_seen_location,display_name,image)
+                VALUES($uid,$ts,$ls,'',$dn,'')
+                ON CONFLICT(user_id) DO UPDATE SET
+                    total_seconds = user_tracking.total_seconds + excluded.total_seconds,
+                    last_seen = CASE WHEN excluded.last_seen > user_tracking.last_seen THEN excluded.last_seen ELSE user_tracking.last_seen END,
+                    display_name = CASE WHEN excluded.display_name != '' AND user_tracking.display_name = '' THEN excluded.display_name ELSE user_tracking.display_name END";
+            var pUid = cmd.Parameters.Add("$uid", SqliteType.Text);
+            var pTs  = cmd.Parameters.Add("$ts",  SqliteType.Integer);
+            var pLs  = cmd.Parameters.Add("$ls",  SqliteType.Text);
+            var pDn  = cmd.Parameters.Add("$dn",  SqliteType.Text);
+            foreach (var (userId, displayName, seconds, lastSeen) in entries)
+            {
+                pUid.Value = userId;
+                pTs.Value  = seconds;
+                pLs.Value  = lastSeen;
+                pDn.Value  = displayName;
+                cmd.ExecuteNonQuery();
+                if (!Users.TryGetValue(userId, out var rec)) { rec = new UserRecord(); Users[userId] = rec; }
+                rec.TotalSeconds += seconds;
+                if (string.IsNullOrEmpty(rec.DisplayName) && !string.IsNullOrEmpty(displayName)) rec.DisplayName = displayName;
+                if (string.Compare(lastSeen, rec.LastSeen, StringComparison.Ordinal) > 0) rec.LastSeen = lastSeen;
+            }
+            tx.Commit();
+        }
+        catch { }
+    }
+
     /// <summary>No-op. Writes happen in Tick(). Kept for API compatibility.</summary>
     public void Save() { }
 
@@ -954,6 +1001,45 @@ public class WorldTimeTracker : IDisposable
         }
 
         return (total, rec.VisitCount, rec.LastVisited);
+    }
+
+    /// <summary>Merges imported world-time data (e.g. from VRCX) into the tracker. Adds to existing totals.</summary>
+    public void BulkMerge(IEnumerable<(string worldId, string worldName, long seconds, int visitCount, string lastVisited)> entries)
+    {
+        try
+        {
+            using var tx  = _db.BeginTransaction();
+            using var cmd = _db.CreateCommand();
+            cmd.Transaction = tx;
+            cmd.CommandText = @"INSERT INTO world_tracking(world_id,total_seconds,visit_count,last_visited,world_name,world_thumb)
+                VALUES($wid,$ts,$vc,$lv,$wn,'')
+                ON CONFLICT(world_id) DO UPDATE SET
+                    total_seconds = world_tracking.total_seconds + excluded.total_seconds,
+                    visit_count   = world_tracking.visit_count   + excluded.visit_count,
+                    last_visited  = CASE WHEN excluded.last_visited > world_tracking.last_visited THEN excluded.last_visited ELSE world_tracking.last_visited END,
+                    world_name    = CASE WHEN excluded.world_name != '' AND world_tracking.world_name = '' THEN excluded.world_name ELSE world_tracking.world_name END";
+            var pWid = cmd.Parameters.Add("$wid", SqliteType.Text);
+            var pTs  = cmd.Parameters.Add("$ts",  SqliteType.Integer);
+            var pVc  = cmd.Parameters.Add("$vc",  SqliteType.Integer);
+            var pLv  = cmd.Parameters.Add("$lv",  SqliteType.Text);
+            var pWn  = cmd.Parameters.Add("$wn",  SqliteType.Text);
+            foreach (var (worldId, worldName, seconds, visitCount, lastVisited) in entries)
+            {
+                pWid.Value = worldId;
+                pTs.Value  = seconds;
+                pVc.Value  = visitCount;
+                pLv.Value  = lastVisited;
+                pWn.Value  = worldName;
+                cmd.ExecuteNonQuery();
+                if (!Worlds.TryGetValue(worldId, out var rec)) { rec = new WorldRecord(); Worlds[worldId] = rec; }
+                rec.TotalSeconds += seconds;
+                rec.VisitCount   += visitCount;
+                if (string.IsNullOrEmpty(rec.WorldName) && !string.IsNullOrEmpty(worldName)) rec.WorldName = worldName;
+                if (string.Compare(lastVisited, rec.LastVisited, StringComparison.Ordinal) > 0) rec.LastVisited = lastVisited;
+            }
+            tx.Commit();
+        }
+        catch { }
     }
 
     /// <summary>No-op. Writes happen in SetCurrentWorld/Tick. Kept for API compatibility.</summary>

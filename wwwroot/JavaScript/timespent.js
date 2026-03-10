@@ -247,8 +247,8 @@ function tsRenderPersonItems() {
             ? `<img class="ts-item-avatar" src="${esc(p.image)}" onerror="this.style.display='none'">`
             : `<div class="ts-item-avatar ts-avatar-placeholder"><span class="msi" style="font-size:16px;color:var(--tx3);">person</span></div>`;
         const badge = isFr
-            ? `<span class="ts-badge ts-badge-friend">Friend</span>`
-            : `<span class="ts-badge ts-badge-stranger">New</span>`;
+            ? `<span class="vrcn-badge ok">Friend</span>`
+            : `<span class="vrcn-badge cyan">New</span>`;
         return `
         <div class="ts-item" onclick="openFriendDetail('${esc(p.userId)}')" style="cursor:pointer">
             <div class="ts-item-rank">#${rank}</div>

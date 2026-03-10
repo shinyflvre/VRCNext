@@ -34,6 +34,12 @@ public class VRChatLogWatcher : IDisposable
     public event Action<string>?         DebugLog;
     /// <summary>Fires on a real-time world/instance change (not during log catch-up).</summary>
     public event Action<string, string>? WorldChanged;   // worldId, location
+    /// <summary>Fires when VRChat logs "Instance closed: {location}" — not during catch-up.</summary>
+    public event Action<string>? InstanceClosed;         // full location string
+    /// <summary>Fires when VRChat logs a player switching to an avatar — not during catch-up.</summary>
+    public event Action<string, string>? AvatarChanged;  // displayName, avatarName
+    /// <summary>Fires when VRChat resolves a video/media URL — not during catch-up.</summary>
+    public event Action<string>? VideoUrl;               // url
     /// <summary>Fires when a player joins during live play (not during log catch-up).</summary>
     public event Action<string, string>? PlayerJoined;   // userId, displayName
     /// <summary>Fires when a player leaves during live play (not during log catch-up).</summary>
@@ -53,6 +59,15 @@ public class VRChatLogWatcher : IDisposable
     // "Joining wrld_xxx:12345~..." captures the full location string
     private static readonly Regex RxRoomJoin = new(
         @"Joining (wrld_[^\s]+)", RegexOptions.Compiled);
+    // "Instance closed: wrld_xxx:12345~..."
+    private static readonly Regex RxInstanceClosed = new(
+        @"Instance closed: (wrld_[^\s]+)", RegexOptions.Compiled);
+    // "[Behaviour] Switching {displayName} to avatar {avatarName}"
+    private static readonly Regex RxAvatarSwitch = new(
+        @"Switching (.+?) to avatar (.+)$", RegexOptions.Compiled);
+    // "[Video Playback] Attempting to resolve URL 'https://...'" or "Resolving URL '...'"
+    private static readonly Regex RxVideoUrl = new(
+        @"(?:Attempting to resolve|Resolving) URL '([^']+)'", RegexOptions.Compiled);
     // "Entering Room: WorldName"
     private static readonly Regex RxRoomEnter = new(
         @"Entering Room: (.+)", RegexOptions.Compiled);
@@ -258,6 +273,37 @@ public class VRChatLogWatcher : IDisposable
                 }
                 return;
             }
+        }
+
+        // Video URL — "[Video Playback] Attempting to resolve URL 'https://...'"
+        if (line.Contains("resolve URL '") || line.Contains("Resolving URL '"))
+        {
+            var m = RxVideoUrl.Match(line);
+            if (m.Success && !catchUp)
+                VideoUrl?.Invoke(m.Groups[1].Value);
+            return;
+        }
+
+        // Avatar switch — "[Behaviour] Switching {name} to avatar {avatarName}"
+        if (line.Contains("Switching ") && line.Contains(" to avatar "))
+        {
+            var m = RxAvatarSwitch.Match(line);
+            if (m.Success && !catchUp)
+                AvatarChanged?.Invoke(m.Groups[1].Value.Trim(), m.Groups[2].Value.Trim());
+            return;
+        }
+
+        // Instance closed
+        if (line.Contains("Instance closed:"))
+        {
+            var m = RxInstanceClosed.Match(line);
+            if (m.Success && !catchUp)
+            {
+                var loc = m.Groups[1].Value;
+                Log($"LogWatcher: 🔒 Instance closed: {loc}");
+                InstanceClosed?.Invoke(loc);
+            }
+            return;
         }
     }
 

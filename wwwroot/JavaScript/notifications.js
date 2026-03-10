@@ -10,7 +10,10 @@ function toggleNotifPanel() {
             _notifDismiss = e => {
                 const panel = document.getElementById('notifPanel');
                 const btn   = document.getElementById('btnNotif');
-                if (!panel?.contains(e.target) && !btn?.contains(e.target)) toggleNotifPanel();
+                // Use composedPath() so the check survives DOM mutations caused by
+                // acceptNotif/declineNotif re-rendering the list before bubbling completes
+                const path = e.composedPath();
+                if (!path.includes(panel) && !path.includes(btn)) toggleNotifPanel();
             };
             document.addEventListener('click', _notifDismiss);
         }, 0);
@@ -116,8 +119,8 @@ function renderNotifications(list) {
                 <div class="notif-time">${time}</div>
             </div>
             <div class="notif-actions">
-                ${canAccept ? `<button class="btn-f notif-accept-btn" onclick="acceptNotif('${nid}',this)" style="padding:2px 8px;font-size:10px;"><span class="msi" style="font-size:14px;">check</span> Accept</button>` : ''}
-                ${(canAccept || !n.seen) ? `<button class="btn-fd notif-decline-btn" onclick="declineNotif('${nid}',this)" style="padding:2px 8px;font-size:10px;" title="Decline"><span class="msi" style="font-size:14px;">close</span></button>` : ''}
+                ${canAccept ? `<button class="vrcn-notify-button primary notif-accept-btn" onclick="acceptNotif('${nid}',this)"><span class="msi">check</span> Accept</button>` : ''}
+                ${(canAccept || !n.seen) ? `<button class="vrcn-notify-button danger notif-decline-btn" onclick="declineNotif('${nid}',this)" title="Decline"><span class="msi">close</span></button>` : ''}
             </div>
         </div>`;
     }).join('');
@@ -139,16 +142,17 @@ function acceptNotif(notifId, btn) {
 function showLaunchModal(location, steamVrOpen) {
     closeLaunchModal();
     const el = document.createElement('div');
-    el.className = 'launch-modal-overlay';
+    el.className = 'modal-overlay';
+    el.style.zIndex = '10003';
     el.innerHTML = `
-        <div class="launch-modal">
+        <div class="modal-box launch-modal">
             <div class="launch-modal-title">VRChat is not open</div>
             <div class="launch-modal-sub">How do you want to play?</div>
             <div class="launch-modal-btns">
-                <button class="launch-btn${steamVrOpen ? ' launch-btn-primary' : ''}" onclick="launchAndJoin('${location}',true)">
+                <button class="vrcn-button${steamVrOpen ? ' vrcn-btn-primary' : ''}" onclick="launchAndJoin('${location}',true)">
                     <span class="msi">visibility</span> Play in VR
                 </button>
-                <button class="launch-btn${!steamVrOpen ? ' launch-btn-primary' : ''}" onclick="launchAndJoin('${location}',false)">
+                <button class="vrcn-button${!steamVrOpen ? ' vrcn-btn-primary' : ''}" onclick="launchAndJoin('${location}',false)">
                     <span class="msi">desktop_windows</span> Play on Desktop
                 </button>
             </div>
@@ -245,8 +249,9 @@ function renderCurrentInstance(data) {
         });
     }
 
+    const { cls: _instCls, label: _instLabel } = getInstanceBadge(data.instanceType);
     const typeBadge = data.instanceType && data.instanceType !== 'public'
-        ? `<span class="inst-type-badge">${esc(getInstanceBadge(data.instanceType).label)}</span>` : '';
+        ? `<span class="inst-type-badge vrcn-badge ${_instCls}">${esc(_instLabel)}</span>` : '';
 
     let usersHtml = '';
     if (users.length > 0) {
@@ -277,8 +282,8 @@ function renderCurrentInstance(data) {
         </div>
         ${usersHtml}
         <div class="inst-invite-bar">
-            <button class="inst-invite-btn" onclick="openInviteModal()">
-                <span class="msi" style="font-size:15px;">person_add</span> Invite Friends
+            <button class="vrcn-button inst-invite-btn" onclick="openInviteModal()">
+                <span class="msi">person_add</span> Invite Friends
             </button>
         </div>
     </div>

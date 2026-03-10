@@ -287,13 +287,13 @@ function setRelayState(r, s) {
     const txt = document.getElementById('relayStatusText');
     const bd = document.getElementById('badgeRelay');
     if (r) {
-        if (b) { b.className = 'btn-f'; b.innerHTML = '<span class="msi" style="font-size:16px;">stop</span> Stop'; }
+        if (b) { b.className = 'vrcn-button'; b.innerHTML = '<span class="msi" style="font-size:16px;">stop</span> Stop'; }
         if (dot) dot.className = 'sf-dot online';
         if (txt) txt.textContent = 'Running';
         bd.className = 'mini-badge online';
         document.getElementById('statStreams').textContent = s || '0';
     } else {
-        if (b) { b.className = 'btn-f'; b.innerHTML = '<span class="msi" style="font-size:16px;">play_arrow</span> Start'; }
+        if (b) { b.className = 'vrcn-button'; b.innerHTML = '<span class="msi" style="font-size:16px;">play_arrow</span> Start'; }
         if (dot) dot.className = 'sf-dot offline';
         if (txt) txt.textContent = 'Not running';
         bd.className = 'mini-badge offline';
@@ -419,7 +419,7 @@ function playVRChat() {
 
 /* === Communication === */
 function sendToCS(m) {
-    if (window.chrome?.webview) window.chrome.webview.postMessage(m);
+    window.external.sendMessage(JSON.stringify(m));
 }
 
 function esc(s) {
@@ -445,7 +445,41 @@ function copyIdBadge(el, id) {
 
 function idBadge(id) {
     const safe = jsq(id);
-    return `<span class="id-copy-badge" onclick="copyIdBadge(this,'${safe}')"><span class="msi" style="font-size:12px;">link</span>${esc(id)}</span>`;
+    return `<span class="vrcn-id-clip" onclick="copyIdBadge(this,'${safe}')"><span class="msi" style="font-size:12px;">link</span>${esc(id)}</span>`;
+}
+
+// ── Location / instance type helpers (global) ──────────────────────────────
+
+function parseFriendLocation(loc) {
+    if (!loc || loc === 'private' || loc === 'offline' || loc === 'traveling') return { worldId: '', instanceType: loc || 'private' };
+    var worldId = loc.includes(':') ? loc.split(':')[0] : loc;
+    var instanceType = 'public';
+    if (loc.includes('~private(')) instanceType = 'private';
+    else if (loc.includes('~friends+(')) instanceType = 'friends+';
+    else if (loc.includes('~friends(')) instanceType = 'friends';
+    else if (loc.includes('~hidden(')) instanceType = 'hidden';
+    else if (loc.includes('~group(')) {
+        var gatMatch = loc.match(/groupAccessType\(([^)]+)\)/);
+        var gat = gatMatch ? gatMatch[1].toLowerCase() : '';
+        if (gat === 'public') instanceType = 'group-public';
+        else if (gat === 'plus') instanceType = 'group-plus';
+        else if (gat === 'members') instanceType = 'group-members';
+        else instanceType = 'group';
+    }
+    return { worldId, instanceType };
+}
+
+function getInstanceBadge(instanceType) {
+    const t = instanceType || 'public';
+    const labels = { 'public':'Public', 'friends':'Friends', 'friends+':'Friends+', 'hidden':'Friends+',
+                     'invite_plus':'Invite+', 'private':'Invite', 'group':'Group',
+                     'group-public':'Group Public', 'group-plus':'Group+', 'group-members':'Group' };
+    const label = labels[t] || t.charAt(0).toUpperCase() + t.slice(1);
+    let cls = 'public';
+    if (t === 'friends' || t === 'friends+' || t === 'hidden') cls = 'friends';
+    else if (t === 'invite_plus' || t === 'private') cls = 'private';
+    else if (t.startsWith('group')) cls = 'group';
+    return { cls, label };
 }
 
 /* ── Custom Dropdown (vn-select) ─────────────────────────────────────────── */
@@ -498,7 +532,7 @@ function initVnSelect(el) {
 
             if (isVrcPlus(opt.value, opt.text)) {
                 const badge = document.createElement('span');
-                badge.className = 'vn-vrc-badge';
+                badge.className = 'vrcn-badge warn';
                 badge.textContent = 'VRC+';
                 item.appendChild(badge);
             }
@@ -579,3 +613,4 @@ function handleFfcProgress(d) {
     if (lbl)  lbl.textContent  = d.label || ('Caching... ' + (d.progress || 0) + '%');
     if (btn)  btn.disabled = true;
 }
+

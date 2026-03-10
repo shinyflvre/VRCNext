@@ -15,23 +15,98 @@ public partial class MainForm
         _vrcDebugSetup = true;
         _vrcApi.DebugLog += msg =>
         {
-            try { Invoke(() => SendToJS("log", new { msg = $"[VRC] {msg}", color = "sec" })); } catch { }
+            try { SendToJS("log", new { msg = $"[VRC] {msg}", color = "sec" }); } catch { }
         };
         _logWatcher.DebugLog += msg =>
         {
-            try { Invoke(() => SendToJS("log", new { msg = $"[LOG] {msg}", color = "sec" })); } catch { }
+            try { SendToJS("log", new { msg = $"[LOG] {msg}", color = "sec" }); } catch { }
         };
         _logWatcher.WorldChanged += (wId, loc) =>
         {
-            try { Invoke(() => HandleWorldChangedOnUiThread(wId, loc)); } catch { }
+            try { HandleWorldChangedOnUiThread(wId, loc); } catch { }
         };
         _logWatcher.PlayerJoined += (uid, name) =>
         {
-            try { Invoke(() => HandlePlayerJoinedOnUiThread(uid, name)); } catch { }
+            try { HandlePlayerJoinedOnUiThread(uid, name); } catch { }
         };
         _logWatcher.PlayerLeft += (uid, name) =>
         {
-            try { Invoke(() => PushCurrentInstanceFromCache()); } catch { }
+            try { PushCurrentInstanceFromCache(); } catch { }
+        };
+        _logWatcher.InstanceClosed += loc =>
+        {
+            try
+            {
+                _recentlyClosedLocs.Add(loc);
+                if (_settings.MyInstances.Remove(loc))
+                {
+                    _settings.Save();
+                    _ = Task.Run(() => OnWebMessage("""{"type":"vrcGetMyInstances"}"""));
+                }
+            }
+            catch { }
+        };
+        _logWatcher.AvatarChanged += (displayName, avatarName) =>
+        {
+            try
+            {
+                var myName = _vrcApi.CurrentUserRaw?["displayName"]?.ToString() ?? "";
+                if (string.IsNullOrEmpty(myName) || displayName != myName) return;
+                // Dedup: VRChat re-logs avatar on every instance join; skip if name unchanged
+                if (avatarName == _lastAvatarName) return;
+                _lastAvatarName = avatarName;
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        // Wait a moment then refresh user to get new currentAvatar ID
+                        await Task.Delay(2000);
+                        await _vrcApi.GetCurrentUserLocationAsync(); // updates CurrentUserRaw
+                        var avatarId = _vrcApi.CurrentAvatarId ?? "";
+                        string avatarThumb = "";
+                        if (!string.IsNullOrEmpty(avatarId))
+                        {
+                            var av = await _vrcApi.GetAvatarAsync(avatarId);
+                            avatarThumb = av?["thumbnailImageUrl"]?.ToString() ?? av?["imageUrl"]?.ToString() ?? "";
+                        }
+                        var ev = new TimelineService.TimelineEvent
+                        {
+                            Type      = "avatar_switch",
+                            Timestamp = DateTime.UtcNow.ToString("o"),
+                            UserId    = avatarId,
+                            UserName  = avatarName,
+                            UserImage = avatarThumb,
+                        };
+                        _timeline.AddEvent(ev);
+                        SendToJS("timelineEvent", BuildTimelinePayload(ev));
+                    }
+                    catch { }
+                });
+            }
+            catch { }
+        };
+        _logWatcher.VideoUrl += url =>
+        {
+            try
+            {
+                // Deduplicate: skip if same URL was logged within the last 30 seconds
+                var now = DateTime.UtcNow;
+                if (_lastVideoUrl == url && (now - _lastVideoUrlTime).TotalSeconds < 30) return;
+                _lastVideoUrl     = url;
+                _lastVideoUrlTime = now;
+
+                var ev = new TimelineService.TimelineEvent
+                {
+                    Type      = "video_url",
+                    Timestamp = now.ToString("o"),
+                    WorldId   = _logWatcher.CurrentWorldId ?? "",
+                    WorldName = _cachedInstWorldName,
+                    Message   = url,
+                };
+                _timeline.AddEvent(ev);
+                SendToJS("timelineEvent", BuildTimelinePayload(ev));
+            }
+            catch { }
         };
     }
 
@@ -52,11 +127,12 @@ public partial class MainForm
             var result = await _vrcApi.TryResumeSessionAsync();
             if (result.Success && result.User != null)
             {
-                SendVrcUserData(result.User);
+                SendVrcUserData(result.User, loginFlow: true);
                 SendToJS("log", new { msg = $"VRChat: Reconnected as {result.User["displayName"]}", color = "ok" });
                 SendAllCachedData();
-                StartWebSocket();
                 await VrcRefreshFriendsAsync();
+                _wsDisconnectedAt = DateTime.UtcNow;
+                StartWebSocket();
                 _ = TriggerStartupBackgroundRefreshAsync();
                 return;
             }
@@ -98,10 +174,11 @@ public partial class MainForm
             SaveVrcCookies();
             _settings.Save();
 
-            SendVrcUserData(result.User);
+            SendVrcUserData(result.User, loginFlow: true);
             SendToJS("log", new { msg = $"VRChat: Logged in as {result.User["displayName"]}", color = "ok" });
-            StartWebSocket();
             await VrcRefreshFriendsAsync();
+            _wsDisconnectedAt = DateTime.UtcNow;
+            StartWebSocket();
             _ = TriggerStartupBackgroundRefreshAsync();
         }
         else
@@ -120,10 +197,11 @@ public partial class MainForm
             SaveVrcCookies();
             _settings.Save();
 
-            SendVrcUserData(result.User);
+            SendVrcUserData(result.User, loginFlow: true);
             SendToJS("log", new { msg = $"VRChat: Logged in as {result.User["displayName"]}", color = "ok" });
-            StartWebSocket();
             await VrcRefreshFriendsAsync();
+            _wsDisconnectedAt = DateTime.UtcNow;
+            StartWebSocket();
             _ = TriggerStartupBackgroundRefreshAsync();
         }
         else
@@ -142,13 +220,28 @@ public partial class MainForm
 
     private static void ApplyStartWithWindows(bool enable)
     {
+#if WINDOWS
         using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(
             @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", true);
         if (key == null) return;
+        var exe = Environment.ProcessPath ?? "";
         if (enable)
-            key.SetValue("VRCNext", $"\"{Application.ExecutablePath}\" --minimized");
+            key.SetValue("VRCNext", $"\"{exe}\" --minimized");
         else
             key.DeleteValue("VRCNext", throwOnMissingValue: false);
+#else
+        var dir  = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "autostart");
+        var file = Path.Combine(dir, "VRCNext.desktop");
+        if (enable)
+        {
+            Directory.CreateDirectory(dir);
+            File.WriteAllText(file,
+                $"[Desktop Entry]\nType=Application\nName=VRCNext\n" +
+                $"Exec=\"{Environment.ProcessPath ?? "VRCNext"}\" --minimized\nHidden=false\n");
+        }
+        else if (File.Exists(file)) File.Delete(file);
+#endif
     }
 
     // Settings
@@ -251,7 +344,7 @@ public partial class MainForm
         foreach (var drive in DriveInfo.GetDrives())
         {
             if (drive.DriveType != DriveType.Fixed) continue;
-            var root = drive.RootDirectory.FullName; // e.g. "C:\"
+            var root = drive.RootDirectory.FullName;
             candidates.Add(Path.Combine(root, "Program Files (x86)", "Steam", "steamapps", "common", "VRChat", "launch.exe"));
             candidates.Add(Path.Combine(root, "Program Files", "Steam", "steamapps", "common", "VRChat", "launch.exe"));
             candidates.Add(Path.Combine(root, "Steam", "steamapps", "common", "VRChat", "launch.exe"));
@@ -269,7 +362,6 @@ public partial class MainForm
             if (File.Exists(steamDefault))
             {
                 var vdf = File.ReadAllText(steamDefault);
-                // Match "path" entries like:  "path"		"D:\\SteamLibrary"
                 foreach (System.Text.RegularExpressions.Match m in
                     System.Text.RegularExpressions.Regex.Matches(vdf, "\"path\"\\s+\"([^\"]+)\""))
                 {

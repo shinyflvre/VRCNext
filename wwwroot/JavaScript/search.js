@@ -50,7 +50,7 @@ function renderSearchResults(type, results, offset, hasMore) {
     // Add "Load More" button if there are more results
     if (state.hasMore) {
         const searchType = sType === 'people' ? 'people' : sType;
-        html += `<div style="grid-column:1/-1;text-align:center;padding:12px;"><button class="btn-f load-more-btn" onclick="doSearch('${searchType}',true)" style="padding:8px 24px;"><span class="msi" style="font-size:16px;">expand_more</span> Load More</button></div>`;
+        html += `<div style="grid-column:1/-1;text-align:center;padding:12px;"><button class="vrcn-button load-more-btn" onclick="doSearch('${searchType}',true)" style="padding:8px 24px;"><span class="msi" style="font-size:16px;">expand_more</span> Load More</button></div>`;
     }
     el.innerHTML = html;
 }

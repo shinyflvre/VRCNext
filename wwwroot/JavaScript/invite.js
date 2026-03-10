@@ -1,6 +1,7 @@
 /* === Multi-Invite Modal === */
 let _inviteSelected = new Set();
 let _inviteSending = false;
+let _inviteOverrideLoc = null; // set when inviting to a specific instance (not current)
 
 function openInviteModal() {
     if (!currentVrcUser) return;
@@ -21,6 +22,29 @@ function closeInviteModal() {
     if (m) m.style.display = 'none';
     _inviteSelected = new Set();
     _inviteSending = false;
+    _inviteOverrideLoc = null;
+}
+
+function openInviteModalForLocation(location, worldName, worldThumb, instanceType) {
+    _inviteOverrideLoc = location;
+    const m = document.getElementById('modalInvite');
+    if (!m) return;
+    _inviteSelected = new Set();
+    _inviteSending = false;
+    // Temporarily override currentInstanceData fields so _renderInviteModal shows correct info
+    const _prev = { worldName: currentInstanceData?.worldName, worldThumb: currentInstanceData?.worldThumb, instanceType: currentInstanceData?.instanceType };
+    if (!currentInstanceData) window.currentInstanceData = {};
+    currentInstanceData.worldName = worldName;
+    currentInstanceData.worldThumb = worldThumb;
+    currentInstanceData.instanceType = instanceType;
+    _renderInviteModal();
+    // Restore after render (the render already read the values)
+    if (currentInstanceData) {
+        currentInstanceData.worldName = _prev.worldName;
+        currentInstanceData.worldThumb = _prev.worldThumb;
+        currentInstanceData.instanceType = _prev.instanceType;
+    }
+    m.style.display = 'flex';
 }
 
 function _renderInviteModal() {
@@ -29,13 +53,15 @@ function _renderInviteModal() {
     const worldName = currentInstanceData?.worldName || 'Current Instance';
     const worldThumb = currentInstanceData?.worldThumb || '';
     const instanceType = currentInstanceData?.instanceType || '';
+    const { cls: badgeCls, label: badgeLabel } = getInstanceBadge(instanceType || 'public');
     const typeBadge = instanceType && instanceType !== 'public'
-        ? `<span class="inst-type-badge">${esc(getInstanceBadge(instanceType).label)}</span>` : '';
+        ? `<span class="vrcn-badge ${badgeCls}">${esc(badgeLabel)}</span>` : '';
     box.innerHTML = `
         <div class="inv-world-banner" style="background-image:url('${esc(worldThumb)}')">
             <div class="inv-world-fade"></div>
             <div class="inv-world-info">
-                <div class="inv-world-name">${esc(worldName)} ${typeBadge}</div>
+                ${typeBadge ? `<div style="margin-bottom:4px;">${typeBadge}</div>` : ''}
+                <div class="inv-world-name">${esc(worldName)}</div>
                 <div style="font-size:10px;color:rgba(255,255,255,.65);margin-top:3px;">Invite to this instance</div>
             </div>
             <button class="inv-close-btn" onclick="closeInviteModal()"><span class="msi">close</span></button>
@@ -47,7 +73,7 @@ function _renderInviteModal() {
         <div id="inviteList" class="inv-list"></div>
         <div class="inv-footer">
             <span id="inviteSelCount" class="inv-sel-count"></span>
-            <button id="inviteSendBtn" class="inv-send-btn" onclick="sendMultiInvite()" disabled>Send Invite</button>
+            <button id="inviteSendBtn" class="vrcn-button" onclick="sendMultiInvite()" disabled>Send Invite</button>
         </div>
         <div id="inviteProgress" class="inv-progress-wrap" style="display:none;">
             <div class="inv-progress-track"><div id="inviteProgressBar" class="inv-progress-bar"></div></div>
@@ -61,17 +87,22 @@ function renderInviteList(filter) {
     if (!el) return;
 
     const myLocBase = currentInstanceData?.location?.split('~')[0] || null;
+    const _instUserIds = myLocBase ? new Set((currentInstanceData.users || []).map(u => u.id).filter(Boolean)) : new Set();
 
-    const friends = (vrcFriendsData || []).filter(f => {
+    const allFriends = (vrcFriendsData || []).map(f =>
+        (_instUserIds.has(f.id) && (!f.location || f.location === 'private')) ? { ...f, location: currentInstanceData.location } : f
+    ).filter(f => {
         if (f.presence === 'offline') return false;
-        if (myLocBase && f.location && f.location.split('~')[0] === myLocBase) return false;
         if (filter) {
             if (!(f.displayName || '').toLowerCase().includes(filter.toLowerCase())) return false;
         }
         return true;
     });
 
-    if (friends.length === 0) {
+    const instFriends = myLocBase ? allFriends.filter(f => f.location && f.location.split('~')[0] === myLocBase) : [];
+    const friends = allFriends.filter(f => !myLocBase || !f.location || f.location.split('~')[0] !== myLocBase);
+
+    if (allFriends.length === 0) {
         el.innerHTML = `<div class="inv-empty">${filter ? 'No results' : 'No friends available to invite'}</div>`;
         return;
     }
@@ -92,7 +123,7 @@ function renderInviteList(filter) {
         const indicatorClass = isWeb ? 'vrc-status-ring' : 'vrc-status-dot';
         const statusCls = statusDotClass(f.status || 'offline');
         const fid = jsq(f.id || '');
-        return `<div class="inv-row${sel ? ' inv-row-sel' : ''}" onclick="toggleInviteSelect('${fid}')">
+        return `<div class="vrcn-profile-item${sel ? ' inv-row-sel' : ''}" onclick="toggleInviteSelect('${fid}')">
             <div class="inv-check${sel ? ' inv-check-on' : ''}">
                 ${sel ? '<span class="msi" style="font-size:13px;line-height:1;">check</span>' : ''}
             </div>
@@ -104,6 +135,10 @@ function renderInviteList(filter) {
         </div>`;
     }
 
+    if (instFriends.length > 0) {
+        h += `<div class="inv-section-lbl">IN-INSTANCE — ${instFriends.length}</div>`;
+        instFriends.forEach(f => h += card(f));
+    }
     if (gameFriends.length > 0) {
         h += `<div class="inv-section-lbl">IN-GAME — ${gameFriends.length}</div>`;
         gameFriends.forEach(f => h += card(f));
@@ -156,7 +191,9 @@ function sendMultiInvite() {
     if (prog) prog.style.display = '';
 
     _applyInviteProgress(0, ids.length, 0, 0);
-    sendToCS({ action: 'vrcBatchInvite', userIds: ids });
+    const msg = { action: 'vrcBatchInvite', userIds: ids };
+    if (_inviteOverrideLoc) msg.location = _inviteOverrideLoc;
+    sendToCS(msg);
 }
 
 function handleBatchInviteProgress(payload) {

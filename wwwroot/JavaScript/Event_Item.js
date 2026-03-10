@@ -32,11 +32,12 @@ function renderEventDetail(ev) {
     const tags = Array.isArray(ev.tags) ? ev.tags : [];
     const tagsHtml = tags.map(t => {
         const isFeat = /featured/i.test(t);
-        return `<span style="padding:1px 6px;border-radius:4px;font-size:10px;background:${isFeat?'rgba(245,158,11,.15)':'color-mix(in srgb,var(--accent) 12%,transparent)'};color:${isFeat?'#f59e0b':'var(--accent-lt)'};border:1px solid ${isFeat?'rgba(245,158,11,.35)':'color-mix(in srgb,var(--accent) 35%,transparent)'};">${esc(t)}</span>`;
-    }).join(' ');
+        return `<span class="vrcn-badge${isFeat ? ' warn' : ''}">${esc(t)}</span>`;
+    }).join('');
 
+    const { cls: _accCls } = getInstanceBadge((ev.accessType || '').toLowerCase());
     const accessBadge = ev.accessType
-        ? `<span style="padding:1px 6px;border-radius:4px;font-size:10px;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent-lt);border:1px solid color-mix(in srgb,var(--accent) 35%,transparent);">${esc(ev.accessType)}</span>`
+        ? `<span class="vrcn-badge ${_accCls}">${esc(ev.accessType)}</span>`
         : '';
 
     const groupHtml = ev.group
@@ -65,8 +66,8 @@ function renderEventDetail(ev) {
             ${groupHtml}
             ${ev.description ? `<div class="fd-section-label" style="margin-top:12px;">About</div><div class="fd-bio">${esc(ev.description)}</div>` : ''}
             <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;">
-                <button class="fd-btn fd-btn-join" id="${followBtnId}" onclick="toggleFollowEvent('${groupId}','${calendarId}',${isFollowing},this)"><span class="msi">${isFollowing ? 'notifications_off' : 'notifications_active'}</span><span class="ev-follow-lbl">${isFollowing ? 'Unfollow' : 'Follow'}</span></button>
-                <button class="fd-btn" onclick="document.getElementById('modalDetail').style.display='none'">Close</button>
+                <button class="vrcn-button-round vrcn-btn-join" id="${followBtnId}" onclick="toggleFollowEvent('${groupId}','${calendarId}',${isFollowing},this)"><span class="msi">${isFollowing ? 'notifications_off' : 'notifications_active'}</span><span class="ev-follow-lbl">${isFollowing ? 'Unfollow' : 'Follow'}</span></button>
+                <button class="vrcn-button-round" onclick="document.getElementById('modalDetail').style.display='none'">Close</button>
             </div>
         </div>`;
 }

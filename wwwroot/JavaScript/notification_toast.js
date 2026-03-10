@@ -80,7 +80,7 @@ function _showNotifCard(n) {
             <div class="nc-body">
                 <div class="nc-title">${titleHtml}</div>
                 ${subText ? `<div class="nc-sub">${esc(subText)}</div>` : ''}
-                ${canAccept ? `<button class="nc-accept-btn" onclick="_acceptNotifCard('${nid}',this)"><span class="msi" style="font-size:13px;">check</span> Accept</button>` : ''}
+                ${canAccept ? `<button class="vrcn-notify-button primary" onclick="_acceptNotifCard('${nid}',this)"><span class="msi">check</span> Accept</button>` : ''}
             </div>
             <button class="nc-close-btn" onclick="_dismissNotifCard(this.closest('.nc-card'))"><span class="msi" style="font-size:15px;">close</span></button>
         </div>

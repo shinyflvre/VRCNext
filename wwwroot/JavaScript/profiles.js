@@ -115,7 +115,7 @@ function renderMyProfileContent() {
 
     const langTags = (u.tags||[]).filter(t => t.startsWith('language_'));
     const langsViewHtml = langTags.length
-        ? `<div class="fd-lang-tags">${langTags.map(t => `<span class="fd-lang-tag">${esc(LANG_MAP[t]||t.replace('language_','').toUpperCase())}</span>`).join('')}</div>`
+        ? `<div class="fd-lang-tags">${langTags.map(t => `<span class="vrcn-badge">${esc(LANG_MAP[t]||t.replace('language_','').toUpperCase())}</span>`).join('')}</div>`
         : `<div class="myp-empty">No languages set</div>`;
 
     const bioLinksViewHtml = (u.bioLinks||[]).length
@@ -146,10 +146,10 @@ function renderMyProfileContent() {
                     ${u.pronouns ? `<div style="font-size:13px;color:var(--tx1);">${esc(u.pronouns)}</div>` : '<div class="myp-empty">No pronouns set</div>'}
                 </div>
                 <div id="mypPronounsEdit" style="display:none;">
-                    <input type="text" id="mypPronounsInput" class="myp-text-input" placeholder="z.B. he/him, she/her, they/them..." maxlength="32" value="${esc(u.pronouns||'')}">
+                    <input type="text" id="mypPronounsInput" class="vrcn-edit-field" placeholder="z.B. he/him, she/her, they/them..." maxlength="32" value="${esc(u.pronouns||'')}" style="width:100%;">
                     <div class="myp-edit-actions">
-                        <button class="myp-cancel-btn" onclick="cancelMyField('pronouns')">Cancel</button>
-                        <button class="myp-save-btn" onclick="saveMyField('pronouns')">Save</button>
+                        <button class="vrcn-button" onclick="cancelMyField('pronouns')">Cancel</button>
+                        <button class="vrcn-button vrcn-btn-primary" onclick="saveMyField('pronouns')">Save</button>
                     </div>
                 </div>
             </div>
@@ -166,8 +166,8 @@ function renderMyProfileContent() {
                     <textarea id="mypBioInput" class="myp-textarea" rows="4" maxlength="512" placeholder="Write your bio...">${esc(u.bio||'')}</textarea>
                     <div class="myp-char-count"><span id="mypBioCount">${(u.bio||'').length}</span>/512</div>
                     <div class="myp-edit-actions">
-                        <button class="myp-cancel-btn" onclick="cancelMyField('bio')">Cancel</button>
-                        <button class="myp-save-btn" onclick="saveMyField('bio')">Save</button>
+                        <button class="vrcn-button" onclick="cancelMyField('bio')">Cancel</button>
+                        <button class="vrcn-button vrcn-btn-primary" onclick="saveMyField('bio')">Save</button>
                     </div>
                 </div>
             </div>
@@ -181,8 +181,8 @@ function renderMyProfileContent() {
                 <div id="mypLinksEdit" style="display:none;">
                     <div id="mypLinksInputs"></div>
                     <div class="myp-edit-actions">
-                        <button class="myp-cancel-btn" onclick="cancelMyField('links')">Cancel</button>
-                        <button class="myp-save-btn" onclick="saveMyField('links')">Save</button>
+                        <button class="vrcn-button" onclick="cancelMyField('links')">Cancel</button>
+                        <button class="vrcn-button vrcn-btn-primary" onclick="saveMyField('links')">Save</button>
                     </div>
                 </div>
             </div>
@@ -200,14 +200,14 @@ function renderMyProfileContent() {
                         <button class="myp-add-lang-btn" onclick="addMyLanguage()"><span class="msi" style="font-size:15px;">add</span></button>
                     </div>
                     <div class="myp-edit-actions">
-                        <button class="myp-cancel-btn" onclick="cancelMyField('languages')">Cancel</button>
-                        <button class="myp-save-btn" onclick="saveMyField('languages')">Save</button>
+                        <button class="vrcn-button" onclick="cancelMyField('languages')">Cancel</button>
+                        <button class="vrcn-button vrcn-btn-primary" onclick="saveMyField('languages')">Save</button>
                     </div>
                 </div>
             </div>
 
             <div style="text-align:right;padding-top:12px;">
-                <button class="fd-btn" onclick="closeMyProfile()">Close</button>
+                <button class="vrcn-button-round" onclick="closeMyProfile()">Close</button>
             </div>
         </div>`;
 
@@ -257,7 +257,7 @@ function saveMyField(field) {
     const u = currentVrcUser;
     if (!u) return;
     const EDITS = { pronouns: 'mypPronounsEdit', bio: 'mypBioEdit', links: 'mypLinksEdit', languages: 'mypLangsEdit' };
-    const saveBtn = document.querySelector(`#${EDITS[field]} .myp-save-btn`);
+    const saveBtn = document.querySelector(`#${EDITS[field]} .vrcn-btn-primary`);
     if (saveBtn) saveBtn.disabled = true;
 
     if (field === 'pronouns') {
@@ -267,7 +267,7 @@ function saveMyField(field) {
         const bio = document.getElementById('mypBioInput')?.value ?? '';
         sendToCS({ action: 'vrcUpdateProfile', bio });
     } else if (field === 'links') {
-        const inputs = document.querySelectorAll('#mypLinksInputs .myp-link-input');
+        const inputs = document.querySelectorAll('#mypLinksInputs .vrcn-edit-field');
         const bioLinks = Array.from(inputs).map(i => i.value.trim()).filter(Boolean).slice(0, 3);
         sendToCS({ action: 'vrcUpdateProfile', bioLinks });
     } else if (field === 'languages') {
@@ -285,7 +285,7 @@ function _renderMyLinksInputs() {
     container.innerHTML = [0, 1, 2].map(i =>
         `<div class="myp-link-row">
             <span class="myp-link-num">${i + 1}</span>
-            <input type="url" class="myp-link-input" placeholder="https://..." value="${esc(links[i]||'')}" maxlength="512">
+            <input type="url" class="vrcn-edit-field" placeholder="https://..." value="${esc(links[i]||'')}" maxlength="512" style="flex:1;">
         </div>`
     ).join('');
 }
@@ -386,7 +386,7 @@ function renderVrcFriends(friends, counts) {
         const dotClass = presenceType === 'web' ? 'vrc-status-ring' : 'vrc-status-dot';
         const statusCls = presenceType === 'offline' ? 's-offline' : statusDotClass(f.status);
         const rank = getTrustRank(f.tags || []);
-        const rankBadge = rank ? `<span class="fd-badge" style="background:${rank.color}22;color:${rank.color};padding:1px 5px;font-size:9px;border-radius:4px;flex-shrink:0;">${rank.label}</span>` : '';
+        const rankBadge = rank ? `<span class="vrcn-badge" style="background:${rank.color}22;color:${rank.color};">${rank.label}</span>` : '';
         return `<div class="vrc-friend-card" onclick="openFriendDetail('${fid}')">${imgTag}<div class="vrc-friend-info"><div class="vrc-friend-name" style="display:flex;align-items:center;gap:5px;"><span class="${dotClass} ${statusCls}" style="width:6px;height:6px;flex-shrink:0;"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(f.displayName)}</span>${rankBadge}</div><div class="vrc-friend-loc">${esc(f.statusDescription || statusLabel(f.status))} · ${esc(loc)}</div></div></div>`;
     }
 
@@ -591,8 +591,6 @@ function openFriendDetail(userId) {
     c.innerHTML = sk('profile');
     m.style.display = 'flex';
     sendToCS({ action: 'vrcGetFriendDetail', userId: userId });
-    // Refresh timeline so world names are resolved and instance players are current
-    sendToCS({ action: 'getTimeline' });
 }
 
 function closeFriendDetail() {
@@ -715,7 +713,7 @@ function buildFdTimelinePreview(userId) {
         return `<div class="fdtl-item">
             ${imgHtml}
             <div class="fdtl-item-info">
-                <div class="fdtl-badge" style="background:${color}22;color:${color};"><span class="msi" style="font-size:9px;vertical-align:middle;">${meta.icon}</span> ${esc(meta.label)}</div>
+                <div class="fdtl-badge vrcn-badge" style="background:${color}22;color:${color};"><span class="msi" style="font-size:10px;vertical-align:middle;">${meta.icon}</span> ${esc(meta.label)}</div>
                 ${loc ? `<div class="fdtl-item-loc">${esc(loc)}</div>` : ''}
                 <div class="fdtl-item-date">${esc(dateStr)}${timeStr ? ' · ' + timeStr : ''}</div>
             </div>
@@ -781,6 +779,13 @@ function renderFriendDetail(d) {
     } else {
         metaHtml += `<div class="fd-meta-row"><span class="fd-meta-label">Time Together</span><span style="color:var(--tx3)">Not tracked yet</span></div>`;
     }
+    // meetCount comes from C# (DB query) on each meet_again event — take the max from any loaded event for this user
+    const fdMeetCnt = Array.isArray(timelineEvents)
+        ? Math.max(0, ...timelineEvents.filter(e => e.type === 'meet_again' && e.userId === d.id).map(e => e.meetCount || 0))
+        : 0;
+    if (fdMeetCnt > 0) {
+        metaHtml += `<div class="fd-meta-row"><span class="fd-meta-label">Meets</span><span>${fdMeetCnt}</span></div>`;
+    }
 
     const noteVal = (d.userNote || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
     const noteHtml = `<div class="fd-note-section">
@@ -798,33 +803,33 @@ function renderFriendDetail(d) {
     const isBlocked = Array.isArray(blockedData) && blockedData.some(e => e.targetUserId === d.id);
     const isMuted   = Array.isArray(mutedData)   && mutedData.some(e => e.targetUserId === d.id);
     if (d.isFriend) {
-        if (d.canJoin) actionsHtml += `<button class="fd-btn fd-btn-join" onclick="friendAction('join','${loc}','${uid}')">Join</button>`;
-        if (d.canRequestInvite) actionsHtml += `<button class="fd-btn" onclick="friendAction('requestInvite','${loc}','${uid}')">Request Invite</button>`;
+        if (d.canJoin) actionsHtml += `<button class="vrcn-button-round vrcn-btn-join" onclick="friendAction('join','${loc}','${uid}')">Join</button>`;
+        if (d.canRequestInvite) actionsHtml += `<button class="vrcn-button-round" onclick="friendAction('requestInvite','${loc}','${uid}')">Request Invite</button>`;
         const myInInstance = currentInstanceData && currentInstanceData.location && !currentInstanceData.empty && !currentInstanceData.error;
-        if (myInInstance) actionsHtml += `<button class="fd-btn" onclick="openFriendInviteModal('${uid}','${esc(d.displayName).replace(/'/g, "\\'")}')">Invite</button>`;
+        if (myInInstance) actionsHtml += `<button class="vrcn-button-round" onclick="openFriendInviteModal('${uid}','${esc(d.displayName).replace(/'/g, "\\'")}')">Invite</button>`;
         const favFid = (d.favFriendId || '').replace(/'/g, "\\'");
-        actionsHtml += `<button class="fd-btn fd-btn-fav${d.isFavorited ? ' active' : ''}" id="fdFavBtn" onclick="toggleFavFriend('${uid}','${favFid}',this)" title="${d.isFavorited ? 'Unfavorite' : 'Favorite'}"><span class="msi" style="font-size:16px;">${d.isFavorited ? 'star' : 'star_outline'}</span></button>`;
+        actionsHtml += `<button class="vrcn-button-round${d.isFavorited ? ' active' : ''}" id="fdFavBtn" onclick="toggleFavFriend('${uid}','${favFid}',this)" title="${d.isFavorited ? 'Unfavorite' : 'Favorite'}" style="margin-left:auto;"><span class="msi" style="font-size:16px;">${d.isFavorited ? 'star' : 'star_outline'}</span></button>`;
     } else {
-        actionsHtml += `<button class="fd-btn fd-btn-accent" id="fdAddFriend" onclick="sendToCS({action:'vrcSendFriendRequest',userId:'${uid}'});this.disabled=true;this.textContent='Request Sent';">Add Friend</button>`;
+        actionsHtml += `<button class="vrcn-button-round vrcn-btn-primary" id="fdAddFriend" onclick="sendToCS({action:'vrcSendFriendRequest',userId:'${uid}'});this.disabled=true;this.textContent='Request Sent';">Add Friend</button>`;
     }
-    actionsHtml += `<button class="fd-btn fd-btn-mod${isMuted ? ' active' : ''}" id="fdMuteBtn" onclick="toggleMod('${uid}','mute',this)" title="${isMuted ? 'Unmute' : 'Mute'}"><span class="msi" style="font-size:16px;">mic${isMuted ? '_off' : ''}</span></button>`;
-    actionsHtml += `<button class="fd-btn fd-btn-mod${isBlocked ? ' active' : ''}" id="fdBlockBtn" onclick="toggleMod('${uid}','block',this)" title="${isBlocked ? 'Unblock' : 'Block'}"><span class="msi" style="font-size:16px;">${isBlocked ? 'block' : 'shield'}</span></button>`;
-    if (d.isFriend) actionsHtml += `<button class="fd-btn fd-btn-mod" id="fdUnfriend" onclick="confirmUnfriend('${uid}','${esc(d.displayName).replace(/'/g, "\\'")}') " title="Unfriend"><span class="msi" style="font-size:16px;">person_remove</span></button>`;
+    actionsHtml += `<button class="vrcn-button-round vrcn-btn-danger${isMuted ? ' active' : ''}" id="fdMuteBtn" onclick="toggleMod('${uid}','mute',this)" title="${isMuted ? 'Unmute' : 'Mute'}"><span class="msi" style="font-size:16px;">mic${isMuted ? '_off' : ''}</span></button>`;
+    actionsHtml += `<button class="vrcn-button-round vrcn-btn-danger${isBlocked ? ' active' : ''}" id="fdBlockBtn" onclick="toggleMod('${uid}','block',this)" title="${isBlocked ? 'Unblock' : 'Block'}"><span class="msi" style="font-size:16px;">${isBlocked ? 'block' : 'shield'}</span></button>`;
+    if (d.isFriend) actionsHtml += `<button class="vrcn-button-round vrcn-btn-danger" id="fdUnfriend" onclick="confirmUnfriend('${uid}','${esc(d.displayName).replace(/'/g, "\\'")}') " title="Unfriend"><span class="msi" style="font-size:16px;">person_remove</span></button>`;
     actionsHtml += '</div>';
 
     // Badges
     let badgesHtml = '<div class="fd-badges-row">';
-    if (d.isFriend) badgesHtml += `<span class="fd-badge fd-badge-friend"><span class="msi" style="font-size:11px;">check_circle</span>Friend</span>`;
-    if (d.ageVerified) badgesHtml += `<span class="fd-badge fd-badge-verified"><span class="msi" style="font-size:11px;">verified</span>18+</span>`;
+    if (d.isFriend) badgesHtml += `<span class="vrcn-badge ok"><span class="msi" style="font-size:11px;">check_circle</span>Friend</span>`;
+    if (d.ageVerified) badgesHtml += `<span class="vrcn-badge ok"><span class="msi" style="font-size:11px;">verified</span>18+</span>`;
     const rank = getTrustRank(d.tags || []);
-    if (rank) badgesHtml += `<span class="fd-badge" style="background:${rank.color}22;color:${rank.color}">${esc(rank.label)}</span>`;
+    if (rank) badgesHtml += `<span class="vrcn-badge" style="background:${rank.color}22;color:${rank.color}">${esc(rank.label)}</span>`;
     const mutualCount = (d.mutuals || []).length;
-    if (mutualCount > 0) badgesHtml += `<span class="fd-badge fd-badge-mutual"><span class="msi" style="font-size:11px;">group</span>${mutualCount} Mutual${mutualCount !== 1 ? 's' : ''}</span>`;
+    if (mutualCount > 0) badgesHtml += `<span class="vrcn-badge"><span class="msi" style="font-size:11px;">group</span>${mutualCount} Mutual${mutualCount !== 1 ? 's' : ''}</span>`;
     badgesHtml += '</div>';
 
     const pronounsHtml = d.pronouns ? `<div class="fd-pronouns">${esc(d.pronouns)}</div>` : '';
     const langs = getLanguages(d.tags || []);
-    const langsHtml = langs.length ? `<div class="fd-lang-tags">${langs.map(l => `<span class="fd-lang-tag">${esc(l)}</span>`).join('')}</div>` : '';
+    const langsHtml = langs.length ? `<div class="fd-lang-tags">${langs.map(l => `<span class="vrcn-badge">${esc(l)}</span>`).join('')}</div>` : '';
 
     // Groups data
     const allGroups = d.userGroups || [];
@@ -957,7 +962,7 @@ function renderFriendDetail(d) {
     });
     worldsContent += `</div>`;
 
-    c.innerHTML = `${bannerHtml}<div class="fd-content${bannerSrc ? ' fd-has-banner' : ''}"><div class="fd-header">${imgTag}<div><div class="fd-name">${esc(d.displayName)}</div>${pronounsHtml}<div class="fd-status" id="fd-live-status"><span class="${fdDotClass} ${fdStatusDotCls}" style="width:8px;height:8px;"></span>${fdIsOffline ? 'Offline' : statusLabel(d.status)}${(!fdIsOffline && fdIsWeb) ? ' (Web)' : ''}${(!fdIsOffline && d.statusDescription) ? ' — ' + esc(d.statusDescription) : ''}</div></div></div>${badgesHtml}${actionsHtml}${tabsHtml}<div id="fdTabInfo">${infoContent}</div><div id="fdTabGroups" style="display:none;">${groupsContent}</div><div id="fdTabMutuals" style="display:none;">${mutualsContent}</div><div id="fdTabWorlds" style="display:none;">${worldsContent}</div><div style="margin-top:10px;text-align:right;"><button class="fd-btn" onclick="closeFriendDetail()">Close</button></div></div>`;
+    c.innerHTML = `${bannerHtml}<div class="fd-content${bannerSrc ? ' fd-has-banner' : ''}"><div class="fd-header">${imgTag}<div><div class="fd-name">${esc(d.displayName)}</div>${pronounsHtml}<div class="fd-status" id="fd-live-status"><span class="${fdDotClass} ${fdStatusDotCls}" style="width:8px;height:8px;"></span>${fdIsOffline ? 'Offline' : statusLabel(d.status)}${(!fdIsOffline && fdIsWeb) ? ' (Web)' : ''}${(!fdIsOffline && d.statusDescription) ? ' — ' + esc(d.statusDescription) : ''}</div></div></div>${badgesHtml}${actionsHtml}${tabsHtml}<div id="fdTabInfo">${infoContent}</div><div id="fdTabGroups" style="display:none;">${groupsContent}</div><div id="fdTabMutuals" style="display:none;">${mutualsContent}</div><div id="fdTabWorlds" style="display:none;">${worldsContent}</div><div style="margin-top:10px;text-align:right;"><button class="vrcn-button-round" onclick="closeFriendDetail()">Close</button></div></div>`;
 
     // Live ticker - only when friend is confirmed in same instance
     if (_fdLiveTimer) { clearInterval(_fdLiveTimer); _fdLiveTimer = null; }
@@ -1069,7 +1074,7 @@ function renderModList(containerId, list, actionType) {
     }
     list = filtered;
     const btnLabel = actionType === 'block' ? 'Unblock' : 'Unmute';
-    const btnClass = 'fd-btn fd-btn-unmod';
+    const btnClass = 'vrcn-button-round vrcn-btn-danger';
     el.innerHTML = list.map(entry => {
         const uid = jsq(entry.targetUserId || '');
         const displayName = entry.targetDisplayName || entry.targetUserId || '?';
@@ -1208,9 +1213,10 @@ function openFriendInviteModal(userId, displayName) {
     const worldName = currentInstanceData?.worldName || 'your instance';
 
     const el = document.createElement('div');
-    el.className = 'inv-modal-overlay';
+    el.className = 'modal-overlay';
+    el.style.zIndex = '10003';
     el.innerHTML = `
-        <div class="inv-single-modal">
+        <div class="modal-box inv-single-modal">
             <div class="inv-world-banner" style="${thumb ? `background-image:url('${cssUrl(thumb)}')` : ''}">
                 <div class="inv-world-fade"></div>
                 <div class="inv-world-info">
@@ -1221,12 +1227,12 @@ function openFriendInviteModal(userId, displayName) {
             </div>
             <div class="inv-single-body">
                 <div class="inv-single-row">
-                    <button class="inv-action-btn inv-action-primary" onclick="_invModalSendDirect()">Invite Directly</button>
-                    <button class="inv-action-btn" id="invMsgToggleBtn" onclick="_invModalToggleMsgs()">Invite with Message</button>
+                    <button class="vrcn-button vrcn-btn-primary" onclick="_invModalSendDirect()">Invite Directly</button>
+                    <button class="vrcn-button" id="invMsgToggleBtn" onclick="_invModalToggleMsgs()">Invite with Message</button>
                 </div>
                 <div id="invMsgList" style="display:none;"></div>
                 <div id="invMsgSendRow" style="display:none;">
-                    <button class="inv-action-btn inv-action-primary inv-action-full" onclick="_invModalSendWithMsg()">Send Invite</button>
+                    <button class="vrcn-button vrcn-btn-primary inv-action-full" onclick="_invModalSendWithMsg()">Send Invite</button>
                 </div>
             </div>
         </div>`;
@@ -1379,7 +1385,7 @@ function openImagePicker(type, targetId) {
             <div class="gp-modal-header">
                 <span class="msi" style="font-size:20px;color:var(--accent);">edit</span>
                 <span id="imagePickerTitle">${esc(title)}</span>
-                <button class="fd-btn" onclick="closeImagePicker()" style="padding:4px 8px;" title="Close"><span class="msi" style="font-size:18px;">close</span></button>
+                <button class="vrcn-button-round" onclick="closeImagePicker()" title="Close"><span class="msi" style="font-size:18px;">close</span></button>
             </div>
             <div class="gp-modal-body" style="flex:1;overflow-y:auto;">
                 <div id="imagePickerGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:6px;padding:4px 0;">
@@ -1387,8 +1393,8 @@ function openImagePicker(type, targetId) {
                 </div>
             </div>
             <div class="gp-modal-footer">
-                <button class="fd-btn" onclick="closeImagePicker()">Cancel</button>
-                <button class="fd-btn fd-btn-join" id="imagePickerApply" disabled onclick="applyImagePicker()" style="opacity:.45;">
+                <button class="vrcn-button-round" onclick="closeImagePicker()">Cancel</button>
+                <button class="vrcn-button-round vrcn-btn-join" id="imagePickerApply" disabled onclick="applyImagePicker()" style="opacity:.45;">
                     <span class="msi" style="font-size:16px;vertical-align:middle;margin-right:4px;">check</span>Apply
                 </button>
             </div>

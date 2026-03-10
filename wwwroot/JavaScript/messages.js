@@ -1,11 +1,11 @@
-/* === WebView message handler === */
-if (window.chrome?.webview) {
-    window.chrome.webview.addEventListener('message', e => {
-        const { type, payload } = e.data;
-        switch (type) {
+/* === Photino message handler === */
+window.external.receiveMessage(rawMsg => {
+    const { type, payload } = JSON.parse(rawMsg);
+    switch (type) {
             case 'loadSettings': loadSettingsToUI(payload); break;
             case 'relayState': setRelayState(payload.running, payload.streams); break;
             case 'log': addLog(payload.msg, payload.color); break;
+            case 'toast': showToast(payload.ok, payload.msg); break;
             case 'wsStatus': {
                 const badge = document.getElementById('wsBadge');
                 if (badge) {
@@ -73,6 +73,7 @@ if (window.chrome?.webview) {
                     if (fsl) fsl.innerHTML = '<div class="vrc-section-label">IN-GAME — ···</div>' + sk('friend', 10);
                 }
                 renderDashboard();
+                loadMyInstances();
                 requestInstanceInfo();
                 refreshNotifications();
                 { const vp = document.getElementById('badgeVrcPlus');
@@ -119,11 +120,12 @@ if (window.chrome?.webview) {
             case 'vrcFavoriteFriends': renderFavFriends(payload); break;
             case 'vrcFavoriteFriendToggled': handleFavFriendToggled(payload); break;
             case 'vrcFriendDetailError':
-                document.getElementById('friendDetailContent').innerHTML = `<div class="fd-loading" style="color:var(--err);">${esc(payload.error || 'Error loading profile')}</div><div style="margin-top:10px;text-align:right;"><button class="fd-btn" onclick="closeFriendDetail()">Close</button></div>`;
+                document.getElementById('friendDetailContent').innerHTML = `<div class="fd-loading" style="color:var(--err);">${esc(payload.error || 'Error loading profile')}</div><div style="margin-top:10px;text-align:right;"><button class="vrcn-button-round" onclick="closeFriendDetail()">Close</button></div>`;
                 break;
             case 'vrcActionResult':
                 if (payload.action === 'sendChatMessage') { if (typeof handleChatActionResult === 'function') handleChatActionResult(payload); break; }
                 if (payload.action === 'boop') { showToast(payload.success, payload.message); break; }
+                if (payload.action === 'createInstance' && payload.success) { loadMyInstances(); }
                 if (payload.action === 'deleteGroupEvent') {
                     if (payload.success) {
                         const card = document.querySelector(`.fd-group-card[data-event-id="${payload.eventId}"]`);
@@ -190,7 +192,7 @@ if (window.chrome?.webview) {
                     if (lav && payload.languages != null) {
                         const langs = payload.languages || [];
                         lav.innerHTML = langs.length
-                            ? `<div class="fd-lang-tags">${langs.map(l => `<span class="fd-lang-tag">${esc(LANG_MAP['language_'+l] || l.toUpperCase())}</span>`).join('')}</div>`
+                            ? `<div class="fd-lang-tags">${langs.map(l => `<span class="vrcn-badge">${esc(LANG_MAP['language_'+l] || l.toUpperCase())}</span>`).join('')}</div>`
                             : '<div class="myp-empty">No languages set</div>';
                     }
                     if (jsv && payload.joinState != null) {
@@ -211,7 +213,7 @@ if (window.chrome?.webview) {
                     if (payload.joinState != null) cancelGroupField('joinState');
                     showToast(true, 'Group updated!');
                 } else {
-                    document.querySelectorAll('#gdescDescEdit .myp-save-btn, #gdescRulesEdit .myp-save-btn, #ggrpLinksEdit .myp-save-btn, #ggrpLangsEdit .myp-save-btn, #ggrpJoinStateEdit .myp-save-btn').forEach(b => b.disabled = false);
+                    document.querySelectorAll('#gdescDescEdit .vrcn-btn-primary, #gdescRulesEdit .vrcn-btn-primary, #ggrpLinksEdit .vrcn-btn-primary, #ggrpLangsEdit .vrcn-btn-primary, #ggrpJoinStateEdit .vrcn-btn-primary').forEach(b => b.disabled = false);
                     showToast(false, 'Update failed.');
                 }
                 break;
@@ -220,7 +222,7 @@ if (window.chrome?.webview) {
                     renderMyProfileContent();
                     showToast(true, 'Saved!');
                 } else {
-                    document.querySelectorAll('#mypBox .myp-save-btn').forEach(b => b.disabled = false);
+                    document.querySelectorAll('#mypBox .vrcn-btn-primary').forEach(b => b.disabled = false);
                     showToast(false, payload.error || 'Update failed');
                 }
                 break;
@@ -327,7 +329,7 @@ if (window.chrome?.webview) {
                 renderGroupDetail(payload);
                 break;
             case 'vrcGroupDetailError':
-                document.getElementById('detailModalContent').innerHTML = `<div style="padding:30px;text-align:center;color:var(--err);">${esc(payload.error || 'Error loading group')}</div><div style="text-align:center;margin-top:10px;"><button class="fd-btn" onclick="document.getElementById('modalDetail').style.display='none'">Close</button></div>`;
+                document.getElementById('detailModalContent').innerHTML = `<div style="padding:30px;text-align:center;color:var(--err);">${esc(payload.error || 'Error loading group')}</div><div style="text-align:center;margin-top:10px;"><button class="vrcn-button-round" onclick="document.getElementById('modalDetail').style.display='none'">Close</button></div>`;
                 break;
             case 'vrcGroupMembersPage':
                 {
@@ -339,7 +341,7 @@ if (window.chrome?.webview) {
                     const loadMoreDiv = document.getElementById('gdMembersLoadMore');
                     if (loadMoreDiv) {
                         if (payload.hasMore) {
-                            loadMoreDiv.innerHTML = '<button class="btn-f" onclick="loadMoreGroupMembers()">Load More Members</button>';
+                            loadMoreDiv.innerHTML = '<button class="vrcn-button" onclick="loadMoreGroupMembers()">Load More Members</button>';
                         } else {
                             loadMoreDiv.innerHTML = '<div style="font-size:11px;color:var(--tx3);padding:6px;">All members loaded</div>';
                         }
@@ -352,9 +354,16 @@ if (window.chrome?.webview) {
             case 'vrcAvatarDetail':
                 renderAvatarDetail(payload);
                 break;
+            case 'vrcAvatarUpdateResult':
+                onAvatarUpdateResult(payload);
+                break;
+            case 'vrcOnlineCount':
+                _dashOnlineCount = payload.count || 0;
+                updateDashSub();
+                break;
             case 'vrcAvatarDetailError':
                 { const ac = document.getElementById('avatarDetailContent');
-                  if (ac) ac.innerHTML = `<div style="padding:30px;text-align:center;color:var(--err);">${esc(payload.error || 'Error loading avatar')}</div><div style="text-align:center;margin-top:10px;"><button class="fd-btn" onclick="closeAvatarDetail()">Close</button></div>`; }
+                  if (ac) ac.innerHTML = `<div style="padding:30px;text-align:center;color:var(--err);">${esc(payload.error || 'Error loading avatar')}</div><div style="text-align:center;margin-top:10px;"><button class="vrcn-button-round" onclick="closeAvatarDetail()">Close</button></div>`; }
                 break;
             case 'vrcFavoriteWorlds':
                 renderFavWorlds(payload);
@@ -382,7 +391,7 @@ if (window.chrome?.webview) {
                 onDiscoveryFeed(payload.json);
                 break;
             case 'vrcWorldDetailError':
-                document.getElementById('detailModalContent').innerHTML = `<div style="padding:30px;text-align:center;color:var(--err);">${esc(payload.error || 'Error loading world')}</div><div style="text-align:center;margin-top:10px;"><button class="fd-btn" onclick="document.getElementById('modalDetail').style.display='none'">Close</button></div>`;
+                document.getElementById('detailModalContent').innerHTML = `<div style="padding:30px;text-align:center;color:var(--err);">${esc(payload.error || 'Error loading world')}</div><div style="text-align:center;margin-top:10px;"><button class="vrcn-button-round" onclick="document.getElementById('modalDetail').style.display='none'">Close</button></div>`;
                 break;
             case 'vrcChatHistory':
                 if (typeof handleChatHistory === 'function') handleChatHistory(payload);
@@ -439,6 +448,9 @@ if (window.chrome?.webview) {
                 break;
             case 'vrcBatchInviteProgress':
                 handleBatchInviteProgress(payload);
+                break;
+            case 'myInstances':
+                if (typeof renderMyInstances === 'function') renderMyInstances(payload);
                 break;
             case 'dashBgSelected':
                 dashBgPath = payload.path || '';
@@ -515,7 +527,26 @@ if (window.chrome?.webview) {
             case 'vrcTimeSpentData':
                 if (typeof tsOnData === 'function') tsOnData(payload);
                 break;
-        }
-    });
-    sendToCS({ action: 'ready' });
-}
+        case 'setPlatform':
+            if (payload?.isLinux) {
+                document.querySelectorAll('[data-windows-only]').forEach(el => el.style.display = 'none');
+            }
+            break;
+        case 'ftAlsoWasHere':
+            renderFtAlsoWasHereResult(payload);
+            break;
+        case 'vrcxPreview':
+            vrcxShowPreview(payload);
+            break;
+        case 'vrcxImportProgress':
+            vrcxShowProgress(payload);
+            break;
+        case 'vrcxImportDone':
+            vrcxShowDone(payload);
+            break;
+        case 'vrcxImportError':
+            vrcxShowError(payload?.error);
+            break;
+    }
+});
+sendToCS({ action: 'ready' });

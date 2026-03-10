@@ -34,14 +34,18 @@ public partial class MainForm
         catch { }
     }
 
-    private void SendVrcUserData(JObject user)
+    private void SendVrcUserData(JObject user, bool loginFlow = false)
     {
         _currentVrcUserId = user["id"]?.ToString() ?? "";
 
-        // Start log watcher on successful login (idempotent, safe to call multiple times)
-        _logWatcher.Start();
-        StartVrcPhotoWatcher();
-        _ = LoadFavoriteFriendsAsync();
+        // Start log watcher and load login-only data only on initial login/session-resume,
+        // not on every status or profile update.
+        if (loginFlow)
+        {
+            _logWatcher.Start();
+            StartVrcPhotoWatcher();
+            _ = LoadFavoriteFriendsAsync();
+        }
 
         // Bootstrap once per app session: if VRChat was already running when the app started,
         // the catch-up read populated CurrentWorldId without firing WorldChanged.
@@ -102,13 +106,16 @@ public partial class MainForm
             currentAvatarImageUrl = _imgCache?.Get(user["currentAvatarImageUrl"]?.ToString() ?? "") ?? user["currentAvatarImageUrl"]?.ToString() ?? "",
         });
 
-        // Fetch VRChat credit balance and push to JS
-        _ = Task.Run(async () =>
+        // Fetch VRChat credit balance only on login — balance doesn't change on status/profile updates
+        if (loginFlow)
         {
-            var balance = await _vrcApi.GetBalanceAsync();
-            if (balance >= 0)
-                Invoke(() => SendToJS("vrcCredits", new { balance }));
-        });
+            _ = Task.Run(async () =>
+            {
+                var balance = await _vrcApi.GetBalanceAsync();
+                if (balance >= 0)
+                    Invoke(() => SendToJS("vrcCredits", new { balance }));
+            });
+        }
     }
 
     private async Task VrcRefreshFriendsAsync(bool silent = false)
@@ -268,14 +275,54 @@ public partial class MainForm
                     SendToJS("log", new { msg = $"VRChat: {counts.game} in-game, {counts.web} web, {counts.offline} offline", color = "ok" });
             });
 
+            // Proactively resolve world info for in-game friends without waiting for JS to ask.
+            // On cache-hits this is instant; on misses it races with vrcResolveWorlds and the
+            // first result populates _worldCache so the other is a no-op.
+            var inGameWorldIds = online
+                .Select(f => f["location"]?.ToString() ?? "")
+                .Where(l => l.Contains(':'))
+                .Select(l => l.Split(':')[0])
+                .Where(id => id.StartsWith("wrld_"))
+                .Distinct()
+                .ToList();
+            if (inGameWorldIds.Count > 0)
+            {
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        var tasks = inGameWorldIds.Select(async wid =>
+                        {
+                            try
+                            {
+                                var world = await _vrcApi.GetWorldAsync(wid);
+                                if (world == null) return (wid, null as object);
+                                return (wid, (object)new
+                                {
+                                    name              = world["name"]?.ToString() ?? "",
+                                    thumbnailImageUrl = world["thumbnailImageUrl"]?.ToString() ?? "",
+                                    imageUrl          = world["imageUrl"]?.ToString() ?? ""
+                                });
+                            }
+                            catch { return (wid, null as object); }
+                        });
+                        var results = await Task.WhenAll(tasks);
+                        var dict = results
+                            .Where(r => r.Item2 != null)
+                            .ToDictionary(r => r.wid, r => r.Item2!);
+                        if (dict.Count > 0)
+                            SendToJS("vrcWorldsResolved", dict);
+                    }
+                    catch { }
+                });
+            }
+
             // Time tracking: update my location and tick tracker
             try
             {
-                // Prefer log-derived location (no extra API call, immune to rate limits).
-                // Fall back to API only if log watcher hasn't seen a room join yet.
-                var myLoc = _logWatcher.CurrentLocation;
-                if (string.IsNullOrEmpty(myLoc) || myLoc == "offline" || myLoc == "private" || myLoc == "traveling")
-                    myLoc = await _vrcApi.GetMyLocationAsync();
+                // Use log-derived location only — no API fallback needed.
+                // If VRChat is not running, don't track location regardless of cached log state.
+                var myLoc = IsVrcRunning() ? _logWatcher.CurrentLocation : null;
 
                 _timeTracker.SetMyLocation(myLoc ?? "");
                 var trackData = onlineList.Select(f => (
@@ -558,10 +605,14 @@ public partial class MainForm
         // Badges come from the full user object via GET /users/{userId} (ensured above)
         var badgesArr = user["badges"] as JArray ?? new JArray();
 
+        // Use instance API canRequestInvite field (authoritative) to distinguish Invite from Invite+
+        if (instanceType == "private" && inst?["canRequestInvite"]?.Value<bool>() == true)
+            instanceType = "invite_plus";
+
         // World data comes from inst["world"] — the instance endpoint embeds it
         var instWorld = inst?["world"] as JObject;
         string worldName     = instWorld?["name"]?.ToString() ?? "";
-        string worldThumb    = instWorld?["thumbnailImageUrl"]?.ToString() ?? "";
+        string worldThumb    = _imgCache?.GetWorld(instWorld?["thumbnailImageUrl"]?.ToString()) ?? instWorld?["thumbnailImageUrl"]?.ToString() ?? "";
         int    worldCapacity = instWorld?["capacity"]?.Value<int>() ?? inst?["capacity"]?.Value<int>() ?? 0;
         int    userCount     = inst?["n_users"]?.Value<int>() ?? inst?["userCount"]?.Value<int>() ?? 0;
         string userNote      = noteObj?["note"]?.ToString() ?? "";
@@ -570,7 +621,7 @@ public partial class MainForm
                     || instanceType == "hidden"
                     || instanceType == "group-public" || instanceType == "group-plus"
                     || instanceType == "group-members" || instanceType == "group";
-        bool canRequestInvite = instanceType == "private";
+        bool canRequestInvite = instanceType == "private" || instanceType == "invite_plus";
         bool isInWorld = !string.IsNullOrEmpty(worldId) && location != "private" && location != "offline" && location != "traveling";
 
         // Represented group is derived from the groups list (isRepresenting == true),
@@ -785,7 +836,7 @@ public partial class MainForm
                 var world = await _vrcApi.GetWorldAsync(worldId);
                 if (world == null) return;
                 var wname  = world["name"]?.ToString() ?? "";
-                var wthumb = world["thumbnailImageUrl"]?.ToString() ?? "";
+                var wthumb = _imgCache?.GetWorld(world["thumbnailImageUrl"]?.ToString()) ?? world["thumbnailImageUrl"]?.ToString() ?? "";
                 _timeline.UpdateFriendEventWorld(evId, wname, wthumb);
                 var updated = _timeline.GetFriendEvents().FirstOrDefault(x => x.Id == evId);
                 if (updated != null)

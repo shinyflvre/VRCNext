@@ -7,7 +7,7 @@ function joinStateBadge(js) {
         request: { label: 'Request Invite', cls: 'group'   },
     };
     const m = map[js] || { label: js || '?', cls: 'hidden' };
-    return `<span class="fd-instance-badge ${m.cls}">${esc(m.label)}</span>`;
+    return `<span class="vrcn-badge ${m.cls}">${esc(m.label)}</span>`;
 }
 
 /* === My Groups === */
@@ -85,21 +85,21 @@ function renderGroupDetail(g) {
     const canPost  = g.canPost === true;
     const canEvent = g.canEvent === true;
     const createPostBtn = (g.isJoined && canPost)
-        ? `<button class="fd-btn fd-btn-join" onclick="openGroupPostModal('${esc(g.id)}')"><span class="msi" style="font-size:16px;vertical-align:middle;margin-right:4px;">edit</span>Post</button>`
+        ? `<button class="vrcn-button-round vrcn-btn-join" onclick="openGroupPostModal('${esc(g.id)}')"><span class="msi" style="font-size:16px;vertical-align:middle;margin-right:4px;">edit</span>Post</button>`
         : '';
     const createEventBtn = (g.isJoined && canEvent)
-        ? `<button class="fd-btn fd-btn-join" onclick="openGroupEventModal('${esc(g.id)}')"><span class="msi" style="font-size:16px;vertical-align:middle;margin-right:4px;">event</span>Events</button>`
+        ? `<button class="vrcn-button-round vrcn-btn-join" onclick="openGroupEventModal('${esc(g.id)}')"><span class="msi" style="font-size:16px;vertical-align:middle;margin-right:4px;">event</span>Events</button>`
         : '';
     const leaveJoinBtn = g.isJoined
-        ? `<button class="fd-btn fd-btn-danger" onclick="sendToCS({action:'vrcLeaveGroup',groupId:'${esc(g.id)}'});document.getElementById('modalDetail').style.display='none';"><span class="msi" style="font-size:16px;vertical-align:middle;margin-right:4px;">logout</span>Leave Group</button>`
-        : `<button class="fd-btn fd-btn-join" onclick="sendToCS({action:'vrcJoinGroup',groupId:'${esc(g.id)}'});document.getElementById('modalDetail').style.display='none';"><span class="msi" style="font-size:16px;vertical-align:middle;margin-right:4px;">group_add</span>Join Group</button>`;
+        ? `<button class="vrcn-button-round vrcn-btn-danger" onclick="sendToCS({action:'vrcLeaveGroup',groupId:'${esc(g.id)}'});document.getElementById('modalDetail').style.display='none';"><span class="msi" style="font-size:16px;vertical-align:middle;margin-right:4px;">logout</span>Leave Group</button>`
+        : `<button class="vrcn-button-round vrcn-btn-join" onclick="sendToCS({action:'vrcJoinGroup',groupId:'${esc(g.id)}'});document.getElementById('modalDetail').style.display='none';"><span class="msi" style="font-size:16px;vertical-align:middle;margin-right:4px;">group_add</span>Join Group</button>`;
 
     // Tab: Info
     const gid_e = esc(g.id);
     const grpLangs = (g.languages || []);
     const grpLinks = (g.links || []).filter(Boolean);
     const grpLangsViewHtml = grpLangs.length
-        ? `<div class="fd-lang-tags">${grpLangs.map(l => `<span class="fd-lang-tag">${esc(LANG_MAP['language_'+l] || l.toUpperCase())}</span>`).join('')}</div>`
+        ? `<div class="fd-lang-tags">${grpLangs.map(l => `<span class="vrcn-badge">${esc(LANG_MAP['language_'+l] || l.toUpperCase())}</span>`).join('')}</div>`
         : `<div class="myp-empty">No languages set</div>`;
     const grpLinksViewHtml = grpLinks.length
         ? `<div class="fd-bio-links">${grpLinks.map(url => renderBioLink(url)).join('')}</div>`
@@ -116,8 +116,8 @@ function renderGroupDetail(g) {
             ${canEdit ? `<div id="gdescDescEdit" style="display:none;">
                 <textarea id="gdescDescInput" class="myp-textarea" rows="4" maxlength="2000" placeholder="Group description...">${esc(g.description||'')}</textarea>
                 <div class="myp-edit-actions">
-                    <button class="myp-cancel-btn" onclick="cancelGroupField('desc')">Cancel</button>
-                    <button class="myp-save-btn" onclick="saveGroupField('desc','${gid_e}')">Save</button>
+                    <button class="vrcn-button" onclick="cancelGroupField('desc')">Cancel</button>
+                    <button class="vrcn-button vrcn-btn-primary" onclick="saveGroupField('desc','${gid_e}')">Save</button>
                 </div>
             </div>` : ''}
         </div>
@@ -130,8 +130,8 @@ function renderGroupDetail(g) {
             ${canEdit ? `<div id="ggrpLinksEdit" style="display:none;">
                 <div id="ggrpLinksInputs"></div>
                 <div class="myp-edit-actions">
-                    <button class="myp-cancel-btn" onclick="cancelGroupField('links')">Cancel</button>
-                    <button class="myp-save-btn" onclick="saveGroupField('links','${gid_e}')">Save</button>
+                    <button class="vrcn-button" onclick="cancelGroupField('links')">Cancel</button>
+                    <button class="vrcn-button vrcn-btn-primary" onclick="saveGroupField('links','${gid_e}')">Save</button>
                 </div>
             </div>` : ''}
         </div>
@@ -148,8 +148,8 @@ function renderGroupDetail(g) {
                     <button class="myp-add-lang-btn" onclick="addGrpLanguage()"><span class="msi" style="font-size:15px;">add</span></button>
                 </div>
                 <div class="myp-edit-actions">
-                    <button class="myp-cancel-btn" onclick="cancelGroupField('langs')">Cancel</button>
-                    <button class="myp-save-btn" onclick="saveGroupField('langs','${gid_e}')">Save</button>
+                    <button class="vrcn-button" onclick="cancelGroupField('langs')">Cancel</button>
+                    <button class="vrcn-button vrcn-btn-primary" onclick="saveGroupField('langs','${gid_e}')">Save</button>
                 </div>
             </div>` : ''}
         </div>
@@ -164,8 +164,8 @@ function renderGroupDetail(g) {
             ${canEdit ? `<div id="gdescRulesEdit" style="display:none;">
                 <textarea id="gdescRulesInput" class="myp-textarea" rows="5" maxlength="2000" placeholder="Group rules...">${esc(g.rules||'')}</textarea>
                 <div class="myp-edit-actions">
-                    <button class="myp-cancel-btn" onclick="cancelGroupField('rules')">Cancel</button>
-                    <button class="myp-save-btn" onclick="saveGroupField('rules','${gid_e}')">Save</button>
+                    <button class="vrcn-button" onclick="cancelGroupField('rules')">Cancel</button>
+                    <button class="vrcn-button vrcn-btn-primary" onclick="saveGroupField('rules','${gid_e}')">Save</button>
                 </div>
             </div>` : ''}
         </div>
@@ -185,8 +185,8 @@ function renderGroupDetail(g) {
                     <option value="request" ${g.joinState==='request' ? 'selected' : ''}>Request Invite</option>
                 </select>
                 <div class="myp-edit-actions">
-                    <button class="myp-cancel-btn" onclick="cancelGroupField('joinState')">Cancel</button>
-                    <button class="myp-save-btn" onclick="saveGroupField('joinState','${gid_e}')">Save</button>
+                    <button class="vrcn-button" onclick="cancelGroupField('joinState')">Cancel</button>
+                    <button class="vrcn-button vrcn-btn-primary" onclick="saveGroupField('joinState','${gid_e}')">Save</button>
                 </div>
             </div>` : ''}
         </div>`;
@@ -267,7 +267,7 @@ function renderGroupDetail(g) {
             const loc = (inst.location || '').replace(/'/g, "\\'");
             instancesTab += `<div class="fd-group-card" onclick="sendToCS({action:'vrcJoinFriend',location:'${loc}'})">
                 ${thumbHtml}<div class="fd-group-card-info"><div class="fd-group-card-name">${esc(inst.worldName || 'Unknown World')}</div><div class="fd-group-card-meta">${users}</div></div>
-                <button class="fd-btn fd-btn-join" style="padding:4px 10px;font-size:11px;" onclick="event.stopPropagation();sendToCS({action:'vrcJoinFriend',location:'${loc}'})"><span class="msi" style="font-size:14px;">login</span>Join</button>
+                <button class="vrcn-button-round vrcn-btn-join" onclick="event.stopPropagation();sendToCS({action:'vrcJoinFriend',location:'${loc}'})"><span class="msi" style="font-size:14px;">login</span>Join</button>
             </div>`;
         });
     }
@@ -297,7 +297,7 @@ function renderGroupDetail(g) {
         });
         membersTab += '</div>';
         if (members.length >= 50) {
-            membersTab += `<div id="gdMembersLoadMore" style="text-align:center;padding:12px;"><button class="btn-f" onclick="loadMoreGroupMembers()">Load More Members</button></div>`;
+            membersTab += `<div id="gdMembersLoadMore" style="text-align:center;padding:12px;"><button class="vrcn-button" onclick="loadMoreGroupMembers()">Load More Members</button></div>`;
         }
     }
     // Store group id + offset for pagination
@@ -322,7 +322,7 @@ function renderGroupDetail(g) {
         <div id="gdTabInstances" style="display:none;">${instancesTab}</div>
         <div id="gdTabGallery" style="display:none;">${galleryTab}</div>
         <div id="gdTabMembers" style="display:none;">${membersTab}</div>
-        <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;"><div style="display:flex;gap:8px;">${createPostBtn}${createEventBtn}${leaveJoinBtn}</div><button class="fd-btn" onclick="document.getElementById('modalDetail').style.display='none'">Close</button></div>
+        <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;"><div style="display:flex;gap:8px;">${createPostBtn}${createEventBtn}${leaveJoinBtn}</div><button class="vrcn-button-round" onclick="document.getElementById('modalDetail').style.display='none'">Close</button></div>
     </div>`;
 }
 
@@ -364,7 +364,7 @@ function cancelGroupField(field) {
 
 function saveGroupField(field, groupId) {
     const ids = _grpFieldIds[field];
-    const saveBtn = document.querySelector(`#${ids.edit} .myp-save-btn`);
+    const saveBtn = document.querySelector(`#${ids.edit} .vrcn-btn-primary`);
     if (saveBtn) saveBtn.disabled = true;
 
     if (field === 'desc') {
@@ -372,7 +372,7 @@ function saveGroupField(field, groupId) {
     } else if (field === 'rules') {
         sendToCS({ action: 'vrcUpdateGroup', groupId, rules: document.getElementById('gdescRulesInput')?.value ?? '' });
     } else if (field === 'links') {
-        const inputs = document.querySelectorAll('#ggrpLinksInputs .myp-link-input');
+        const inputs = document.querySelectorAll('#ggrpLinksInputs .vrcn-edit-field');
         const links = Array.from(inputs).map(i => i.value.trim()).filter(Boolean);
         sendToCS({ action: 'vrcUpdateGroup', groupId, links });
     } else if (field === 'langs') {
@@ -392,7 +392,7 @@ function _renderGrpLinksInputs() {
     container.innerHTML = [0, 1, 2].map(i =>
         `<div class="myp-link-row">
             <span class="myp-link-num">${i + 1}</span>
-            <input type="url" class="myp-link-input" placeholder="https://..." value="${esc(links[i]||'')}" maxlength="512">
+            <input type="url" class="vrcn-edit-field" placeholder="https://..." value="${esc(links[i]||'')}" maxlength="512" style="flex:1;">
         </div>`
     ).join('');
 }
@@ -507,7 +507,7 @@ function openGroupPostModal(groupId) {
         </div>
         <div class="gp-modal-body">
             <label class="gp-label">Title</label>
-            <input id="gpTitle" class="gp-input" type="text" placeholder="Post title..." maxlength="200">
+            <input id="gpTitle" class="vrcn-edit-field" type="text" placeholder="Post title..." maxlength="200" style="width:100%;">
             <label class="gp-label" style="margin-top:12px;">Content</label>
             <textarea id="gpText" class="gp-textarea" placeholder="What's on your mind?" rows="5" maxlength="2000"></textarea>
             <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;">
@@ -528,8 +528,8 @@ function openGroupPostModal(groupId) {
             </div>
             <label class="gp-label" style="margin-top:12px;">Image <span style="color:var(--tx3);font-weight:400;">(optional)</span></label>
             <div style="display:flex;gap:6px;margin-bottom:8px;">
-                <button class="fd-btn active" id="gpSrcUploadBtn" onclick="gpSetImgSource('upload')" style="flex:1;font-size:11px;"><span class="msi" style="font-size:14px;vertical-align:middle;">upload_file</span> Upload</button>
-                <button class="fd-btn" id="gpSrcLibraryBtn" onclick="gpSetImgSource('library')" style="flex:1;font-size:11px;"><span class="msi" style="font-size:14px;vertical-align:middle;">photo_library</span> From Library</button>
+                <button class="vrcn-button-round active" id="gpSrcUploadBtn" onclick="gpSetImgSource('upload')" style="flex:1;font-size:11px;"><span class="msi" style="font-size:14px;vertical-align:middle;">upload_file</span> Upload</button>
+                <button class="vrcn-button-round" id="gpSrcLibraryBtn" onclick="gpSetImgSource('library')" style="flex:1;font-size:11px;"><span class="msi" style="font-size:14px;vertical-align:middle;">photo_library</span> From Library</button>
             </div>
             <div id="gpUploadArea">
                 <div class="gp-img-area" id="gpImgArea" onclick="document.getElementById('gpFileInput').click()">
@@ -547,8 +547,8 @@ function openGroupPostModal(groupId) {
             <div id="gpError" style="display:none;margin-top:8px;padding:8px 10px;background:rgba(255,80,80,.12);border-radius:8px;color:var(--err);font-size:12px;"></div>
         </div>
         <div class="gp-modal-footer">
-            <button class="fd-btn fd-btn-join" id="gpSubmitBtn" onclick="submitGroupPost()"><span class="msi" style="font-size:16px;vertical-align:middle;margin-right:4px;">send</span>Post</button>
-            <button class="fd-btn" onclick="closeGroupPostModal()" style="margin-left:auto;">Cancel</button>
+            <button class="vrcn-button-round vrcn-btn-join" id="gpSubmitBtn" onclick="submitGroupPost()"><span class="msi" style="font-size:16px;vertical-align:middle;margin-right:4px;">send</span>Post</button>
+            <button class="vrcn-button-round" onclick="closeGroupPostModal()" style="margin-left:auto;">Cancel</button>
         </div>
     </div>`;
     initAllVnSelects();
@@ -710,8 +710,8 @@ function _ensureGevDp() {
             <button id="gevDp24hBtn" class="gev-dp-24h-btn" onclick="gevDpToggle24h()">24h</button>
         </div>
         <div class="tl-dp-footer">
-            <button class="btn-f" style="flex:1;justify-content:center;font-size:11px;" onclick="gevDpNow()">Now</button>
-            <button class="btn-f fd-btn-join" style="flex:1;justify-content:center;font-size:11px;" onclick="gevDpConfirm()">OK</button>
+            <button class="vrcn-button-round" style="flex:1;justify-content:center;" onclick="gevDpNow()">Now</button>
+            <button class="vrcn-button-round vrcn-btn-join" style="flex:1;justify-content:center;" onclick="gevDpConfirm()">OK</button>
         </div>`;
     document.body.appendChild(el);
 }
@@ -939,7 +939,7 @@ function openGroupEventModal(groupId) {
         </div>
         <div class="gp-modal-body">
             <label class="gp-label">Event Name</label>
-            <input id="gevName" class="gp-input" type="text" placeholder="Event name..." maxlength="64">
+            <input id="gevName" class="vrcn-edit-field" type="text" placeholder="Event name..." maxlength="64" style="width:100%;">
 
             <label class="gp-label" style="margin-top:12px;">Description</label>
             <textarea id="gevDesc" class="gp-textarea" placeholder="What's happening?" rows="4" maxlength="2000"></textarea>
@@ -995,8 +995,8 @@ function openGroupEventModal(groupId) {
 
             <label class="gp-label" style="margin-top:12px;">Image <span style="color:var(--tx3);font-weight:400;">(optional)</span></label>
             <div style="display:flex;gap:6px;margin-bottom:8px;">
-                <button class="fd-btn active" id="gevSrcUploadBtn" onclick="gevSetImgSource('upload')" style="flex:1;font-size:11px;"><span class="msi" style="font-size:14px;vertical-align:middle;">upload_file</span> Upload</button>
-                <button class="fd-btn" id="gevSrcLibraryBtn" onclick="gevSetImgSource('library')" style="flex:1;font-size:11px;"><span class="msi" style="font-size:14px;vertical-align:middle;">photo_library</span> From Library</button>
+                <button class="vrcn-button-round active" id="gevSrcUploadBtn" onclick="gevSetImgSource('upload')" style="flex:1;font-size:11px;"><span class="msi" style="font-size:14px;vertical-align:middle;">upload_file</span> Upload</button>
+                <button class="vrcn-button-round" id="gevSrcLibraryBtn" onclick="gevSetImgSource('library')" style="flex:1;font-size:11px;"><span class="msi" style="font-size:14px;vertical-align:middle;">photo_library</span> From Library</button>
             </div>
             <div id="gevUploadArea">
                 <div class="gp-img-area" id="gevImgArea" onclick="document.getElementById('gevFileInput').click()">
@@ -1015,8 +1015,8 @@ function openGroupEventModal(groupId) {
             <div id="gevError" style="display:none;margin-top:8px;padding:8px 10px;background:rgba(255,80,80,.12);border-radius:8px;color:var(--err);font-size:12px;"></div>
         </div>
         <div class="gp-modal-footer">
-            <button class="fd-btn fd-btn-join" id="gevSubmitBtn" onclick="submitGroupEvent()"><span class="msi" style="font-size:16px;vertical-align:middle;margin-right:4px;">event</span>Create Event</button>
-            <button class="fd-btn" onclick="closeGroupEventModal()" style="margin-left:auto;">Cancel</button>
+            <button class="vrcn-button-round vrcn-btn-join" id="gevSubmitBtn" onclick="submitGroupEvent()"><span class="msi" style="font-size:16px;vertical-align:middle;margin-right:4px;">event</span>Create Event</button>
+            <button class="vrcn-button-round" onclick="closeGroupEventModal()" style="margin-left:auto;">Cancel</button>
         </div>
     </div>`;
     initAllVnSelects();

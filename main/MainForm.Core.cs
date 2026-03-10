@@ -1,13 +1,13 @@
-using Microsoft.Web.WebView2.WinForms;
-using Microsoft.Web.WebView2.Core;
+using Photino.NET;
 using Newtonsoft.Json;
+using System.Diagnostics;
 using VRCNext.Services;
 
 namespace VRCNext;
 
-public partial class MainForm : Form
+public partial class MainForm
 {
-    public MainForm()
+    public MainForm(string[] args)
     {
         _settings = AppSettings.Load();
         if (_settings.MemoryTrimEnabled) _memTrim.SetEnabled(true);
@@ -15,124 +15,135 @@ public partial class MainForm : Form
         _worldTimeTracker = WorldTimeTracker.Load();
         _photoPlayersStore = PhotoPlayersStore.Load();
         _timeline = TimelineService.Load();
-
-        Text = "VRCNext";
-        Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath) ?? SystemIcons.Application;
-        Size = new Size(1100, 700);
-        MinimumSize = new Size(900, 540);
-        StartPosition = FormStartPosition.CenterScreen;
-        if (Environment.GetCommandLineArgs().Contains("--minimized"))
-            WindowState = FormWindowState.Minimized;
-        BackColor = Color.FromArgb(8, 12, 21);
-        FormBorderStyle = FormBorderStyle.Sizable;
-        DoubleBuffered = true;
-
-        _webView = new WebView2 { Dock = DockStyle.Fill };
-        Controls.Add(_webView);
-
-        _uptimeTimer = new System.Windows.Forms.Timer { Interval = 100 };
-        int _uptimeTick = 0;
-        _uptimeTimer.Tick += (s, e) =>
-        {
-            if (_voiceFight?.IsRunning == true)
-                SendToJS("vfMeter", new { level = _voiceFight.MeterLevel });
-            _uptimeTick++;
-            if (_uptimeTick >= 10)
-            {
-                _uptimeTick = 0;
-                if (_relayRunning)
-                    SendToJS("uptimeTick", (DateTime.Now - _relayStart).ToString(@"hh\:mm\:ss"));
-            }
-        };
-
+        _minimized = args.Contains("--minimized");
         _fileWatcher.NewFile += OnNewFile;
-        Load += async (s, e) => await InitWebView();
     }
 
-    private async Task InitWebView()
+    public void Run()
     {
-        var wv2DataDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "VRCNext", "WebView2");
-        Directory.CreateDirectory(wv2DataDir);
-        var env = await CoreWebView2Environment.CreateAsync(null, wv2DataDir);
-        await _webView.EnsureCoreWebView2Async(env);
+        StartHttpListener();
 
-        // Image cache (avatars, world thumbnails, group icons)
-        var imgCacheDir = Path.Combine(
+        _imgCacheDir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "VRCNext", "ImageCache");
-        Directory.CreateDirectory(imgCacheDir);
-        _imgCache = new ImageCacheService(imgCacheDir, _vrcApi.GetHttpClient())
+        Directory.CreateDirectory(_imgCacheDir);
+        _imgCache = new ImageCacheService(_imgCacheDir, _vrcApi.GetHttpClient())
         {
             Enabled    = _settings.ImgCacheEnabled,
             LimitBytes = (long)_settings.ImgCacheLimitGb * 1024 * 1024 * 1024,
+            Port       = _httpPort,
         };
-        _webView.CoreWebView2.SetVirtualHostNameToFolderMapping(
-            ImageCacheService.VirtualHost, imgCacheDir, CoreWebView2HostResourceAccessKind.Allow);
 
-        // Map watch folders as virtual hosts so images/videos can be loaded
-        UpdateVirtualHostMappings();
-
-        // Load setup wizard or main UI based on whether setup is complete
-        var wwwroot = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "wwwroot");
+        var wwwroot   = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "wwwroot");
         var startPage = _settings.SetupComplete
             ? Path.Combine(wwwroot, "index.html")
             : Path.Combine(wwwroot, "setup", "setup.html");
-        // Fallback to index.html if setup page doesn't exist
-        if (!File.Exists(startPage))
-            startPage = Path.Combine(wwwroot, "index.html");
-        _webView.CoreWebView2.Navigate(new Uri(startPage).AbsoluteUri);
+        if (!File.Exists(startPage)) startPage = Path.Combine(wwwroot, "index.html");
 
-        // Listen for messages from JS
-        _webView.CoreWebView2.WebMessageReceived += OnWebMessage;
-
-        // Disable context menu and devtools in release
-        _webView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
-        _webView.CoreWebView2.Settings.AreBrowserAcceleratorKeysEnabled = false;
-    }
-
-    private readonly List<string> _mappedHosts = new();
-
-    private void UpdateVirtualHostMappings()
-    {
-        if (_webView.CoreWebView2 == null) return;
-
-        foreach (var host in _mappedHosts)
+        int uptimeTick = 0;
+        _uptimeTimer2 = new System.Threading.Timer(_ =>
         {
-            try { _webView.CoreWebView2.ClearVirtualHostNameToFolderMapping(host); } catch { }
-        }
-        _mappedHosts.Clear();
+            if (_voiceFight?.IsRunning == true)
+                SendToJS("vfMeter", new { level = _voiceFight.MeterLevel });
+            if (Interlocked.Increment(ref uptimeTick) % 10 == 0 && _relayRunning)
+                SendToJS("uptimeTick", (DateTime.Now - _relayStart).ToString(@"hh\:mm\:ss"));
+        }, null, 100, 100);
 
-        for (int i = 0; i < _settings.WatchFolders.Count; i++)
+        // Chromeless on Windows requires explicit location (Center() sets a flag, not coordinates)
+        var (startX, startY) = GetCenteredLocation(1100, 700);
+
+#if !WINDOWS
+        // Auto-install missing GStreamer plugins required by WebKit2GTK (blank window without them)
+        EnsureLinuxGstreamer();
+
+        // WebKit2GTK on systems without proper GPU (VMs, Hyper-V, missing Vulkan):
+        // Force Mesa software rendering so EGL/OpenGL never fails in the WebKit child process.
+        // These must be set before PhotinoWindow so the child process inherits them.
+        void SetIfUnset(string key, string val)
         {
-            var folder = _settings.WatchFolders[i];
-            if (!Directory.Exists(folder)) continue;
-            var host = $"localmedia{i}.vrcnext.local";
-            _webView.CoreWebView2.SetVirtualHostNameToFolderMapping(
-                host, folder, CoreWebView2HostResourceAccessKind.Allow);
-            _mappedHosts.Add(host);
+            if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable(key)))
+                Environment.SetEnvironmentVariable(key, val);
         }
+        SetIfUnset("WEBKIT_DISABLE_DMABUF_RENDERER",    "1");
+        SetIfUnset("WEBKIT_DISABLE_COMPOSITING_MODE",   "1");
+        SetIfUnset("LIBGL_ALWAYS_SOFTWARE",             "1");
+        SetIfUnset("GALLIUM_DRIVER",                    "llvmpipe");
+#endif
+
+        var iconPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "wwwroot", "logo.png");
+        var windowBuilder = new PhotinoWindow()
+            .SetTitle("VRCNext")
+            .SetUseOsDefaultSize(false)
+            .SetSize(1100, 700)
+            .SetMinSize(900, 540)
+            .SetChromeless(OperatingSystem.IsWindows())
+            .SetResizable(true)
+            .SetUseOsDefaultLocation(false)
+            .SetLeft(startX)
+            .SetTop(startY)
+            .RegisterWebMessageReceivedHandler((_, message) => { _ = OnWebMessage(message); });
+        if (File.Exists(iconPath)) windowBuilder.SetIconFile(iconPath);
+        _window = windowBuilder.Load(startPage);
+
+        if (_minimized) _window.SetMinimized(true);
+        _window.WaitForClose();
+        OnClose();
     }
 
-    // C# to JS messaging
-    private void SendToJS(string type, object? payload = null)
+#if !WINDOWS
+    private static void EnsureLinuxGstreamer()
     {
-        if (_webView.CoreWebView2 == null) return;
-        var msg = JsonConvert.SerializeObject(new { type, payload });
-        // Replace VRChat image URLs with locally-cached versions for instant loading
-        if (_imgCache != null)
-            msg = _vrcImgUrlRegex.Replace(msg, m => $"\"{_imgCache.Get(m.Groups[1].Value)}\"");
-        try { _webView.CoreWebView2.PostWebMessageAsJson(msg); } catch { }
-    }
+        // Check if autoaudiosink is available — its absence crashes WebKitWebProcess (blank window)
+        try
+        {
+            var check = Process.Start(new ProcessStartInfo("gst-inspect-1.0")
+            {
+                Arguments = "autoaudiosink",
+                RedirectStandardOutput = true,
+                RedirectStandardError  = true,
+                UseShellExecute        = false,
+            });
+            check?.WaitForExit(3000);
+            if (check?.ExitCode == 0) return; // already installed
+        }
+        catch { return; } // gst-inspect-1.0 not on PATH — nothing we can do
 
-    protected override void OnFormClosing(FormClosingEventArgs e)
+        // Determine install command for the running distro
+        string pkgs = "";
+        if (File.Exists("/usr/bin/pacman") || File.Exists("/bin/pacman"))
+            pkgs = "gst-plugins-base gst-plugins-good gst-libav";
+        else if (File.Exists("/usr/bin/apt-get"))
+            pkgs = "gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-libav";
+        else if (File.Exists("/usr/bin/dnf"))
+            pkgs = "gstreamer1-plugins-base gstreamer1-plugins-good";
+        if (string.IsNullOrEmpty(pkgs)) return;
+
+        string pm  = File.Exists("/usr/bin/pacman") || File.Exists("/bin/pacman") ? "pacman -S --noconfirm"
+                   : File.Exists("/usr/bin/apt-get")                               ? "apt-get install -y"
+                                                                                   : "dnf install -y";
+        string cmd = $"{pm} {pkgs}";
+
+        // Use pkexec — opens a GUI polkit dialog (no terminal needed)
+        try
+        {
+            var proc = Process.Start(new ProcessStartInfo("pkexec")
+            {
+                Arguments      = $"/bin/bash -c \"{cmd}\"",
+                UseShellExecute = false,
+            });
+            proc?.WaitForExit();
+        }
+        catch { }
+    }
+#endif
+
+    private void OnClose()
     {
         try { _vcProcess?.Kill(entireProcessTree: true); } catch { }
         _wsService?.Dispose();
         _wsFallbackTimer?.Dispose();
         _fileWatcher.Dispose();
-        _uptimeTimer.Dispose();
+        _uptimeTimer2?.Dispose();
         _steamVR?.Dispose();
         _voiceFight?.Dispose();
         _osc?.Dispose();
@@ -145,7 +156,111 @@ public partial class MainForm : Form
         _webhook.Dispose();
         _logWatcher.Dispose();
         _memTrim.Dispose();
-        _webView?.Dispose();
-        base.OnFormClosing(e);
+        _httpListener?.Stop();
+    }
+
+    private void SendToJS(string type, object? payload = null)
+    {
+        var msg = JsonConvert.SerializeObject(new { type, payload });
+        if (_imgCache != null)
+            msg = _vrcImgUrlRegex.Replace(msg, m => $"\"{_imgCache.Get(m.Groups[1].Value)}\"");
+        try { _window.SendWebMessage(msg); } catch { }
+    }
+
+    // ── HttpListener (replaces WebView2 virtual hosts) ────────────────────────
+
+    private readonly List<string> _mappedHosts = new();
+
+    private void StartHttpListener()
+    {
+        // Try the saved port first, then scan for a free one
+        var candidates = new List<int>();
+        if (_settings.LocalHttpPort > 0) candidates.Add(_settings.LocalHttpPort);
+        var rng = new Random();
+        for (int i = 0; i < 200; i++) candidates.Add(rng.Next(49152, 65534));
+
+        foreach (var port in candidates)
+        {
+            _httpListener = new System.Net.HttpListener();
+            _httpListener.Prefixes.Add($"http://localhost:{port}/");
+            try
+            {
+                _httpListener.Start();
+                _httpPort = port;
+                if (_settings.LocalHttpPort != port)
+                {
+                    _settings.LocalHttpPort = port;
+                    _settings.Save();
+                }
+                break;
+            }
+            catch (System.Net.HttpListenerException) { _httpListener.Close(); }
+        }
+        _ = Task.Run(ServeHttpAsync);
+    }
+
+    private void UpdateVirtualHostMappings()
+    {
+        // No-op with Photino — watch folders served via /media{i}/ routes in HttpListener
+    }
+
+    private async Task ServeHttpAsync()
+    {
+        while (_httpListener?.IsListening == true)
+        {
+            try
+            {
+                var ctx = await _httpListener.GetContextAsync();
+                _ = Task.Run(() => HandleHttp(ctx));
+            }
+            catch { break; }
+        }
+    }
+
+    private void HandleHttp(System.Net.HttpListenerContext ctx)
+    {
+        var path = ctx.Request.Url?.AbsolutePath ?? "/";
+        try
+        {
+            if (path.StartsWith("/imgcache/"))
+                ServeFile(ctx, Path.Combine(_imgCacheDir, Uri.UnescapeDataString(path["/imgcache/".Length..])));
+            else if (path.StartsWith("/vrcphotos/"))
+            {
+                if (!string.IsNullOrEmpty(_vrcPhotoDir))
+                    ServeFile(ctx, Path.Combine(_vrcPhotoDir, Uri.UnescapeDataString(path["/vrcphotos/".Length..])));
+                else
+                    ctx.Response.StatusCode = 404;
+            }
+            else if (path.StartsWith("/media"))
+            {
+                var rest  = path["/media".Length..];
+                var slash = rest.IndexOf('/');
+                if (slash > 0 && int.TryParse(rest[..slash], out var idx)
+                    && idx < _settings.WatchFolders.Count)
+                    ServeFile(ctx, Path.Combine(_settings.WatchFolders[idx], Uri.UnescapeDataString(rest[(slash + 1)..])));
+                else
+                    ctx.Response.StatusCode = 404;
+            }
+            else ctx.Response.StatusCode = 404;
+        }
+        catch { ctx.Response.StatusCode = 500; }
+        finally { try { ctx.Response.Close(); } catch { } }
+    }
+
+    private static void ServeFile(System.Net.HttpListenerContext ctx, string file)
+    {
+        if (!File.Exists(file)) { ctx.Response.StatusCode = 404; return; }
+        ctx.Response.ContentType = Path.GetExtension(file).ToLower() switch {
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".png"  => "image/png",
+            ".gif"  => "image/gif",
+            ".webp" => "image/webp",
+            ".mp4"  => "video/mp4",
+            ".webm" => "video/webm",
+            _       => "application/octet-stream"
+        };
+        ctx.Response.StatusCode = 200;
+        using var fs = File.OpenRead(file);
+        fs.CopyTo(ctx.Response.OutputStream);
     }
 }

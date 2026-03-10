@@ -1,43 +1,20 @@
 /* === Dashboard === */
-function parseFriendLocation(loc) {
-    if (!loc || loc === 'private' || loc === 'offline' || loc === 'traveling') return { worldId: '', instanceType: loc || 'private' };
-    var worldId = loc.includes(':') ? loc.split(':')[0] : loc;
-    var instanceType = 'public';
-    if (loc.includes('~private(')) instanceType = 'private';
-    else if (loc.includes('~friends+(')) instanceType = 'friends+';
-    else if (loc.includes('~friends(')) instanceType = 'friends';
-    else if (loc.includes('~hidden(')) instanceType = 'hidden';
-    else if (loc.includes('~group(')) {
-        var gatMatch = loc.match(/groupAccessType\(([^)]+)\)/);
-        var gat = gatMatch ? gatMatch[1].toLowerCase() : '';
-        if (gat === 'public') instanceType = 'group-public';
-        else if (gat === 'plus') instanceType = 'group-plus';
-        else if (gat === 'members') instanceType = 'group-members';
-        else instanceType = 'group';
-    }
-    return { worldId, instanceType };
-}
 
-function getInstanceBadge(instanceType) {
-    const t = instanceType || 'public';
-    // Map API instance types to VRChat UI names
-    const labels = { 'public':'Public', 'friends':'Friends', 'friends+':'Friends+', 'hidden':'Friends+',
-                     'private':'Invite', 'group':'Group', 'group-public':'Group Public',
-                     'group-plus':'Group+', 'group-members':'Group' };
-    const label = labels[t] || t.charAt(0).toUpperCase() + t.slice(1);
-    let cls = 'public';
-    if (t === 'friends' || t === 'friends+' || t === 'hidden') cls = 'friends';
-    else if (t === 'private') cls = 'private';
-    else if (t.startsWith('group')) cls = 'group';
-    return { cls, label };
+let _dashOnlineCount = 0;
+
+function updateDashSub() {
+    const name = currentVrcUser?.displayName;
+    const status = name
+        ? (currentVrcUser.statusDescription || statusLabel(currentVrcUser.status))
+        : 'Connect to VRChat to see your world';
+    const suffix = _dashOnlineCount > 0 ? ` | ${_dashOnlineCount.toLocaleString()} playing worldwide` : '';
+    document.getElementById('dashSub').textContent = status + suffix;
 }
 
 function renderDashboard() {
     const name = currentVrcUser?.displayName;
     document.getElementById('dashWelcome').textContent = name ? `Welcome, ${name}!` : 'Welcome!';
-    document.getElementById('dashSub').textContent = name
-        ? (currentVrcUser.statusDescription || statusLabel(currentVrcUser.status))
-        : 'Connect to VRChat to see your world';
+    updateDashSub();
 
     const bgEl = document.getElementById('dashHeroBg');
     if (dashBgDataUri) {
@@ -56,6 +33,7 @@ function renderDashboard() {
 
     renderDashWorlds();
     renderDashFriendsFeed();
+    sendToCS({ action: 'vrcGetOnlineCount' });
 }
 
 function requestWorldResolution() {
@@ -151,7 +129,7 @@ function renderDashWorlds() {
         const { cls: dwInstCls, label: dwInstLabel } = getInstanceBadge(w.instanceType);
         const instBadge = instCount > 1
             ? `<span style="font-size:9px;color:var(--tx3);margin-left:auto;">${instCount} instances</span>`
-            : `<span class="fd-instance-badge ${dwInstCls}" style="font-size:9px;margin-left:auto;">${dwInstLabel}</span>`;
+            : `<span class="vrcn-badge ${dwInstCls}" style="margin-left:auto;">${dwInstLabel}</span>`;
         return `<div class="dash-world-card" onclick="openWorldDetail('${wid}')">
             <div class="dash-world-thumb" style="${thumbStyle}"><div class="dash-world-thumb-overlay"></div></div>
             <div class="dash-world-info">
@@ -198,6 +176,134 @@ function renderDashFriendsFeed() {
 
 function browseDashBg() {
     sendToCS({ action: 'browseDashBg' });
+}
+
+/* === My Instances === */
+let _myInstancesData = [];
+
+function loadMyInstances() {
+    sendToCS({ action: 'vrcGetMyInstances' });
+}
+
+function refreshMyInstances() {
+    const btn = document.getElementById('miRefreshBtn');
+    if (btn) btn.classList.add('spinning');
+    sendToCS({ action: 'vrcGetMyInstances' });
+    // Spinner stops when renderMyInstances is called (response arrives)
+}
+
+function renderMyInstances(instances) {
+    _myInstancesData = instances || [];
+    const label = document.getElementById('dashMyInstancesLabel');
+    const grid  = document.getElementById('dashMyInstances');
+    const btn   = document.getElementById('miRefreshBtn');
+    if (btn) btn.classList.remove('spinning');
+    if (!label || !grid) return;
+
+    if (!_myInstancesData.length) {
+        label.style.display = 'none';
+        grid.style.display  = 'none';
+        return;
+    }
+
+    label.style.display = '';
+    grid.style.display  = '';
+
+    grid.innerHTML = _myInstancesData.map(inst => {
+        const { cls, label: typeLabel } = getInstanceBadge(inst.instanceType);
+        const thumbStyle = inst.worldThumb ? `background-image:url('${cssUrl(inst.worldThumb)}')` : '';
+        const wid = (inst.worldId || '').replace(/'/g, "\\'");
+        const count = inst.userCount || 0;
+        const cap   = inst.capacity  || 0;
+        const countStr = cap > 0 ? `${count}/${cap} players` : `${count} players`;
+        const safeLoc = (inst.location || '').replace(/'/g, "\\'");
+        return `<div class="dash-world-card" onclick="openMyInstanceDetail('${wid}','${safeLoc}')" data-location="${esc(inst.location || '')}">
+            <div class="dash-world-thumb" style="${thumbStyle}"><div class="dash-world-thumb-overlay"></div></div>
+            <div class="dash-world-info">
+                <div class="dash-world-name">${esc(inst.worldName || inst.worldId || 'Unknown World')}</div>
+                <div class="dash-world-friends-row"></div>
+                <div class="dash-world-meta">
+                    <span class="dash-world-count">${esc(countStr)}</span>
+                    <span class="vrcn-badge ${cls}" style="margin-left:auto;">${esc(typeLabel)}</span>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function removeMyInstance(location) {
+    sendToCS({ action: 'vrcRemoveMyInstance', location });
+    _myInstancesData = _myInstancesData.filter(i => i.location !== location);
+    renderMyInstances(_myInstancesData);
+    closeMyInstanceDetail();
+    showToast(true, 'Instance removed.');
+}
+
+function closeMyInstanceDetail() {
+    document.getElementById('modalMyInstance').style.display = 'none';
+}
+
+function openMyInstanceDetail(worldId, location) {
+    const inst = _myInstancesData.find(i => i.location === location) || _myInstancesData.find(i => i.worldId === worldId);
+    if (!inst) return;
+
+    const m  = document.getElementById('modalMyInstance');
+    const c  = document.getElementById('myInstanceContent');
+    const thumb = inst.worldThumb || '';
+    const { cls, label: typeLabel } = getInstanceBadge(inst.instanceType);
+    const instNum = (inst.location || '').match(/:(\d+)/)?.[1] || '';
+    const canJoin = inst.instanceType !== 'private' && inst.instanceType !== 'invite_plus';
+
+    // Friends in this instance (match by instance number)
+    const instFriends = (typeof vrcFriendsData !== 'undefined')
+        ? vrcFriendsData.filter(f => f.location && f.location.match(/:(\d+)/)?.[1] === instNum)
+        : [];
+
+    const bannerHtml = thumb
+        ? `<div class="fd-banner"><img src="${thumb}" onerror="this.parentElement.style.display='none'"><div class="fd-banner-fade"></div></div>`
+        : '';
+
+    const copyBadge = instNum
+        ? `<span class="vrcn-id-clip" onclick="copyInstanceLink('${jsq(inst.location)}')"><span class="msi" style="font-size:12px;">content_copy</span>#${esc(instNum)}</span>`
+        : '';
+
+    let friendsHtml = '<div class="wd-friends-label">FRIENDS IN THIS INSTANCE</div><div class="wd-friends-list">';
+    if (instFriends.length > 0) {
+        instFriends.forEach(f => {
+            friendsHtml += renderProfileItem(f, `closeMyInstanceDetail();openFriendDetail('${jsq(f.id || '')}')`);
+        });
+    } else {
+        friendsHtml += `<div class="vrcn-profile-item" style="pointer-events:none;opacity:0.55;">
+            <div class="fd-profile-item-avatar" style="display:flex;align-items:center;justify-content:center;"><span class="msi" style="font-size:20px;color:var(--tx3);">person</span></div>
+            <div class="fd-profile-item-info">
+                <div class="fd-profile-item-name">No friends here yet!</div>
+                <div class="fd-profile-item-status">Invite friends to this instance!</div>
+            </div>
+        </div>`;
+    }
+    friendsHtml += '</div>';
+
+    const mloc = jsq(inst.location || '');
+    const mwn  = jsq(inst.worldName || '');
+    const mwt  = jsq(inst.worldThumb || '');
+    const mit  = jsq(inst.instanceType || '');
+    const loc  = (inst.location || '').replace(/'/g, "\\'");
+
+    c.innerHTML = `${bannerHtml}<div class="fd-content${thumb ? ' fd-has-banner' : ''}" style="padding:16px;">
+        <h2 style="margin:0 0 4px;color:var(--tx0);font-size:18px;">${esc(inst.worldName || inst.worldId || 'Unknown World')}</h2>
+        <div style="display:flex;justify-content:flex-end;gap:6px;margin-bottom:4px;">
+            <button class="vrcn-button-round" title="Invite Friends" onclick="closeMyInstanceDetail();openInviteModalForLocation('${mloc}','${mwn}','${mwt}','${mit}')"><span class="msi" style="font-size:16px;">person_add</span></button>
+            <button class="vrcn-button-round vrcn-btn-danger" title="Remove Instance" onclick="removeMyInstance('${loc}')"><span class="msi" style="font-size:16px;">delete</span></button>
+        </div>
+        <div class="fd-badges-row"><span class="vrcn-badge ${cls}">${typeLabel}</span>${copyBadge}</div>
+        ${friendsHtml}
+        <div class="fd-actions">
+            ${canJoin ? `<button class="vrcn-button-round vrcn-btn-join" onclick="closeMyInstanceDetail();sendToCS({action:'vrcJoinFriend',location:'${loc}'})">Join World</button>` : ''}
+            <button class="vrcn-button-round" onclick="closeMyInstanceDetail();openWorldSearchDetail('${jsq(worldId)}')">Open World</button>
+            <button class="vrcn-button-round" style="margin-left:auto;" onclick="closeMyInstanceDetail()">Close</button>
+        </div>
+    </div>`;
+    m.style.display = 'flex';
 }
 
 /* === Discovery Section === */
@@ -275,7 +381,7 @@ function renderDiscovery() {
 
         const tagHtml = tags.map(t => {
             const col = DISCOVERY_TAG_COLORS[t] || { bg: 'var(--bg3)', tx: 'var(--tx2)' };
-            return `<span class="disc-tag" style="background:${col.bg};color:${col.tx}">${esc(t)}</span>`;
+            return `<span class="vrcn-badge" style="background:${col.bg};color:${col.tx}">${esc(t)}</span>`;
         }).join('');
 
         return `<div class="dash-world-card disc-card" onclick="openWorldDetail('${safeWid}')">

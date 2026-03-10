@@ -216,6 +216,12 @@
             if (id) return buildGroupItems(id);
         }
 
+        const myInstCard = el.closest('#dashMyInstances .dash-world-card');
+        if (myInstCard) {
+            const loc = myInstCard.dataset.location;
+            if (loc) return buildMyInstanceItems(loc);
+        }
+
         const dashWorld = el.closest('#dashFavWorlds .dash-world-card');
         if (dashWorld) {
             const id = extractId(dashWorld, /openWorldDetail\('([^']+)'\)/);
@@ -234,13 +240,13 @@
             if (id) return buildAvatarItems(id);
         }
 
-        const memberCard = el.closest('#gdTabMembers .fd-profile-item');
+        const memberCard = el.closest('#gdTabMembers .vrcn-profile-item');
         if (memberCard && window._currentGroupDetail) {
             const id = extractId(memberCard, /openFriendDetail\('([^']+)'\)/);
             if (id) return buildGroupMemberItems(id, window._currentGroupDetail);
         }
 
-        const friendCard = el.closest('.vrc-friend-card, .fd-profile-item, .wd-friend-row, .inst-user-row');
+        const friendCard = el.closest('.vrc-friend-card, .vrcn-profile-item, .vrcn-profile-item, .inst-user-row, .dash-feed-card');
         if (friendCard) {
             const id = extractId(friendCard, /openFriendDetail\('([^']+)'\)/);
             if (id) return buildFriendItems(id);
@@ -294,6 +300,31 @@
             { icon: 'share', label: 'Share Avatar', action: () => { navigator.clipboard.writeText('https://vrchat.com/home/avatar/' + id); showToast(true, 'Avatar link copied to clipboard'); } },
             { icon: 'checkroom', label: 'Use Avatar', action: () => sendToCS({ action: 'vrcSelectAvatar', avatarId: id }) },
         ];
+    }
+
+    function buildMyInstanceItems(loc) {
+        const inst = (typeof _myInstancesData !== 'undefined') && _myInstancesData.find(i => i.location === loc);
+        const worldId = inst?.worldId || '';
+        const wn  = inst?.worldName  || '';
+        const wt  = inst?.worldThumb || '';
+        const it  = inst?.instanceType || '';
+        const favEntry = (typeof favWorldsData !== 'undefined') && favWorldsData.find(fw => fw.id === worldId);
+        const items = [];
+        if (loc) {
+            items.push({ icon: 'person_add', label: 'Invite Friends', action: () => openInviteModalForLocation(loc, wn, wt, it) });
+            items.push({ icon: 'close', label: 'Close Instance', action: () => removeMyInstance(loc), danger: true, confirm: true });
+            items.push('sep');
+        }
+        items.push({ icon: 'open_in_new', label: 'Open Details', action: () => openWorldSearchDetail(worldId) });
+        items.push({ icon: 'share', label: 'Share World', action: () => { navigator.clipboard.writeText('https://vrchat.com/home/world/' + worldId); showToast(true, 'World link copied to clipboard'); } });
+        items.push({ icon: 'home', label: 'Set as Home', action: () => sendToCS({ action: 'vrcSetHomeWorld', worldId }), confirm: true });
+        items.push('sep');
+        if (favEntry) {
+            items.push({ icon: 'star_border', label: 'Remove from Favorites', action: () => removeWorldFavorite(worldId, favEntry.favoriteId) });
+        } else {
+            items.push({ icon: 'star', label: 'Add to Favorites', submenuFn: btn => showFavGroupSubmenu(worldId, btn) });
+        }
+        return items;
     }
 
     function buildWorldItems(id) {

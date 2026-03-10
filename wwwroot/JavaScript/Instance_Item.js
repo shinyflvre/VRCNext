@@ -37,7 +37,7 @@ function renderInstanceItem(opts) {
         ? `<span class="inst-item-count"><span class="msi" style="font-size:12px;">person</span>${userCount}${capacity > 0 ? '/' + capacity : ''}</span>`
         : '';
 
-    const badgeHtml = `<span class="fd-instance-badge ${cls}">${esc(label)}</span>`;
+    const badgeHtml = `<span class="vrcn-badge ${cls}">${esc(label)}</span>`;
     const thumbEl   = `<div class="inst-item-thumb" style="${thumbStyle}"></div>`;
     const clickAttr = onclick ? ` onclick="${onclick}" style="cursor:pointer;"` : '';
 
@@ -63,7 +63,7 @@ function renderInstanceItem(opts) {
     let joinHtml = '';
     if (location && instanceType !== 'private') {
         const loc = location.replace(/'/g, "\\'");
-        joinHtml = `<button class="btn-f inst-item-join" onclick="sendToCS({action:'vrcJoinFriend',location:'${loc}'});this.disabled=true;this.textContent='Joining...';" style="padding:3px 10px;font-size:10px;"><span class="msi" style="font-size:14px;">login</span> Join</button>`;
+        joinHtml = `<button class="vrcn-button inst-item-join" onclick="sendToCS({action:'vrcJoinFriend',location:'${loc}'});this.disabled=true;this.textContent='Joining...';" ><span class="msi" style="font-size:14px;">login</span> Join</button>`;
     }
 
     const rightHtml = (friendsHtml || joinHtml)

@@ -9,7 +9,7 @@
 </head>
 <body>
     <div class="sidebar" id="sidebarEl">
-        <div class="logo"><div class="logo-icon" id="logoIcon">V</div><div class="logo-txt"><div class="logo-text-row"><div class="logo-text">VRCNext</div><span class="logo-beta-badge">BETA</span></div><div class="logo-sub">v2026.6.2</div></div><button class="sb-toggle" onclick="toggleSidebar()" title="Toggle sidebar"><span class="msi" id="sbIcon">menu_open</span></button></div>
+        <div class="logo"><div class="logo-icon" id="logoIcon">V</div><div class="logo-txt"><div class="logo-text-row"><div class="logo-text">VRCNext</div><span class="logo-beta-badge">BETA</span></div><div class="logo-sub">v2026.10.0</div></div><button class="sb-toggle" onclick="toggleSidebar()" title="Toggle sidebar"><span class="msi" id="sbIcon">menu_open</span></button></div>
         <div class="nav">
             <button class="nav-btn active" onclick="showTab(0)"><span class="ni msi">dashboard</span><span class="nl">Dashboard</span></button>
             <button class="nav-btn" onclick="showTab(1)"><span class="ni msi">travel_explore</span><span class="nl">Worlds</span></button>
@@ -24,14 +24,14 @@
                 <button class="nav-group-btn" onclick="toggleNavGroup('navToolsGroup')"><span class="ni msi">build</span><span class="nl">Tools</span><span class="nav-group-arrow msi nl">expand_more</span></button>
                 <div class="nav-group-items">
                     <button class="nav-btn nav-sub" onclick="showTab(5)"><span class="ni msi">chat</span><span class="nl">Custom Chatbox</span></button>
-                    <button class="nav-btn nav-sub" onclick="showTab(6)"><span class="ni msi">cell_tower</span><span class="nl">Media Relay</span></button>
-                    <button class="nav-btn nav-sub" onclick="showTab(10)"><span class="ni msi">rocket_launch</span><span class="nl">Space Flight</span></button>
+                    <button class="nav-btn nav-sub" data-windows-only onclick="showTab(6)"><span class="ni msi">cell_tower</span><span class="nl">Media Relay</span></button>
+                    <button class="nav-btn nav-sub" data-windows-only onclick="showTab(10)"><span class="ni msi">rocket_launch</span><span class="nl">Space Flight</span></button>
                     <button class="nav-btn nav-sub" onclick="showTab(11)"><span class="ni msi">tune</span><span class="nl">OSC Tool</span></button>
-                    <button class="nav-btn nav-sub" onclick="showTab(14)"><span class="ni msi">smart_display</span><span class="nl">YouTube Fix</span></button>
+                    <button class="nav-btn nav-sub" data-windows-only onclick="showTab(14)"><span class="ni msi">smart_display</span><span class="nl">YouTube Fix</span></button>
                     <button class="nav-btn nav-sub" onclick="showTab(8)"><span class="ni msi">article</span><span class="nl">Activity Log</span></button>
                     <button class="nav-btn nav-sub" onclick="showTab(15)"><span class="ni msi">hub</span><span class="nl">Mutual Network</span></button>
                     <button class="nav-btn nav-sub" onclick="showTab(16)"><span class="ni msi">schedule</span><span class="nl">Time Spent</span></button>
-                    <button class="nav-btn nav-sub" onclick="showTab(18)"><span class="ni msi">mic</span><span class="nl">Voice Fight</span></button>
+                    <button class="nav-btn nav-sub" data-windows-only onclick="showTab(18)"><span class="ni msi">mic</span><span class="nl">Voice Fight</span></button>
                 </div>
             </div>
             <button class="nav-btn" onclick="showTab(9)"><span class="ni msi">settings</span><span class="nl">Settings</span></button>
@@ -59,7 +59,7 @@
         <div class="notif-panel upd-panel" id="updatePanel" style="display:none;">
             <div class="notif-panel-header">
                 <span style="font-weight:700;font-size:13px;">Update Available</span>
-                <button class="btn-f" onclick="toggleUpdatePanel()" style="padding:2px 8px;font-size:10px;"><span class="msi" style="font-size:14px;">close</span></button>
+                <button class="vrcn-button" onclick="toggleUpdatePanel()" style="padding:2px 8px;font-size:10px;"><span class="msi" style="font-size:14px;">close</span></button>
             </div>
             <div style="padding:14px 16px;">
                 <div style="font-size:12px;color:var(--tx2);margin-bottom:12px;">Version <strong id="updVersion" style="color:var(--tx0);"></strong> is ready to install.</div>
@@ -67,7 +67,7 @@
                     <div class="upd-progress-bar"><div class="upd-progress-fill" id="updProgressFill"></div></div>
                     <div class="upd-status" id="updStatus">Downloading…</div>
                 </div>
-                <button class="btn-p" id="updBtn" onclick="startUpdate()" style="width:100%;justify-content:center;gap:6px;">
+                <button class="vrcn-button vrcn-btn-primary" id="updBtn" onclick="startUpdate()" style="width:100%;justify-content:center;gap:6px;">
                     <span class="msi" style="font-size:16px;">download</span> Download &amp; Install
                 </button>
             </div>
@@ -81,7 +81,7 @@
 
         <!-- Notification panel -->
         <div class="notif-panel" id="notifPanel" style="display:none;">
-            <div class="notif-panel-header"><span style="font-weight:700;font-size:13px;">Notifications</span><button class="btn-f" onclick="refreshNotifications()" style="padding:2px 8px;font-size:10px;"><span class="msi" style="font-size:14px;">refresh</span></button></div>
+            <div class="notif-panel-header"><span style="font-weight:700;font-size:13px;">Notifications</span><button class="vrcn-button" onclick="refreshNotifications()" style="padding:2px 8px;font-size:10px;"><span class="msi" style="font-size:14px;">refresh</span></button></div>
             <div class="notif-panel-list" id="notifList"><div class="empty-msg">No notifications</div></div>
         </div>
         <div class="content">
@@ -96,6 +96,8 @@
 
                     </div>
                 </div>
+                <div class="dash-section-label" id="dashMyInstancesLabel" style="display:none;">YOUR INSTANCES<button class="mi-refresh-btn" id="miRefreshBtn" onclick="refreshMyInstances()" title="Refresh instances">&#8635;</button></div>
+                <div class="dash-worlds-grid" id="dashMyInstances" style="display:none;"></div>
                 <div class="dash-section-label">FRIENDS LOCATIONS</div>
                 <div class="dash-worlds-grid" id="dashFavWorlds"><div class="empty-msg">Login to VRChat to see where friends are</div></div>
                 <div class="dash-section-label" id="dashDiscoveryLabel" style="display:none;">DISCOVERY</div>
@@ -107,16 +109,16 @@
             <div class="tab" id="tab1">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
                     <div style="display:flex;gap:8px;align-items:center;">
-                        <button class="btn-fav sub-tab-btn active" id="worldFilterFav" onclick="setWorldFilter('favorites')"><span class="msi" style="font-size:16px;">star</span> Favorites</button>
-                        <button class="btn-fav sub-tab-btn" id="worldFilterMine" onclick="setWorldFilter('mine')"><span class="msi" style="font-size:16px;">cloud_upload</span> My Worlds</button>
-                        <button class="btn-fav sub-tab-btn" id="worldFilterSearch" onclick="setWorldFilter('search')"><span class="msi" style="font-size:16px;">search</span> Search</button>
+                        <button class="vrcn-button sub-tab-btn active" id="worldFilterFav" onclick="setWorldFilter('favorites')"><span class="msi" style="font-size:16px;">star</span> Favorites</button>
+                        <button class="vrcn-button sub-tab-btn" id="worldFilterMine" onclick="setWorldFilter('mine')"><span class="msi" style="font-size:16px;">cloud_upload</span> My Worlds</button>
+                        <button class="vrcn-button sub-tab-btn" id="worldFilterSearch" onclick="setWorldFilter('search')"><span class="msi" style="font-size:16px;">search</span> Search</button>
                     </div>
                 </div>
                 <div id="worldMineArea" style="display:none;">
                     <div id="worldMineGrid" class="search-grid"><div class="empty-msg">Loading your worlds...</div></div>
                 </div>
                 <div id="worldSearchArea" style="display:none;">
-                    <div class="search-bar-row"><span class="msi search-ico">search</span><input type="text" id="searchWorldsInput" class="search-input" placeholder="Search worlds..." onkeydown="if(event.key==='Enter')doSearch('worlds')"><button class="btn-f" onclick="doSearch('worlds')">Search</button></div>
+                    <div class="search-bar-row"><span class="msi search-ico">search</span><input type="text" id="searchWorldsInput" class="vrcn-input" placeholder="Search worlds..." onkeydown="if(event.key==='Enter')doSearch('worlds')"><button class="vrcn-button" onclick="doSearch('worlds')">Search</button></div>
                     <div id="searchWorldsResults" class="search-grid"><div class="empty-msg">Search for VRChat worlds</div></div>
                 </div>
                 <div id="worldFavArea">
@@ -127,17 +129,17 @@
                         <button id="favWorldGroupEditBtn" class="myp-edit-btn" onclick="startEditWorldGroupName()" style="display:none;" title="Rename category"><span class="msi" style="font-size:14px;">edit</span></button>
                     </div>
                     <div id="favWorldGroupRenameRow" style="display:none;align-items:center;gap:6px;margin-bottom:10px;">
-                        <input type="text" id="favWorldGroupNameInput" class="myp-text-input" maxlength="64" style="flex:1;max-width:280px;">
-                        <button class="myp-save-btn" onclick="saveWorldGroupName()">Save</button>
-                        <button class="myp-cancel-btn" onclick="cancelEditWorldGroupName()">Cancel</button>
+                        <input type="text" id="favWorldGroupNameInput" class="vrcn-edit-field" maxlength="64" style="flex:1;max-width:280px;">
+                        <button class="vrcn-button vrcn-btn-primary" onclick="saveWorldGroupName()">Save</button>
+                        <button class="vrcn-button" onclick="cancelEditWorldGroupName()">Cancel</button>
                     </div>
                     <!-- Dropdown + search -->
                     <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
-                        <select id="favWorldGroupFilter" class="wd-create-select" onchange="setFavWorldGroup(this.value)" style="min-width:160px;max-width:220px;">
+                        <select id="favWorldGroupFilter" class="vrcn-dropdown" onchange="setFavWorldGroup(this.value)" style="min-width:160px;max-width:220px;">
                             <option value="">All Favorites</option>
                         </select>
-                        <div class="search-bar-row" style="margin-bottom:0;flex:1;min-width:140px;"><span class="msi search-ico">search</span><input type="text" id="favWorldSearchInput" class="search-input" placeholder="Filter favorite worlds..." oninput="filterFavWorlds()"></div>
-                        <button id="favWorldsRefreshBtn" class="btn-f" onclick="refreshFavWorlds()" title="Refresh favorites"><span class="msi" style="font-size:16px;">refresh</span> Refresh</button>
+                        <div class="search-bar-row" style="margin-bottom:0;flex:1;min-width:140px;"><span class="msi search-ico">search</span><input type="text" id="favWorldSearchInput" class="vrcn-input" placeholder="Filter favorite worlds..." oninput="filterFavWorlds()"></div>
+                        <button id="favWorldsRefreshBtn" class="vrcn-button" onclick="refreshFavWorlds()" title="Refresh favorites"><span class="msi" style="font-size:16px;">refresh</span> Refresh</button>
                     </div>
                     <div id="favWorldsGrid" class="search-grid"><div class="empty-msg">Loading favorite worlds...</div></div>
                 </div>
@@ -146,45 +148,45 @@
             <div class="tab" id="tab2">
                 <div style="display:flex;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
                     <div style="display:flex;gap:8px;align-items:center;">
-                        <button class="btn-fav sub-tab-btn active" id="groupFilterMine" onclick="setGroupFilter('mine')"><span class="msi" style="font-size:16px;">groups</span> My Groups</button>
-                        <button class="btn-fav sub-tab-btn" id="groupFilterSearch" onclick="setGroupFilter('search')"><span class="msi" style="font-size:16px;">search</span> Search</button>
+                        <button class="vrcn-button sub-tab-btn active" id="groupFilterMine" onclick="setGroupFilter('mine')"><span class="msi" style="font-size:16px;">groups</span> My Groups</button>
+                        <button class="vrcn-button sub-tab-btn" id="groupFilterSearch" onclick="setGroupFilter('search')"><span class="msi" style="font-size:16px;">search</span> Search</button>
                     </div>
-                    <button id="groupsRefreshBtn" class="btn-f" onclick="refreshGroups()" title="Refresh my groups" style="margin-left:auto;"><span class="msi" style="font-size:16px;">refresh</span> Refresh</button>
+                    <button id="groupsRefreshBtn" class="vrcn-button" onclick="refreshGroups()" title="Refresh my groups" style="margin-left:auto;"><span class="msi" style="font-size:16px;">refresh</span> Refresh</button>
                 </div>
                 <div id="groupMineArea">
                     <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
-                        <div class="search-bar-row" style="margin-bottom:0;flex:1;min-width:140px;"><span class="msi search-ico">search</span><input type="text" id="filterGroupsInput" class="search-input" placeholder="Filter my groups..." oninput="filterMyGroups()"></div>
+                        <div class="search-bar-row" style="margin-bottom:0;flex:1;min-width:140px;"><span class="msi search-ico">search</span><input type="text" id="filterGroupsInput" class="vrcn-input" placeholder="Filter my groups..." oninput="filterMyGroups()"></div>
                     </div>
                     <div id="myGroupsGrid" class="search-grid"></div>
                 </div>
                 <div id="groupSearchArea" style="display:none;">
-                    <div class="search-bar-row"><span class="msi search-ico">search</span><input type="text" id="searchGroupsInput" class="search-input" placeholder="Search groups..." onkeydown="if(event.key==='Enter')doSearch('groups')"><button class="btn-f" onclick="doSearch('groups')">Search</button></div>
+                    <div class="search-bar-row"><span class="msi search-ico">search</span><input type="text" id="searchGroupsInput" class="vrcn-input" placeholder="Search groups..." onkeydown="if(event.key==='Enter')doSearch('groups')"><button class="vrcn-button" onclick="doSearch('groups')">Search</button></div>
                     <div id="searchGroupsResults" class="search-grid"><div class="empty-msg">Search for VRChat groups</div></div>
                 </div>
             </div>
             <!-- Tab 3: People (Favorites + Search + Blocked + Muted) -->
             <div class="tab" id="tab3">
                 <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
-                    <button class="btn-fav sub-tab-btn active" id="peopleFilterFav" onclick="setPeopleFilter('favorites')"><span class="msi" style="font-size:16px;">star</span> Favorites</button>
-                    <button class="btn-fav sub-tab-btn" id="peopleFilterSearch" onclick="setPeopleFilter('search')"><span class="msi" style="font-size:16px;">search</span> Search</button>
-                    <button class="btn-fav sub-tab-btn" id="peopleFilterBlocked" onclick="setPeopleFilter('blocked')"><span class="msi" style="font-size:16px;">block</span> Blocked</button>
-                    <button class="btn-fav sub-tab-btn" id="peopleFilterMuted" onclick="setPeopleFilter('muted')"><span class="msi" style="font-size:16px;">volume_off</span> Muted</button>
-                    <button class="btn-f" id="peopleRefreshBtn" onclick="refreshPeopleTab()" title="Refresh" style="margin-left:auto;"><span class="msi" style="font-size:16px;">refresh</span> Refresh</button>
+                    <button class="vrcn-button sub-tab-btn active" id="peopleFilterFav" onclick="setPeopleFilter('favorites')"><span class="msi" style="font-size:16px;">star</span> Favorites</button>
+                    <button class="vrcn-button sub-tab-btn" id="peopleFilterSearch" onclick="setPeopleFilter('search')"><span class="msi" style="font-size:16px;">search</span> Search</button>
+                    <button class="vrcn-button sub-tab-btn" id="peopleFilterBlocked" onclick="setPeopleFilter('blocked')"><span class="msi" style="font-size:16px;">block</span> Blocked</button>
+                    <button class="vrcn-button sub-tab-btn" id="peopleFilterMuted" onclick="setPeopleFilter('muted')"><span class="msi" style="font-size:16px;">volume_off</span> Muted</button>
+                    <button class="vrcn-button" id="peopleRefreshBtn" onclick="refreshPeopleTab()" title="Refresh" style="margin-left:auto;"><span class="msi" style="font-size:16px;">refresh</span> Refresh</button>
                 </div>
                 <div id="peopleFavArea">
-                    <div class="search-bar-row" style="margin-bottom:12px;"><span class="msi search-ico">search</span><input type="text" id="favFriendSearchInput" class="search-input" placeholder="Filter favorite friends..." oninput="filterFavFriends()"></div>
+                    <div class="search-bar-row" style="margin-bottom:12px;"><span class="msi search-ico">search</span><input type="text" id="favFriendSearchInput" class="vrcn-input" placeholder="Filter favorite friends..." oninput="filterFavFriends()"></div>
                     <div id="favFriendsGrid"><div class="empty-msg">Loading favorite friends...</div></div>
                 </div>
                 <div id="peopleSearchArea" style="display:none;">
-                    <div class="search-bar-row"><span class="msi search-ico">search</span><input type="text" id="searchPeopleInput" class="search-input" placeholder="Search people..." onkeydown="if(event.key==='Enter')doSearch('people')"><button class="btn-f" onclick="doSearch('people')">Search</button></div>
+                    <div class="search-bar-row"><span class="msi search-ico">search</span><input type="text" id="searchPeopleInput" class="vrcn-input" placeholder="Search people..." onkeydown="if(event.key==='Enter')doSearch('people')"><button class="vrcn-button" onclick="doSearch('people')">Search</button></div>
                     <div id="searchPeopleResults" class="search-grid"><div class="empty-msg">Search for VRChat users</div></div>
                 </div>
                 <div id="peopleBlockedArea" style="display:none;">
-                    <div class="search-bar-row" style="margin-bottom:12px;"><span class="msi search-ico">search</span><input type="text" id="blockedSearch" class="search-input" placeholder="Filter blocked users..." oninput="filterModList('block')"></div>
+                    <div class="search-bar-row" style="margin-bottom:12px;"><span class="msi search-ico">search</span><input type="text" id="blockedSearch" class="vrcn-input" placeholder="Filter blocked users..." oninput="filterModList('block')"></div>
                     <div id="blockedList"><div class="empty-msg">Loading...</div></div>
                 </div>
                 <div id="peopleMutedArea" style="display:none;">
-                    <div class="search-bar-row" style="margin-bottom:12px;"><span class="msi search-ico">search</span><input type="text" id="mutedSearch" class="search-input" placeholder="Filter muted users..." oninput="filterModList('mute')"></div>
+                    <div class="search-bar-row" style="margin-bottom:12px;"><span class="msi search-ico">search</span><input type="text" id="mutedSearch" class="vrcn-input" placeholder="Filter muted users..." oninput="filterModList('mute')"></div>
                     <div id="mutedList"><div class="empty-msg">Loading...</div></div>
                 </div>
             </div>
@@ -192,18 +194,18 @@
             <div class="tab" id="tab4">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
                     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                        <button class="btn-fav sub-tab-btn active" id="avatarFilterOwn" onclick="setAvatarFilter('own')"><span class="msi" style="font-size:16px;">person</span> My Avatars</button>
-                        <button class="btn-fav sub-tab-btn" id="avatarFilterFav" onclick="setAvatarFilter('favorites')"><span class="msi" style="font-size:16px;">star</span> Favorites</button>
-                        <button class="btn-fav sub-tab-btn" id="avatarFilterRose" onclick="setAvatarFilter('rose')"><span class="msi" style="font-size:16px;">local_florist</span> Rose Database</button>
-                        <button class="btn-fav sub-tab-btn" id="avatarFilterSearch" onclick="setAvatarFilter('search')"><span class="msi" style="font-size:16px;">search</span> Search</button>
+                        <button class="vrcn-button sub-tab-btn active" id="avatarFilterOwn" onclick="setAvatarFilter('own')"><span class="msi" style="font-size:16px;">person</span> My Avatars</button>
+                        <button class="vrcn-button sub-tab-btn" id="avatarFilterFav" onclick="setAvatarFilter('favorites')"><span class="msi" style="font-size:16px;">star</span> Favorites</button>
+                        <button class="vrcn-button sub-tab-btn" id="avatarFilterRose" onclick="setAvatarFilter('rose')"><span class="msi" style="font-size:16px;">local_florist</span> Rose Database</button>
+                        <button class="vrcn-button sub-tab-btn" id="avatarFilterSearch" onclick="setAvatarFilter('search')"><span class="msi" style="font-size:16px;">search</span> Search</button>
                     </div>
                     <span id="avatarCount" style="font-size:12px;color:var(--tx3);"></span>
                 </div>
                 <!-- Own Avatars -->
                 <div id="avatarOwnArea">
                     <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
-                        <div class="search-bar-row" style="margin-bottom:0;flex:1;min-width:140px;"><span class="msi search-ico">search</span><input type="text" id="ownAvatarSearchInput" class="search-input" placeholder="Filter my avatars..." oninput="filterOwnAvatars()"></div>
-                        <button id="ownAvatarsRefreshBtn" class="btn-f" onclick="refreshAvatars()" title="Refresh"><span class="msi" style="font-size:16px;">refresh</span> Refresh</button>
+                        <div class="search-bar-row" style="margin-bottom:0;flex:1;min-width:140px;"><span class="msi search-ico">search</span><input type="text" id="ownAvatarSearchInput" class="vrcn-input" placeholder="Filter my avatars..." oninput="filterOwnAvatars()"></div>
+                        <button id="ownAvatarsRefreshBtn" class="vrcn-button" onclick="refreshAvatars()" title="Refresh"><span class="msi" style="font-size:16px;">refresh</span> Refresh</button>
                     </div>
                     <div id="avatarGrid" class="avatar-grid"><div class="empty-msg">Login to VRChat to see your avatars</div></div>
                 </div>
@@ -215,37 +217,37 @@
                         <button id="favAvatarGroupEditBtn" class="myp-edit-btn" onclick="startEditAvatarGroupName()" style="display:none;" title="Rename category"><span class="msi" style="font-size:14px;">edit</span></button>
                     </div>
                     <div id="favAvatarGroupRenameRow" style="display:none;align-items:center;gap:6px;margin-bottom:10px;">
-                        <input type="text" id="favAvatarGroupNameInput" class="myp-text-input" maxlength="64" style="flex:1;max-width:280px;">
-                        <button class="myp-save-btn" onclick="saveAvatarGroupName()">Save</button>
-                        <button class="myp-cancel-btn" onclick="cancelEditAvatarGroupName()">Cancel</button>
+                        <input type="text" id="favAvatarGroupNameInput" class="vrcn-edit-field" maxlength="64" style="flex:1;max-width:280px;">
+                        <button class="vrcn-button vrcn-btn-primary" onclick="saveAvatarGroupName()">Save</button>
+                        <button class="vrcn-button" onclick="cancelEditAvatarGroupName()">Cancel</button>
                     </div>
                     <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
-                        <select id="favAvatarGroupFilter" class="wd-create-select" onchange="setFavAvatarGroup(this.value)" style="min-width:160px;max-width:220px;">
+                        <select id="favAvatarGroupFilter" class="vrcn-dropdown" onchange="setFavAvatarGroup(this.value)" style="min-width:160px;max-width:220px;">
                             <option value="">All Favorites</option>
                         </select>
-                        <div class="search-bar-row" style="margin-bottom:0;flex:1;min-width:140px;"><span class="msi search-ico">search</span><input type="text" id="favAvatarSearchInput" class="search-input" placeholder="Filter favorite avatars..." oninput="filterFavAvatars()"></div>
-                        <button id="favAvatarsRefreshBtn" class="btn-f" onclick="refreshFavAvatars()" title="Refresh"><span class="msi" style="font-size:16px;">refresh</span> Refresh</button>
+                        <div class="search-bar-row" style="margin-bottom:0;flex:1;min-width:140px;"><span class="msi search-ico">search</span><input type="text" id="favAvatarSearchInput" class="vrcn-input" placeholder="Filter favorite avatars..." oninput="filterFavAvatars()"></div>
+                        <button id="favAvatarsRefreshBtn" class="vrcn-button" onclick="refreshFavAvatars()" title="Refresh"><span class="msi" style="font-size:16px;">refresh</span> Refresh</button>
                     </div>
                     <div id="favAvatarsGrid" class="avatar-grid"><div class="empty-msg">Loading favorite avatars...</div></div>
                 </div>
                 <!-- Rose Database -->
                 <div id="avatarRoseArea" style="display:none;">
                     <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
-                        <div class="search-bar-row" style="margin-bottom:0;flex:1;min-width:140px;"><span class="msi search-ico">search</span><input type="text" id="roseSearchInput" class="search-input" placeholder="Filter by name, author or tag..." oninput="filterRoseDb()"></div>
-                        <button class="btn-f" id="roseRefreshBtn" onclick="loadRoseDatabase(true)" title="Refresh"><span class="msi" style="font-size:16px;">refresh</span> Refresh</button>
+                        <div class="search-bar-row" style="margin-bottom:0;flex:1;min-width:140px;"><span class="msi search-ico">search</span><input type="text" id="roseSearchInput" class="vrcn-input" placeholder="Filter by name, author or tag..." oninput="filterRoseDb()"></div>
+                        <button class="vrcn-button" id="roseRefreshBtn" onclick="loadRoseDatabase(true)" title="Refresh"><span class="msi" style="font-size:16px;">refresh</span> Refresh</button>
                     </div>
                     <div id="roseDbGrid" class="avatar-grid"><div class="empty-msg">Loading Rose Database...</div></div>
                 </div>
                 <!-- Search -->
                 <div id="avatarSearchArea" style="display:none;">
-                    <div class="search-bar-row" style="margin-bottom:14px;"><span class="msi search-ico">search</span><input type="text" id="avatarSearchInput" class="search-input" placeholder="Search public avatars..." onkeydown="if(event.key==='Enter')doAvatarSearch()"><button class="btn-f" onclick="doAvatarSearch()">Search</button></div>
+                    <div class="search-bar-row" style="margin-bottom:14px;"><span class="msi search-ico">search</span><input type="text" id="avatarSearchInput" class="vrcn-input" placeholder="Search public avatars..." onkeydown="if(event.key==='Enter')doAvatarSearch()"><button class="vrcn-button" onclick="doAvatarSearch()">Search</button></div>
                     <div id="avatarSearchGrid" class="avatar-grid"><div class="empty-msg">Search for public avatars</div></div>
                 </div>
                 <!-- Favorite group picker popup (global, positioned by JS) -->
                 <div id="avFavPickerPanel" style="display:none;position:fixed;z-index:9999;background:var(--bg-card);border:1px solid var(--brd-lt);border-radius:10px;padding:10px;min-width:220px;max-width:280px;box-shadow:0 8px 32px #0008;">
                     <div style="font-size:11px;font-weight:700;color:var(--tx3);margin-bottom:8px;letter-spacing:.5px;">ADD TO FAVORITE GROUP</div>
                     <div id="avFavPickerList"></div>
-                    <div style="margin-top:8px;text-align:right;"><button class="myp-cancel-btn" onclick="closeAvFavPicker()">Cancel</button></div>
+                    <div style="margin-top:8px;text-align:right;"><button class="vrcn-button" onclick="closeAvFavPicker()">Cancel</button></div>
                 </div>
             </div>
             <!-- Tab 5: Custom Chatbox -->
@@ -253,7 +255,7 @@
                 <div class="sf-card sf-status-card" style="margin-bottom:16px;">
                     <div class="sf-status-row">
                         <div class="sf-status"><span class="sf-dot offline" id="cbDot"></span><span id="cbStatusText">Not running</span></div>
-                        <button class="btn-f" id="cbConnBtn" onclick="toggleChatbox()"><span class="msi" style="font-size:16px;">play_arrow</span> Start</button>
+                        <button class="vrcn-button" id="cbConnBtn" onclick="toggleChatbox()"><span class="msi" style="font-size:16px;">play_arrow</span> Start</button>
                     </div>
                 </div>
                 <div class="cb-layout">
@@ -295,7 +297,7 @@
 
                         <div class="cb-card" id="cbAfkCard" style="display:none;">
                             <div class="cb-card-header"><span class="msi" style="font-size:16px;">bedtime</span> AFK Settings</div>
-                            <div class="cb-form-row"><label>Message</label><input type="text" id="cbAfkMessage" class="cb-line-input" value="Currently AFK" oninput="updateChatboxConfig()" style="flex:1;"></div>
+                            <div class="cb-form-row"><label>Message</label><input type="text" id="cbAfkMessage" class="vrcn-edit-field" value="Currently AFK" oninput="updateChatboxConfig()" style="flex:1;"></div>
                             <div style="font-size:10px;color:var(--tx3);margin-top:4px;">Shown when VRChat is not the active window. Overrides other modules.</div>
                         </div>
 
@@ -310,7 +312,7 @@
                             <div class="cb-card-header"><span class="msi" style="font-size:16px;">edit_note</span> Custom Text Lines</div>
                             <div class="cb-custom-lines" id="cbCustomLines"></div>
                             <div class="cb-add-line">
-                                <input type="text" id="cbNewLine" class="cb-line-input" placeholder="Type a custom line..." onkeydown="if(event.key==='Enter'){addChatboxLine();}">
+                                <input type="text" id="cbNewLine" class="vrcn-edit-field" placeholder="Type a custom line..." onkeydown="if(event.key==='Enter'){addChatboxLine();}" style="flex:1;">
                                 <button class="cb-add-btn" onclick="addChatboxLine()"><span class="msi" style="font-size:16px;">add</span></button>
                             </div>
                             <div style="font-size:10px;color:var(--tx3);margin-top:6px;">Lines rotate each cycle. Use for status, socials, bio, etc.</div>
@@ -323,7 +325,7 @@
                 <div class="sf-card sf-status-card" style="margin-bottom:16px;">
                     <div class="sf-status-row">
                         <div class="sf-status"><span class="sf-dot offline" id="relayDot"></span><span id="relayStatusText">Not running</span></div>
-                        <button class="btn-f" id="btnRelay" onclick="toggleRelay()"><span class="msi" style="font-size:16px;">play_arrow</span> Start</button>
+                        <button class="vrcn-button" id="btnRelay" onclick="toggleRelay()"><span class="msi" style="font-size:16px;">play_arrow</span> Start</button>
                     </div>
                 </div>
                 <div class="stats-row">
@@ -338,11 +340,11 @@
                     <div class="sf-toggle-row"><span>Play sound on successful post</span><label class="toggle"><input type="checkbox" id="setNotifySound" onchange="autoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
                 </div>
                 <div class="sect-label" style="margin-top:20px;">BOT IDENTITY</div>
-                <div class="input-row"><label>Bot Name</label><input type="text" id="setBotName" value="VRCNext"></div>
-                <div class="input-row"><label>Avatar URL</label><input type="text" id="setBotAvatar" value="" placeholder="https://..."></div>
+                <div class="input-row"><label>Bot Name</label><input type="text" id="setBotName" class="vrcn-edit-field" value="VRCNext" style="flex:1;"></div>
+                <div class="input-row"><label>Avatar URL</label><input type="text" id="setBotAvatar" class="vrcn-edit-field" value="" placeholder="https://..." style="flex:1;"></div>
                 <div class="sect-label">WEBHOOK CHANNELS</div>
                 <div id="whCards"></div>
-                <div class="file-list-header"><h3>Posted Files</h3><button class="btn-fd" onclick="showDeleteAllModal()"><span class="msi" style="font-size:16px;">delete</span> Delete All</button></div>
+                <div class="file-list-header"><h3>Posted Files</h3><button class="vrcn-button vrcn-btn-danger" onclick="showDeleteAllModal()"><span class="msi" style="font-size:16px;">delete</span> Delete All</button></div>
                 <div class="file-table"><div class="file-table-head"><span>FILE</span><span>CHANNEL</span><span>SIZE</span><span>TIME</span><span></span></div><div id="fileList"><div class="empty-msg">No files posted yet</div></div></div>
             </div>
             <!-- Tab 7: Media Library -->
@@ -350,10 +352,10 @@
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
                     <div><span style="font-size:14px;font-weight:700;color:var(--tx0);">Media Library</span><span id="libCount" style="font-size:12px;color:var(--tx3);margin-left:10px;"></span></div>
                     <div style="display:flex;gap:8px;align-items:center;">
-                        <button class="btn-fav" id="libFavBtn" onclick="toggleFavFilter()"><span class="msi" style="font-size:16px;">star</span> Favorites</button>
-                        <select id="libFolderFilter" class="lib-filter-select" onchange="filterLibrary()"><option value="__all__">All Folders</option></select>
-                        <select id="libTypeFilter" class="lib-filter-select" onchange="filterLibrary()"><option value="all">All Media</option><option value="image">Images</option><option value="video">Videos</option></select>
-                        <button class="btn-f" onclick="refreshLibrary()"><span class="msi" style="font-size:16px;">refresh</span> Refresh</button>
+                        <button class="vrcn-button" id="libFavBtn" onclick="toggleFavFilter()"><span class="msi" style="font-size:16px;">star</span> Favorites</button>
+                        <select id="libFolderFilter" class="vrcn-dropdown" onchange="filterLibrary()"><option value="__all__">All Folders</option></select>
+                        <select id="libTypeFilter" class="vrcn-dropdown" onchange="filterLibrary()"><option value="all">All Media</option><option value="image">Images</option><option value="video">Videos</option></select>
+                        <button class="vrcn-button" onclick="refreshLibrary()"><span class="msi" style="font-size:16px;">refresh</span> Refresh</button>
                     </div>
                 </div>
                 <div class="lib-wrap">
@@ -363,17 +365,16 @@
             </div>
             <!-- Tab 8: Activity Log -->
             <div class="tab" id="tab8">
-                <div class="log-header" style="margin-top:0;display:flex;align-items:center;justify-content:space-between;">
-                    <span>Activity Log</span>
+                <div class="log-header" style="margin-top:0;display:flex;align-items:center;justify-content:flex-end;flex-shrink:0;">
                     <div class="mini-badge offline" id="wsBadge">
                         <span class="mini-badge-icon msi">wifi_off</span>
                         <span class="mini-badge-label">WebSocket</span>
                     </div>
                 </div>
-                <div class="log-area" id="logArea" style="height:calc(100vh - 252px);"></div>
-                <div style="display:flex;gap:8px;margin-top:8px;">
-                    <button class="btn-f" onclick="exportLog()" style="flex:1;justify-content:center;"><span class="msi" style="font-size:16px;">download</span> Export Logs</button>
-                    <button class="btn-f" onclick="clearLog()" style="flex:1;justify-content:center;"><span class="msi" style="font-size:16px;">delete_sweep</span> Clear Logs</button>
+                <div class="log-area" id="logArea" style="flex:1;min-height:0;"></div>
+                <div style="display:flex;gap:8px;margin-top:8px;flex-shrink:0;">
+                    <button class="vrcn-button" onclick="exportLog()" style="flex:1;justify-content:center;"><span class="msi" style="font-size:16px;">download</span> Export Logs</button>
+                    <button class="vrcn-button" onclick="clearLog()" style="flex:1;justify-content:center;"><span class="msi" style="font-size:16px;">delete_sweep</span> Clear Logs</button>
                 </div>
             </div>
             <!-- Tab 9: Settings -->
@@ -386,8 +387,8 @@
                         <div class="set-desc">Watch folders monitor for new images you create. Add your VRChat screenshot folder here. You can also add folders from apps like VHF (VR Hands Frame) to track world location and friends list for those images too.</div>
                         <div class="folder-list" id="folderList"><div class="folder-empty">No folders added</div></div>
                         <div class="folder-btns" style="margin-top:10px;">
-                            <button class="btn-f" onclick="addFolder()"><span class="msi" style="font-size:16px;">create_new_folder</span> Add Folder</button>
-                            <button class="btn-f" onclick="removeFolder()"><span class="msi" style="font-size:16px;">folder_delete</span> Remove</button>
+                            <button class="vrcn-button" onclick="addFolder()"><span class="msi" style="font-size:16px;">create_new_folder</span> Add Folder</button>
+                            <button class="vrcn-button" onclick="removeFolder()"><span class="msi" style="font-size:16px;">folder_delete</span> Remove</button>
                         </div>
                     </div>
 
@@ -396,14 +397,14 @@
                         <div class="sf-card-header"><span class="msi">rocket_launch</span> VRChat Launch Options</div>
                         <div class="sf-section-label">VRChat Path</div>
                         <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
-                            <input type="text" id="setVrcPath" class="set-input" placeholder="C:\...\VRChat.exe" oninput="autoSave()">
-                            <button class="btn-f" onclick="browseExe('vrchat')"><span class="msi" style="font-size:16px;">folder_open</span> Browse</button>
+                            <input type="text" id="setVrcPath" class="vrcn-edit-field" placeholder="C:\...\VRChat.exe" oninput="autoSave()" style="flex:1;">
+                            <button class="vrcn-button" onclick="browseExe('vrchat')"><span class="msi" style="font-size:16px;">folder_open</span> Browse</button>
                         </div>
                         <div class="sf-section-label">Additional Apps</div>
                         <div class="set-desc" style="margin-bottom:8px;">Apps to launch alongside VRChat when you click "Play VRChat". Useful for OVR Advanced Settings, SlimeVR, VRCFaceTracking, and similar tools.</div>
                         <div class="exe-list" id="extraExeList"><div class="folder-empty">None</div></div>
                         <div class="folder-btns" style="margin-top:10px;">
-                            <button class="btn-f" onclick="browseExe('extra')"><span class="msi" style="font-size:16px;">add</span> Add App</button>
+                            <button class="vrcn-button" onclick="browseExe('extra')"><span class="msi" style="font-size:16px;">add</span> Add App</button>
                         </div>
                         <div style="height:12px;"></div>
                         <div class="sf-toggle-row"><span>Auto-start VRCNext with Windows</span><label class="toggle"><input type="checkbox" id="setStartWithWindows" onchange="autoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
@@ -415,12 +416,12 @@
                         <div class="set-desc" style="margin-bottom:12px;">Your credentials are stored locally and only used to connect to the VRChat API. VRCNext never shares them with third parties.</div>
                         <div class="sf-section-label">Credentials</div>
                         <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
-                            <input type="text" id="setVrcUser" class="set-input" placeholder="VRChat username" oninput="autoSave()">
-                            <input type="password" id="setVrcPass" class="set-input" placeholder="VRChat password" oninput="autoSave()">
+                            <input type="text" id="setVrcUser" class="vrcn-edit-field" placeholder="VRChat username" oninput="autoSave()">
+                            <input type="password" id="setVrcPass" class="vrcn-edit-field" placeholder="VRChat password" oninput="autoSave()">
                         </div>
                         <div style="display:flex;align-items:center;gap:8px;">
-                            <button class="btn-f" onclick="vrcLoginFromSettings()" id="btnVrcLogin"><span class="msi" style="font-size:16px;">login</span> Connect</button>
-                            <button class="btn-f" onclick="vrcLogout()" style="display:none;" id="btnVrcLogout"><span class="msi" style="font-size:16px;">logout</span> Disconnect</button>
+                            <button class="vrcn-button" onclick="vrcLoginFromSettings()" id="btnVrcLogin"><span class="msi" style="font-size:16px;">login</span> Connect</button>
+                            <button class="vrcn-button" onclick="vrcLogout()" style="display:none;" id="btnVrcLogout"><span class="msi" style="font-size:16px;">logout</span> Disconnect</button>
                             <span id="vrcLoginStatus" style="font-size:11px;color:var(--tx3);"></span>
                         </div>
                     </div>
@@ -430,7 +431,7 @@
                         <div class="sf-card-header"><span class="msi">palette</span> Design</div>
                         <div class="sf-section-label">Dashboard Background</div>
                         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-                            <button class="btn-f" onclick="browseDashBg()"><span class="msi" style="font-size:16px;">image</span> Choose Image</button>
+                            <button class="vrcn-button" onclick="browseDashBg()"><span class="msi" style="font-size:16px;">image</span> Choose Image</button>
                             <span id="dashBgName" style="font-size:11px;color:var(--tx3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;"></span>
                         </div>
                         <div class="sf-row" style="margin-bottom:6px;">
@@ -450,14 +451,14 @@
                         <div class="sf-card-header"><span class="msi">bug_report</span> Debugging</div>
                         <div class="set-desc" style="margin-bottom:12px;">Use these options if something isn't working correctly or you want to reconfigure VRCNext from scratch.</div>
                         <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                            <button class="btn-f" onclick="sendToCS({action:'resetSetup'})"><span class="msi" style="font-size:16px;">restart_alt</span> Redo Setup Wizard</button>
-                            <button class="btn-f" id="btnForceFfc" onclick="forceFfcAll()"><span class="msi" style="font-size:16px;">cloud_download</span> Force FFC All</button>
+                            <button class="vrcn-button" onclick="sendToCS({action:'resetSetup'})"><span class="msi" style="font-size:16px;">restart_alt</span> Redo Setup Wizard</button>
+                            <button class="vrcn-button" id="btnForceFfc" onclick="forceFfcAll()"><span class="msi" style="font-size:16px;">cloud_download</span> Force FFC All</button>
                         </div>
                         <div class="sf-toggle-row" style="margin-top:14px;">
                             <span>Enable Memory Trim <span class="set-desc" style="display:inline;font-size:11px;">(auto every 10 min)</span></span>
                             <label class="toggle"><input type="checkbox" id="setMemoryTrimEnabled" onchange="autoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label>
                         </div>
-                        <button class="btn-f" style="margin-top:10px;" onclick="sendToCS({action:'forceTrim'})"><span class="msi" style="font-size:16px;">memory</span> Force Memory Trim</button>
+                        <button class="vrcn-button" style="margin-top:10px;" onclick="sendToCS({action:'forceTrim'})"><span class="msi" style="font-size:16px;">memory</span> Force Memory Trim</button>
                         <div id="ffcProgressWrap" style="display:none;margin-top:12px;">
                             <div style="font-size:12px;color:var(--tx2);margin-bottom:6px;" id="ffcProgressLabel">Caching...</div>
                             <div style="background:var(--brd);border-radius:4px;height:6px;overflow:hidden;">
@@ -482,18 +483,56 @@
                             </div>
                             <div style="font-size:10px;color:var(--tx3);margin-top:6px;">When the limit is reached, the oldest ~2 GB of cached images are removed automatically.</div>
                         </div>
-                        <button class="btn-f" style="margin-top:12px;" onclick="sendToCS({action:'clearImgCache'})"><span class="msi" style="font-size:16px;">delete_sweep</span> Clear Image Cache</button>
+                        <button class="vrcn-button" style="margin-top:12px;" onclick="sendToCS({action:'clearImgCache'})"><span class="msi" style="font-size:16px;">delete_sweep</span> Clear Image Cache</button>
                     </div>
 
                     <!-- FAST FETCH CACHE -->
                     <div class="sf-card">
                         <div class="sf-card-header"><span class="msi">bolt</span> Fast Fetch Cache</div>
-                        <div class="set-desc">Fast Fetch Cache stores user profiles, worlds, groups, and avatars locally to improve load times. When enabled, VRCNext instantly shows cached content (descriptions, texts, images) while silently refreshing it in the background. When disabled, all data is freshly downloaded on every request — no cache is stored or used.</div>
+                        <div class="set-desc">Fast Fetch Cache stores user profiles, worlds, groups, and avatars locally to improve load times. When enabled, VRCNext instantly shows cached content (descriptions, texts, images) while silently refreshing it in the background. When disabled, all data is freshly downloaded on every request with no cache stored or used.</div>
                         <div class="sf-toggle-row">
                             <span>Enable FFC</span>
                             <label class="toggle"><input type="checkbox" id="setFfcEnabled" checked onchange="autoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label>
                         </div>
-                        <button class="btn-f" style="margin-top:12px;" onclick="sendToCS({action:'clearFfcCache'})"><span class="msi" style="font-size:16px;">delete_sweep</span> Clear FFC Cache</button>
+                        <button class="vrcn-button" style="margin-top:12px;" onclick="sendToCS({action:'clearFfcCache'})"><span class="msi" style="font-size:16px;">delete_sweep</span> Clear FFC Cache</button>
+                    </div>
+
+                    <div class="sf-card" id="vrcxImportCard">
+                        <div class="sf-card-header"><span class="msi">download</span> Import data from VRCX</div>
+                        <div class="set-desc">Imports your VRCX history into VRCNext: world time, friend time, instance joins, GPS events, online/offline, status and bio changes. Existing data is preserved and values are added on top. Select your <code>VRCX.sqlite3</code> file to begin.</div>
+                        <div style="margin-top:10px;padding:12px 14px;background:rgba(var(--err-rgb,220,50,50),.10);border:1px solid rgba(var(--err-rgb,220,50,50),.30);border-radius:10px;line-height:1.7;">
+                            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                                <span class="msi" style="font-size:20px;color:var(--err);">warning</span>
+                                <span style="font-size:13px;font-weight:700;color:var(--err);">Experimental Feature</span>
+                            </div>
+                            <p style="margin:0 0 8px;font-size:12px;color:var(--tx2);">Importing the VRCX database will only add necessary information. This feature is highly experimental and some data may be missing. Instance information works differently in VRCN, so some images or other details might not appear.</p>
+                            <p style="margin:0 0 8px;font-size:12px;color:var(--tx2);">If your VRCX database is very important to you, it is recommended to continue using VRCX, as the data will not be fully merged with the VRCN database.</p>
+                            <p style="margin:0;font-size:12px;color:var(--tx3);">Full instance data will not be available and some elements may not display correctly.</p>
+                        </div>
+                        <button class="vrcn-button" style="margin-top:12px;" id="vrcxSelectBtn" onclick="vrcxSelectFile()"><span class="msi" style="font-size:16px;">storage</span> Select VRCX Database</button>
+                        <div id="vrcxPreviewBox" style="display:none;margin-top:14px;">
+                            <div class="set-desc" style="margin-bottom:8px;opacity:.7;" id="vrcxFileName"></div>
+                            <div id="vrcxPreviewRows" style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;margin-bottom:14px;"></div>
+                            <div id="vrcxProgressWrap" style="display:none;margin-bottom:14px;">
+                                <div style="font-size:12px;color:var(--tx3);margin-bottom:6px;" id="vrcxProgressLabel">Reading database...</div>
+                                <div style="background:var(--bg-input);border-radius:6px;height:6px;overflow:hidden;">
+                                    <div id="vrcxProgressBar" style="height:100%;width:0%;background:var(--accent);border-radius:6px;transition:width .4s ease;"></div>
+                                </div>
+                            </div>
+                            <div id="vrcxSuccessCard" style="display:none;background:var(--bg-input);border-radius:10px;padding:20px 16px;margin-bottom:12px;text-align:center;">
+                                <span class="msi" style="font-size:40px;color:var(--ok);display:block;margin-bottom:10px;">check_circle</span>
+                                <div style="font-size:14px;font-weight:600;color:var(--tx0);margin-bottom:6px;">Import Complete</div>
+                                <div id="vrcxSuccessDetail" style="font-size:12px;color:var(--tx3);line-height:1.6;"></div>
+                            </div>
+                            <div id="vrcxImportError" style="display:none;margin-bottom:10px;font-size:13px;color:var(--err);"></div>
+                            <div id="vrcxActionBtns" style="display:flex;gap:8px;">
+                                <button class="vrcn-button" id="vrcxStartBtn" onclick="vrcxStartImport()"><span class="msi" style="font-size:16px;">upload</span> Start Import</button>
+                                <button class="vrcn-button" id="vrcxCancelBtn" onclick="vrcxReset()"><span class="msi" style="font-size:16px;">close</span> Cancel</button>
+                            </div>
+                            <div id="vrcxDoneBtn" style="display:none;">
+                                <button class="vrcn-button" onclick="vrcxReset()">Done</button>
+                            </div>
+                        </div>
                     </div>
 
                 </div>
@@ -504,7 +543,7 @@
                     <div class="sf-card sf-status-card">
                         <div class="sf-status-row">
                             <div class="sf-status"><span class="sf-dot offline" id="sfDot"></span><span id="sfStatusText">Not connected</span></div>
-                            <button class="btn-f" id="sfConnBtn" onclick="sfConnect()"><span class="msi" style="font-size:16px;">link</span> Connect</button>
+                            <button class="vrcn-button" id="sfConnBtn" onclick="sfConnect()"><span class="msi" style="font-size:16px;">link</span> Connect</button>
                         </div>
                     </div>
                     <div class="sf-card">
@@ -525,7 +564,7 @@
                             <div class="sf-ctrl" id="sfCtrlR"><span class="msi" style="font-size:14px;">front_hand</span> Right</div>
                         </div>
                         <div style="margin-top:10px;">
-                            <button class="btn-f" onclick="sfReset()" style="width:100%;justify-content:center;"><span class="msi" style="font-size:16px;">restart_alt</span> Reset</button>
+                            <button class="vrcn-button" onclick="sfReset()" style="width:100%;justify-content:center;"><span class="msi" style="font-size:16px;">restart_alt</span> Reset</button>
                         </div>
                     </div>
                     <div class="sf-card">
@@ -549,13 +588,13 @@
                     <div class="sf-card sf-status-card">
                         <div class="sf-status-row">
                             <div class="sf-status"><span class="sf-dot offline" id="oscDot"></span><span id="oscStatusText">Not connected</span></div>
-                            <button class="btn-f" id="oscConnBtn" onclick="oscConnect()"><span class="msi" style="font-size:16px;">link</span> Connect</button>
+                            <button class="vrcn-button" id="oscConnBtn" onclick="oscConnect()"><span class="msi" style="font-size:16px;">link</span> Connect</button>
                         </div>
                     </div>
                     <div id="oscOutputBanner" class="osc-output-banner" style="display:none;">
                         <span class="msi" style="font-size:15px;flex-shrink:0;">warning</span>
                         <span class="osc-banner-text"></span>
-                        <button class="btn-f osc-enable-btn" id="oscEnableBtn" onclick="oscEnableOutputs()"><span class="msi" style="font-size:14px;">output</span> Enable All Outputs</button>
+                        <button class="vrcn-button osc-enable-btn" id="oscEnableBtn" onclick="oscEnableOutputs()"><span class="msi" style="font-size:14px;">output</span> Enable All Outputs</button>
                     </div>
                     <div class="sf-card" style="flex:1;min-height:0;display:flex;flex-direction:column;">
                         <div class="sf-card-header" style="display:flex;align-items:center;justify-content:space-between;">
@@ -575,25 +614,25 @@
             <!-- Tab 12: Timeline -->
             <div class="tab" id="tab12">
                 <div class="tl-mode-row">
-                    <button class="btn-fav sub-tab-btn active" id="tlModePersonal" onclick="setTlMode('personal')"><span class="msi" style="font-size:14px;">person</span> Personal</button>
-                    <button class="btn-fav sub-tab-btn" id="tlModeFriends" onclick="setTlMode('friends')"><span class="msi" style="font-size:14px;">group</span> Friends</button>
+                    <button class="vrcn-button sub-tab-btn active" id="tlModePersonal" onclick="setTlMode('personal')"><span class="msi" style="font-size:14px;">person</span> Personal</button>
+                    <button class="vrcn-button sub-tab-btn" id="tlModeFriends" onclick="setTlMode('friends')"><span class="msi" style="font-size:14px;">group</span> Friends</button>
                     <div style="flex:1;"></div>
-                    <button class="btn-fav sub-tab-btn" id="tlViewTimeline" title="Timeline View" onclick="setTlViewMode('timeline')"><span class="msi" style="font-size:14px;">account_tree</span></button>
-                    <button class="btn-fav sub-tab-btn" id="tlViewList" title="List View" onclick="setTlViewMode('list')"><span class="msi" style="font-size:14px;">format_list_bulleted</span></button>
+                    <button class="vrcn-button sub-tab-btn" id="tlViewTimeline" title="Timeline View" onclick="setTlViewMode('timeline')"><span class="msi" style="font-size:14px;">account_tree</span></button>
+                    <button class="vrcn-button sub-tab-btn" id="tlViewList" title="List View" onclick="setTlViewMode('list')"><span class="msi" style="font-size:14px;">format_list_bulleted</span></button>
                 </div>
                 <div class="tl-topbar">
                     <div class="search-bar-row" style="flex:1;margin-bottom:0;">
                         <span class="msi search-ico">search</span>
-                        <input type="text" id="tlSearchInput" class="search-input" placeholder="Search timeline..." oninput="tlMode==='friends'?filterFriendTimeline():filterTimeline()">
+                        <input type="text" id="tlSearchInput" class="vrcn-input" placeholder="Search timeline..." oninput="tlMode==='friends'?filterFriendTimeline():filterTimeline()">
                     </div>
-                    <button class="btn-f tl-datebtn" id="tlDateBtn" onclick="toggleTlDatePicker()" title="Filter by date">
+                    <button class="vrcn-button tl-datebtn" id="tlDateBtn" onclick="toggleTlDatePicker()" title="Filter by date">
                         <span class="msi" style="font-size:15px;">calendar_today</span>
                         <span id="tlDateLabel" style="display:none;color:var(--accent-lt);font-size:11px;max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
                     </button>
-                    <button class="btn-f tl-datebtn" id="tlDateClear" onclick="clearTlDateFilter()" title="Clear date filter" style="display:none;">
+                    <button class="vrcn-button tl-datebtn" id="tlDateClear" onclick="clearTlDateFilter()" title="Clear date filter" style="display:none;">
                         <span class="msi" style="font-size:14px;">close</span>
                     </button>
-                    <button class="btn-f tl-datebtn" onclick="refreshTimeline()" title="Refresh">
+                    <button class="vrcn-button tl-datebtn" onclick="refreshTimeline()" title="Refresh">
                         <span class="msi" style="font-size:16px;">refresh</span>
                     </button>
                 </div>
@@ -609,46 +648,49 @@
                     </div>
                     <div id="tlDpDaysGrid" class="tl-dp-days"></div>
                     <div class="tl-dp-footer">
-                        <button class="btn-f" style="flex:1;justify-content:center;font-size:11px;" onclick="dpSelectToday()">Today</button>
-                        <button class="btn-f" style="flex:1;justify-content:center;font-size:11px;" onclick="dpClear()">Clear</button>
+                        <button class="vrcn-button" style="flex:1;justify-content:center;font-size:11px;" onclick="dpSelectToday()">Today</button>
+                        <button class="vrcn-button" style="flex:1;justify-content:center;font-size:11px;" onclick="dpClear()">Clear</button>
                     </div>
                 </div>
                 <div class="tl-filter-row" id="tlPersonalFilters">
-                    <button class="btn-fav sub-tab-btn active" id="tlFAll" onclick="setTlFilter('all')">All</button>
-                    <button class="btn-fav sub-tab-btn" id="tlFJoin" onclick="setTlFilter('instance_join')"><span class="msi" style="font-size:14px;">travel_explore</span> Instances</button>
-                    <button class="btn-fav sub-tab-btn" id="tlFPhoto" onclick="setTlFilter('photo')"><span class="msi" style="font-size:14px;">camera</span> Photos</button>
-                    <button class="btn-fav sub-tab-btn" id="tlFMeet" onclick="setTlFilter('first_meet')"><span class="msi" style="font-size:14px;">person_add</span> First Meets</button>
-                    <button class="btn-fav sub-tab-btn" id="tlFMeetAgain" onclick="setTlFilter('meet_again')"><span class="msi" style="font-size:14px;">person_check</span> Meet Again</button>
-                    <button class="btn-fav sub-tab-btn" id="tlFNotif" onclick="setTlFilter('notification')"><span class="msi" style="font-size:14px;">notifications</span> Notifications</button>
+                    <button class="vrcn-button sub-tab-btn active" id="tlFAll" onclick="setTlFilter('all')">All</button>
+                    <button class="vrcn-button sub-tab-btn" id="tlFJoin" onclick="setTlFilter('instance_join')"><span class="msi" style="font-size:14px;">travel_explore</span> Instances</button>
+                    <button class="vrcn-button sub-tab-btn" id="tlFPhoto" onclick="setTlFilter('photo')"><span class="msi" style="font-size:14px;">camera</span> Photos</button>
+                    <button class="vrcn-button sub-tab-btn" id="tlFMeet" onclick="setTlFilter('first_meet')"><span class="msi" style="font-size:14px;">person_add</span> First Meets</button>
+                    <button class="vrcn-button sub-tab-btn" id="tlFMeetAgain" onclick="setTlFilter('meet_again')"><span class="msi" style="font-size:14px;">person_check</span> Meet Again</button>
+                    <button class="vrcn-button sub-tab-btn" id="tlFNotif" onclick="setTlFilter('notification')"><span class="msi" style="font-size:14px;">notifications</span> Notifications</button>
+                    <button class="vrcn-button sub-tab-btn" id="tlFAvatar" onclick="setTlFilter('avatar_switch')"><span class="msi" style="font-size:14px;">checkroom</span> Avatars</button>
+                    <button class="vrcn-button sub-tab-btn" id="tlFUrl" onclick="setTlFilter('video_url')"><span class="msi" style="font-size:14px;">link</span> URLs</button>
                 </div>
                 <div class="tl-filter-row" id="tlFriendsFilters" style="display:none;">
-                    <button class="btn-fav sub-tab-btn active" id="ftFAll"        onclick="setFtFilter('all')">All</button>
-                    <button class="btn-fav sub-tab-btn" id="ftFGps"        onclick="setFtFilter('friend_gps')"><span class="msi" style="font-size:14px;">location_on</span> Location</button>
-                    <button class="btn-fav sub-tab-btn" id="ftFStatus"     onclick="setFtFilter('friend_status')"><span class="msi" style="font-size:14px;">circle</span> Status</button>
-                    <button class="btn-fav sub-tab-btn" id="ftFStatusDesc" onclick="setFtFilter('friend_statusdesc')"><span class="msi" style="font-size:14px;">chat_bubble_outline</span> Status Text</button>
-                    <button class="btn-fav sub-tab-btn" id="ftFOnline"     onclick="setFtFilter('friend_online')"><span class="msi" style="font-size:14px;">login</span> Online</button>
-                    <button class="btn-fav sub-tab-btn" id="ftFOffline"    onclick="setFtFilter('friend_offline')"><span class="msi" style="font-size:14px;">power_settings_new</span> Offline</button>
-                    <button class="btn-fav sub-tab-btn" id="ftFBio"        onclick="setFtFilter('friend_bio')"><span class="msi" style="font-size:14px;">edit_note</span> Bio</button>
+                    <button class="vrcn-button sub-tab-btn active" id="ftFAll"        onclick="setFtFilter('all')">All</button>
+                    <button class="vrcn-button sub-tab-btn" id="ftFGps"        onclick="setFtFilter('friend_gps')"><span class="msi" style="font-size:14px;">location_on</span> Location</button>
+                    <button class="vrcn-button sub-tab-btn" id="ftFStatus"     onclick="setFtFilter('friend_status')"><span class="msi" style="font-size:14px;">circle</span> Status</button>
+                    <button class="vrcn-button sub-tab-btn" id="ftFStatusDesc" onclick="setFtFilter('friend_statusdesc')"><span class="msi" style="font-size:14px;">chat_bubble_outline</span> Status Text</button>
+                    <button class="vrcn-button sub-tab-btn" id="ftFOnline"     onclick="setFtFilter('friend_online')"><span class="msi" style="font-size:14px;">login</span> Online</button>
+                    <button class="vrcn-button sub-tab-btn" id="ftFOffline"    onclick="setFtFilter('friend_offline')"><span class="msi" style="font-size:14px;">power_settings_new</span> Offline</button>
+                    <button class="vrcn-button sub-tab-btn" id="ftFBio"        onclick="setFtFilter('friend_bio')"><span class="msi" style="font-size:14px;">edit_note</span> Bio</button>
                 </div>
                 <div class="tl-container" id="tlContainer">
                     <div class="empty-msg">No timeline events yet. VRChat activity will appear here.</div>
                 </div>
+                <div id="tlPaginatorBar" class="tl-paginator-bar"></div>
             </div>
             <!-- Tab 13: Inventory -->
             <div class="tab" id="tab13">
                 <div class="inv-topbar">
                     <div class="inv-filter-row">
-                        <button class="btn-fav sub-tab-btn active" id="invFPhotos" onclick="switchInvTab('photos')"><span class="msi" style="font-size:14px;">photo_library</span> Photos</button>
-                        <button class="btn-fav sub-tab-btn" id="invFIcons" onclick="switchInvTab('icons')"><span class="msi" style="font-size:14px;">account_circle</span> Icons</button>
-                        <button class="btn-fav sub-tab-btn" id="invFEmojis" onclick="switchInvTab('emojis')"><span class="msi" style="font-size:14px;">emoji_emotions</span> Emojis</button>
-                        <button class="btn-fav sub-tab-btn" id="invFStickers" onclick="switchInvTab('stickers')"><span class="msi" style="font-size:14px;">sticky_note_2</span> Stickers</button>
-                        <button class="btn-fav sub-tab-btn" id="invFPrints" onclick="switchInvTab('prints')"><span class="msi" style="font-size:14px;">print</span> Prints</button>
-                        <button class="btn-fav sub-tab-btn" id="invFInventory" onclick="switchInvTab('inventory')"><span class="msi" style="font-size:14px;">inventory_2</span> Inventory</button>
+                        <button class="vrcn-button sub-tab-btn active" id="invFPhotos" onclick="switchInvTab('photos')"><span class="msi" style="font-size:14px;">photo_library</span> Photos</button>
+                        <button class="vrcn-button sub-tab-btn" id="invFIcons" onclick="switchInvTab('icons')"><span class="msi" style="font-size:14px;">account_circle</span> Icons</button>
+                        <button class="vrcn-button sub-tab-btn" id="invFEmojis" onclick="switchInvTab('emojis')"><span class="msi" style="font-size:14px;">emoji_emotions</span> Emojis</button>
+                        <button class="vrcn-button sub-tab-btn" id="invFStickers" onclick="switchInvTab('stickers')"><span class="msi" style="font-size:14px;">sticky_note_2</span> Stickers</button>
+                        <button class="vrcn-button sub-tab-btn" id="invFPrints" onclick="switchInvTab('prints')"><span class="msi" style="font-size:14px;">print</span> Prints</button>
+                        <button class="vrcn-button sub-tab-btn" id="invFInventory" onclick="switchInvTab('inventory')"><span class="msi" style="font-size:14px;">inventory_2</span> Inventory</button>
                     </div>
                     <div style="display:flex;gap:8px;align-items:center;">
                         <span id="invCount" style="font-size:12px;color:var(--tx3);"></span>
-                        <button class="btn-f" id="invUploadBtn" onclick="openInvUploadModal()" style="display:none;"><span class="msi" style="font-size:16px;">upload</span> Upload</button>
-                        <button class="btn-f" onclick="refreshInventory()"><span class="msi" style="font-size:16px;">refresh</span> Refresh</button>
+                        <button class="vrcn-button" id="invUploadBtn" onclick="openInvUploadModal()" style="display:none;"><span class="msi" style="font-size:16px;">upload</span> Upload</button>
+                        <button class="vrcn-button" onclick="refreshInventory()"><span class="msi" style="font-size:16px;">refresh</span> Refresh</button>
                     </div>
                 </div>
                 <div id="invGrid" class="inv-grid"><div class="empty-msg">Select a category above</div></div>
@@ -658,7 +700,7 @@
                 <div class="sf-card sf-status-card" style="margin-bottom:16px;">
                     <div class="sf-status-row">
                         <div class="sf-status"><span class="sf-dot offline" id="vcDot"></span><span id="vcStatusText">Not running</span></div>
-                        <button class="btn-f" id="btnVc" onclick="toggleVc()" disabled><span class="msi" style="font-size:16px;">play_arrow</span> Start</button>
+                        <button class="vrcn-button" id="btnVc" onclick="toggleVc()" disabled><span class="msi" style="font-size:16px;">play_arrow</span> Start</button>
                     </div>
                 </div>
                 <div class="cb-card" id="vcInstallCard">
@@ -673,7 +715,7 @@
                         </div>
                     </div>
                     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                        <button class="btn-f" id="btnVcInstall" onclick="vcInstall()"><span class="msi" style="font-size:16px;">download</span> Install / Update</button>
+                        <button class="vrcn-button" id="btnVcInstall" onclick="vcInstall()"><span class="msi" style="font-size:16px;">download</span> Install / Update</button>
                         <span id="vcVersionLabel" style="font-size:12px;color:var(--tx3);"></span>
                     </div>
                 </div>
@@ -700,10 +742,10 @@
                 <div class="ts-root">
                     <div class="ts-header">
                         <div class="ts-tab-btns">
-                            <button class="btn-fav sub-tab-btn active" id="tsBtnWorlds" onclick="tsSetView('worlds')">
+                            <button class="vrcn-button sub-tab-btn active" id="tsBtnWorlds" onclick="tsSetView('worlds')">
                                 <span class="msi" style="font-size:15px;">travel_explore</span> Worlds
                             </button>
-                            <button class="btn-fav sub-tab-btn" id="tsBtnPersons" onclick="tsSetView('persons')">
+                            <button class="vrcn-button sub-tab-btn" id="tsBtnPersons" onclick="tsSetView('persons')">
                                 <span class="msi" style="font-size:15px;">group</span> Persons
                             </button>
                         </div>
@@ -728,8 +770,8 @@
                         <div class="sf-status-row">
                             <div class="sf-status"><span class="sf-dot offline" id="vfDot"></span><span id="vfStatusText">Not running</span></div>
                             <div style="display:flex;gap:8px;">
-                                <button class="btn-f" onclick="openVfBlockModal()"><span class="msi" style="font-size:16px;">block</span> Block Words</button>
-                                <button class="btn-f" id="vfConnBtn" onclick="vfConnect()"><span class="msi" style="font-size:16px;">play_arrow</span> Start</button>
+                                <button class="vrcn-button" onclick="openVfBlockModal()"><span class="msi" style="font-size:16px;">block</span> Block Words</button>
+                                <button class="vrcn-button" id="vfConnBtn" onclick="vfConnect()"><span class="msi" style="font-size:16px;">play_arrow</span> Start</button>
                             </div>
                         </div>
                     </div>
@@ -756,7 +798,7 @@
                         <div class="sf-card" style="flex:1;margin-bottom:0;">
                             <div class="sf-card-header"><span class="msi">stop_circle</span> Stop Command</div>
                             <div style="display:flex;align-items:center;gap:8px;">
-                                <input id="vfStopWordInput" class="vf-word-input" placeholder="Stop word…"
+                                <input id="vfStopWordInput" class="vrcn-edit-field" style="flex:1;" placeholder="Stop word…"
                                     oninput="vfStopWordChanged(this.value)"
                                     onblur="vfSetStopWord(this.value)">
                                 <button class="vf-btn-icon" onclick="vfStopSound()" title="Stop playback now"><span class="msi">stop</span></button>
@@ -775,7 +817,7 @@
                     <div class="sf-card">
                         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
                             <div class="sf-card-header" style="margin-bottom:0;"><span class="msi">library_music</span> Sounds</div>
-                            <button class="btn-f" onclick="vfAddSound()"><span class="msi" style="font-size:16px;">add</span> Add Sound</button>
+                            <button class="vrcn-button" onclick="vfAddSound()"><span class="msi" style="font-size:16px;">add</span> Add Sound</button>
                         </div>
                         <div id="vfItems"><div class="empty-msg">No sounds added yet.</div></div>
                     </div>
@@ -785,7 +827,7 @@
     </div>
 
     <div class="rsidebar" id="rsidebar">
-        <div class="rsidebar-header"><span class="rsidebar-title">FRIENDS</span><button class="btn-f" onclick="vrcRefresh()" title="Refresh" style="padding:3px 5px;"><span class="msi" style="font-size:14px;">refresh</span></button><div class="win-dots"><button class="win-dot win-dot-min" onclick="sendToCS({action:'windowMinimize'})" title="Minimize"></button><button class="win-dot win-dot-max" onclick="sendToCS({action:'windowMaximize'})" title="Maximize"></button><button class="win-dot win-dot-close" onclick="sendToCS({action:'windowClose'})" title="Close"></button></div></div>
+        <div class="rsidebar-header"><span class="rsidebar-title">FRIENDS</span><button class="mi-refresh-btn" onclick="vrcRefresh()" title="Refresh">&#8635;</button><div class="win-dots" data-windows-only><button class="win-dot win-dot-min" onclick="sendToCS({action:'windowMinimize'})" title="Minimize"></button><button class="win-dot win-dot-max" onclick="sendToCS({action:'windowMaximize'})" title="Maximize"></button><button class="win-dot win-dot-close" onclick="sendToCS({action:'windowClose'})" title="Close"></button></div></div>
         <div class="rsidebar-content" id="vrcPanel">
             <div id="vrcProfileArea"></div>
             <div id="vrcInstanceArea"></div>
@@ -799,7 +841,7 @@
                     <div style="font-size:12px;color:var(--tx2);margin-bottom:12px;">Login to VRChat to see friends online</div>
                     <input type="text" id="vrcQuickUser" placeholder="Username" onkeydown="if(event.key==='Enter')document.getElementById('vrcQuickPass').focus()">
                     <input type="password" id="vrcQuickPass" placeholder="Password" onkeydown="if(event.key==='Enter')vrcQuickLogin()">
-                    <button class="btn-f" onclick="vrcQuickLogin()" style="width:100%;justify-content:center;"><span class="msi" style="font-size:16px;">login</span> Connect</button>
+                    <button class="vrcn-button" onclick="vrcQuickLogin()" style="width:100%;justify-content:center;"><span class="msi" style="font-size:16px;">login</span> Connect</button>
                     <div id="vrcQuickError" style="font-size:11px;color:var(--tx2);margin-top:6px;min-height:16px;"></div>
                 </div>
             </div>
@@ -814,7 +856,7 @@
             <div class="modal-msg" id="modal2FAMsg">Enter the 6-digit code from your email or authenticator app.</div>
             <div style="margin:16px 0;"><input type="text" id="modal2FACode" maxlength="6" placeholder="000000" autocomplete="one-time-code" style="width:100%;text-align:center;font-size:24px;letter-spacing:8px;font-weight:700;padding:12px;background:var(--bg-input);border:none;border-radius:8px;color:var(--tx0);outline:none;font-family:inherit;" onkeydown="if(event.key==='Enter')modal2FASubmit()"></div>
             <div id="modal2FAError" style="font-size:11px;color:var(--err);margin-bottom:8px;min-height:16px;"></div>
-            <div class="modal-btns"><button class="fd-btn" onclick="document.getElementById('modal2FA').style.display='none'">Cancel</button><button class="fd-btn fd-btn-join" onclick="modal2FASubmit()">Verify</button></div>
+            <div class="modal-btns"><button class="vrcn-button-round" onclick="document.getElementById('modal2FA').style.display='none'">Cancel</button><button class="vrcn-button-round vrcn-btn-join" onclick="modal2FASubmit()">Verify</button></div>
         </div>
     </div>
 
@@ -825,7 +867,7 @@
             <div id="statusOptions"></div>
             <textarea class="status-desc-input" id="statusDescInput" rows="2" maxlength="64" placeholder="Status message..."></textarea>
             <div style="font-size:10px;color:var(--tx3);margin-top:4px;margin-bottom:14px;text-align:right;" id="statusDescCount">0/64</div>
-            <div class="modal-btns"><button class="fd-btn" onclick="document.getElementById('modalStatus').style.display='none'">Cancel</button><button class="fd-btn fd-btn-join" onclick="submitStatusChange()">Update</button></div>
+            <div class="modal-btns"><button class="vrcn-button-round" onclick="document.getElementById('modalStatus').style.display='none'">Cancel</button><button class="vrcn-button-round vrcn-btn-join" onclick="submitStatusChange()">Update</button></div>
         </div>
     </div>
 
@@ -837,6 +879,11 @@
     <!-- World Detail Modal -->
     <div class="modal-overlay" id="modalWorldDetail" style="display:none;" onclick="if(event.target===this)closeWorldDetail()">
         <div class="modal-box wide" id="worldDetailContent" style="position:relative;"></div>
+    </div>
+
+    <!-- My Instance Detail Modal -->
+    <div class="modal-overlay" id="modalMyInstance" style="display:none;" onclick="if(event.target===this)closeMyInstanceDetail()">
+        <div class="modal-box wide" id="myInstanceContent" style="position:relative;"></div>
     </div>
 
     <!-- Friend GPS Instance Log Modal -->
@@ -866,7 +913,7 @@
             <div style="font-size:12px;color:var(--tx3);margin-bottom:14px;">Stripped from recognition. Type a word and press Enter.</div>
             <div class="vf-block-chips" id="vfBlockChips" onclick="document.getElementById('vfBlockInlineInput')?.focus()"></div>
             <div class="modal-btns" style="margin-top:14px;">
-                <button class="fd-btn" onclick="document.getElementById('modalVfBlock').style.display='none'">Close</button>
+                <button class="vrcn-button-round" onclick="document.getElementById('modalVfBlock').style.display='none'">Close</button>
             </div>
         </div>
     </div>

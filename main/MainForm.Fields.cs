@@ -1,4 +1,4 @@
-using Microsoft.Web.WebView2.WinForms;
+using Photino.NET;
 using Newtonsoft.Json.Linq;
 using VRCNext.Services;
 using System.Diagnostics;
@@ -7,7 +7,18 @@ namespace VRCNext;
 
 public partial class MainForm
 {
-    private WebView2 _webView = null!;
+    private PhotinoWindow _window = null!;
+    private string _imgCacheDir = "";
+    private string _vrcPhotoDir = "";
+    private int _httpPort;
+    private System.Net.HttpListener? _httpListener;
+    private System.Threading.Timer? _uptimeTimer2;
+    private bool _minimized;
+    private readonly HashSet<string> _recentlyClosedLocs = new();
+    private string _lastVideoUrl = "";
+    private DateTime _lastVideoUrlTime = DateTime.MinValue;
+    private string _lastAvatarName = "";
+
     private readonly AppSettings _settings;
     private readonly WebhookService _webhook = new();
     private readonly FileWatcherService _fileWatcher = new();
@@ -30,7 +41,6 @@ public partial class MainForm
     private DateTime _relayStart;
     private double _totalSizeMB;
     private int _fileCount;
-    private System.Windows.Forms.Timer _uptimeTimer = null!;
     private VRChatWebSocketService? _wsService;
     private Process? _vcProcess;
     private readonly UserTimeTracker _timeTracker;
@@ -78,4 +88,14 @@ public partial class MainForm
     private readonly Dictionary<string, string>              _friendLastBio        = new(); // userId -> bio
     private readonly Dictionary<string, (string name, string image)> _friendNameImg = new(); // userId -> name+image
     private bool                                             _friendStateSeeded = false;
+
+    // VRCX import — path retained between preview and start
+    private string _vrcxImportPath = "";
+
+    // Timeline image/world resolution session caches — prevents repeated API calls for already-resolved data
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _tlPlayerImageCache = new();
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _tlWorldThumbCache  = new(); // "" = tried but 404
+
+    private System.Threading.CancellationTokenSource _tlFetchCts  = new();
+    private System.Threading.CancellationTokenSource _ftlFetchCts = new();
 }
