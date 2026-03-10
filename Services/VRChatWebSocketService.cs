@@ -45,6 +45,9 @@ internal sealed class VRChatWebSocketService : IDisposable
     /// <summary>Own location changed (contains the new instance location string).</summary>
     public event EventHandler<string>? OwnLocationChanged;
 
+    /// <summary>Own profile updated via user-update event (status, bio, statusDescription, etc.).</summary>
+    public event EventHandler<JObject>? OwnUserUpdated;
+
     /// <summary>WebSocket connected successfully.</summary>
     public event EventHandler? Connected;
 
@@ -348,6 +351,17 @@ internal sealed class VRChatWebSocketService : IDisposable
                         var location = content["location"]?.Value<string>() ?? "";
                         if (!string.IsNullOrEmpty(location))
                             OwnLocationChanged?.Invoke(this, location);
+                    }
+                    catch { }
+                    break;
+
+                case "user-update":
+                    try
+                    {
+                        var content = JObject.Parse(contentStr);
+                        var userObj = content["user"] as JObject;
+                        if (userObj != null)
+                            OwnUserUpdated?.Invoke(this, userObj);
                     }
                     catch { }
                     break;

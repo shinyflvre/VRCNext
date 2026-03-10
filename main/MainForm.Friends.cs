@@ -90,6 +90,11 @@ public partial class MainForm
             }
         }
 
+        // Keep own status in sync for Discord Presence
+        var rawStatus = user["status"]?.ToString() ?? "";
+        if (!string.IsNullOrEmpty(rawStatus)) _myVrcStatus = rawStatus;
+        PushDiscordPresence();
+
         SendToJS("vrcUser", new
         {
             id = user["id"]?.ToString() ?? "",

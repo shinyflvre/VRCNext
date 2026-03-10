@@ -122,6 +122,23 @@ function saveSettings() {
             sfUseGrip: document.getElementById('sfUseGrip').checked,
             chatboxAutoStart: document.getElementById('setCbAutoStart').checked,
             sfAutoStart: document.getElementById('setSfAutoStart').checked,
+            discordPresenceAutoStart: document.getElementById('setDpAutoStart')?.checked ?? false,
+            dpHideJoinBtnJoinMe: document.getElementById('dpHideJoinBtn_joinme')?.checked ?? false,
+            dpHideJoinBtnOnline: document.getElementById('dpHideJoinBtn_online')?.checked ?? false,
+            dpHideJoinBtnAskMe:  document.getElementById('dpHideJoinBtn_askme')?.checked  ?? false,
+            dpHideJoinBtnBusy:   document.getElementById('dpHideJoinBtn_busy')?.checked   ?? false,
+            dpHideInstIdJoinMe:  document.getElementById('dpHideInstId_joinme')?.checked ?? false,
+            dpHideInstIdOnline:  document.getElementById('dpHideInstId_online')?.checked ?? false,
+            dpHideInstIdAskMe:   document.getElementById('dpHideInstId_askme')?.checked  ?? false,
+            dpHideInstIdBusy:    document.getElementById('dpHideInstId_busy')?.checked   ?? false,
+            dpHideLocJoinMe:     document.getElementById('dpHideLoc_joinme')?.checked    ?? false,
+            dpHideLocOnline:     document.getElementById('dpHideLoc_online')?.checked    ?? false,
+            dpHideLocAskMe:      document.getElementById('dpHideLoc_askme')?.checked     ?? false,
+            dpHideLocBusy:       document.getElementById('dpHideLoc_busy')?.checked      ?? false,
+            dpHidePlayersJoinMe: document.getElementById('dpHidePlayers_joinme')?.checked ?? false,
+            dpHidePlayersOnline: document.getElementById('dpHidePlayers_online')?.checked ?? false,
+            dpHidePlayersAskMe:  document.getElementById('dpHidePlayers_askme')?.checked  ?? false,
+            dpHidePlayersBusy:   document.getElementById('dpHidePlayers_busy')?.checked   ?? false,
             imgCacheEnabled: document.getElementById('setImgCacheEnabled').checked,
             imgCacheLimitGb: parseInt(document.getElementById('setImgCacheLimit').value) || 5,
             ffcEnabled: document.getElementById('setFfcEnabled').checked,
@@ -235,12 +252,31 @@ function loadSettingsToUI(s) {
     // Restore auto-start flags
     const _cbAutoStart = s.ChatboxAutoStart ?? s.chatboxAutoStart ?? false;
     const _sfAutoStart = s.SfAutoStart ?? s.sfAutoStart ?? false;
+    const _dpAutoStart = s.DiscordPresenceAutoStart ?? s.discordPresenceAutoStart ?? false;
     document.getElementById('setCbAutoStart').checked = _cbAutoStart;
     document.getElementById('setSfAutoStart').checked = _sfAutoStart;
+    const dpAutoEl = document.getElementById('setDpAutoStart');
+    if (dpAutoEl) dpAutoEl.checked = _dpAutoStart;
+    // Restore Discord privacy + join button toggles
+    const _dpPv = [
+        ['dpHideInstId_joinme', 'DpHideInstIdJoinMe'],  ['dpHideInstId_online', 'DpHideInstIdOnline'],
+        ['dpHideInstId_askme',  'DpHideInstIdAskMe'],   ['dpHideInstId_busy',   'DpHideInstIdBusy'],
+        ['dpHideLoc_joinme',    'DpHideLocJoinMe'],     ['dpHideLoc_online',    'DpHideLocOnline'],
+        ['dpHideLoc_askme',     'DpHideLocAskMe'],      ['dpHideLoc_busy',      'DpHideLocBusy'],
+        ['dpHidePlayers_joinme','DpHidePlayersJoinMe'], ['dpHidePlayers_online','DpHidePlayersOnline'],
+        ['dpHidePlayers_askme', 'DpHidePlayersAskMe'],  ['dpHidePlayers_busy',  'DpHidePlayersBusy'],
+        ['dpHideJoinBtn_joinme','DpHideJoinBtnJoinMe'], ['dpHideJoinBtn_online','DpHideJoinBtnOnline'],
+        ['dpHideJoinBtn_askme', 'DpHideJoinBtnAskMe'],  ['dpHideJoinBtn_busy',  'DpHideJoinBtnBusy'],
+    ];
+    for (const [id, key] of _dpPv) {
+        const el = document.getElementById(id);
+        if (el) el.checked = s[key] ?? s[key.charAt(0).toLowerCase() + key.slice(1)] ?? false;
+    }
 
     // Trigger auto-starts if enabled
     if (_cbAutoStart && !chatboxEnabled) setTimeout(() => toggleChatbox(), 300);
     if (_sfAutoStart) setTimeout(() => sfConnect(), 400);
+    if (_dpAutoStart && !_dpRunning) setTimeout(() => sendToCS({ action: 'dpStart' }), 500);
 
     // Image cache settings
     const imgCacheEnabled = s.ImgCacheEnabled ?? s.imgCacheEnabled ?? true;

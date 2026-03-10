@@ -9,7 +9,7 @@
 </head>
 <body>
     <div class="sidebar" id="sidebarEl">
-        <div class="logo"><div class="logo-icon" id="logoIcon">V</div><div class="logo-txt"><div class="logo-text-row"><div class="logo-text">VRCNext</div><span class="logo-beta-badge">BETA</span></div><div class="logo-sub">v2026.10.1</div></div><button class="sb-toggle" onclick="toggleSidebar()" title="Toggle sidebar"><span class="msi" id="sbIcon">menu_open</span></button></div>
+        <div class="logo"><div class="logo-icon" id="logoIcon">V</div><div class="logo-txt"><div class="logo-text-row"><div class="logo-text">VRCNext</div><span class="logo-beta-badge">BETA</span></div><div class="logo-sub">v2026.10.2</div></div><button class="sb-toggle" onclick="toggleSidebar()" title="Toggle sidebar"><span class="msi" id="sbIcon">menu_open</span></button></div>
         <div class="nav">
             <button class="nav-btn active" onclick="showTab(0)"><span class="ni msi">dashboard</span><span class="nl">Dashboard</span></button>
             <button class="nav-btn" onclick="showTab(1)"><span class="ni msi">travel_explore</span><span class="nl">Worlds</span></button>
@@ -32,6 +32,7 @@
                     <button class="nav-btn nav-sub" onclick="showTab(15)"><span class="ni msi">hub</span><span class="nl">Mutual Network</span></button>
                     <button class="nav-btn nav-sub" onclick="showTab(16)"><span class="ni msi">schedule</span><span class="nl">Time Spent</span></button>
                     <button class="nav-btn nav-sub" data-windows-only onclick="showTab(18)"><span class="ni msi">mic</span><span class="nl">Voice Fight</span></button>
+                    <button class="nav-btn nav-sub" onclick="showTab(19)"><span class="ni msi">sensors</span><span class="nl">Discord Presence</span></button>
                 </div>
             </div>
             <button class="nav-btn" onclick="showTab(9)"><span class="ni msi">settings</span><span class="nl">Settings</span></button>
@@ -824,6 +825,98 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Tab 19: Discord Presence -->
+            <div class="tab" id="tab19">
+                <div class="sf-layout">
+                    <!-- Status card -->
+                    <div class="sf-card sf-status-card">
+                        <div class="sf-status-row">
+                            <div class="sf-status">
+                                <span class="sf-dot offline" id="dpDot"></span>
+                                <span id="dpStatusText">Not connected</span>
+                            </div>
+                            <button class="vrcn-button" id="dpConnBtn" onclick="dpToggle()">
+                                <span class="msi" style="font-size:16px;">play_arrow</span> Start
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Live preview card -->
+                    <div class="sf-card" id="dpPreviewCard" style="display:none;">
+                        <div class="sf-card-header"><span class="msi">visibility</span> Live Preview</div>
+                        <div class="dp-preview">
+                            <div class="dp-img-wrap">
+                                <img id="dpPreviewImg" src="" alt="" class="dp-world-img">
+                                <div id="dpPreviewStatusDot" class="dp-status-dot online"></div>
+                            </div>
+                            <div class="dp-preview-text">
+                                <div class="dp-preview-title" id="dpPreviewTitle">—</div>
+                                <div class="dp-preview-state" id="dpPreviewState">—</div>
+                                <div class="dp-preview-time" id="dpPreviewTime">0:00 elapsed</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Launch card -->
+                    <div class="sf-card">
+                        <div class="sf-card-header"><span class="msi">power_settings_new</span> Launch</div>
+                        <div class="sf-toggle-row"><span>Start when launching VRCNext</span><label class="toggle"><input type="checkbox" id="setDpAutoStart" onchange="dpAutoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                    </div>
+
+                    <!-- Privacy settings card -->
+                    <div class="sf-card">
+                        <div class="sf-card-header"><span class="msi">shield</span> Privacy</div>
+                        <div class="dp-pg">
+                            <div class="dp-pg-row dp-pg-header">
+                                <div class="dp-pg-lbl"></div>
+                                <div class="dp-pg-col"><span class="dp-pg-dot join_me" title="Join Me"></span></div>
+                                <div class="dp-pg-col"><span class="dp-pg-dot online"  title="Online"></span></div>
+                                <div class="dp-pg-col"><span class="dp-pg-dot ask_me"  title="Ask Me"></span></div>
+                                <div class="dp-pg-col"><span class="dp-pg-dot busy"    title="Busy"></span></div>
+                            </div>
+                            <div class="dp-pg-row">
+                                <div class="dp-pg-lbl">Hide Instance ID</div>
+                                <div class="dp-pg-col"><label class="toggle"><input type="checkbox" id="dpHideInstId_joinme" onchange="dpAutoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                                <div class="dp-pg-col"><label class="toggle"><input type="checkbox" id="dpHideInstId_online" onchange="dpAutoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                                <div class="dp-pg-col"><label class="toggle"><input type="checkbox" id="dpHideInstId_askme"  onchange="dpAutoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                                <div class="dp-pg-col"><label class="toggle"><input type="checkbox" id="dpHideInstId_busy"   onchange="dpAutoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                            </div>
+                            <div class="dp-pg-row">
+                                <div class="dp-pg-lbl">Hide Location</div>
+                                <div class="dp-pg-col"><label class="toggle"><input type="checkbox" id="dpHideLoc_joinme" onchange="dpAutoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                                <div class="dp-pg-col"><label class="toggle"><input type="checkbox" id="dpHideLoc_online" onchange="dpAutoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                                <div class="dp-pg-col"><label class="toggle"><input type="checkbox" id="dpHideLoc_askme"  onchange="dpAutoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                                <div class="dp-pg-col"><label class="toggle"><input type="checkbox" id="dpHideLoc_busy"   onchange="dpAutoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                            </div>
+                            <div class="dp-pg-row">
+                                <div class="dp-pg-lbl">Hide Player Count</div>
+                                <div class="dp-pg-col"><label class="toggle"><input type="checkbox" id="dpHidePlayers_joinme" onchange="dpAutoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                                <div class="dp-pg-col"><label class="toggle"><input type="checkbox" id="dpHidePlayers_online" onchange="dpAutoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                                <div class="dp-pg-col"><label class="toggle"><input type="checkbox" id="dpHidePlayers_askme"  onchange="dpAutoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                                <div class="dp-pg-col"><label class="toggle"><input type="checkbox" id="dpHidePlayers_busy"   onchange="dpAutoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                            </div>
+                            <div class="dp-pg-row">
+                                <div class="dp-pg-lbl">Hide Join button</div>
+                                <div class="dp-pg-col"><label class="toggle"><input type="checkbox" id="dpHideJoinBtn_joinme" onchange="dpAutoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                                <div class="dp-pg-col"><label class="toggle"><input type="checkbox" id="dpHideJoinBtn_online" onchange="dpAutoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                                <div class="dp-pg-col"><label class="toggle"><input type="checkbox" id="dpHideJoinBtn_askme"  onchange="dpAutoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                                <div class="dp-pg-col"><label class="toggle"><input type="checkbox" id="dpHideJoinBtn_busy"   onchange="dpAutoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Info card -->
+                    <div class="sf-card">
+                        <div class="sf-card-header"><span class="msi">info</span> How it works</div>
+                        <div style="font-size:12px;color:var(--tx2);line-height:1.7;">
+                            Shows your current VRChat world on your Discord profile.<br>
+                            Updates automatically when you join a new world or change status.<br><br>
+                            <strong style="color:var(--tx1);">Discord must be running</strong> for Rich Presence to appear.
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -960,6 +1053,7 @@
     <script src="JavaScript/Event_Item.js"></script>
     <script src="JavaScript/calendar.js"></script>
     <script src="JavaScript/voicefight.js"></script>
+    <script src="JavaScript/discord.js"></script>
     <script src="JavaScript/init.js"></script>
 </body>
 </html>

@@ -57,6 +57,11 @@ public partial class MainForm
     private VoiceFightService? _voiceFight;
     private VoiceFightSettings _vfSettings = VoiceFightSettings.Load();
 
+    // Discord Rich Presence
+    private DiscordPresenceService? _discordPresence;
+    private DateTime _discordJoinedAt = DateTime.MinValue;
+    private string   _myVrcStatus     = "active"; // updated on login + status change
+
     // Tracks which userIds currently have a background profile refresh in-flight (deduplication)
     private readonly HashSet<string> _profileRefreshInFlight = new();
 

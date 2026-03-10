@@ -304,6 +304,23 @@ public partial class MainForm
             _settings.SfUseGrip = data["sfUseGrip"]?.Value<bool>() ?? true;
             _settings.ChatboxAutoStart = data["chatboxAutoStart"]?.Value<bool>() ?? false;
             _settings.SfAutoStart = data["sfAutoStart"]?.Value<bool>() ?? false;
+            _settings.DiscordPresenceAutoStart = data["discordPresenceAutoStart"]?.Value<bool>() ?? false;
+            _settings.DpHideInstIdJoinMe  = data["dpHideInstIdJoinMe"]?.Value<bool>()  ?? false;
+            _settings.DpHideInstIdOnline  = data["dpHideInstIdOnline"]?.Value<bool>()  ?? false;
+            _settings.DpHideInstIdAskMe   = data["dpHideInstIdAskMe"]?.Value<bool>()   ?? true;
+            _settings.DpHideInstIdBusy    = data["dpHideInstIdBusy"]?.Value<bool>()    ?? true;
+            _settings.DpHideLocJoinMe     = data["dpHideLocJoinMe"]?.Value<bool>()     ?? false;
+            _settings.DpHideLocOnline     = data["dpHideLocOnline"]?.Value<bool>()     ?? false;
+            _settings.DpHideLocAskMe      = data["dpHideLocAskMe"]?.Value<bool>()      ?? true;
+            _settings.DpHideLocBusy       = data["dpHideLocBusy"]?.Value<bool>()       ?? true;
+            _settings.DpHidePlayersJoinMe = data["dpHidePlayersJoinMe"]?.Value<bool>() ?? false;
+            _settings.DpHidePlayersOnline = data["dpHidePlayersOnline"]?.Value<bool>() ?? false;
+            _settings.DpHidePlayersAskMe  = data["dpHidePlayersAskMe"]?.Value<bool>()  ?? true;
+            _settings.DpHidePlayersBusy   = data["dpHidePlayersBusy"]?.Value<bool>()   ?? true;
+            _settings.DpHideJoinBtnJoinMe = data["dpHideJoinBtnJoinMe"]?.Value<bool>() ?? false;
+            _settings.DpHideJoinBtnOnline = data["dpHideJoinBtnOnline"]?.Value<bool>() ?? false;
+            _settings.DpHideJoinBtnAskMe  = data["dpHideJoinBtnAskMe"]?.Value<bool>()  ?? true;
+            _settings.DpHideJoinBtnBusy   = data["dpHideJoinBtnBusy"]?.Value<bool>()   ?? true;
 
             // Image cache settings
             _settings.ImgCacheEnabled  = data["imgCacheEnabled"]?.Value<bool>() ?? true;

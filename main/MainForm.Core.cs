@@ -150,6 +150,7 @@ public partial class MainForm
         _uptimeTimer2?.Dispose();
         _steamVR?.Dispose();
         _voiceFight?.Dispose();
+        _discordPresence?.Dispose();
         _osc?.Dispose();
         _timeline.Dispose();
         _photoPlayersStore.Dispose();

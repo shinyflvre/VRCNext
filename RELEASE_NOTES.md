@@ -1,27 +1,21 @@
-# VRCNext 2026.10.2
+# VRCNext 2026.10.3
 
-This release focuses on memory management improvements and quality-of-life fixes for the Media Library,
-along with paginator improvements across Timeline and Media Library.
+## Live Own Profile Updates (WebSocket)
 
----
-
-## Memory Fixes
-
-- The Media Library now uses **pagination** and never renders more than 50 items at a time, preventing unbounded memory growth
-- All 50 preview images now load as **thumbnails** instead of full-resolution files, significantly reducing memory pressure
-- Memory usage in the WebView2 worker process should now stay within approximately **500 MB** during normal Media Library usage
+- Your **status** (Online / Join Me / Ask Me / Busy) now updates in real time in the sidebar as soon as you change it in VRChat
+- Your **status description** updates live without needing to restart the app
+- Your **bio**, **pronouns**, **languages**, and **bio links** all sync immediately when edited
+- Your **profile icon** and **avatar thumbnail** update live as well
+- Previously, none of these would update until the app was restarted — now all own profile changes are reflected instantly via the official VRChat WebSocket (`user-update` event)
 
 ---
 
-## Changes
+## Discord Rich Presence
 
-- Moved the **pagination bar** to a fixed position at the bottom of the Timeline and Media Library — it is now always visible regardless of scroll position
-- Redesigned the **paginator** to be more compact and easier to navigate — the layout is consistent and never shifts as you move between pages
-
----
-
-## Fixes
-
-- Fixed an issue where **favoriting, deleting, or censoring** an image in the Media Library would reset the user back to page 1
-- Fixed an issue where **favoriting, deleting, or censoring** an image would scroll the view back to the top of the page
-- Most of these issues were introduced during the Photino.NET port when the Media Library was reworked — they should now all be resolved
+- New **Discord Rich Presence** feature (Tab 19) — shows your current VRChat world and instance state directly in Discord
+- Displays your VRChat **status color** (Online / Join Me / Ask Me / Busy) as a small status dot on your Discord profile
+- Shows the **world thumbnail** as the large image and elapsed time since joining the instance
+- Optional **Join Instance** button in Discord that links directly to your current instance
+- **Privacy settings** per status — independently hide instance ID, location, player count, and the join button for each of your four VRChat statuses
+- Ask Me and Busy statuses default to hiding sensitive info out of the box
+- Can be toggled on/off at any time from within the app

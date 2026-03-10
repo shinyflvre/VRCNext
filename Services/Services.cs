@@ -271,6 +271,25 @@ public class AppSettings
     // Auto-start flags
     public bool ChatboxAutoStart { get; set; }
     public bool SfAutoStart { get; set; }
+    public bool DiscordPresenceAutoStart { get; set; }
+
+    // Discord Rich Presence — privacy per status
+    public bool DpHideInstIdJoinMe  { get; set; }
+    public bool DpHideInstIdOnline  { get; set; }
+    public bool DpHideInstIdAskMe   { get; set; } = true;
+    public bool DpHideInstIdBusy    { get; set; } = true;
+    public bool DpHideLocJoinMe     { get; set; }
+    public bool DpHideLocOnline     { get; set; }
+    public bool DpHideLocAskMe      { get; set; } = true;
+    public bool DpHideLocBusy       { get; set; } = true;
+    public bool DpHidePlayersJoinMe { get; set; }
+    public bool DpHidePlayersOnline { get; set; }
+    public bool DpHidePlayersAskMe  { get; set; } = true;
+    public bool DpHidePlayersBusy   { get; set; } = true;
+    public bool DpHideJoinBtnJoinMe { get; set; }
+    public bool DpHideJoinBtnOnline { get; set; }
+    public bool DpHideJoinBtnAskMe  { get; set; } = true;
+    public bool DpHideJoinBtnBusy   { get; set; } = true;
 
     // Image cache settings
     public bool ImgCacheEnabled { get; set; } = true;

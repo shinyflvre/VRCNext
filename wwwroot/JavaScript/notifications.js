@@ -194,6 +194,15 @@ function declineNotif(notifId, btn) {
 /* === Current Instance (sidebar) === */
 function renderCurrentInstance(data) {
     currentInstanceData = data;
+
+    // Feed Discord presence preview
+    if (typeof dpOnInstanceUpdate === 'function' && data && !data.empty && !data.error && data.worldName) {
+        const typeLabel = getInstanceBadge(data.instanceType).label;
+        const shortId = (data.location || '').split(':')[1]?.split('~')[0] || '';
+        const stateStr = `${typeLabel} #${shortId} (${data.nUsers}/${data.capacity})`;
+        dpOnInstanceUpdate(data.worldName, data.worldThumb, stateStr, null);
+    }
+
     const el = document.getElementById('vrcInstanceArea');
     if (!el) return;
 

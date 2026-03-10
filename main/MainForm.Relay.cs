@@ -6,6 +6,71 @@ namespace VRCNext;
 
 public partial class MainForm
 {
+    // Discord Rich Presence
+
+    private void PushDiscordPresence()
+    {
+        if (_discordPresence?.IsConnected != true) return;
+        if (string.IsNullOrEmpty(_cachedInstWorldName)) { _discordPresence.ClearPresence(); return; }
+
+        var (_, rawInstanceId, instanceType) = VRChatApiService.ParseLocation(_cachedInstLocation);
+
+        // Extract the short numeric instance ID, e.g. "12345" from "12345~friends+(usr_...)~nonce"
+        var shortId = rawInstanceId.Contains('~') ? rawInstanceId[..rawInstanceId.IndexOf('~')] : rawInstanceId;
+
+        var typeLabel = instanceType switch
+        {
+            "public"        => "Public",
+            "friends"       => "Friends",
+            "friends+"      => "Friends+",
+            "hidden"        => "Friends+",   // VRChat API: hidden = Friends+
+            "private"       => "Invite",     // VRChat API: private = Invite Only
+            "invite_plus"   => "Invite+",
+            "group"         => "Group",
+            "group-public"  => "Group Public",
+            "group-plus"    => "Group+",
+            "group-members" => "Group",
+            _               => "Public",
+        };
+
+        var nUsers = _logWatcher.GetCurrentPlayers().Count;
+        if (nUsers == 0) nUsers = 1; // at minimum we are in the instance
+
+        // Privacy flags based on current VRC status
+        bool isJoinMe = _myVrcStatus == "join me";
+        bool isOnline = _myVrcStatus is "active" or "online" or "";
+        bool isAskMe  = _myVrcStatus == "ask me";
+        bool isBusy   = _myVrcStatus == "busy";
+
+        bool hideInstId  = (isJoinMe && _settings.DpHideInstIdJoinMe)  || (isOnline && _settings.DpHideInstIdOnline)
+                         || (isAskMe && _settings.DpHideInstIdAskMe)   || (isBusy   && _settings.DpHideInstIdBusy);
+        bool hideLoc     = (isJoinMe && _settings.DpHideLocJoinMe)     || (isOnline && _settings.DpHideLocOnline)
+                         || (isAskMe && _settings.DpHideLocAskMe)      || (isBusy   && _settings.DpHideLocBusy);
+        bool hidePlayers = (isJoinMe && _settings.DpHidePlayersJoinMe) || (isOnline && _settings.DpHidePlayersOnline)
+                         || (isAskMe && _settings.DpHidePlayersAskMe)  || (isBusy   && _settings.DpHidePlayersBusy);
+
+        var stateParts = new System.Text.StringBuilder(typeLabel);
+        if (!hideInstId)  stateParts.Append($" #{shortId}");
+        if (!hidePlayers) stateParts.Append($" ({nUsers}/{_cachedInstCapacity})");
+        var state = stateParts.ToString();
+
+        var worldName  = hideLoc ? "" : _cachedInstWorldName;
+        var worldThumb = hideLoc ? "" : _cachedInstWorldThumb;
+        var joinedAt = _discordJoinedAt == DateTime.MinValue ? DateTime.Now : _discordJoinedAt;
+
+        bool hideJoinBtn = (isJoinMe && _settings.DpHideJoinBtnJoinMe) || (isOnline && _settings.DpHideJoinBtnOnline)
+                         || (isAskMe && _settings.DpHideJoinBtnAskMe)  || (isBusy   && _settings.DpHideJoinBtnBusy);
+        string? joinUrl = null;
+        if (!hideJoinBtn && !string.IsNullOrEmpty(_cachedInstLocation))
+        {
+            var (worldId2, _, _) = VRChatApiService.ParseLocation(_cachedInstLocation);
+            var encodedInst = Uri.EscapeDataString(rawInstanceId);
+            joinUrl = $"https://vrchat.com/home/launch?worldId={worldId2}&instanceId={encodedInst}";
+        }
+
+        _discordPresence.UpdatePresence(worldName, state, worldThumb, _myVrcStatus, joinedAt, joinUrl);
+    }
+
     // Voice Fight helpers
     private object VfBuildItemsPayload() =>
         _vfSettings.Items.Select((item, i) => new
@@ -302,6 +367,20 @@ public partial class MainForm
         {
             if (_vrcApi.IsLoggedIn)
                 _ = Task.Delay(3000).ContinueWith(_ => VrcGetCurrentInstanceAsync());
+        };
+
+        // user-update: own profile changed in-game (status, bio, statusDescription, tags, icon…)
+        // The WS payload is partial (no pronouns/bioLinks), so fetch the full user from REST
+        // then push everything to JS in one shot — sidebar, modal, Discord presence all update.
+        _wsService.OwnUserUpdated += (_, _) =>
+        {
+            if (!_vrcApi.IsLoggedIn) return;
+            _ = Task.Run(async () =>
+            {
+                var full = await _vrcApi.RefreshCurrentUserAsync();
+                if (full != null)
+                    Invoke(() => SendVrcUserData(full));
+            });
         };
 
         // All log calls must use Invoke(); these fire on the WebSocket background thread

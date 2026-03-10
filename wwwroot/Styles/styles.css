@@ -309,7 +309,7 @@ body {
 
 .nav-group-items {
     overflow: hidden;
-    max-height: 400px;
+    max-height: 600px;
     transition: max-height .25s ease, opacity .2s;
     opacity: 1;
 }
@@ -6922,3 +6922,79 @@ div.vn-select {
     display: inline-flex;
     align-items: center;
 }
+
+/* ── Discord Rich Presence ─────────────────────────────────────────────── */
+.dp-preview {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+}
+.dp-img-wrap {
+    position: relative;
+    flex-shrink: 0;
+}
+.dp-world-img {
+    width: 72px;
+    height: 72px;
+    border-radius: 10px;
+    object-fit: cover;
+    background: var(--bg2);
+    display: block;
+}
+.dp-status-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2.5px solid var(--bg-card);
+    position: absolute;
+    bottom: -3px;
+    right: -3px;
+    background: #747f8d;
+}
+.dp-status-dot.online  { background: #3ba55d; }
+.dp-status-dot.join_me { background: #5bc8f5; }
+.dp-status-dot.busy    { background: #ed4245; }
+.dp-status-dot.ask_me  { background: #faa61a; }
+.dp-status-dot.offline { background: #747f8d; }
+.dp-preview-text {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding-top: 4px;
+    min-width: 0;
+}
+.dp-preview-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--tx0);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.dp-preview-state {
+    font-size: 12px;
+    color: var(--tx2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.dp-preview-time {
+    font-size: 11px;
+    color: var(--tx3);
+    margin-top: 4px;
+}
+.dp-pg { display: flex; flex-direction: column; gap: 6px; }
+.dp-pg-row { display: grid; grid-template-columns: 1fr repeat(4, 44px); align-items: center; gap: 4px; }
+.dp-pg-header { margin-bottom: 2px; }
+.dp-pg-lbl { font-size: 12px; color: var(--tx2); }
+.dp-pg-col { display: flex; justify-content: center; align-items: center; }
+.dp-pg-dot {
+    display: inline-block;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: #747f8d;
+}
+.dp-pg-dot.online  { background: #3ba55d; }
+.dp-pg-dot.join_me { background: #5bc8f5; }
+.dp-pg-dot.ask_me  { background: #faa61a; }
+.dp-pg-dot.busy    { background: #ed4245; }

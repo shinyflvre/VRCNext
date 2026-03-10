@@ -464,6 +464,7 @@ window.external.receiveMessage(rawMsg => {
             case 'sfUpdate':
                 handleSfUpdate(payload);
                 break;
+            case 'dpState': dpOnState(payload); break;
             case 'vfState': handleVfState(payload); break;
             case 'vfDevices': populateVfDevices(payload); break;
             case 'vfItems': renderVfItems(payload); break;

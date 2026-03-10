@@ -138,6 +138,7 @@ public partial class MainForm
 
             Invoke(() =>
             {
+                PushDiscordPresence();
                 SendToJS("log", new { msg = $"Instance: {worldName} — {nUsers} total, {users.Count} tracked ({playerSource})", color = "ok" });
                 SendToJS("vrcCurrentInstance", new {
                     location = loc, worldId = parsed.worldId,
@@ -230,6 +231,9 @@ public partial class MainForm
         _timeline.AddEvent(instEv);
         SendToJS("timelineEvent", BuildTimelinePayload(instEv));
         SendToJS("log", new { msg = $"[TIMELINE] Instance join: {worldId}", color = "sec" });
+
+        // Reset Discord join timer for the new instance
+        _discordJoinedAt = DateTime.Now;
 
         // Track world visit immediately (log watcher fires on every actual world change)
         _worldTimeTracker.SetCurrentWorld(worldId);

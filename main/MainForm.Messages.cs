@@ -3576,6 +3576,29 @@ public partial class MainForm
                         });
                     }
                     break;
+
+                // Discord Rich Presence
+                case "dpStart":
+                    {
+                        _discordPresence?.Dispose();
+                        _discordPresence = new Services.DiscordPresenceService("1480822566854852762");
+                        _discordPresence.OnLog += s => Invoke(() => SendToJS("log", new { msg = s, color = "sec" }));
+                        bool ok = _discordPresence.Connect();
+                        SendToJS("dpState", new { running = ok });
+                        if (ok) PushDiscordPresence();
+                    }
+                    break;
+
+                case "dpStop":
+                    _discordPresence?.Disconnect();
+                    _discordPresence?.Dispose();
+                    _discordPresence = null;
+                    SendToJS("dpState", new { running = false });
+                    break;
+
+                case "dpRefresh":
+                    PushDiscordPresence();
+                    break;
             }
         }
         catch (Exception ex)
