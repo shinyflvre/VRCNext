@@ -1137,6 +1137,39 @@ public class VRChatApiService
         return new JArray();
     }
 
+    public async Task<JArray> GetRecentWorldsAsync()
+    {
+        if (!IsLoggedIn) return new JArray();
+        try
+        {
+            var resp = await _http.GetAsync($"{BASE}/instances/recent");
+            if (!resp.IsSuccessStatusCode) return new JArray();
+            // Response is an array of location strings: "wrld_xxx:12345~public"
+            var locations = JArray.Parse(await resp.Content.ReadAsStringAsync());
+            var seen = new HashSet<string>();
+            var worldIds = new List<string>();
+            foreach (var loc in locations)
+            {
+                var locStr = loc.ToString();
+                var worldId = locStr.Contains(':') ? locStr.Split(':')[0] : locStr;
+                if (worldId.StartsWith("wrld_") && seen.Add(worldId))
+                    worldIds.Add(worldId);
+            }
+            var tasks = worldIds.Take(16).Select(async wid =>
+            {
+                try { return await GetWorldAsync(wid); }
+                catch { return null; }
+            });
+            var worlds = await Task.WhenAll(tasks);
+            var result = new JArray();
+            foreach (var w in worlds)
+                if (w != null) result.Add(w);
+            return result;
+        }
+        catch (Exception ex) { Log($"GetRecentWorlds exception: {ex.Message}"); }
+        return new JArray();
+    }
+
     public async Task<JArray> GetPopularWorldsAsync(int n = 32)
     {
         if (!IsLoggedIn) return new JArray();

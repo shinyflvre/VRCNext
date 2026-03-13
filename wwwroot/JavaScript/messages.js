@@ -452,6 +452,9 @@ window.external.receiveMessage(rawMsg => {
             case 'activeWorlds':
                 onActiveWorlds(payload.worlds);
                 break;
+            case 'recentWorlds':
+                onRecentWorlds(payload.worlds);
+                break;
             case 'vrcWorldDetailError':
                 document.getElementById('detailModalContent').innerHTML = `<div style="padding:30px;text-align:center;color:var(--err);">${esc(payload.error || 'Error loading world')}</div><div style="text-align:center;margin-top:10px;"><button class="vrcn-button-round" onclick="document.getElementById('modalDetail').style.display='none'">Close</button></div>`;
                 break;

@@ -319,6 +319,7 @@ const DISC_PER_PAGE   = 8;
 const DISC_CACHE_TTL  = 10 * 60 * 1000;
 let _popularCache = { worlds: [], ts: 0 };
 let _activeCache  = { worlds: [], ts: 0 };
+let _recentCache  = { worlds: [], ts: 0 };
 
 setInterval(() => {
     sendToCS({ action: 'vrcGetPopularWorlds' });
@@ -333,6 +334,7 @@ function setDiscoveryTab(tab) {
     });
     if (tab === 'popular') _fetchPopularWorlds();
     else if (tab === 'active') _fetchActiveWorlds();
+    else if (tab === 'recent') _fetchRecentWorlds();
     else renderDiscoverySection();
 }
 
@@ -354,6 +356,20 @@ function _fetchActiveWorlds() {
     sendToCS({ action: 'vrcGetActiveWorlds' });
 }
 
+function _fetchRecentWorlds() {
+    if (Date.now() - _recentCache.ts < DISC_CACHE_TTL && _recentCache.worlds.length) {
+        renderDiscoverySection();
+        return;
+    }
+    document.getElementById('dashDiscoveryGrid').innerHTML = '<div class="empty-msg">Loading worlds...</div>';
+    sendToCS({ action: 'vrcGetRecentWorlds' });
+}
+
+function onRecentWorlds(worlds) {
+    _recentCache = { worlds: worlds || [], ts: Date.now() };
+    if (_discTab === 'recent') renderDiscoverySection();
+}
+
 function onPopularWorlds(worlds) {
     _popularCache = { worlds: worlds || [], ts: Date.now() };
     if (_discTab === 'popular') renderDiscoverySection();
@@ -365,7 +381,7 @@ function onActiveWorlds(worlds) {
 }
 
 function discPageChange(dir) {
-    const cache = _discTab === 'popular' ? _popularCache : _activeCache;
+    const cache = _discTab === 'popular' ? _popularCache : _discTab === 'active' ? _activeCache : _recentCache;
     const maxPage = Math.max(0, Math.ceil(cache.worlds.length / DISC_PER_PAGE) - 1);
     _discPage = Math.max(0, Math.min(maxPage, _discPage + dir));
     renderDiscoverySection();
@@ -382,7 +398,7 @@ function renderDiscoverySection() {
         return;
     }
 
-    const cache = _discTab === 'popular' ? _popularCache : _activeCache;
+    const cache = _discTab === 'popular' ? _popularCache : _discTab === 'active' ? _activeCache : _recentCache;
     if (!cache.worlds.length) {
         grid.innerHTML = '<div class="empty-msg">Loading worlds...</div>';
         if (pagination) pagination.style.display = 'none';

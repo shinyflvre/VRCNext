@@ -526,6 +526,14 @@ public partial class MainForm
                     });
                     break;
 
+                case "vrcGetRecentWorlds":
+                    _ = Task.Run(async () =>
+                    {
+                        var worlds = await _vrcApi.GetRecentWorldsAsync();
+                        Invoke(() => SendToJS("recentWorlds", new { worlds }));
+                    });
+                    break;
+
                 case "vrcGetPopularWorlds":
                     _ = Task.Run(async () =>
                     {
