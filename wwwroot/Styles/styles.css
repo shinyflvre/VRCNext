@@ -1878,34 +1878,17 @@ body {
 .vrc-friend-search {
     display: flex;
     align-items: center;
-    padding: 6px 10px;
+    padding: 6px 0;
     margin-bottom: 6px;
     position: relative;
 }
 
 .vrc-fs-icon {
     position: absolute;
-    left: 18px;
+    left: 10px;
     font-size: 14px;
     color: var(--tx3);
     pointer-events: none;
-}
-
-.vrc-fs-input {
-    width: 100%;
-    padding: 7px 10px 7px 30px;
-    background: var(--bg-input);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--tx1);
-    font-size: 11px;
-    font-family: inherit;
-    outline: none;
-    transition: border-color .15s;
-}
-
-.vrc-fs-input:focus {
-    border-color: var(--accent);
 }
 
 .vrc-section-label {
