@@ -313,6 +313,113 @@ function openMyInstanceDetail(worldId, location) {
 }
 
 /* === Discovery Section === */
+let _discTab  = 'discovery';
+let _discPage = 0;
+const DISC_PER_PAGE   = 8;
+const DISC_CACHE_TTL  = 10 * 60 * 1000;
+let _popularCache = { worlds: [], ts: 0 };
+let _activeCache  = { worlds: [], ts: 0 };
+
+setInterval(() => {
+    sendToCS({ action: 'vrcGetPopularWorlds' });
+    sendToCS({ action: 'vrcGetActiveWorlds' });
+}, DISC_CACHE_TTL);
+
+function setDiscoveryTab(tab) {
+    _discTab  = tab;
+    _discPage = 0;
+    document.querySelectorAll('.disc-tab').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tab);
+    });
+    if (tab === 'popular') _fetchPopularWorlds();
+    else if (tab === 'active') _fetchActiveWorlds();
+    else renderDiscoverySection();
+}
+
+function _fetchPopularWorlds() {
+    if (Date.now() - _popularCache.ts < DISC_CACHE_TTL && _popularCache.worlds.length) {
+        renderDiscoverySection();
+        return;
+    }
+    document.getElementById('dashDiscoveryGrid').innerHTML = '<div class="empty-msg">Loading worlds...</div>';
+    sendToCS({ action: 'vrcGetPopularWorlds' });
+}
+
+function _fetchActiveWorlds() {
+    if (Date.now() - _activeCache.ts < DISC_CACHE_TTL && _activeCache.worlds.length) {
+        renderDiscoverySection();
+        return;
+    }
+    document.getElementById('dashDiscoveryGrid').innerHTML = '<div class="empty-msg">Loading worlds...</div>';
+    sendToCS({ action: 'vrcGetActiveWorlds' });
+}
+
+function onPopularWorlds(worlds) {
+    _popularCache = { worlds: worlds || [], ts: Date.now() };
+    if (_discTab === 'popular') renderDiscoverySection();
+}
+
+function onActiveWorlds(worlds) {
+    _activeCache = { worlds: worlds || [], ts: Date.now() };
+    if (_discTab === 'active') renderDiscoverySection();
+}
+
+function discPageChange(dir) {
+    const cache = _discTab === 'popular' ? _popularCache : _activeCache;
+    const maxPage = Math.max(0, Math.ceil(cache.worlds.length / DISC_PER_PAGE) - 1);
+    _discPage = Math.max(0, Math.min(maxPage, _discPage + dir));
+    renderDiscoverySection();
+}
+
+function renderDiscoverySection() {
+    const grid       = document.getElementById('dashDiscoveryGrid');
+    const pagination = document.getElementById('discPagination');
+    if (!grid) return;
+
+    if (_discTab === 'discovery') {
+        if (pagination) pagination.style.display = 'none';
+        renderDiscovery();
+        return;
+    }
+
+    const cache = _discTab === 'popular' ? _popularCache : _activeCache;
+    if (!cache.worlds.length) {
+        grid.innerHTML = '<div class="empty-msg">Loading worlds...</div>';
+        if (pagination) pagination.style.display = 'none';
+        return;
+    }
+
+    const totalPages = Math.max(1, Math.ceil(cache.worlds.length / DISC_PER_PAGE));
+    _discPage = Math.min(_discPage, totalPages - 1);
+    const page = cache.worlds.slice(_discPage * DISC_PER_PAGE, (_discPage + 1) * DISC_PER_PAGE);
+
+    grid.innerHTML = page.map(w => {
+        const name  = esc(w.name || w.id || '');
+        const thumb = w.thumbnailImageUrl || w.imageUrl || '';
+        const thumbStyle = thumb ? `background-image:url('${cssUrl(thumb)}')` : '';
+        const wid = (w.id || '').replace(/'/g, "\\'");
+        const occupants = w.occupants ?? w.publicOccupants ?? 0;
+        const playingStr = occupants > 0 ? `${occupants.toLocaleString()} playing` : '';
+        return `<div class="dash-world-card" onclick="openWorldSearchDetail('${wid}')">
+            <div class="dash-world-thumb" style="${thumbStyle}"><div class="dash-world-thumb-overlay"></div></div>
+            <div class="dash-world-info">
+                <div class="dash-world-name">${name}</div>
+                ${playingStr ? `<div class="dash-world-meta"><span class="dash-world-count">${playingStr}</span></div>` : ''}
+            </div>
+        </div>`;
+    }).join('');
+
+    if (pagination) {
+        pagination.style.display = totalPages > 1 ? 'flex' : 'none';
+        const lbl = document.getElementById('discPageLabel');
+        if (lbl) lbl.textContent = `${_discPage + 1} / ${totalPages}`;
+        const prev = document.getElementById('discPrevBtn');
+        const next = document.getElementById('discNextBtn');
+        if (prev) prev.disabled = _discPage === 0;
+        if (next) next.disabled = _discPage >= totalPages - 1;
+    }
+}
+
 const DISCOVERY_URL = 'https://vrcn.shinyflvres.com/Dashboard_Discovery.json';
 
 const DISCOVERY_TAG_COLORS = {
@@ -346,34 +453,27 @@ function onDiscoveryFeed(json) {
             .filter(id => id.startsWith('wrld_') && !dashWorldCache[id]);
         if (unresolvedIds.length > 0) {
             sendToCS({ action: 'vrcResolveWorlds', worldIds: unresolvedIds });
-            // Wait for vrcWorldsResolved before rendering to avoid flashing raw IDs.
-            // Fallback render after 8s in case the API call fails or user is not logged in.
             setTimeout(() => {
                 const stillUnresolved = discoveryWorlds.some(w => {
                     const id = w.WorldID || w.worldId || '';
                     return id.startsWith('wrld_') && !dashWorldCache[id];
                 });
-                if (stillUnresolved) renderDiscovery();
+                if (stillUnresolved && _discTab === 'discovery') renderDiscovery();
             }, 8000);
-        } else {
+        } else if (_discTab === 'discovery') {
             renderDiscovery();
         }
     } catch (_) {}
 }
 
 function renderDiscovery() {
-    const label = document.getElementById('dashDiscoveryLabel');
-    const grid  = document.getElementById('dashDiscoveryGrid');
-    if (!label || !grid) return;
+    const grid = document.getElementById('dashDiscoveryGrid');
+    if (!grid) return;
 
     if (!discoveryWorlds.length) {
-        label.style.display = 'none';
-        grid.style.display  = 'none';
+        grid.innerHTML = '<div class="empty-msg">No discovery worlds available</div>';
         return;
     }
-
-    label.style.display = '';
-    grid.style.display  = '';
 
     grid.innerHTML = discoveryWorlds.map(w => {
         const wid  = (w.WorldID || w.worldId || '').trim();

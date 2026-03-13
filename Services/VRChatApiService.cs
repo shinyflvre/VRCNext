@@ -1137,6 +1137,30 @@ public class VRChatApiService
         return new JArray();
     }
 
+    public async Task<JArray> GetPopularWorldsAsync(int n = 32)
+    {
+        if (!IsLoggedIn) return new JArray();
+        try
+        {
+            var resp = await _http.GetAsync($"{BASE}/worlds?sort=popularity&order=descending&releaseStatus=public&n={n}");
+            if (resp.IsSuccessStatusCode) return JArray.Parse(await resp.Content.ReadAsStringAsync());
+        }
+        catch (Exception ex) { Log($"GetPopularWorlds exception: {ex.Message}"); }
+        return new JArray();
+    }
+
+    public async Task<JArray> GetActiveWorldsAsync(int n = 32)
+    {
+        if (!IsLoggedIn) return new JArray();
+        try
+        {
+            var resp = await _http.GetAsync($"{BASE}/worlds?sort=heat&order=descending&releaseStatus=public&n={n}");
+            if (resp.IsSuccessStatusCode) return JArray.Parse(await resp.Content.ReadAsStringAsync());
+        }
+        catch (Exception ex) { Log($"GetActiveWorlds exception: {ex.Message}"); }
+        return new JArray();
+    }
+
     public async Task<JArray> SearchWorldsAsync(string query, int n = 20, int offset = 0)
     {
         if (!IsLoggedIn || string.IsNullOrEmpty(query)) return new JArray();

@@ -102,8 +102,19 @@
                 <div class="dash-worlds-grid" id="dashMyInstances" style="display:none;"></div>
                 <div class="dash-section-label">FRIENDS LOCATIONS</div>
                 <div class="dash-worlds-grid" id="dashFavWorlds"><div class="empty-msg">Login to VRChat to see where friends are</div></div>
-                <div class="dash-section-label" id="dashDiscoveryLabel" style="display:none;">DISCOVERY</div>
-                <div class="dash-worlds-grid" id="dashDiscoveryGrid" style="display:none;"></div>
+                <div class="disc-tab-row">
+                    <button class="vrcn-dashboard-button disc-tab active" data-tab="discovery" onclick="setDiscoveryTab('discovery')">DISCOVERY</button>
+                    <span class="disc-tab-sep">|</span>
+                    <button class="vrcn-dashboard-button disc-tab" data-tab="popular" onclick="setDiscoveryTab('popular')">POPULAR WORLDS</button>
+                    <span class="disc-tab-sep">|</span>
+                    <button class="vrcn-dashboard-button disc-tab" data-tab="active" onclick="setDiscoveryTab('active')">VERY ACTIVE</button>
+                    <span class="disc-pagination" id="discPagination" style="display:none;">
+                        <button class="disc-page-btn" id="discPrevBtn" onclick="discPageChange(-1)"><span class="msi">chevron_left</span></button>
+                        <span class="disc-page-label" id="discPageLabel">1 / 4</span>
+                        <button class="disc-page-btn" id="discNextBtn" onclick="discPageChange(1)"><span class="msi">chevron_right</span></button>
+                    </span>
+                </div>
+                <div class="dash-worlds-grid" id="dashDiscoveryGrid"></div>
                 <div class="dash-section-label">FRIENDS ACTIVITY</div>
                 <div class="dash-friends-feed" id="dashFriendsFeed"><div class="empty-msg">Login to VRChat to see friends</div></div>
             </div>

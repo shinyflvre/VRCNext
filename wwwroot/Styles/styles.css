@@ -2386,6 +2386,84 @@ body {
     margin-top: 28px;
 }
 
+/* === Discovery tabs === */
+.disc-tab-row {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 28px;
+    margin-bottom: 14px;
+}
+
+.vrcn-dashboard-button {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.disc-tab {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: var(--tx3);
+    padding-bottom: 3px;
+    border-bottom: 2px solid transparent;
+    transition: color .15s, border-color .15s;
+}
+
+.disc-tab:hover { color: var(--tx1); }
+
+.disc-tab.active {
+    color: var(--tx0);
+    border-bottom-color: var(--accent);
+}
+
+.disc-tab-sep {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--tx3);
+    opacity: 0.4;
+    user-select: none;
+}
+
+.disc-pagination {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    margin-left: 6px;
+    padding-bottom: 3px;
+    border-bottom: 2px solid transparent; /* match disc-tab total bottom = padding(3)+border(2) */
+}
+
+.disc-page-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: var(--tx3);
+    display: inline-flex;
+    align-items: center;
+    font-size: 0;
+    transition: color .15s;
+}
+.disc-page-btn .msi { font-size: 11px; line-height: 1; }
+
+.disc-page-btn:hover { color: var(--tx1); }
+.disc-page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.disc-page-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--tx3);
+    min-width: 34px;
+    text-align: center;
+}
+
 .dash-worlds-grid {
     position: relative;
     z-index: 1;
