@@ -227,6 +227,8 @@ body {
     flex-direction: column;
     transition: width .22s ease,min-width .22s ease;
     overflow: hidden;
+    position: relative;
+    padding-top: 54px;
 }
 
 .sidebar.collapsed,
@@ -236,13 +238,19 @@ body {
 }
 
 .logo {
-    padding: 16px 4px 16px 14px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 54px;
+    z-index: 5;
+    background: var(--bg-side);
     display: flex;
     align-items: center;
+    padding: 0 4px 0 14px;
     gap: 11px;
     overflow: hidden;
     white-space: nowrap;
-    flex-shrink: 0;
 }
 
 .logo-icon {
@@ -297,7 +305,7 @@ body {
 
 .sidebar.collapsed .logo {
     justify-content: center;
-    padding: 10px 5px;
+    padding: 0 5px;
 }
 
 .sb-toggle, .rs-toggle {
@@ -1702,6 +1710,8 @@ body {
     flex-direction: column;
     overflow: hidden;
     transition: width .22s ease, min-width .22s ease;
+    position: relative;
+    padding-top: 54px;
 }
 
 .rsidebar.collapsed {
@@ -1711,15 +1721,22 @@ body {
 
 
 .rsidebar-header {
-    padding: 14px 8px 10px 4px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 54px;
+    z-index: 5;
+    background: var(--bg-side);
     display: flex;
     align-items: center;
+    padding: 0 8px 0 4px;
     gap: 6px;
 }
 
 .rsidebar.collapsed .rsidebar-header {
     justify-content: center;
-    padding: 10px 4px;
+    padding: 0 4px;
 }
 
 .rsidebar.collapsed .rsidebar-title,
@@ -1842,7 +1859,7 @@ body {
 .win-dot-max   { background: #28C840; }
 
 .rsidebar-title {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
     color: var(--tx0);
     letter-spacing: 1px;
@@ -2515,7 +2532,7 @@ body {
     background: none;
     border: none;
     color: var(--tx3);
-    font-size: 13px;
+    font-size: 15px;
     cursor: pointer;
     padding: 0 2px;
     line-height: 1;
