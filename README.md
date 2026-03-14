@@ -1,4 +1,5 @@
-<img width="1100" height="700" alt="Screenshot 2026-03-01 030814" src="https://github.com/user-attachments/assets/ce84ee52-4281-43e1-9201-dcf33a852fea" />
+![Screenshot](https://i.imgur.com/EasCJ7d.png)
+
 
 # VRCNext
 
