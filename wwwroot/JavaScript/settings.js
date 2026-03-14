@@ -112,6 +112,7 @@ function saveSettings() {
             theme: currentTheme,
             specialTheme: currentSpecialTheme,
             autoColorAccuracy: autoColorAccuracy,
+            playBtnTheme: currentPlayBtnTheme,
             dashBgPath: dashBgPath,
             dashOpacity: parseInt(document.getElementById('setDashOpacity').value) || 40,
             randomDashBg: document.getElementById('setRandomBg').checked,
@@ -260,6 +261,8 @@ function loadSettingsToUI(s) {
     // custom_ themes are applied later when customColors loads
     renderThemeChips();
     renderSpecialThemeChips();
+    currentPlayBtnTheme = s.PlayBtnTheme || s.playBtnTheme || '';
+    applyPlayBtnTheme(currentPlayBtnTheme);
 
     // Restore chatbox settings
     document.getElementById('cbShowTime').checked = s.CbShowTime ?? s.cbShowTime ?? true;

@@ -6,6 +6,7 @@ try { hiddenMedia = new Set(JSON.parse(localStorage.getItem('vrcnext_hidden') ||
 const thumbCache = {};
 let currentTheme = 'midnight', currentSpecialTheme = '', autoColorAccuracy = 50, notifyAudio = null, currentVrcUser = null;
 let customThemes = []; // user-saved themes from auto color
+let currentPlayBtnTheme = '';
 let sidebarCollapsed = localStorage.getItem('vrcnext_sidebar') === '1';
 let rsidebarCollapsed = localStorage.getItem('vrcnext_rsidebar') === '1';
 // Apply saved sidebar state immediately on load
@@ -428,6 +429,25 @@ function applySpecialTheme(n) {
     renderThemeChips(); // show/hide Add + button
     const row = document.getElementById('autoAccuracyRow');
     if (row) row.style.display = n === 'auto' ? 'flex' : 'none';
+    autoSave();
+}
+
+function renderPlayBtnThemeChips() {
+    const el = document.getElementById('playBtnThemeGrid');
+    if (!el) return;
+    const chips = [
+        { key: '',       label: 'Standard',    dot: '#1DB954' },
+        { key: 'accent', label: 'Theme Color', dot: 'var(--accent)' },
+    ];
+    el.innerHTML = chips.map(t =>
+        `<button class="theme-chip${currentPlayBtnTheme === t.key ? ' active' : ''}" onclick="applyPlayBtnTheme('${t.key}')"><span class="theme-dot" style="background:${t.dot}"></span>${t.label}</button>`
+    ).join('');
+}
+
+function applyPlayBtnTheme(key) {
+    currentPlayBtnTheme = key;
+    document.body.classList.toggle('play-btn-accent', key === 'accent');
+    renderPlayBtnThemeChips();
     autoSave();
 }
 

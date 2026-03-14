@@ -274,6 +274,7 @@ public partial class MainForm
                 _vrOverlay?.SetTheme(_settings.Theme);
 #endif
             _settings.AutoColorAccuracy = data["autoColorAccuracy"]?.Value<int>() ?? 50;
+            _settings.PlayBtnTheme = data["playBtnTheme"]?.ToString() ?? "";
 
             var dashBg = data["dashBgPath"]?.ToString();
             if (dashBg != null) _settings.DashBgPath = dashBg;

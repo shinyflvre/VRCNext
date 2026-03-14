@@ -867,6 +867,24 @@ body {
 .vrcn-btn-primary:hover { background: var(--accent-lt) !important; }
 .vrcn-btn-join { background: #1DB954 !important; color: #fff !important; box-shadow: 0 4px 16px rgba(29,185,84,.3); }
 .vrcn-btn-join:hover { box-shadow: 0 6px 24px rgba(29,185,84,.45) !important; }
+
+/* Play Button Theme — accent override */
+body.play-btn-accent .btn-play {
+    background: var(--accent) !important;
+    box-shadow: 0 4px 16px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+body.play-btn-accent .btn-play:hover {
+    background: var(--accent-lt) !important;
+    box-shadow: 0 6px 24px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+body.play-btn-accent .vrcn-btn-join {
+    background: var(--accent) !important;
+    box-shadow: 0 4px 16px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+body.play-btn-accent .vrcn-btn-join:hover {
+    background: var(--accent-lt) !important;
+    box-shadow: 0 6px 24px color-mix(in srgb, var(--accent) 55%, transparent) !important;
+}
 .vrcn-btn-danger { background: rgba(255,75,85,.15) !important; color: var(--err) !important; }
 .vrcn-btn-danger:hover { background: var(--err) !important; color: #fff !important; }
 
