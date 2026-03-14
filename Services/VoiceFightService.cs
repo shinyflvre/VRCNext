@@ -6,6 +6,7 @@ using System.Threading;
 #if WINDOWS
 using NAudio.Wave;
 using NAudio.Vorbis;
+using NAudio.MediaFoundation;
 using Vosk;
 using System.Runtime.InteropServices;
 #endif
@@ -139,7 +140,8 @@ public sealed class VoiceFightService : IDisposable
             string ext = Path.GetExtension(path).ToLowerInvariant();
             if (ext == ".mp3") using (var r = new Mp3FileReader(path)) return r.TotalTime;
             if (ext == ".ogg") using (var r = new VorbisWaveReader(path)) return r.TotalTime;
-            using (var r = new WaveFileReader(path)) return r.TotalTime;
+            if (ext == ".wav") using (var r = new WaveFileReader(path)) return r.TotalTime;
+            using (var r = new MediaFoundationReader(path)) return r.TotalTime;
         }
         catch { return TimeSpan.Zero; }
     }
@@ -516,7 +518,8 @@ public sealed class VoiceFightService : IDisposable
         string ext = Path.GetExtension(path).ToLowerInvariant();
         if (ext == ".mp3") return new Mp3FileReader(path);
         if (ext == ".ogg") return new VorbisWaveReader(path);
-        return new WaveFileReader(path);
+        if (ext == ".wav") return new WaveFileReader(path);
+        return new MediaFoundationReader(path);
     }
 
     private static string NormalizeWord(string input)
