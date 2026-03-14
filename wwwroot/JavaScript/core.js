@@ -254,6 +254,8 @@ function addCustomThemeFromAuto() {
     if (!chip) return;
     const labelEl = chip.querySelector('.theme-chip-label');
     if (!labelEl) return;
+    // Disable the chip's onclick so Space/Enter can't trigger selectCustomTheme while editing
+    chip.onclick = null;
     const input = document.createElement('input');
     input.type = 'text';
     input.value = 'Custom';
@@ -269,7 +271,10 @@ function addCustomThemeFromAuto() {
         saveCustomColors();
     };
     input.addEventListener('blur', finalize);
-    input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); input.blur(); } if (e.key === 'Escape') { input.value = 'Custom'; input.blur(); } });
+    input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+        if (e.key === 'Escape') { input.value = 'Custom'; input.blur(); }
+    });
     labelEl.replaceWith(input);
     input.select();
     input.focus();
@@ -418,7 +423,7 @@ function renderSpecialThemeChips() {
 function applySpecialTheme(n) {
     currentSpecialTheme = n;
     if (n === 'auto') applyAutoColor();
-    else applyColors(THEMES[currentTheme]?.c);
+    else applyColors(THEMES[currentTheme]?.c ?? customThemes.find(t => t.key === currentTheme)?.c);
     renderSpecialThemeChips();
     renderThemeChips(); // show/hide Add + button
     const row = document.getElementById('autoAccuracyRow');
