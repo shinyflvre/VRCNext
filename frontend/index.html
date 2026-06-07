@@ -134,25 +134,25 @@
                                     <button class="tb-dd-item" onclick="sendToCS({action:'openShortcutFolder',folder:'vrcn_data'})"><span class="msi">folder</span><span data-i18n="tb.shortcuts.vrcn_data">VRCN Data</span></button>
                                 </div>
                             </div>
-                            <div class="tb-dd-sep"></div>
-                            <div class="tb-dd-item" onclick="showTab(5)"><span class="msi">chat</span><span data-i18n="nav.custom_chatbox">Custom Chatbox</span></div>
-                            <div class="tb-dd-item" onclick="showTab(6)"><span class="msi">cell_tower</span><span data-i18n="nav.media_relay">Media Relay</span></div>
-                            <div class="tb-dd-item" onclick="showTab(10)"><span class="msi">rocket_launch</span><span data-i18n="nav.space_flight">Space Flight</span></div>
-                            <div class="tb-dd-item" onclick="showTab(26)"><span class="msi">photo_camera</span><span data-i18n="nav.frame_shot">FrameShot</span></div>
-                            <div class="tb-dd-item" onclick="showTab(11)"><span class="msi">tune</span><span data-i18n="nav.osc_tool">OSC Tool</span></div>
-                            <div class="tb-dd-item" onclick="showTab(14)"><span class="msi">smart_display</span><span data-i18n="nav.youtube_fix">YouTube Fix</span></div>
+                            <div class="tb-dd-sep" data-windows-only></div>
+                            <div class="tb-dd-item" data-windows-only onclick="showTab(5)"><span class="msi">chat</span><span data-i18n="nav.custom_chatbox">Custom Chatbox</span></div>
+                            <div class="tb-dd-item" data-windows-only onclick="showTab(6)"><span class="msi">cell_tower</span><span data-i18n="nav.media_relay">Media Relay</span></div>
+                            <div class="tb-dd-item" data-windows-only onclick="showTab(10)"><span class="msi">rocket_launch</span><span data-i18n="nav.space_flight">Space Flight</span></div>
+                            <div class="tb-dd-item" data-windows-only onclick="showTab(26)"><span class="msi">photo_camera</span><span data-i18n="nav.frame_shot">FrameShot</span></div>
+                            <div class="tb-dd-item" data-windows-only onclick="showTab(11)"><span class="msi">tune</span><span data-i18n="nav.osc_tool">OSC Tool</span></div>
+                            <div class="tb-dd-item" data-windows-only onclick="showTab(14)"><span class="msi">smart_display</span><span data-i18n="nav.youtube_fix">YouTube Fix</span></div>
                             <div class="tb-dd-sep"></div>
                             <div class="tb-dd-item" onclick="showTab(8)"><span class="msi">article</span><span data-i18n="nav.activity_log">Activity Log</span></div>
                             <div class="tb-dd-item" onclick="showTab(15)"><span class="msi">hub</span><span data-i18n="nav.mutual_network">Mutual Network</span></div>
                             <div class="tb-dd-item" onclick="showTab(16)"><span class="msi">schedule</span><span data-i18n="nav.time_spent">Time Spent</span></div>
                             <div class="tb-dd-item" onclick="showTab(23)"><span class="msi">gps_fixed</span><span data-i18n="nav.event_snipe">Event Snipe</span></div>
                             <div class="tb-dd-sep"></div>
-                            <div class="tb-dd-item" onclick="showTab(18)"><span class="msi">mic</span><span data-i18n="nav.voice_fight">Voice Fight</span></div>
-                            <div class="tb-dd-item" onclick="showTab(19)"><span class="msi">sensors</span><span data-i18n="nav.discord_presence">Discord Presence</span></div>
-                            <div class="tb-dd-item" onclick="showTab(20)"><span class="msi">watch</span><span data-i18n="nav.vr_overlay">VR Overlay</span></div>
+                            <div class="tb-dd-item" data-windows-only onclick="showTab(18)"><span class="msi">mic</span><span data-i18n="nav.voice_fight">Voice Fight</span></div>
+                            <div class="tb-dd-item" data-windows-only onclick="showTab(19)"><span class="msi">sensors</span><span data-i18n="nav.discord_presence">Discord Presence</span></div>
+                            <div class="tb-dd-item" data-windows-only onclick="showTab(20)"><span class="msi">watch</span><span data-i18n="nav.vr_overlay">VR Overlay</span></div>
                             <div class="tb-dd-item" onclick="showTab(21)"><span class="msi">lock</span><span data-i18n="nav.permini">Permini</span></div>
-                            <div class="tb-dd-item" onclick="showTab(22)"><span class="msi">translate</span><span data-i18n="nav.kikitan_xd">Kikitan XD</span></div>
-                            <div class="tb-dd-item" onclick="showTab(24)"><span class="msi">height</span><span data-i18n="nav.avatar_scaling">Avatar Scaling</span></div>
+                            <div class="tb-dd-item" data-windows-only onclick="showTab(22)"><span class="msi">translate</span><span data-i18n="nav.kikitan_xd">Kikitan XD</span></div>
+                            <div class="tb-dd-item" data-windows-only onclick="showTab(24)"><span class="msi">height</span><span data-i18n="nav.avatar_scaling">Avatar Scaling</span></div>
                             <div class="tb-dd-item" onclick="showTab(25)"><span class="msi">auto_awesome</span><span data-i18n="nav.action_flow">Action Flow</span></div>
                         </div>
                     </div>
@@ -192,7 +192,7 @@
                         <span class="msi ss-icon">search</span>
                     </div>
                 </div>
-                <div id="tbToolsGroup">
+                <div id="tbToolsGroup" data-windows-only>
                     <button class="tb-sidebar-btn" id="badgeRelay" title="Media Relay" data-i18n-title="nav.media_relay" onclick="toggleRelay()"><span class="msi">cell_tower</span></button>
                     <button class="tb-sidebar-btn" id="badgeChatbox" title="Custom Chatbox" data-i18n-title="nav.custom_chatbox" onclick="toggleChatbox()"><span class="msi">chat</span></button>
                     <button class="tb-sidebar-btn" id="badgeSpace" title="Space Flight" data-i18n-title="nav.space_flight" onclick="sfConnect()"><span class="msi">rocket_launch</span></button>
@@ -205,7 +205,7 @@
                     <div class="tb-sep"></div>
                 </div>
                 <button class="tb-sidebar-btn" id="btnUpdate" onclick="toggleUpdatePanel()" title="Update available" data-i18n-title="update.available" style="display:none;"><span class="msi">system_update_alt</span><span class="notif-count" id="updateBadge">1</span></button>
-                <button class="tb-sidebar-btn" id="tbToolsToggle" onclick="tbToggleTools()" title="Tools" data-i18n-title="nav.tools"><span class="msi">construction</span></button>
+                <button class="tb-sidebar-btn" id="tbToolsToggle" data-windows-only onclick="tbToggleTools()" title="Tools" data-i18n-title="nav.tools"><span class="msi">construction</span></button>
                 <button class="tb-sidebar-btn" id="btnChat" onclick="toggleChatPanel()" title="Messages" data-i18n-title="common.messages"><span class="msi">forum</span><span class="notif-count" id="chatBadge" style="display:none;">0</span></button>
                 <button class="tb-sidebar-btn" id="btnNotif" onclick="toggleNotifPanel()" title="Notifications" data-i18n-title="common.notifications"><span class="msi">notifications</span><span class="notif-count" id="notifBadge" style="display:none;">0</span></button>
                 <div class="tb-sep"></div>

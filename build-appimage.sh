@@ -54,9 +54,10 @@ mkdir -p "$APPDIR/usr/bin"
 cp -r "$PUB/." "$APPDIR/usr/bin/"
 rm -f "$APPDIR/usr/bin/libcoreclrtraceptprovider.so"
 
-mkdir -p "$APPDIR/usr/share/icons/hicolor/256x256/apps"
-cp "$APPDIR/usr/bin/frontend/logo.png" "$APPDIR/usr/share/icons/hicolor/256x256/apps/vrcnext.png"
+mkdir -p "$APPDIR/usr/share/icons/hicolor/512x512/apps"
+cp "$APPDIR/usr/bin/frontend/logo.png" "$APPDIR/usr/share/icons/hicolor/512x512/apps/vrcnext.png"
 cp "$APPDIR/usr/bin/frontend/logo.png" "$APPDIR/vrcnext.png"
+cp "$APPDIR/usr/bin/frontend/logo.png" "$APPDIR/.DirIcon"
 
 mkdir -p "$APPDIR/usr/share/applications"
 cat > "$APPDIR/usr/share/applications/vrcnext.desktop" <<'EOF'
