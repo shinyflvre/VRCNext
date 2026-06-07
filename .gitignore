@@ -2,6 +2,11 @@
 bin/
 obj/
 
+# Linux AppImage build
+publish-linux/
+AppDir/
+*.AppImage
+
 # User
 *.user
 *.suo

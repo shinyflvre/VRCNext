@@ -1,6 +1,5 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using NativeFileDialogSharp;
 using VRCNext.Services;
 using VRCNext.Services.Helpers;
 using System.Diagnostics;
@@ -384,7 +383,7 @@ public class AuthController
 
             case "setupBrowsePhotoDir":
                 {
-                    var r = Dialog.FolderPicker(Path.Combine(
+                    var r = FilePicker.FolderPicker(Path.Combine(
                         Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), "VRChat"));
                     if (r.IsOk) _core.SendToJS("setupPhotoDirResult", r.Path);
                 }
@@ -420,7 +419,9 @@ public class AuthController
                         Arguments = $"--waitpid {Environment.ProcessId}",
                         UseShellExecute = true
                     });
+#if WINDOWS
                     WindowController.AllowNextClose();
+#endif
                     try { _core.Window?.Close(); } catch { Environment.Exit(0); }
                 }
                 break;
@@ -441,7 +442,7 @@ public class AuthController
             case "browseExe":
                 {
                     var target = msg["target"]?.ToString() ?? "extra";
-                    var r = Dialog.FileOpen("exe");
+                    var r = FilePicker.FileOpen("exe");
                     if (r.IsOk)
                     {
                         _core.SendToJS("exeAdded", new { target, path = r.Path });
@@ -456,7 +457,7 @@ public class AuthController
 
             case "browseDashBg":
                 {
-                    var r = Dialog.FileOpen("png,jpg,jpeg,bmp,webp,gif,mp4");
+                    var r = FilePicker.FileOpen("png,jpg,jpeg,bmp,webp,gif,mp4");
                     if (r.IsOk)
                     {
                         try

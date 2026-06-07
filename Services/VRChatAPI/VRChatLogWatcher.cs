@@ -166,13 +166,7 @@ public class VRChatLogWatcher : IDisposable
 
     public void Stop() { _pollTimer?.Dispose(); _pollTimer = null; }
 
-    private string GetLogDirectory()
-    {
-        // VRChat uses LocalLow, not Local
-        var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var appData = Directory.GetParent(local)?.FullName ?? local;
-        return Path.Combine(appData, "LocalLow", "VRChat", "VRChat");
-    }
+    private string GetLogDirectory() => Helpers.VrcPaths.VrcDataDir();
 
     private void FindLatestLogFile()
     {

@@ -9,11 +9,7 @@ namespace VRCNext.Services.Helpers;
 // itself, so we read/write it directly — it is not part of VRCNext settings.
 public static class VrcConfigHelper
 {
-    private static string VrcAppDataDir()
-    {
-        var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        return Path.GetFullPath(Path.Combine(local, "..", "LocalLow", "VRChat", "VRChat"));
-    }
+    private static string VrcAppDataDir() => VrcPaths.VrcDataDir();
 
     private static string ConfigPath() => Path.Combine(VrcAppDataDir(), "config.json");
 

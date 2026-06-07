@@ -1,5 +1,4 @@
 using Microsoft.Data.Sqlite;
-using NativeFileDialogSharp;
 using Newtonsoft.Json.Linq;
 using VRCNext.Services;
 using VRCNext.Services.Helpers;
@@ -667,7 +666,7 @@ public class TimelineController
 
     private void SelectAndPreview()
     {
-        var r = Dialog.FileOpen("sqlite3,db");
+        var r = FilePicker.FileOpen("sqlite3,db");
         if (!r.IsOk) { _core.SendToJS("vrcxSelectCancelled", null); return; }
         _vrcxImportPath = r.Path;
 

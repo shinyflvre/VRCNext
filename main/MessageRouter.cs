@@ -1,6 +1,5 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using NativeFileDialogSharp;
 using VRCNext.Services;
 using VRCNext.Services.Helpers;
 using System.Diagnostics;
@@ -396,7 +395,7 @@ public partial class AppShell
 
                 case "addFolder":
                     {
-                        var r = Dialog.FolderPicker();
+                        var r = FilePicker.FolderPicker();
                         if (r.IsOk) SendToJS("folderAdded", r.Path);
                     }
                     break;
@@ -2260,7 +2259,7 @@ public partial class AppShell
                 case "invBrowseUpload":
                 {
                     var uploadTag = msg["tag"]?.ToString() ?? "gallery";
-                    var r = Dialog.FileOpen("png");
+                    var r = FilePicker.FileOpen("png");
                     if (r.IsOk)
                     {
                         var path = r.Path;
@@ -2498,7 +2497,7 @@ public partial class AppShell
                     var dlFileName = msg["fileName"]?.ToString() ?? "download.png";
                     if (!string.IsNullOrEmpty(dlUrl))
                     {
-                        var rs = Dialog.FileSave("png");
+                        var rs = FilePicker.FileSave("png");
                         if (rs.IsOk)
                         {
                             var savePath = rs.Path;
@@ -2546,9 +2545,7 @@ public partial class AppShell
                     var folder = msg["folder"]?.ToString();
                     string? dir = folder switch
                     {
-                        "vrchat_data"  => Path.GetFullPath(Path.Combine(
-                                              Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                                              "..", "LocalLow", "VRChat", "VRChat")),
+                        "vrchat_data"  => VrcPaths.VrcDataDir(),
                         "vrchat_crash" => Path.Combine(
                                               Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                                               "Temp", "VRChat", "VRChat", "Crashes"),

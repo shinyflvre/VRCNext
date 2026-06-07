@@ -169,8 +169,12 @@ public partial class AppShell
         _core.DispatchMessage = rawMsg => OnWebMessage(rawMsg);
         _core.AvtrdbSubmit        = id => { QueueAvtrdbSubmit(id); QueueAvtrIcuSubmit(id); };
         _core.PrefetchSharedContent = () => PrefetchSharedContentAsync();
-        _core.LoadPage = path => _window.Load(path);
+        _core.LoadPage = path => _window.Load(ResolvePageUrl(path));
+#if WINDOWS
         _memTrim.OnTrim = () => { _core.TrimCaches(); _core.VrOverlay?.TrimMemory(); };
+#else
+        _memTrim.OnTrim = () => { _core.TrimCaches(); };
+#endif
         _friends = new FriendsController(_core);
         _instance = new InstanceController(_core, _friends);
         _notifications = new NotificationsController(_core, _friends, _instance);
@@ -203,8 +207,10 @@ public partial class AppShell
             _vrcnPlusCtrl.OnOwnUserKnown(user?["id"]?.ToString() ?? "");
         };
         _core.PushDiscordPresence = () => _discordCtrl.PushPresence();
+#if WINDOWS
         _vroCtrl.OnToolToggle    = ToggleToolFromOverlay;
         _vroCtrl.OnVrScaleChange = delta => _asCtrl.ApplyVrScaleDelta(delta);
+#endif
         _vroCtrl.GetToolStates = () => (
             _discordCtrl.IsConnected,
             _vfCtrl.IsRunning,
@@ -347,19 +353,14 @@ public partial class AppShell
         }
 
 #if !WINDOWS
-        // Auto-install missing GStreamer plugins required by WebKit2GTK (blank window without them)
         EnsureLinuxGstreamer();
 
-        // WebKit2GTK on systems without proper GPU (VMs, Hyper-V, missing Vulkan):
-        // Force Mesa software rendering so EGL/OpenGL never fails in the WebKit child process.
-        // These must be set before PhotinoWindow so the child process inherits them.
         void SetIfUnset(string key, string val)
         {
             if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable(key)))
                 Environment.SetEnvironmentVariable(key, val);
         }
         SetIfUnset("WEBKIT_DISABLE_DMABUF_RENDERER",    "1");
-        SetIfUnset("WEBKIT_DISABLE_COMPOSITING_MODE",   "1");
         SetIfUnset("LIBGL_ALWAYS_SOFTWARE",             "1");
         SetIfUnset("GALLIUM_DRIVER",                    "llvmpipe");
 #endif
@@ -386,7 +387,7 @@ public partial class AppShell
 #endif
             .RegisterWebMessageReceivedHandler((_, message) => { _ = OnWebMessage(message); });
         if (File.Exists(iconPath)) windowBuilder.SetIconFile(iconPath);
-        _window = windowBuilder.Load(startPage);
+        _window = windowBuilder.Load(ResolvePageUrl(startPage));
         _core.Window = _window;
         _ = RunJsDispatcherAsync();
         _ = RunAutoBackupsAsync();
@@ -805,6 +806,25 @@ public partial class AppShell
 
     private readonly List<string> _mappedHosts = new();
 
+    private string ResolvePageUrl(string fileOrPath)
+    {
+        if (OperatingSystem.IsWindows()) return fileOrPath;
+        try
+        {
+            var frontendRoot = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "frontend"));
+            var full = Path.GetFullPath(fileOrPath);
+            if (full.StartsWith(frontendRoot, StringComparison.Ordinal) && _httpPort > 0)
+            {
+                var rel = full.Substring(frontendRoot.Length)
+                              .TrimStart(Path.DirectorySeparatorChar, '/')
+                              .Replace(Path.DirectorySeparatorChar, '/');
+                return $"http://localhost:{_httpPort}/{rel}";
+            }
+        }
+        catch { }
+        return fileOrPath;
+    }
+
     private void StartHttpListener()
     {
         // Try the saved port first, then scan for a free one
@@ -918,10 +938,79 @@ public partial class AppShell
                 else
                     ctx.Response.StatusCode = 404;
             }
-            else ctx.Response.StatusCode = 404;
+            else
+            {
+                var frontendRoot = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "frontend"));
+                var rel = Uri.UnescapeDataString(path.TrimStart('/'));
+                if (string.IsNullOrEmpty(rel)) rel = "index.html";
+                var full = ResolveFrontendFile(frontendRoot, rel);
+                if (full != null)
+                    await ServeStaticAsync(ctx, full);
+                else
+                    ctx.Response.StatusCode = 404;
+            }
         }
         catch { ctx.Response.StatusCode = 500; }
         finally { try { ctx.Response.Close(); } catch { } }
+    }
+
+    private static string? ResolveFrontendFile(string root, string rel)
+    {
+        var direct = Path.GetFullPath(Path.Combine(root, rel.Replace('/', Path.DirectorySeparatorChar)));
+        if (direct.StartsWith(root, StringComparison.Ordinal) && File.Exists(direct)) return direct;
+
+        var current = root;
+        foreach (var seg in rel.Split('/', StringSplitOptions.RemoveEmptyEntries))
+        {
+            if (seg == "." || seg == "..") return null;
+            var next = Path.Combine(current, seg);
+            if (Directory.Exists(next) || File.Exists(next)) { current = next; continue; }
+            string? match = null;
+            try
+            {
+                foreach (var entry in Directory.EnumerateFileSystemEntries(current))
+                {
+                    if (string.Equals(Path.GetFileName(entry), seg, StringComparison.OrdinalIgnoreCase))
+                    { match = entry; break; }
+                }
+            }
+            catch { return null; }
+            if (match == null) return null;
+            current = match;
+        }
+        return File.Exists(current) ? current : null;
+    }
+
+    private static async Task ServeStaticAsync(System.Net.HttpListenerContext ctx, string file)
+    {
+        ctx.Response.ContentType = Path.GetExtension(file).ToLowerInvariant() switch
+        {
+            ".html" or ".htm" => "text/html; charset=utf-8",
+            ".css"            => "text/css; charset=utf-8",
+            ".js" or ".mjs"   => "text/javascript; charset=utf-8",
+            ".json"           => "application/json; charset=utf-8",
+            ".svg"            => "image/svg+xml",
+            ".png"            => "image/png",
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".gif"            => "image/gif",
+            ".webp"           => "image/webp",
+            ".ico"            => "image/x-icon",
+            ".woff"           => "font/woff",
+            ".woff2"          => "font/woff2",
+            ".ttf"            => "font/ttf",
+            ".otf"            => "font/otf",
+            ".mp3"            => "audio/mpeg",
+            ".wav"            => "audio/wav",
+            ".ogg"            => "audio/ogg",
+            ".mp4"            => "video/mp4",
+            ".webm"           => "video/webm",
+            _                 => "application/octet-stream"
+        };
+        ctx.Response.StatusCode = 200;
+        ctx.Response.Headers.Add("Access-Control-Allow-Origin", "*");
+        var bytes = await File.ReadAllBytesAsync(file);
+        ctx.Response.ContentLength64 = bytes.Length;
+        await ctx.Response.OutputStream.WriteAsync(bytes);
     }
 
     private static async Task ServeThemeFileAsync(System.Net.HttpListenerContext ctx, string file)
@@ -1060,6 +1149,24 @@ public partial class AppShell
         }
     }
 
+    private static void GenerateImageThumbSkia(string file, string thumbPath)
+    {
+        var tmpPath = thumbPath + ".tmp";
+        using var input = File.OpenRead(file);
+        using var src = SkiaSharp.SKBitmap.Decode(input);
+        if (src == null) return;
+        const int maxSize = 400;
+        var scale = Math.Min(1.0, Math.Min(maxSize / (double)src.Width, maxSize / (double)src.Height));
+        var w = Math.Max(1, (int)(src.Width  * scale));
+        var h = Math.Max(1, (int)(src.Height * scale));
+        using var resized = src.Resize(new SkiaSharp.SKImageInfo(w, h), SkiaSharp.SKFilterQuality.Medium);
+        if (resized == null) return;
+        using var img = SkiaSharp.SKImage.FromBitmap(resized);
+        using var data = img.Encode(SkiaSharp.SKEncodedImageFormat.Jpeg, 72);
+        using (var fs = File.Create(tmpPath)) data.SaveTo(fs);
+        File.Move(tmpPath, thumbPath, overwrite: true);
+    }
+
     private async Task ServeThumbAsync(System.Net.HttpListenerContext ctx, string file)
     {
         if (!File.Exists(file)) { ctx.Response.StatusCode = 404; return; }
@@ -1086,11 +1193,10 @@ public partial class AppShell
                         var ok = await Task.Run(() => GenerateVideoThumb(file, thumbPath));
                         if (!ok) { ctx.Response.StatusCode = 404; return; }
                     }
-                    else
+                    else if (OperatingSystem.IsWindows())
                     await Task.Run(() =>
                     {
                         var tmpPath = thumbPath + ".tmp";
-                        // FromStream instead of FromFile — releases file handle immediately after read
                         var rawBytes = File.ReadAllBytes(file);
                         using var ms  = new MemoryStream(rawBytes);
                         using var src = System.Drawing.Image.FromStream(ms, false, false);
@@ -1109,19 +1215,20 @@ public partial class AppShell
                         var encParams = new System.Drawing.Imaging.EncoderParameters(1);
                         encParams.Param[0] = new System.Drawing.Imaging.EncoderParameter(
                             System.Drawing.Imaging.Encoder.Quality, 72L);
-                        // Atomic write: temp file then rename to prevent serving half-written files
                         bmp.Save(tmpPath, jpegCodec, encParams);
                         File.Move(tmpPath, thumbPath, overwrite: true);
 
-                        // Periodic GC to prompt libgdiplus to release native memory
                         if (Interlocked.Increment(ref _thumbGenCount) % 10 == 0)
                             GC.Collect(1, GCCollectionMode.Optimized, false);
                     });
+                    else
+                        await Task.Run(() => GenerateImageThumbSkia(file, thumbPath));
                 }
             }
             finally { _thumbSem.Release(); }
         }
 
+        if (!File.Exists(thumbPath)) { ctx.Response.StatusCode = 404; return; }
         ctx.Response.ContentType = "image/jpeg";
         ctx.Response.StatusCode  = 200;
         var thumbBytes = await File.ReadAllBytesAsync(thumbPath);

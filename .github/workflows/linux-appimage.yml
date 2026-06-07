@@ -1,0 +1,114 @@
+name: Build Linux AppImage
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  appimage:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Install build & runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-0 libwebkit2gtk-4.1-dev \
+            libgtk-3-0 libgtk-3-dev libglib2.0-0 \
+            gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-libav \
+            zenity patchelf desktop-file-utils librsvg2-dev fuse libfuse2
+
+      - name: Publish (self-contained linux-x64)
+        run: |
+          dotnet publish VRCNext.csproj \
+            -c Release -r linux-x64 --self-contained true \
+            -p:VRCNextWhKey='${{ secrets.VRCNEXT_WH_KEY }}' \
+            -p:VRCNextVrcnPlusAdminToken='${{ secrets.VRCNEXT_VRCN_PLUS_ADMIN_TOKEN }}' \
+            -o publish
+          chmod +x publish/VRCNext
+
+      - name: Assemble AppDir
+        run: |
+          set -e
+          APPDIR="$PWD/AppDir"
+          mkdir -p "$APPDIR/usr/bin"
+          cp -r publish/* "$APPDIR/usr/bin/"
+          rm -f "$APPDIR/usr/bin/libcoreclrtraceptprovider.so"
+
+          mkdir -p "$APPDIR/usr/share/icons/hicolor/256x256/apps"
+          cp "$APPDIR/usr/bin/frontend/logo.png" "$APPDIR/usr/share/icons/hicolor/256x256/apps/vrcnext.png"
+          cp "$APPDIR/usr/bin/frontend/logo.png" "$APPDIR/vrcnext.png"
+
+          mkdir -p "$APPDIR/usr/share/applications"
+          cat > "$APPDIR/usr/share/applications/vrcnext.desktop" <<'EOF'
+          [Desktop Entry]
+          Type=Application
+          Name=VRCNext
+          Comment=VRChat launcher and management
+          Exec=VRCNext
+          Icon=vrcnext
+          Terminal=false
+          Categories=Game;Utility;
+          StartupWMClass=VRCNext
+          EOF
+          cp "$APPDIR/usr/share/applications/vrcnext.desktop" "$APPDIR/vrcnext.desktop"
+
+          WK_LIBEXEC="$(find /usr/lib /usr/libexec /usr/lib/x86_64-linux-gnu -type d -name 'webkit2gtk-4.1' 2>/dev/null | head -1)"
+          if [ -n "$WK_LIBEXEC" ]; then
+            mkdir -p "$APPDIR/usr/libexec/webkit2gtk-4.1"
+            cp -a "$WK_LIBEXEC"/. "$APPDIR/usr/libexec/webkit2gtk-4.1/"
+          fi
+
+          mkdir -p "$APPDIR/apprun-hooks"
+          cat > "$APPDIR/apprun-hooks/zz-vrcnext-env.sh" <<'EOF'
+          export WEBKIT_EXEC_PATH="${APPDIR}/usr/libexec/webkit2gtk-4.1"
+          EOF
+
+      - name: Download linuxdeploy and plugins
+        run: |
+          BASE="https://github.com/linuxdeploy"
+          wget -q "$BASE/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage"
+          wget -q "$BASE/linuxdeploy-plugin-gtk/raw/master/linuxdeploy-plugin-gtk.sh"
+          chmod +x linuxdeploy-x86_64.AppImage linuxdeploy-plugin-gtk.sh
+
+      - name: Build AppImage
+        env:
+          LD_LIBRARY_PATH: ${{ github.workspace }}/AppDir/usr/bin
+          DEPLOY_GTK_VERSION: '3'
+          NO_STRIP: '1'
+        run: |
+          export PATH="$PWD:$PATH"
+          ./linuxdeploy-x86_64.AppImage --appimage-extract-and-run \
+            --appdir AppDir \
+            --executable AppDir/usr/bin/VRCNext \
+            --library AppDir/usr/bin/Photino.Native.so \
+            --library AppDir/usr/bin/libnfd.so \
+            --desktop-file AppDir/vrcnext.desktop \
+            --icon-file AppDir/vrcnext.png \
+            --plugin gtk \
+            --output appimage
+          mv VRCNext*.AppImage VRCNext-x86_64.AppImage
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: VRCNext-x86_64.AppImage
+          path: VRCNext-x86_64.AppImage
+
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: VRCNext-x86_64.AppImage

@@ -1,4 +1,4 @@
-using NativeFileDialogSharp;
+using VRCNext.Services.Helpers;
 using Newtonsoft.Json.Linq;
 using VRCNext.Services;
 
@@ -75,7 +75,7 @@ public class VoiceFightController : IDisposable
 
             case "vfAddSound":
                 {
-                    var r = Dialog.FileOpen("wav,mp3,ogg");
+                    var r = FilePicker.FileOpen("wav,mp3,ogg");
                     if (r.IsOk)
                     {
                         var path = r.Path;
@@ -101,7 +101,7 @@ public class VoiceFightController : IDisposable
                     int itemIdx = msg["itemIndex"]?.Value<int>() ?? -1;
                     if (itemIdx >= 0 && itemIdx < _vfSettings.Items.Count)
                     {
-                        var r = Dialog.FileOpen("wav,mp3,ogg");
+                        var r = FilePicker.FileOpen("wav,mp3,ogg");
                         if (r.IsOk)
                         {
                             var path = r.Path;

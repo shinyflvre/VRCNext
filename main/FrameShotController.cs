@@ -13,7 +13,11 @@ public class FrameShotController : IDisposable
     private readonly PhotosController _photos;
     private bool _fsEventsWired;
 
+#if WINDOWS
     public bool IsConnected => _core.VrOverlay?.FsConnected ?? false;
+#else
+    public bool IsConnected => false;
+#endif
 
     public FrameShotController(CoreLibrary core, VROverlayController vroCtrl, PhotosController photos)
     {

@@ -52,10 +52,14 @@ static class Program
 
         mutex.Dispose();
         if (showError)
+#if WINDOWS
             MessageBox.Show(
                 GetAlreadyRunningMessage(),
                 "VRCNext", MessageBoxButtons.OK,
                 MessageBoxIcon.Information);
+#else
+            Console.Error.WriteLine(GetAlreadyRunningMessage());
+#endif
         return false;
     }
 

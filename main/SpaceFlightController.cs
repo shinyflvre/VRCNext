@@ -11,7 +11,11 @@ public class SpaceFlightController : IDisposable
     private readonly VROverlayController _vroCtrl;
     private bool _sfEventsWired;
 
+#if WINDOWS
     public bool IsConnected => _core.VrOverlay?.SfConnected ?? false;
+#else
+    public bool IsConnected => false;
+#endif
 
     public SpaceFlightController(CoreLibrary core, VROverlayController vroCtrl)
     {
