@@ -2536,7 +2536,41 @@ public partial class AppShell
                 {
                     var filePath = msg["path"]?.ToString();
                     if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
+                    {
+#if WINDOWS
                         Process.Start("explorer.exe", $"/select,\"{filePath}\"");
+#else
+                        bool revealed = false;
+                        try
+                        {
+                            var dbus = new ProcessStartInfo { FileName = "dbus-send", UseShellExecute = false };
+                            dbus.ArgumentList.Add("--session");
+                            dbus.ArgumentList.Add("--dest=org.freedesktop.FileManager1");
+                            dbus.ArgumentList.Add("--type=method_call");
+                            dbus.ArgumentList.Add("/org/freedesktop/FileManager1");
+                            dbus.ArgumentList.Add("org.freedesktop.FileManager1.ShowItems");
+                            dbus.ArgumentList.Add("array:string:file://" + filePath);
+                            dbus.ArgumentList.Add("string:");
+                            using var dp = Process.Start(dbus);
+                            if (dp != null) { dp.WaitForExit(5000); revealed = dp.HasExited && dp.ExitCode == 0; }
+                        }
+                        catch { }
+                        if (!revealed)
+                        {
+                            try
+                            {
+                                var dir = Path.GetDirectoryName(filePath);
+                                if (!string.IsNullOrEmpty(dir))
+                                {
+                                    var op = new ProcessStartInfo { FileName = "xdg-open", UseShellExecute = false };
+                                    op.ArgumentList.Add(dir);
+                                    Process.Start(op);
+                                }
+                            }
+                            catch { }
+                        }
+#endif
+                    }
                     break;
                 }
 

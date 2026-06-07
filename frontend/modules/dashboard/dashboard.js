@@ -35,6 +35,11 @@ function updateDashSub() {
     document.getElementById('dashSub').textContent = status;
 }
 
+function _dashBgSrc(p) {
+    if (location.protocol === 'file:') return 'file:///' + p.replace(/\\/g, '/');
+    return `http://localhost:${_localHttpPort}/dashbg?file=${encodeURIComponent(p)}`;
+}
+
 function renderDashboard() {
     const name = currentVrcUser?.displayName;
     document.getElementById('dashWelcome').innerHTML = name
@@ -46,7 +51,7 @@ function renderDashboard() {
     const bgEl = document.getElementById('dashHeroBg');
     const isVideoBg = dashBgPath && dashBgPath.toLowerCase().endsWith('.mp4');
     if (isVideoBg) {
-        const src = dashBgDataUri || ('file:///' + dashBgPath.replace(/\\/g, '/'));
+        const src = dashBgDataUri || _dashBgSrc(dashBgPath);
         const existingVid = bgEl.querySelector('video');
         if (existingVid && existingVid.getAttribute('data-src') === src) {
             // same source — keep the video playing, don't recreate it
@@ -69,7 +74,7 @@ function renderDashboard() {
         if (dashBgDataUri) {
             bgEl.style.backgroundImage = `url('${dashBgDataUri}')`;
         } else if (dashBgPath) {
-            const fileUri = 'file:///' + dashBgPath.replace(/\\/g, '/');
+            const fileUri = _dashBgSrc(dashBgPath);
             bgEl.style.backgroundImage = `url('${fileUri}')`;
         } else {
             bgEl.style.backgroundImage = `url('fallback_bg.png')`;

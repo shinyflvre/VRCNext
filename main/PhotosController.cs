@@ -467,12 +467,56 @@ public class PhotosController
                         _core.SendToJS("toast", new { ok = false, msg = $"Wallpaper error: {ex.Message}" });
                     }
                 }
+#else
+                var lWallPath = msg["path"]?.ToString();
+                if (!string.IsNullOrEmpty(lWallPath) && File.Exists(lWallPath))
+                {
+                    bool wok = SetLinuxWallpaper(lWallPath);
+                    _core.SendToJS("toast", new { ok = wok, msg = wok
+                        ? "Desktop background updated"
+                        : "Could not set wallpaper (unsupported desktop environment)" });
+                }
 #endif
                 break;
         }
     }
 
     // Private Methods
+
+#if !WINDOWS
+    private static bool SetLinuxWallpaper(string path)
+    {
+        var uri = "file://" + path;
+        if (TryRun("plasma-apply-wallpaperimage", path)) return true;
+        bool gnome = TryRun("gsettings", "set", "org.gnome.desktop.background", "picture-uri", uri);
+        TryRun("gsettings", "set", "org.gnome.desktop.background", "picture-uri-dark", uri);
+        if (gnome) return true;
+        if (TryRun("gsettings", "set", "org.cinnamon.desktop.background", "picture-uri", uri)) return true;
+        if (TryRun("xfconf-query", "-c", "xfce4-desktop", "-p", "/backdrop/screen0/monitor0/workspace0/last-image", "-s", path)) return true;
+        if (TryRun("feh", "--bg-fill", path)) return true;
+        return false;
+    }
+
+    private static bool TryRun(string file, params string[] args)
+    {
+        try
+        {
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = file,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+            };
+            foreach (var a in args) psi.ArgumentList.Add(a);
+            using var p = System.Diagnostics.Process.Start(psi);
+            if (p == null) return false;
+            if (!p.WaitForExit(8000)) { try { p.Kill(true); } catch { } return false; }
+            return p.ExitCode == 0;
+        }
+        catch { return false; }
+    }
+#endif
 
     // Add a single new file to the library cache and push it to JS immediately.
     // No-op if the cache isn't ready yet (the next scan will pick it up).
