@@ -1916,7 +1916,8 @@ public class AuthController
         if (enable)
         {
             Directory.CreateDirectory(dir);
-            var exe = Environment.ProcessPath ?? "VRCNext";
+            var exe = Environment.GetEnvironmentVariable("APPIMAGE");
+            if (string.IsNullOrEmpty(exe)) exe = Environment.ProcessPath ?? "VRCNext";
             File.WriteAllText(file,
                 "[Desktop Entry]\n" +
                 "Type=Application\n" +
