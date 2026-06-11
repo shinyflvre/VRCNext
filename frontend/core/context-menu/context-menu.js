@@ -980,6 +980,138 @@
         positionSubmenu(parentBtn);
     }
 
+    function showAvLocalMoveToGroupSubmenu(avatarId, parentBtn) {
+        const groups = (typeof _localFavAvatarGroups !== 'undefined') ? _localFavAvatarGroups : [];
+        const currentGroupIds = (typeof _localFavAvatarsData !== 'undefined')
+            ? _localFavAvatarsData.filter(a => a.id === avatarId).map(a => a.groupId)
+            : [];
+
+        function renderLocalGroupSubmenu() {
+            const g = (typeof _localFavAvatarGroups !== 'undefined') ? _localFavAvatarGroups : [];
+            const cIds = (typeof _localFavAvatarsData !== 'undefined')
+                ? _localFavAvatarsData.filter(a => a.id === avatarId).map(a => a.groupId)
+                : [];
+            submenu.innerHTML = g.map(gr => {
+                const isInGroup = cIds.includes(gr.id);
+                const iconEl = isInGroup
+                    ? `<span class="msi" style="font-size:14px;color:var(--accent);">check_circle</span>`
+                    : `<span class="msi" style="font-size:14px;">folder</span>`;
+                return `<button class="vn-ctx-item${isInGroup ? ' ci-group-selected' : ''}"
+                    data-local-group-id="${gr.id}" data-avid="${esc(avatarId)}" data-is-in-group="${isInGroup}">
+                    ${iconEl}
+                    <span class="vn-ctx-label">${esc(gr.name)}</span>
+                </button>`;
+            }).join('') + `<button class="vn-ctx-item" data-local-create-group="true" data-avid="${esc(avatarId)}">
+                <span class="msi" style="font-size:14px;">add</span>
+                <span class="vn-ctx-label">${cm('avatar.create_local_group', 'Create New Group...')}</span>
+            </button>`;
+            submenu.querySelectorAll('[data-local-group-id]').forEach(btn => {
+                btn.addEventListener('click', e => {
+                    e.stopPropagation();
+                    const groupId = parseInt(btn.dataset.localGroupId);
+                    const isInGroup = btn.dataset.isInGroup === 'true';
+                    if (isInGroup) {
+                        sendToCS({ action: 'localFavRemoveItem', groupId, itemId: btn.dataset.avid, itemType: 'avatar' });
+                    } else {
+                        sendToCS({ action: 'localFavAddItem', groupId, itemId: btn.dataset.avid, itemType: 'avatar' });
+                    }
+                    hideMenu();
+                });
+                btn.addEventListener('mouseenter', () => clearTimeout(submenuTimer));
+            });
+            submenu.querySelectorAll('[data-local-create-group]').forEach(btn => {
+                btn.addEventListener('click', e => {
+                    e.stopPropagation();
+                    hideMenu();
+                    if (typeof showAvatarLocalFavCreateGroupDialog === 'function') {
+                        showAvatarLocalFavCreateGroupDialog(btn.dataset.avid);
+                    }
+                });
+                btn.addEventListener('mouseenter', () => clearTimeout(submenuTimer));
+            });
+            positionSubmenu(parentBtn);
+        }
+
+        // If groups not loaded yet, fetch them first
+        if (groups.length === 0) {
+            submenu.innerHTML = `<div class="vn-ctx-item" style="opacity:0.5;">${cm('common.loading', 'Loading...')}</div>`;
+            positionSubmenu(parentBtn);
+            const originalHandler = window.handleAvatarLocalFavGroups;
+            window.handleAvatarLocalFavGroups = function(payload) {
+                if (payload && payload.favType === 'avatar') {
+                    _localFavAvatarGroups = payload.groups || [];
+                    if (typeof renderAvatarLocalFavItems === 'function') {
+                        renderAvatarLocalFavItems({ groups: payload.groups, entries: undefined });
+                    }
+                }
+                window.handleAvatarLocalFavGroups = originalHandler;
+                renderLocalGroupSubmenu();
+            };
+            sendToCS({ action: 'localFavGetGroups', favType: 'avatar' });
+        } else {
+            renderLocalGroupSubmenu();
+        }
+    }
+
+    function showAvLocalEditModeGroupSubmenu(parentBtn) {
+        const groups = (typeof _localFavAvatarGroups !== 'undefined') ? _localFavAvatarGroups : [];
+
+        function renderLocalEditGroupSubmenu() {
+            const g = (typeof _localFavAvatarGroups !== 'undefined') ? _localFavAvatarGroups : [];
+            submenu.innerHTML = g.map(gr => {
+                return `<button class="vn-ctx-item" data-local-edit-group-id="${gr.id}">
+                    <span class="msi" style="font-size:14px;">folder</span>
+                    <span class="vn-ctx-label">${esc(gr.name)}</span>
+                </button>`;
+            }).join('') + `<button class="vn-ctx-item" data-local-edit-create-group="true">
+                <span class="msi" style="font-size:14px;">add</span>
+                <span class="vn-ctx-label">${cm('avatar.create_local_group', 'Create New Group...')}</span>
+            </button>`;
+            submenu.querySelectorAll('[data-local-edit-group-id]').forEach(btn => {
+                btn.addEventListener('click', e => {
+                    e.stopPropagation();
+                    const groupId = parseInt(btn.dataset.localEditGroupId);
+                    if (typeof avLocalEditMoveSelected === 'function') {
+                        avLocalEditMoveSelected(groupId);
+                    }
+                    hideMenu();
+                });
+                btn.addEventListener('mouseenter', () => clearTimeout(submenuTimer));
+            });
+            submenu.querySelectorAll('[data-local-edit-create-group]').forEach(btn => {
+                btn.addEventListener('click', e => {
+                    e.stopPropagation();
+                    hideMenu();
+                    if (typeof showAvatarLocalFavCreateGroupDialog === 'function') {
+                        showAvatarLocalFavCreateGroupDialog();
+                    }
+                });
+                btn.addEventListener('mouseenter', () => clearTimeout(submenuTimer));
+            });
+            positionSubmenu(parentBtn);
+        }
+
+        // If groups not loaded yet, fetch them first
+        if (groups.length === 0) {
+            submenu.innerHTML = `<div class="vn-ctx-item" style="opacity:0.5;">${cm('common.loading', 'Loading...')}</div>`;
+            positionSubmenu(parentBtn);
+            const originalHandler = window.handleAvatarLocalFavGroups;
+            window.handleAvatarLocalFavGroups = function(payload) {
+                if (payload && payload.favType === 'avatar') {
+                    _localFavAvatarGroups = payload.groups || [];
+                    if (typeof renderAvatarLocalFavItems === 'function') {
+                        renderAvatarLocalFavItems({ groups: payload.groups, entries: undefined });
+                    }
+                }
+                window.handleAvatarLocalFavGroups = originalHandler;
+                renderLocalEditGroupSubmenu();
+            };
+            sendToCS({ action: 'localFavGetGroups', favType: 'avatar' });
+        } else {
+            renderLocalEditGroupSubmenu();
+        }
+    }
+
     function buildAvatarItems(id) {
         // Edit mode: auto-select right-clicked avatar and show only batch-action items
         if (typeof _avEditMode !== 'undefined' && _avEditMode) {
@@ -990,6 +1122,7 @@
             }
             return [
                 { icon: 'drive_file_move', label: cm('avatar.move_to_category', 'Move to Category'), submenuFn: btn => showAvEditModeGroupSubmenu(btn) },
+                { icon: 'folder', label: cm('avatar.move_to_local_group', 'Move to Local Group'), submenuFn: btn => showAvLocalEditModeGroupSubmenu(btn) },
                 { icon: 'star_border', label: cm('avatar.remove_favorites', 'Remove from Favorites'), action: () => avEditRemoveSelected(), danger: true, confirm: true },
             ];
         }
@@ -1009,6 +1142,7 @@
         } else {
             items.push({ icon: 'star', label: cm('avatar.add_favorites', 'Add to Favorites'), submenuFn: btn => showAvFavGroupSubmenu(id, btn) });
         }
+        items.push({ icon: 'folder', label: cm('avatar.move_to_local_group', 'Move to Local Group'), submenuFn: btn => showAvLocalMoveToGroupSubmenu(id, btn) });
         return items;
     }
 

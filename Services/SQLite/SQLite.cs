@@ -1934,6 +1934,59 @@ public class UnifiedTimeEngine : IDisposable
         )";
         as_cmd.ExecuteNonQuery();
 
+        // local_favorite_groups
+        try
+        {
+            using var lfg = _db.CreateCommand();
+            lfg.CommandText = @"CREATE TABLE IF NOT EXISTS local_favorite_groups (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                name       TEXT NOT NULL DEFAULT '',
+                fav_type   TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL DEFAULT ''
+            )";
+            lfg.ExecuteNonQuery();
+        }
+        catch { }
+
+        foreach (var col in new[]
+        {
+            "name       TEXT NOT NULL DEFAULT ''",
+            "fav_type   TEXT NOT NULL DEFAULT ''",
+            "created_at TEXT NOT NULL DEFAULT ''",
+        })
+        {
+            try { using var mc = _db.CreateCommand(); mc.CommandText = $"ALTER TABLE local_favorite_groups ADD COLUMN {col}"; mc.ExecuteNonQuery(); } catch { }
+        }
+
+        // local_favorite_entries
+        try
+        {
+            using var lfe = _db.CreateCommand();
+            lfe.CommandText = @"CREATE TABLE IF NOT EXISTS local_favorite_entries (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                group_id   INTEGER NOT NULL DEFAULT 0,
+                item_id    TEXT NOT NULL DEFAULT '',
+                item_type  TEXT NOT NULL DEFAULT '',
+                added_at   TEXT NOT NULL DEFAULT ''
+            )";
+            lfe.ExecuteNonQuery();
+        }
+        catch { }
+
+        foreach (var col in new[]
+        {
+            "group_id  INTEGER NOT NULL DEFAULT 0",
+            "item_id   TEXT NOT NULL DEFAULT ''",
+            "item_type TEXT NOT NULL DEFAULT ''",
+            "added_at  TEXT NOT NULL DEFAULT ''",
+        })
+        {
+            try { using var mc = _db.CreateCommand(); mc.CommandText = $"ALTER TABLE local_favorite_entries ADD COLUMN {col}"; mc.ExecuteNonQuery(); } catch { }
+        }
+
+        try { using var idx1 = _db.CreateCommand(); idx1.CommandText = "CREATE INDEX IF NOT EXISTS idx_lfe_group ON local_favorite_entries(group_id)"; idx1.ExecuteNonQuery(); } catch { }
+        try { using var idx2 = _db.CreateCommand(); idx2.CommandText = "CREATE UNIQUE INDEX IF NOT EXISTS idx_lfe_unique ON local_favorite_entries(group_id, item_id, item_type)"; idx2.ExecuteNonQuery(); } catch { }
+
         foreach (var col in new[]
         {
             "profile           TEXT NOT NULL DEFAULT ''",
@@ -2204,6 +2257,222 @@ public class UnifiedTimeEngine : IDisposable
                 return result is long l ? (int)l : 0;
             }
             catch { return 0; }
+        }
+    }
+
+    // Local Favorite Groups
+
+    public class LocalFavGroup
+    {
+        [JsonProperty("id")]
+        public int Id { get; set; }
+        [JsonProperty("name")]
+        public string Name { get; set; } = "";
+        [JsonProperty("favType")]
+        public string FavType { get; set; } = "";
+        [JsonProperty("createdAt")]
+        public string CreatedAt { get; set; } = "";
+    }
+
+    public class LocalFavEntry
+    {
+        [JsonProperty("id")]
+        public int Id { get; set; }
+        [JsonProperty("groupId")]
+        public int GroupId { get; set; }
+        [JsonProperty("itemId")]
+        public string ItemId { get; set; } = "";
+        [JsonProperty("itemType")]
+        public string ItemType { get; set; } = "";
+        [JsonProperty("addedAt")]
+        public string AddedAt { get; set; } = "";
+    }
+
+    public List<LocalFavGroup> GetLocalFavGroups(string favType)
+    {
+        lock (_lock)
+        {
+            var result = new List<LocalFavGroup>();
+            try
+            {
+                using var cmd = _db.CreateCommand();
+                cmd.CommandText = "SELECT id,name,fav_type,created_at FROM local_favorite_groups WHERE fav_type=$ft ORDER BY name ASC";
+                cmd.Parameters.AddWithValue("$ft", favType);
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
+                    result.Add(new LocalFavGroup { Id = r.GetInt32(0), Name = r.GetString(1), FavType = r.GetString(2), CreatedAt = r.GetString(3) });
+            }
+            catch { }
+            return result;
+        }
+    }
+
+    public int CreateLocalFavGroup(string name, string favType)
+    {
+        if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(favType)) return -1;
+        lock (_lock)
+        {
+            try
+            {
+                var now = DateTime.UtcNow.ToString("o");
+                using var cmd = _db.CreateCommand();
+                cmd.CommandText = "INSERT INTO local_favorite_groups(name,fav_type,created_at) VALUES($n,$ft,$ca); SELECT last_insert_rowid();";
+                cmd.Parameters.AddWithValue("$n", name);
+                cmd.Parameters.AddWithValue("$ft", favType);
+                cmd.Parameters.AddWithValue("$ca", now);
+                var result = cmd.ExecuteScalar();
+                return result is long l ? (int)l : -1;
+            }
+            catch { return -1; }
+        }
+    }
+
+    public bool DeleteLocalFavGroup(int groupId)
+    {
+        lock (_lock)
+        {
+            try
+            {
+                using var tx = _db.BeginTransaction();
+                using var del1 = _db.CreateCommand();
+                del1.Transaction = tx;
+                del1.CommandText = "DELETE FROM local_favorite_entries WHERE group_id=$gid";
+                del1.Parameters.AddWithValue("$gid", groupId);
+                del1.ExecuteNonQuery();
+                using var del2 = _db.CreateCommand();
+                del2.Transaction = tx;
+                del2.CommandText = "DELETE FROM local_favorite_groups WHERE id=$gid";
+                del2.Parameters.AddWithValue("$gid", groupId);
+                del2.ExecuteNonQuery();
+                tx.Commit();
+                return true;
+            }
+            catch { return false; }
+        }
+    }
+
+    public bool RenameLocalFavGroup(int groupId, string newName)
+    {
+        if (string.IsNullOrEmpty(newName)) return false;
+        lock (_lock)
+        {
+            try
+            {
+                using var cmd = _db.CreateCommand();
+                cmd.CommandText = "UPDATE local_favorite_groups SET name=$n WHERE id=$gid";
+                cmd.Parameters.AddWithValue("$n", newName);
+                cmd.Parameters.AddWithValue("$gid", groupId);
+                cmd.ExecuteNonQuery();
+                return true;
+            }
+            catch { return false; }
+        }
+    }
+
+    public List<LocalFavEntry> GetLocalFavEntries(string favType, string? groupFilter = null)
+    {
+        lock (_lock)
+        {
+            var result = new List<LocalFavEntry>();
+            try
+            {
+                using var cmd = _db.CreateCommand();
+                if (string.IsNullOrEmpty(groupFilter))
+                {
+                    cmd.CommandText = @"SELECT e.id,e.group_id,e.item_id,e.item_type,e.added_at
+                        FROM local_favorite_entries e
+                        INNER JOIN local_favorite_groups g ON e.group_id=g.id
+                        WHERE g.fav_type=$ft
+                        ORDER BY e.added_at DESC";
+                    cmd.Parameters.AddWithValue("$ft", favType);
+                }
+                else
+                {
+                    cmd.CommandText = "SELECT id,group_id,item_id,item_type,added_at FROM local_favorite_entries WHERE group_id=(SELECT id FROM local_favorite_groups WHERE name=$gn AND fav_type=$ft)";
+                    cmd.Parameters.AddWithValue("$gn", groupFilter);
+                    cmd.Parameters.AddWithValue("$ft", favType);
+                }
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
+                    result.Add(new LocalFavEntry { Id = r.GetInt32(0), GroupId = r.GetInt32(1), ItemId = r.GetString(2), ItemType = r.GetString(3), AddedAt = r.GetString(4) });
+            }
+            catch { }
+            return result;
+        }
+    }
+
+    public List<int> GetGroupsForItem(string itemId, string itemType)
+    {
+        lock (_lock)
+        {
+            var result = new List<int>();
+            try
+            {
+                using var cmd = _db.CreateCommand();
+                cmd.CommandText = "SELECT group_id FROM local_favorite_entries WHERE item_id=$i AND item_type=$it";
+                cmd.Parameters.AddWithValue("$i", itemId);
+                cmd.Parameters.AddWithValue("$it", itemType);
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
+                    result.Add(r.GetInt32(0));
+            }
+            catch { }
+            return result;
+        }
+    }
+
+    public bool AddLocalFavItem(int groupId, string itemId, string itemType)
+    {
+        lock (_lock)
+        {
+            try
+            {
+                var now = DateTime.UtcNow.ToString("o");
+                using var cmd = _db.CreateCommand();
+                cmd.CommandText = "INSERT OR IGNORE INTO local_favorite_entries(group_id,item_id,item_type,added_at) VALUES($gid,$i,$it,$ca)";
+                cmd.Parameters.AddWithValue("$gid", groupId);
+                cmd.Parameters.AddWithValue("$i", itemId);
+                cmd.Parameters.AddWithValue("$it", itemType);
+                cmd.Parameters.AddWithValue("$ca", now);
+                cmd.ExecuteNonQuery();
+                return true;
+            }
+            catch { return false; }
+        }
+    }
+
+    public bool RemoveLocalFavItem(int groupId, string itemId, string itemType)
+    {
+        lock (_lock)
+        {
+            try
+            {
+                using var cmd = _db.CreateCommand();
+                cmd.CommandText = "DELETE FROM local_favorite_entries WHERE group_id=$gid AND item_id=$i AND item_type=$it";
+                cmd.Parameters.AddWithValue("$gid", groupId);
+                cmd.Parameters.AddWithValue("$i", itemId);
+                cmd.Parameters.AddWithValue("$it", itemType);
+                cmd.ExecuteNonQuery();
+                return true;
+            }
+            catch { return false; }
+        }
+    }
+
+    public bool RemoveItemFromAllGroups(string itemId, string itemType)
+    {
+        lock (_lock)
+        {
+            try
+            {
+                using var cmd = _db.CreateCommand();
+                cmd.CommandText = "DELETE FROM local_favorite_entries WHERE item_id=$i AND item_type=$it";
+                cmd.Parameters.AddWithValue("$i", itemId);
+                cmd.Parameters.AddWithValue("$it", itemType);
+                cmd.ExecuteNonQuery();
+                return true;
+            }
+            catch { return false; }
         }
     }
 

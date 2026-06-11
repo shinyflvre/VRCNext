@@ -2771,6 +2771,117 @@ public partial class AppShell
                         }
                     });
                     break;
+
+                // Local Favorites
+                case "localFavGetGroups":
+                {
+                    var favType = msg["favType"]?.ToString() ?? "";
+                    var groups = _core.TimeEngine.GetLocalFavGroups(favType);
+                    Invoke(() => SendToJS("localFavGroups", new { favType, groups }));
+                    break;
+                }
+
+                case "localFavCreateGroup":
+                {
+                    var name = msg["name"]?.ToString() ?? "";
+                    var favType = msg["favType"]?.ToString() ?? "";
+                    if (!string.IsNullOrEmpty(name) && !string.IsNullOrEmpty(favType))
+                    {
+                        var id = _core.TimeEngine.CreateLocalFavGroup(name, favType);
+                        var groups = _core.TimeEngine.GetLocalFavGroups(favType);
+                        Invoke(() => SendToJS("localFavGroups", new { favType, groups }));
+                        Invoke(() => SendToJS("localFavGroupCreated", new { ok = id > 0, groupId = id, name, favType }));
+                    }
+                    break;
+                }
+
+                case "localFavDeleteGroup":
+                {
+                    var groupId = msg["groupId"]?.Value<int>() ?? 0;
+                    var favType = msg["favType"]?.ToString() ?? "";
+                    if (groupId > 0 && !string.IsNullOrEmpty(favType))
+                    {
+                        var ok = _core.TimeEngine.DeleteLocalFavGroup(groupId);
+                        var groups = _core.TimeEngine.GetLocalFavGroups(favType);
+                        Invoke(() => SendToJS("localFavGroups", new { favType, groups }));
+                        Invoke(() => SendToJS("localFavGroupDeleted", new { ok, groupId }));
+                    }
+                    break;
+                }
+
+                case "localFavRenameGroup":
+                {
+                    var groupId = msg["groupId"]?.Value<int>() ?? 0;
+                    var newName = msg["newName"]?.ToString() ?? "";
+                    var favType = msg["favType"]?.ToString() ?? "";
+                    if (groupId > 0 && !string.IsNullOrEmpty(newName) && !string.IsNullOrEmpty(favType))
+                    {
+                        var ok = _core.TimeEngine.RenameLocalFavGroup(groupId, newName);
+                        var groups = _core.TimeEngine.GetLocalFavGroups(favType);
+                        Invoke(() => SendToJS("localFavGroups", new { favType, groups }));
+                        Invoke(() => SendToJS("localFavGroupRenamed", new { ok, groupId, newName }));
+                    }
+                    break;
+                }
+
+                case "localFavGetItems":
+                {
+                    var favType = msg["favType"]?.ToString() ?? "";
+                    var groupFilter = msg["groupFilter"]?.ToString();
+                    var entries = _core.TimeEngine.GetLocalFavEntries(favType, groupFilter);
+                    Invoke(() => SendToJS("localFavItems", new { favType, groupFilter = groupFilter ?? "", entries }));
+                    break;
+                }
+
+                case "localFavAddItem":
+                {
+                    var groupId = msg["groupId"]?.Value<int>() ?? 0;
+                    var itemId = msg["itemId"]?.ToString() ?? "";
+                    var itemType = msg["itemType"]?.ToString() ?? "";
+                    if (groupId > 0 && !string.IsNullOrEmpty(itemId) && !string.IsNullOrEmpty(itemType))
+                    {
+                        var ok = _core.TimeEngine.AddLocalFavItem(groupId, itemId, itemType);
+                        Invoke(() => SendToJS("localFavItemAdded", new { ok, groupId, itemId, itemType }));
+                    }
+                    break;
+                }
+
+                case "localFavRemoveItem":
+                {
+                    var groupId = msg["groupId"]?.Value<int>() ?? 0;
+                    var itemId = msg["itemId"]?.ToString() ?? "";
+                    var itemType = msg["itemType"]?.ToString() ?? "";
+                    if (groupId > 0 && !string.IsNullOrEmpty(itemId) && !string.IsNullOrEmpty(itemType))
+                    {
+                        var ok = _core.TimeEngine.RemoveLocalFavItem(groupId, itemId, itemType);
+                        Invoke(() => SendToJS("localFavItemRemoved", new { ok, groupId, itemId, itemType }));
+                    }
+                    break;
+                }
+
+                case "localFavGetItemGroups":
+                {
+                    var itemId = msg["itemId"]?.ToString() ?? "";
+                    var itemType = msg["itemType"]?.ToString() ?? "";
+                    if (!string.IsNullOrEmpty(itemId) && !string.IsNullOrEmpty(itemType))
+                    {
+                        var groupIds = _core.TimeEngine.GetGroupsForItem(itemId, itemType);
+                        Invoke(() => SendToJS("localFavItemGroups", new { itemId, itemType, groupIds }));
+                    }
+                    break;
+                }
+
+                case "localFavRemoveItemFromAll":
+                {
+                    var itemId = msg["itemId"]?.ToString() ?? "";
+                    var itemType = msg["itemType"]?.ToString() ?? "";
+                    if (!string.IsNullOrEmpty(itemId) && !string.IsNullOrEmpty(itemType))
+                    {
+                        var ok = _core.TimeEngine.RemoveItemFromAllGroups(itemId, itemType);
+                        Invoke(() => SendToJS("localFavItemRemovedFromAll", new { ok, itemId, itemType }));
+                    }
+                    break;
+                }
             }
         }
         catch (Exception ex)

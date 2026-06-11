@@ -5,6 +5,11 @@ let _avEditSelected = new Set();
 let _avIcuBuffer = [];
 let _avIcuBufferCursor = 0;
 let _avIcuFetchHasMore = false;
+let _localFavAvatarsData = [];
+let _localFavAvatarGroups = [];
+let _localFavAvatarGroupFilter = '';
+let _avatarLocalFavEditMode = false;
+let _avatarLocalFavEditSelected = new Set();
 function avatarEmptyMessage(key, fallback) {
     return `<div class="empty-msg">${t(key, fallback)}</div>`;
 }
@@ -95,19 +100,22 @@ function refreshFavAvatars() {
 
 function setAvatarFilter(filter) {
     if (_avEditMode) exitAvEditMode();
+    if (_avatarLocalFavEditMode) exitAvatarLocalFavEditMode();
     avatarFilter = filter;
     document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
-    const btnMap = { own: 'avatarFilterOwn', favorites: 'avatarFilterFav', rose: 'avatarFilterRose', search: 'avatarFilterSearch' };
+    const btnMap = { own: 'avatarFilterOwn', favorites: 'avatarFilterFav', localFavorites: 'avatarFilterLocalFav', rose: 'avatarFilterRose', search: 'avatarFilterSearch' };
     const btn = document.getElementById(btnMap[filter]);
     if (btn) btn.classList.add('active');
 
     const ownArea    = document.getElementById('avatarOwnArea');
     const favArea    = document.getElementById('avatarFavArea');
+    const localFavArea = document.getElementById('avatarLocalFavArea');
     const roseArea   = document.getElementById('avatarRoseArea');
     const searchArea = document.getElementById('avatarSearchArea');
 
     if (ownArea)    ownArea.style.display    = filter === 'own'       ? '' : 'none';
     if (favArea)    favArea.style.display    = filter === 'favorites' ? '' : 'none';
+    if (localFavArea) localFavArea.style.display = filter === 'localFavorites' ? '' : 'none';
     if (roseArea)   roseArea.style.display   = filter === 'rose'      ? '' : 'none';
     if (searchArea) searchArea.style.display = filter === 'search'    ? '' : 'none';
 
@@ -122,6 +130,8 @@ function setAvatarFilter(filter) {
 
     const editBtn = document.getElementById('avatarEditModeBtn');
     if (editBtn) editBtn.style.display = filter === 'favorites' ? '' : 'none';
+    const localFavEditBtn = document.getElementById('avatarLocalFavEditModeBtn');
+    if (localFavEditBtn) localFavEditBtn.style.display = filter === 'localFavorites' ? '' : 'none';
     if (filter === 'own') {
         const inp = document.getElementById('ownAvatarSearchInput');
         if (inp) inp.value = '';
@@ -129,6 +139,8 @@ function setAvatarFilter(filter) {
     } else if (filter === 'favorites') {
         if (favAvatarsData.length === 0) sendToCS({ action: 'vrcGetAvatars', filter: 'favorites' });
         else { updateFavAvatarGroupHeader(); filterFavAvatars(); }
+    } else if (filter === 'localFavorites') {
+        refreshAvatarLocalFav();
     } else if (filter === 'rose') {
         loadRoseDatabase();
     } else {
@@ -620,6 +632,17 @@ function avEditRemoveSelected() {
     exitAvEditMode();
 }
 
+function avLocalEditMoveSelected(groupId) {
+    if (_avEditSelected.size === 0) return;
+    const picker = document.getElementById('avatarEditMovePicker');
+    if (picker) { picker.style.display = 'none'; picker.innerHTML = ''; }
+    const toMove = [..._avEditSelected];
+    toMove.forEach(avatarId => {
+        sendToCS({ action: 'localFavAddItem', groupId, itemId: avatarId, itemType: 'avatar' });
+    });
+    exitAvEditMode();
+}
+
 /* === Favorite Picker Popup === */
 let _avFavPickerAvatarId = null;
 
@@ -912,3 +935,368 @@ function renderRoseAvatarCard(a) {
     </div>`;
 }
 
+/* === Local Favorites === */
+function refreshAvatarLocalFav() {
+    const btn = document.getElementById('avatarLocalFavRefreshBtn');
+    if (btn) { btn.disabled = true; btn.querySelector('.msi').textContent = 'hourglass_empty'; }
+    sendToCS({ action: 'localFavGetGroups', favType: 'avatar' });
+    sendToCS({ action: 'localFavGetItems', favType: 'avatar' });
+}
+
+function setAvatarLocalFavGroup(val) {
+    _localFavAvatarGroupFilter = val;
+    updateAvatarLocalFavGroupHeader();
+    filterAvatarLocalFav();
+}
+
+function updateAvatarLocalFavGroupHeader() {
+    const label = document.getElementById('avatarLocalFavGroupLabel');
+    const editBtn = document.getElementById('avatarLocalFavGroupEditBtn');
+    const deleteBtn = document.getElementById('avatarLocalFavGroupDeleteBtn');
+    if (!label) return;
+    if (!_localFavAvatarGroupFilter) {
+        label.textContent = t('avatars.local_favorites.group.all', 'All Local Favorites');
+        if (editBtn) editBtn.style.display = 'none';
+        if (deleteBtn) deleteBtn.style.display = 'none';
+    } else {
+        const g = _localFavAvatarGroups.find(x => x.name === _localFavAvatarGroupFilter);
+        label.textContent = g ? g.name : _localFavAvatarGroupFilter;
+        if (editBtn) editBtn.style.display = '';
+        if (deleteBtn) deleteBtn.style.display = '';
+    }
+}
+
+function startEditAvatarLocalFavGroupName() {
+    const g = _localFavAvatarGroups.find(x => x.name === _localFavAvatarGroupFilter);
+    if (!g) return;
+    const input = document.getElementById('avatarLocalFavGroupNameInput');
+    if (input) input.value = g.name;
+    document.getElementById('avatarLocalFavGroupHeader').style.display = 'none';
+    const row = document.getElementById('avatarLocalFavGroupRenameRow');
+    if (row) row.style.display = 'flex';
+    if (input) input.focus();
+}
+
+function cancelEditAvatarLocalFavGroupName() {
+    document.getElementById('avatarLocalFavGroupHeader').style.display = 'flex';
+    const row = document.getElementById('avatarLocalFavGroupRenameRow');
+    if (row) row.style.display = 'none';
+    const saveBtn = document.querySelector('#avatarLocalFavGroupRenameRow .vrcn-btn-primary');
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = t('common.save', 'Save'); }
+}
+
+function saveAvatarLocalFavGroupName() {
+    const g = _localFavAvatarGroups.find(x => x.name === _localFavAvatarGroupFilter);
+    if (!g) return;
+    const input = document.getElementById('avatarLocalFavGroupNameInput');
+    const newName = (input?.value || '').trim();
+    if (!newName) return;
+    const saveBtn = document.querySelector('#avatarLocalFavGroupRenameRow .vrcn-btn-primary');
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = t('common.saving', 'Saving...'); }
+    sendToCS({ action: 'localFavRenameGroup', groupId: g.id, newName: newName, favType: 'avatar' });
+}
+
+function deleteAvatarLocalFavGroup() {
+    const g = _localFavAvatarGroups.find(x => x.name === _localFavAvatarGroupFilter);
+    if (!g) return;
+    if (!confirm(t('avatars.local_favorites.delete_group_confirm', 'Delete group "{name}"? All avatars in this group will be removed.', { name: g.name }))) return;
+    sendToCS({ action: 'localFavDeleteGroup', groupId: g.id, favType: 'avatar' });
+}
+
+function renderAvatarLocalFavItems(payload) {
+    const refreshBtn = document.getElementById('avatarLocalFavRefreshBtn');
+    if (refreshBtn) { refreshBtn.disabled = false; const ico = refreshBtn.querySelector('.msi'); if (ico) ico.textContent = 'refresh'; }
+
+    if (payload.groups) {
+        _localFavAvatarGroups = payload.groups;
+        const sel = document.getElementById('avatarLocalFavGroupFilter');
+        if (sel) {
+            const prev = _localFavAvatarGroupFilter;
+            sel.innerHTML = `<option value="">${t('avatars.local_favorites.group.all', 'All Local Favorites')}</option>` +
+                payload.groups.map(g => `<option value="${esc(g.name || '')}">${esc(g.name || t('avatars.local_favorites.group.unnamed', 'Unnamed Group'))}</option>`).join('');
+            const stillValid = payload.groups.some(g => g.name === prev);
+            _localFavAvatarGroupFilter = stillValid ? prev : '';
+            sel.value = _localFavAvatarGroupFilter;
+            if (sel._vnRefresh) sel._vnRefresh();
+        }
+    }
+
+    if (payload.entries) {
+        _localFavAvatarsData = payload.entries.map(e => ({
+            id: e.itemId,
+            groupId: e.groupId,
+            name: avatarInfoCache[e.itemId]?.name || e.itemId,
+            thumbnailImageUrl: avatarInfoCache[e.itemId]?.thumbnailImageUrl || '',
+            authorName: avatarInfoCache[e.itemId]?.authorName || '',
+        }));
+    }
+
+    filterAvatarLocalFav();
+}
+
+function filterAvatarLocalFav() {
+    const q = (document.getElementById('avatarLocalFavSearchInput')?.value || '').toLowerCase();
+    let filtered = _localFavAvatarsData;
+    if (_localFavAvatarGroupFilter) {
+        const group = _localFavAvatarGroups.find(g => g.name === _localFavAvatarGroupFilter);
+        if (group) filtered = filtered.filter(a => a.groupId === group.id);
+    }
+    if (q) filtered = filtered.filter(a => (a.name||'').toLowerCase().includes(q) || (a.authorName||'').toLowerCase().includes(q));
+
+    const el = document.getElementById('avatarLocalFavGrid');
+    if (!filtered.length) {
+        el.innerHTML = `<div class="empty-msg">${q || _localFavAvatarGroupFilter
+            ? t('avatars.local_favorites.no_match', 'No local favorites match your filter')
+            : t('avatars.local_favorites.empty', 'No local favorites found')}</div>`;
+        if (_avatarLocalFavEditMode) updateAvatarLocalFavEditBar();
+        return;
+    }
+
+    if (!_localFavAvatarGroupFilter && _localFavAvatarGroups.length > 1) {
+        let html = '';
+        let first = true;
+        _localFavAvatarGroups.forEach(g => {
+            const groupItems = filtered.filter(a => a.groupId === g.id);
+            if (!groupItems.length) return;
+            html += `<div class="fav-group-header${first ? ' fav-group-header-first' : ''}">
+                <span class="topbar-title">${esc(g.name)}</span>
+                <span class="fav-group-count">${groupItems.length}</span>
+            </div>`;
+            html += groupItems.map(a => renderAvatarLocalFavCard(a)).join('');
+            first = false;
+        });
+        el.innerHTML = html;
+    } else {
+        el.innerHTML = filtered.map(a => renderAvatarLocalFavCard(a)).join('');
+    }
+    if (_avatarLocalFavEditMode) updateAvatarLocalFavEditBar();
+}
+
+function renderAvatarLocalFavCard(a) {
+    const thumb = a.thumbnailImageUrl || '';
+    const aid = jsq(a.id);
+    const thumbStyle = thumb ? `background-image:url('${cssUrl(thumb)}')` : '';
+    if (_avatarLocalFavEditMode) {
+        const isSelected = _avatarLocalFavEditSelected.has(a.id);
+        const checkIcon = isSelected
+            ? `<span class="msi" style="font-size:22px;color:var(--accent);">check_circle</span>`
+            : `<span class="msi" style="font-size:22px;color:rgba(255,255,255,0.7);">radio_button_unchecked</span>`;
+        return `<div class="vrcn-content-card av-card" data-avid="${esc(a.id)}" onclick="toggleAvatarLocalFavEditSelect('${aid}',this)" style="user-select:none;">
+            <div class="cc-bg" style="${thumbStyle}"></div>
+            <div class="cc-scrim"></div>
+            <div class="wd-edit-check">${checkIcon}</div>
+            <div class="cc-content">
+                <div class="cc-name">${esc(a.name)}</div>
+                <div class="cc-meta">${esc(a.authorName || '')}</div>
+            </div>
+            ${isSelected ? '<div class="wd-edit-sel-border"></div>' : ''}</div>`;
+    }
+    return `<div class="vrcn-content-card av-card" onclick="selectAvatar('${aid}')">
+        <div class="cc-bg" style="${thumbStyle}"></div>
+        <div class="cc-scrim"></div>
+        <div class="cc-content">
+            <div class="cc-name">${esc(a.name)}</div>
+            <div class="cc-meta">${esc(a.authorName || '')}</div>
+        </div>
+    </div>`;
+}
+
+function toggleAvatarLocalFavEditMode() {
+    if (_avatarLocalFavEditMode) { exitAvatarLocalFavEditMode(); return; }
+    _avatarLocalFavEditMode = true;
+    _avatarLocalFavEditSelected = new Set();
+    const btn = document.getElementById('avatarLocalFavEditModeBtn');
+    if (btn) { btn.innerHTML = `<span class="msi" style="font-size:16px;">check</span> <span>${t('avatars.edit.done', 'Done')}</span>`; btn.classList.add('active'); }
+    const filterBtns = document.getElementById('avatarFilterBtns');
+    if (filterBtns) filterBtns.style.display = 'none';
+    const bar = document.getElementById('avatarLocalFavEditBar');
+    if (bar) bar.style.display = 'flex';
+    filterAvatarLocalFav();
+}
+
+function exitAvatarLocalFavEditMode() {
+    _avatarLocalFavEditMode = false;
+    _avatarLocalFavEditSelected = new Set();
+    const btn = document.getElementById('avatarLocalFavEditModeBtn');
+    if (btn) { btn.innerHTML = `<span class="msi" style="font-size:16px;">edit</span> <span>${t('avatars.local_favorites.edit_button', 'Edit')}</span>`; btn.classList.remove('active'); }
+    const filterBtns = document.getElementById('avatarFilterBtns');
+    if (filterBtns) filterBtns.style.display = '';
+    const bar = document.getElementById('avatarLocalFavEditBar');
+    if (bar) bar.style.display = 'none';
+    const picker = document.getElementById('avatarLocalFavMovePicker');
+    if (picker) { picker.style.display = 'none'; picker.innerHTML = ''; }
+    filterAvatarLocalFav();
+}
+
+function toggleAvatarLocalFavEditSelect(id, el) {
+    if (_avatarLocalFavEditSelected.has(id)) {
+        _avatarLocalFavEditSelected.delete(id);
+        const chk = el?.querySelector('.wd-edit-check .msi');
+        if (chk) { chk.textContent = 'radio_button_unchecked'; chk.style.color = 'rgba(255,255,255,0.7)'; }
+        el?.querySelector('.wd-edit-sel-border')?.remove();
+    } else {
+        _avatarLocalFavEditSelected.add(id);
+        const chk = el?.querySelector('.wd-edit-check .msi');
+        if (chk) { chk.textContent = 'check_circle'; chk.style.color = 'var(--accent)'; }
+        if (el && !el.querySelector('.wd-edit-sel-border')) {
+            el.insertAdjacentHTML('beforeend', '<div class="wd-edit-sel-border"></div>');
+        }
+    }
+    updateAvatarLocalFavEditBar();
+}
+
+function avatarLocalFavEditSelectAll() {
+    const q = (document.getElementById('avatarLocalFavSearchInput')?.value || '').toLowerCase();
+    let filtered = _localFavAvatarsData;
+    if (_localFavAvatarGroupFilter) {
+        const group = _localFavAvatarGroups.find(g => g.name === _localFavAvatarGroupFilter);
+        if (group) filtered = filtered.filter(a => a.groupId === group.id);
+    }
+    if (q) filtered = filtered.filter(a => (a.name||'').toLowerCase().includes(q) || (a.authorName||'').toLowerCase().includes(q));
+    const allSelected = filtered.length > 0 && filtered.every(a => _avatarLocalFavEditSelected.has(a.id));
+    if (allSelected) {
+        filtered.forEach(a => _avatarLocalFavEditSelected.delete(a.id));
+    } else {
+        filtered.forEach(a => _avatarLocalFavEditSelected.add(a.id));
+    }
+    filterAvatarLocalFav();
+}
+
+function updateAvatarLocalFavEditBar() {
+    const count = _avatarLocalFavEditSelected.size;
+    const countEl = document.getElementById('avatarLocalFavEditCount');
+    if (countEl) countEl.textContent = tf('avatars.edit.selected', { count }, '{count} selected');
+    const selectAllBtn = document.getElementById('avatarLocalFavEditSelectAllBtn');
+    if (selectAllBtn) {
+        const q = (document.getElementById('avatarLocalFavSearchInput')?.value || '').toLowerCase();
+        let filtered = _localFavAvatarsData;
+        if (_localFavAvatarGroupFilter) {
+            const group = _localFavAvatarGroups.find(g => g.name === _localFavAvatarGroupFilter);
+            if (group) filtered = filtered.filter(a => a.groupId === group.id);
+        }
+        if (q) filtered = filtered.filter(a => (a.name||'').toLowerCase().includes(q) || (a.authorName||'').toLowerCase().includes(q));
+        const allSel = filtered.length > 0 && filtered.every(a => _avatarLocalFavEditSelected.has(a.id));
+        selectAllBtn.textContent = allSel ? t('avatars.edit.deselect_all', 'Deselect All') : t('avatars.edit.select_all', 'Select All');
+    }
+    document.querySelectorAll('#avatarLocalFavEditBar .av-edit-action').forEach(b => b.disabled = count === 0);
+}
+
+function avatarLocalFavEditShowMoveMenu(btn) {
+    if (_avatarLocalFavEditSelected.size === 0) return;
+    const picker = document.getElementById('avatarLocalFavMovePicker');
+    if (!picker) return;
+    if (picker.style.display === 'block') { picker.style.display = 'none'; picker.innerHTML = ''; return; }
+    picker.innerHTML = _localFavAvatarGroups.map(g => {
+        const count = _localFavAvatarsData.filter(a => a.groupId === g.id).length;
+        return `<div class="vn-select-option" onclick="avatarLocalFavMoveSelected(${g.id})">
+            <span class="msi" style="font-size:14px;flex-shrink:0;">folder</span>
+            <span style="flex:1;">${esc(g.name)}</span>
+            <span style="font-size:10px;color:var(--tx3);flex-shrink:0;">${count}</span>
+        </div>`;
+    }).join('');
+    picker.style.display = 'block';
+    setTimeout(() => {
+        const close = (e) => {
+            if (!picker.contains(e.target) && e.target !== btn) {
+                picker.style.display = 'none';
+                picker.innerHTML = '';
+                document.removeEventListener('click', close);
+            }
+        };
+        document.addEventListener('click', close);
+    }, 0);
+}
+
+function avatarLocalFavMoveSelected(groupId) {
+    if (_avatarLocalFavEditSelected.size === 0) return;
+    const picker = document.getElementById('avatarLocalFavMovePicker');
+    if (picker) { picker.style.display = 'none'; picker.innerHTML = ''; }
+    const toMove = [..._avatarLocalFavEditSelected];
+    toMove.forEach(avatarId => {
+        sendToCS({ action: 'localFavAddItem', groupId, itemId: avatarId, itemType: 'avatar' });
+    });
+    exitAvatarLocalFavEditMode();
+    setTimeout(() => refreshAvatarLocalFav(), 100);
+}
+
+function avatarLocalFavEditDeleteSelected() {
+    if (_avatarLocalFavEditSelected.size === 0) return;
+    const toDelete = [..._avatarLocalFavEditSelected];
+    toDelete.forEach(avatarId => {
+        const entry = _localFavAvatarsData.find(a => a.id === avatarId);
+        if (entry) sendToCS({ action: 'localFavRemoveItem', groupId: entry.groupId, itemId: avatarId, itemType: 'avatar' });
+    });
+    exitAvatarLocalFavEditMode();
+    setTimeout(() => refreshAvatarLocalFav(), 100);
+}
+
+function showAvatarLocalFavCreateGroupDialog() {
+    const name = window.prompt(t('avatars.local_favorites.create_group_prompt', 'Enter group name:'));
+    if (name && name.trim()) {
+        sendToCS({ action: 'localFavCreateGroup', name: name.trim(), favType: 'avatar' });
+    }
+}
+
+/* === Local Favorites Message Handlers === */
+function handleAvatarLocalFavGroups(payload) {
+    if (payload && payload.favType === 'avatar') {
+        renderAvatarLocalFavItems({ groups: payload.groups, entries: undefined });
+    }
+}
+
+function handleAvatarLocalFavItems(payload) {
+    if (payload && payload.favType === 'avatar') {
+        renderAvatarLocalFavItems({ groups: undefined, entries: payload.entries });
+        // Fetch missing avatar info for local favorites
+        if (payload.entries && typeof avatarInfoCache !== 'undefined') {
+            payload.entries.forEach(e => {
+                if (e.itemId && (!avatarInfoCache[e.itemId] || !avatarInfoCache[e.itemId].thumbnailImageUrl)) {
+                    sendToCS({ action: 'vrcGetAvatarInfo', avatarId: e.itemId });
+                }
+            });
+        }
+    }
+}
+
+function handleAvatarLocalFavGroupCreated(payload) {
+    if (payload && payload.ok) {
+        refreshAvatarLocalFav();
+    }
+}
+
+function handleAvatarLocalFavGroupDeleted(payload) {
+    if (payload && payload.ok) {
+        _localFavAvatarGroupFilter = '';
+        cancelEditAvatarLocalFavGroupName();
+        refreshAvatarLocalFav();
+    }
+}
+
+function handleAvatarLocalFavGroupRenamed(payload) {
+    if (payload && payload.ok) {
+        cancelEditAvatarLocalFavGroupName();
+        refreshAvatarLocalFav();
+    }
+}
+
+function handleAvatarLocalFavItemAdded(payload) {
+    if (payload && payload.ok) {
+        refreshAvatarLocalFav();
+    }
+}
+
+function handleAvatarLocalFavItemRemoved(payload) {
+    if (payload && payload.ok) {
+        refreshAvatarLocalFav();
+    }
+}
+
+function handleAvatarLocalFavItemGroups(payload) {
+    // Used for profile modal to show which groups an item is in
+}
+
+function handleAvatarLocalFavItemRemovedFromAll(payload) {
+    if (payload && payload.ok) {
+        refreshAvatarLocalFav();
+    }
+}

@@ -2,6 +2,7 @@
                     <div id="avatarFilterBtns" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                         <button class="vrcn-button sub-tab-btn active" id="avatarFilterOwn" onclick="setAvatarFilter('own')"><span class="msi" style="font-size:16px;">person</span> <span data-i18n="avatars.filters.own">My Avatars</span></button>
                         <button class="vrcn-button sub-tab-btn" id="avatarFilterFav" onclick="setAvatarFilter('favorites')"><span class="msi" style="font-size:16px;">star</span> <span data-i18n="avatars.filters.favorites">Favorites</span></button>
+                        <button class="vrcn-button sub-tab-btn" id="avatarFilterLocalFav" onclick="setAvatarFilter('localFavorites')"><span class="msi" style="font-size:16px;">folder_special</span> <span data-i18n="avatars.filters.local_favorites">Local Favorites</span></button>
                         <button class="vrcn-button sub-tab-btn" id="avatarFilterRose" onclick="setAvatarFilter('rose')"><span class="msi" style="font-size:16px;">local_florist</span> <span data-i18n="avatars.filters.rose">Rose Database</span></button>
                         <button class="vrcn-button sub-tab-btn" id="avatarFilterSearch" onclick="setAvatarFilter('search')"><span class="msi" style="font-size:16px;">search</span> <span data-i18n="common.search">Search</span></button>
                         <select id="avatarSearchDbDrop" class="vrcn-dropdown" onchange="setAvatarSearchDb(this.value)" style="min-width:120px;"><option value="avtrdb">Avtrdb</option><option value="avtricu">Avtr.icu</option><option value="all">Search all</option></select>
@@ -16,8 +17,18 @@
                         </div>
                         <button id="avatarEditRemoveBtn" class="vrcn-button av-edit-action" disabled onclick="avEditRemoveSelected()"><span class="msi" style="font-size:14px;">star_border</span> <span data-i18n="avatars.edit.remove">Remove</span></button>
                     </div>
+                    <div id="avatarLocalFavEditBar" style="display:none;align-items:center;gap:6px;flex-wrap:wrap;flex:1;">
+                        <span id="avatarLocalFavEditCount" style="font-size:12px;color:var(--tx2);white-space:nowrap;">0 selected</span>
+                        <button id="avatarLocalFavEditSelectAllBtn" class="vrcn-button" onclick="avatarLocalFavEditSelectAll()" data-i18n="avatars.edit.select_all">Select All</button>
+                        <div style="position:relative;">
+                            <button id="avatarLocalFavMoveBtn" class="vrcn-button av-edit-action" disabled onclick="avatarLocalFavEditShowMoveMenu(this)"><span class="msi" style="font-size:14px;">drive_file_move</span> <span data-i18n="avatars.edit.move_to">Move to...</span></button>
+                            <div id="avatarLocalFavMovePicker" class="vn-select-panel" style="display:none;min-width:180px;z-index:1200;"></div>
+                        </div>
+                        <button id="avatarLocalFavDeleteGroupBtn" class="vrcn-button av-edit-action" disabled onclick="avatarLocalFavEditDeleteSelected()"><span class="msi" style="font-size:14px;">delete</span> <span data-i18n="avatars.local_favorites.remove_from_group">Remove from Group</span></button>
+                    </div>
                     <div style="display:flex;gap:4px;align-items:center;">
                         <button id="avatarEditModeBtn" class="vrcn-button" style="display:none;" onclick="toggleAvEditMode()" title="Edit favorites" data-i18n-title="avatars.edit.button"><span class="msi" style="font-size:16px;">edit</span> <span data-i18n="avatars.edit.button">Edit</span></button>
+                        <button id="avatarLocalFavEditModeBtn" class="vrcn-button" onclick="toggleAvatarLocalFavEditMode()" title="Edit local favorites" data-i18n-title="avatars.local_favorites.edit_button"><span class="msi" style="font-size:16px;">edit</span> <span data-i18n="avatars.local_favorites.edit_button">Edit</span></button>
                         <button class="vrcn-button sub-tab-btn active" id="avatarGridLarge" onclick="setGridSize('avatars','default')" title="Large grid"><span class="msi" style="font-size:16px;">grid_on</span></button>
                         <button class="vrcn-button sub-tab-btn" id="avatarGridSmall" onclick="setGridSize('avatars','compact')" title="Compact grid"><span class="msi" style="font-size:14px;">apps</span></button>
                     </div>
@@ -50,6 +61,28 @@
                         <button id="favAvatarsRefreshBtn" class="vrcn-button" onclick="refreshFavAvatars()" title="Refresh" data-i18n-title="common.refresh"><span class="msi" style="font-size:16px;">refresh</span> <span data-i18n="common.refresh">Refresh</span></button>
                     </div>
                     <div id="favAvatarsGrid" class="avatar-grid"><div class="empty-msg" data-i18n="avatars.favorites.loading">Loading favorite avatars...</div></div>
+                </div>
+                <!-- Local Favorites -->
+                <div id="avatarLocalFavArea" style="display:none;">
+                    <div id="avatarLocalFavGroupHeader" style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
+                        <span id="avatarLocalFavGroupLabel" style="font-size:13px;font-weight:600;color:var(--tx1);" data-i18n="avatars.local_favorites.group.all">All Local Favorites</span>
+                        <button id="avatarLocalFavGroupEditBtn" class="myp-edit-btn" onclick="startEditAvatarLocalFavGroupName()" style="display:none;" title="Rename group" data-i18n-title="avatars.local_favorites.rename_group"><span class="msi" style="font-size:14px;">edit</span></button>
+                        <button id="avatarLocalFavGroupDeleteBtn" class="myp-edit-btn" onclick="deleteAvatarLocalFavGroup()" style="display:none;" title="Delete group" data-i18n-title="avatars.local_favorites.delete_group"><span class="msi" style="font-size:14px;">delete</span></button>
+                        <button id="avatarLocalFavCreateGroupBtn" class="myp-edit-btn" onclick="showAvatarLocalFavCreateGroupDialog()" title="Create new group" data-i18n-title="avatars.local_favorites.create_group"><span class="msi" style="font-size:14px;">add</span></button>
+                    </div>
+                    <div id="avatarLocalFavGroupRenameRow" style="display:none;align-items:center;gap:6px;margin-bottom:10px;">
+                        <input type="text" id="avatarLocalFavGroupNameInput" class="vrcn-edit-field" maxlength="64" style="flex:1;max-width:280px;">
+                        <button class="vrcn-button vrcn-btn-primary" onclick="saveAvatarLocalFavGroupName()" data-i18n="common.save">Save</button>
+                        <button class="vrcn-button" onclick="cancelEditAvatarLocalFavGroupName()" data-i18n="common.cancel">Cancel</button>
+                    </div>
+                    <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+                        <select id="avatarLocalFavGroupFilter" class="vrcn-dropdown" onchange="setAvatarLocalFavGroup(this.value)" style="min-width:160px;max-width:220px;">
+                            <option value="" data-i18n="avatars.local_favorites.group.all">All Local Favorites</option>
+                        </select>
+                        <div class="search-bar-row" style="margin-bottom:0;flex:1;min-width:140px;"><span class="msi search-ico">search</span><input type="text" id="avatarLocalFavSearchInput" class="vrcn-input" placeholder="Filter local favorites..." data-i18n-placeholder="avatars.local_favorites.filter_placeholder" oninput="filterAvatarLocalFav()"></div>
+                        <button id="avatarLocalFavRefreshBtn" class="vrcn-button" onclick="refreshAvatarLocalFav()" title="Refresh local favorites" data-i18n-title="avatars.local_favorites.refresh_title"><span class="msi" style="font-size:16px;">refresh</span> <span data-i18n="common.refresh">Refresh</span></button>
+                    </div>
+                    <div id="avatarLocalFavGrid" class="avatar-grid"><div class="empty-msg" data-i18n="avatars.local_favorites.loading">Loading local favorites...</div></div>
                 </div>
                 <!-- Rose Database -->
                 <div id="avatarRoseArea" style="display:none;">

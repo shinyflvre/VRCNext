@@ -265,7 +265,27 @@ window.external.receiveMessage(rawMsg => {
             case 'vrcFriendPreview': if (typeof handleFriendPreview === 'function') handleFriendPreview(payload); break;
             case 'vrcUserBasic': if (typeof handleUserBasic === 'function') handleUserBasic(payload); break;
             case 'vrcAvatarByFileId': handleAvatarByFileId(payload); break;
-            case 'vrcAvatarInfo': handleAvatarByFileId(payload); break;
+            case 'vrcAvatarInfo':
+                if (typeof avatarInfoCache !== 'undefined' && payload.avatarId) {
+                    avatarInfoCache[payload.avatarId] = {
+                        id: payload.avatarId,
+                        name: payload.avatarName || '',
+                        thumbnailImageUrl: payload.avatarImage || '',
+                        authorName: payload.avatarAuthor || '',
+                    };
+                    // Update local favorites data directly
+                    if (typeof _localFavAvatarsData !== 'undefined' && Array.isArray(_localFavAvatarsData)) {
+                        const av = _localFavAvatarsData.find(a => a.id === payload.avatarId);
+                        if (av) {
+                            av.name = payload.avatarName || av.name;
+                            av.thumbnailImageUrl = payload.avatarImage || av.thumbnailImageUrl;
+                            av.authorName = payload.avatarAuthor || av.authorName;
+                            if (typeof filterAvatarLocalFav === 'function') filterAvatarLocalFav();
+                        }
+                    }
+                }
+                if (typeof handleAvatarByFileId === 'function') handleAvatarByFileId(payload);
+                break;
             case 'vrcInstanceAvatarFound': handleInstanceAvatarFound(payload); break;
             case 'vrcFavoriteFriends': renderFavFriends(payload); break;
             case 'vrcFavoriteFriendToggled': handleFavFriendToggled(payload); break;
@@ -1068,6 +1088,42 @@ case 'vrcNews':
             break;
         case 'vrcnPlusSaveResult':
             if (typeof window.vrcnPlusSaveResult === 'function') window.vrcnPlusSaveResult(payload);
+            break;
+        case 'localFavGroups':
+            if (typeof handleLocalFavGroups === 'function') handleLocalFavGroups(payload);
+            if (typeof handleAvatarLocalFavGroups === 'function') handleAvatarLocalFavGroups(payload);
+            break;
+        case 'localFavItems':
+            if (typeof handleLocalFavItems === 'function') handleLocalFavItems(payload);
+            if (typeof handleAvatarLocalFavItems === 'function') handleAvatarLocalFavItems(payload);
+            break;
+        case 'localFavGroupCreated':
+            if (typeof handleLocalFavGroupCreated === 'function') handleLocalFavGroupCreated(payload);
+            if (typeof handleAvatarLocalFavGroupCreated === 'function') handleAvatarLocalFavGroupCreated(payload);
+            break;
+        case 'localFavGroupDeleted':
+            if (typeof handleLocalFavGroupDeleted === 'function') handleLocalFavGroupDeleted(payload);
+            if (typeof handleAvatarLocalFavGroupDeleted === 'function') handleAvatarLocalFavGroupDeleted(payload);
+           break;
+        case 'localFavGroupRenamed':
+            if (typeof handleLocalFavGroupRenamed === 'function') handleLocalFavGroupRenamed(payload);
+            if (typeof handleAvatarLocalFavGroupRenamed === 'function') handleAvatarLocalFavGroupRenamed(payload);
+            break;
+        case 'localFavItemAdded':
+            if (typeof handleLocalFavItemAdded === 'function') handleLocalFavItemAdded(payload);
+            if (typeof handleAvatarLocalFavItemAdded === 'function') handleAvatarLocalFavItemAdded(payload);
+            break;
+        case 'localFavItemRemoved':
+            if (typeof handleLocalFavItemRemoved === 'function') handleLocalFavItemRemoved(payload);
+            if (typeof handleAvatarLocalFavItemRemoved === 'function') handleAvatarLocalFavItemRemoved(payload);
+            break;
+        case 'localFavItemGroups':
+            if (typeof handleLocalFavItemGroups === 'function') handleLocalFavItemGroups(payload);
+            if (typeof handleAvatarLocalFavItemGroups === 'function') handleAvatarLocalFavItemGroups(payload);
+            break;
+        case 'localFavItemRemovedFromAll':
+            if (typeof handleLocalFavItemRemovedFromAll === 'function') handleLocalFavItemRemovedFromAll(payload);
+            if (typeof handleAvatarLocalFavItemRemovedFromAll === 'function') handleAvatarLocalFavItemRemovedFromAll(payload);
             break;
     }
 });
