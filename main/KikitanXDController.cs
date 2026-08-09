@@ -1,4 +1,4 @@
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using VRCNext.Services;
 using VRCNext.Services.KikitanXD;
 
@@ -178,19 +178,71 @@ public class KikitanXDController : IDisposable
             : new KikitanXDService();
         _service.OnLog += s => Invoke(() => _core.SendToJS("log", new { msg = s, color = "sec" }));
         _service.OnRecognized += (text, isPartial) =>
+        {
+            _kxLastSource = text ?? "";
+            _kxLastFinal  = !isPartial;
+            PushKikitanToOverlay();
             Invoke(() => _core.SendToJS("kxdRecognized", new { text, isPartial }));
+        };
         _service.OnTranslated += text =>
+        {
+            _kxLastTranslation = text ?? "";
+            PushKikitanToOverlay();
             Invoke(() => _core.SendToJS("kxdTranslated", new { text }));
+        };
         _service.OnOutput += SpeakTts;
         _service.OnChatboxSent += () => _core.OnChatboxPauseRequest?.Invoke(15_000);
         _service.Start(_settings.InputDeviceIndex, _settings);
+        _kxLastSource = "";
+        _kxLastTranslation = "";
+        _kxLastFinal = true;
+        PushKikitanToOverlay();
         _core.SendToJS("kxdState", new { running = true });
+    }
+
+    private string _kxLastSource      = "";
+    private string _kxLastTranslation = "";
+    private bool   _kxLastFinal       = true;
+
+    private static readonly Dictionary<string, string> KxLangNames = new()
+    {
+        ["auto"] = "Auto", ["en"] = "English",  ["ja"] = "Japanese", ["zh"] = "Chinese",
+        ["ko"]   = "Korean", ["de"] = "German", ["fr"] = "French",   ["es"] = "Spanish",
+        ["pt"]   = "Portuguese", ["ru"] = "Russian", ["it"] = "Italian", ["nl"] = "Dutch",
+        ["pl"]   = "Polish", ["tr"] = "Turkish", ["ar"] = "Arabic",  ["hi"] = "Hindi",
+    };
+
+    private static string KxLangName(string code)
+    {
+        if (string.IsNullOrWhiteSpace(code)) return "Auto";
+        return KxLangNames.TryGetValue(code.ToLowerInvariant(), out var n) ? n : code.ToUpperInvariant();
+    }
+
+    private void PushKikitanToOverlay()
+    {
+#if WINDOWS
+        try
+        {
+            _core.VrOverlay?.SetKikitanState(
+                _kxLastSource,
+                _kxLastTranslation,
+                _kxLastFinal,
+                KxLangName(_settings.SourceLang),
+                KxLangName(_settings.TargetLang),
+                string.Equals(_settings.Model, "google", StringComparison.OrdinalIgnoreCase) ? "Gemini Live" : "Groq",
+                _settings.TranslateEnabled);
+        }
+        catch { }
+#endif
     }
 
     public void Dispose()
     {
         _service?.Dispose();
         _service = null;
+        _kxLastSource = "";
+        _kxLastTranslation = "";
+        PushKikitanToOverlay();
     }
 
     private void SpeakTts(string text)

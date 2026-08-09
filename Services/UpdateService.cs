@@ -15,7 +15,7 @@ public class UpdateService
     public UpdateService()
     {
         try { _mgr = new UpdateManager(new GithubSource(RepoUrl, null, false)); }
-        catch { }
+        catch (Exception ex) { CrashHandler.WriteEntry("UpdateService.Ctor", ex); }
     }
 
     public async Task<string?> CheckAsync()

@@ -84,7 +84,7 @@ public static class WindowsFixes
             else
                 Log?.Invoke("WIFX - [WINFIX] - resolved and stable!");
         }
-        catch { }
+        catch (Exception ex) { Log?.Invoke($"WIFX - [WINFIX] - tick error: {ex.Message}"); }
         finally { Interlocked.Exchange(ref _busy, 0); }
     }
 
@@ -137,7 +137,7 @@ public static class WindowsFixes
                     return int.Parse(m.Groups[1].Value);
             }
         }
-        catch { }
+        catch (Exception ex) { Log?.Invoke($"WIFX - [WINFIX] - service lookup error: {ex.Message}"); }
         return 0;
     }
 #endif

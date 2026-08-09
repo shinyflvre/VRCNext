@@ -1,48 +1,99 @@
-VRCNext Non-Commercial Open Source License (VNCOL) 1.0
+VRCNext Non-Commercial Source Available License (VNCOL) 1.2
 
 Copyright (c) 2026 VRCNext Contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, and sublicense copies of
-the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
+of this software and associated documentation files (the "Software"), to use,
+copy, modify, merge, publish, and distribute the Software, subject to the terms
+and conditions of this License.
 
 1. NON-COMMERCIALIZATION
-   The Software, in whole or in part, and any fork, derivative work, or
-   modified version thereof, may not be sold, licensed for a fee, offered as
-   part of a paid product or service, used to generate revenue, or otherwise
-   monetized in any form — directly or indirectly — without explicit written
-   permission from all original copyright holders.
 
-   This includes but is not limited to:
-   - Selling the Software or any fork of it
-   - Placing the Software or any fork behind a paywall
-   - Using the Software or any fork as a component of a commercial product
-   - Accepting donations or crowdfunding specifically tied to distributing
-     the Software or any fork of it
+The Software, in whole or in part, and any fork, derivative work, or modified
+version thereof, may not be sold, licensed for a fee, offered as part of a paid
+product or service, placed behind a paywall or subscription, or otherwise
+commercialized without explicit written permission from the applicable
+copyright holders.
+
+Commercialization includes, but is not limited to:
+
+* Selling the Software or any fork or modified version of it
+* Requiring payment to download, access, or use the Software
+* Placing the Software, a fork, or any of its features behind a paywall,
+  subscription, membership, or other paid access system
+* Selling access to modified or exclusive builds of the Software
+* Using the Software or a substantial portion of it as part of a commercial
+  product or paid service
+
+Voluntary donations, tips, sponsorships, and crowdfunding are permitted.
+
+Receiving donations or other voluntary financial support does not by itself
+constitute commercialization under this License, regardless of whether the
+recipient develops, maintains, modifies, or distributes the Software or a fork
+of it.
+
+Donations must remain voluntary and may not be required in exchange for access
+to the Software, a fork, features, patches, builds, downloads, or functionality.
 
 2. ATTRIBUTION FOR FORKS AND DERIVATIVE WORKS
-   Any fork, derivative work, or modified version of the Software must include
-   clear and prominent credit to ALL contributors of the original Software and
-   any prior forks it is based upon. This credit must:
 
-   - Be visible in the repository (e.g., in the README, CREDITS, or equivalent)
-   - List the names or usernames of all contributors as they appear in the
-     original project's contributor records
-   - Not misrepresent the origin of the original work
+Forks, derivative works, and modified versions must clearly identify VRCNext
+as the original project and must not misrepresent the origin or authorship of
+the original work.
 
-3. COPYRIGHT NOTICE
-   The above copyright notice and this license shall be included in all copies
-   or substantial portions of the Software, including forks and derivative works.
+Existing copyright, license, and attribution notices included with the Software
+must not be intentionally removed or misrepresented.
+
+Maintainers of forks are encouraged, but not required, to include a contributor
+list in their repository, such as in the README, CREDITS file, or equivalent.
+
+When practical, this list should preserve the names or usernames of VRCNext
+contributors who had contributed to the project at the time the fork was
+created, as well as appropriate attribution for contributors to prior forks
+from which the fork is directly derived.
+
+Maintainers are not required to continuously synchronize their contributor
+list with contributors who join the original VRCNext project after the fork
+was created.
+
+Failure to maintain such a contributor list does not constitute a violation of
+this License, provided that the required attribution and existing notices
+described above are preserved.
+
+3. COPYRIGHT AND LICENSE NOTICE
+
+The above copyright notice and this License shall be included in all copies or
+substantial portions of the Software, including distributed forks, derivative
+works, and modified versions.
+
+The VRCNext-derived portions of any distributed fork, derivative work, or
+modified version must remain licensed under VRCNext Non-Commercial Source Available  (VNCOL) 1.2.
+
+This License may not be replaced with another license for VRCNext-derived
+portions of the Software in a way that removes or weakens the requirements of
+this License.
+
+Independent code that is merely combined with or distributed alongside the
+Software may be licensed separately, provided that doing so does not remove,
+override, or circumvent the requirements of this License for VRCNext-derived
+code.
 
 4. PERMISSIONS
-   Subject to the conditions above, you are free to:
-   - Use the Software for any personal, educational, or non-commercial purpose
-   - Copy, modify, and distribute the Software
-   - Sublicense the Software under the same license terms
-   - Merge the Software into other non-commercial projects
+
+Subject to the conditions of this License, you are free to:
+
+* Use the Software for personal, educational, or other non-commercial purposes
+* Copy and modify the Software
+* Create and maintain forks of the Software
+* Publish and distribute the Software and modified versions free of charge
+* Merge or incorporate the Software into other non-commercial projects
+* Receive voluntary donations, tips, sponsorships, or crowdfunding while
+  developing, maintaining, modifying, or distributing the Software
+
+Any distributed copy, fork, or derivative work containing VRCNext-derived code
+must retain this License for those portions.
+
+5. NO WARRANTY
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,

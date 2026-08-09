@@ -578,15 +578,17 @@ public class TimelineService : IDisposable
                 var have = new HashSet<string>(StringComparer.Ordinal);
                 foreach (var e in _events) have.Add(e.Id);
 
+                var newEvents = new List<TimelineEvent>();
                 using var tx = _db.BeginTransaction();
                 foreach (var ev in events)
                 {
                     DbInsertIgnoreEvent(ev, tx);
-                    if (have.Add(ev.Id)) _events.Add(ev);
+                    if (have.Add(ev.Id)) newEvents.Add(ev);
                 }
                 tx.Commit();
+                _events.AddRange(newEvents);
             }
-            catch { }
+            catch (Exception ex) { CrashHandler.WriteEntry("BulkImportEvents", ex); }
 
             if (_optimizeMode)
             {
@@ -605,15 +607,17 @@ public class TimelineService : IDisposable
                 var have = new HashSet<string>(StringComparer.Ordinal);
                 foreach (var e in _friendEvents) have.Add(e.Id);
 
+                var newEvents = new List<FriendTimelineEvent>();
                 using var tx = _db.BeginTransaction();
                 foreach (var ev in events)
                 {
                     DbInsertIgnoreFriendEvent(ev, tx);
-                    if (have.Add(ev.Id)) _friendEvents.Add(ev);
+                    if (have.Add(ev.Id)) newEvents.Add(ev);
                 }
                 tx.Commit();
+                _friendEvents.AddRange(newEvents);
             }
-            catch { }
+            catch (Exception ex) { CrashHandler.WriteEntry("BulkImportFriendEvents", ex); }
 
             if (_optimizeMode)
             {

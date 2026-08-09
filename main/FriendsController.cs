@@ -3038,7 +3038,7 @@ public class FriendsController
             var json = File.ReadAllText(file);
             return JsonConvert.DeserializeObject<List<ChatEntry>>(json) ?? [];
         }
-        catch { return []; }
+        catch (Exception ex) { CrashHandler.WriteEntry("GetChatHistory", ex); return []; }
     }
 
     public ChatEntry StoreChatMessage(string userId, string from, string text, string? type = null, string? emoji = null)
@@ -3052,7 +3052,7 @@ public class FriendsController
             if (history.Count > 500) history = history[^500..];
             File.WriteAllText(ChatFile(userId), JsonConvert.SerializeObject(history));
         }
-        catch { }
+        catch (Exception ex) { CrashHandler.WriteEntry("StoreChatMessage", ex); }
         return entry;
     }
 }

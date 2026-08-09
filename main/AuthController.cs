@@ -718,11 +718,11 @@ public class AuthController
         };
         _core.LogWatcher.WorldChanged += (wId, loc) =>
         {
-            try { _instance.HandleWorldChangedOnUiThread(wId, loc); } catch { }
+            try { _instance.HandleWorldChangedOnUiThread(wId, loc); } catch (Exception ex) { CrashHandler.WriteEntry("LogWatcher.WorldChanged", ex); }
         };
         _core.LogWatcher.PlayerJoined += (uid, name) =>
         {
-            try { _instance.HandlePlayerJoinedOnUiThread(uid, name); } catch { }
+            try { _instance.HandlePlayerJoinedOnUiThread(uid, name); } catch (Exception ex) { CrashHandler.WriteEntry("LogWatcher.PlayerJoined", ex); }
         };
         _core.LogWatcher.PlayerLeft += (uid, name) =>
         {
@@ -733,7 +733,7 @@ public class AuthController
                 if (!string.IsNullOrEmpty(uid)) _instance.HandlePlayerLeftOnUiThread(uid);
                 _instance.PushCurrentInstanceFromCache();
             }
-            catch { }
+            catch (Exception ex) { CrashHandler.WriteEntry("LogWatcher.PlayerLeft", ex); }
         };
         _core.LogWatcher.InstanceClosed += loc =>
         {
@@ -746,7 +746,7 @@ public class AuthController
                     _ = Task.Run(() => _core.DispatchMessage?.Invoke("""{"type":"vrcGetMyInstances"}"""));
                 }
             }
-            catch { }
+            catch (Exception ex) { CrashHandler.WriteEntry("LogWatcher.InstanceClosed", ex); }
         };
         _core.LogWatcher.AvatarChanged += (displayName, avatarName) =>
         {
@@ -790,18 +790,18 @@ public class AuthController
                         if (!string.IsNullOrEmpty(avatarId))
                             _core.VrcndbSubmit?.Invoke(avatarId);
                     }
-                    catch { }
+                    catch (Exception ex) { CrashHandler.WriteEntry("LogWatcher.AvatarChanged.Async", ex); }
                 });
             }
-            catch { }
+            catch (Exception ex) { CrashHandler.WriteEntry("LogWatcher.AvatarChanged", ex); }
         };
         _core.LogWatcher.AvatarSeen += id =>
         {
-            try { _core.VrcndbSubmit?.Invoke(id); } catch { }
+            try { _core.VrcndbSubmit?.Invoke(id); } catch (Exception ex) { CrashHandler.WriteEntry("LogWatcher.AvatarSeen", ex); }
         };
         _core.LogWatcher.PrintSeen += printId =>
         {
-            try { _printSaver.OnPrintSeen(printId); } catch { }
+            try { _printSaver.OnPrintSeen(printId); } catch (Exception ex) { CrashHandler.WriteEntry("LogWatcher.PrintSeen", ex); }
         };
         _core.LogWatcher.VideoUrl += url =>
         {
@@ -823,7 +823,7 @@ public class AuthController
                 _core.Timeline.AddEvent(ev);
                 _core.SendToJS("timelineEvent", _instance.BuildTimelinePayload(ev));
             }
-            catch { }
+            catch (Exception ex) { CrashHandler.WriteEntry("LogWatcher.VideoUrl", ex); }
         };
         _core.LogWatcher.PlayerModerated += (name, modType, active) =>
         {

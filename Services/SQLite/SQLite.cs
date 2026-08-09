@@ -881,7 +881,7 @@ public class UnifiedTimeEngine : IDisposable
             using var jr = new JsonTextReader(sr) { DateParseHandling = DateParseHandling.None };
             p = JObject.Load(jr);
         }
-        catch { return; }
+        catch (Exception ex) { CrashHandler.WriteEntry("SaveUserProfileCache.Parse", ex); return; }
         var now = DateTime.UtcNow.ToString("o");
         lock (_lock)
         {
@@ -970,7 +970,7 @@ public class UnifiedTimeEngine : IDisposable
                 cmd.Parameters.AddWithValue("$ths",    p["themeSubtextColor"]?.ToString() ?? "");
                 cmd.ExecuteNonQuery();
             }
-            catch { }
+            catch (Exception ex) { CrashHandler.WriteEntry("SaveUserProfileCache.Write", ex); }
         }
     }
 
@@ -991,7 +991,7 @@ public class UnifiedTimeEngine : IDisposable
                 cmd.Parameters.AddWithValue("$id", userId); cmd.Parameters.AddWithValue("$gj", groupsJson); cmd.Parameters.AddWithValue("$cat", now);
                 cmd.ExecuteNonQuery();
             }
-            catch { }
+            catch (Exception ex) { CrashHandler.WriteEntry("SaveUserGroupsCache", ex); }
         }
     }
 
@@ -1009,7 +1009,7 @@ public class UnifiedTimeEngine : IDisposable
                 cmd.Parameters.AddWithValue("$ca", json);
                 cmd.ExecuteNonQuery();
             }
-            catch { }
+            catch (Exception ex) { CrashHandler.WriteEntry("SetAvatarInfoCache", ex); }
         }
     }
 
@@ -1030,7 +1030,7 @@ public class UnifiedTimeEngine : IDisposable
                 cmd.Parameters.AddWithValue("$id", userId); cmd.Parameters.AddWithValue("$cj", contentJson); cmd.Parameters.AddWithValue("$cat", now);
                 cmd.ExecuteNonQuery();
             }
-            catch { }
+            catch (Exception ex) { CrashHandler.WriteEntry("SaveUserContentCache", ex); }
         }
     }
 
@@ -1051,7 +1051,7 @@ public class UnifiedTimeEngine : IDisposable
                 cmd.Parameters.AddWithValue("$id", userId); cmd.Parameters.AddWithValue("$mj", mutualsJson); cmd.Parameters.AddWithValue("$cat", now);
                 cmd.ExecuteNonQuery();
             }
-            catch { }
+            catch (Exception ex) { CrashHandler.WriteEntry("SaveUserMutualsCache", ex); }
         }
     }
 
@@ -1072,7 +1072,7 @@ public class UnifiedTimeEngine : IDisposable
                 cmd.Parameters.AddWithValue("$id", userId); cmd.Parameters.AddWithValue("$mgj", mutualGroupsJson); cmd.Parameters.AddWithValue("$cat", now);
                 cmd.ExecuteNonQuery();
             }
-            catch { }
+            catch (Exception ex) { CrashHandler.WriteEntry("SaveUserMutualGroupsCache", ex); }
         }
     }
 
@@ -1164,7 +1164,7 @@ public class UnifiedTimeEngine : IDisposable
                     upd.ExecuteNonQuery();
                 }
             }
-            catch { }
+            catch (Exception ex) { CrashHandler.WriteEntry("CleanMutualCaches", ex); }
         }
     }
 
@@ -1246,7 +1246,7 @@ public class UnifiedTimeEngine : IDisposable
                 cmd.Parameters.AddWithValue("$cat",  now);
                 cmd.ExecuteNonQuery();
             }
-            catch { }
+            catch (Exception ex) { CrashHandler.WriteEntry("SaveEventDetail", ex); }
         }
     }
 
@@ -1279,7 +1279,7 @@ public class UnifiedTimeEngine : IDisposable
                 cmd.Parameters.AddWithValue("$img", rec.Image);
                 cmd.ExecuteNonQuery();
             }
-            catch { }
+            catch (Exception ex) { CrashHandler.WriteEntry("UpdateUserInfo", ex); }
         }
     }
 
@@ -1338,7 +1338,7 @@ public class UnifiedTimeEngine : IDisposable
                 }
                 tx.Commit();
             }
-            catch { }
+            catch (Exception ex) { CrashHandler.WriteEntry("UpdateFriendTracking", ex); }
         }
     }
 

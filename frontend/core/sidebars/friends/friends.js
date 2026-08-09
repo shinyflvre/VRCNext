@@ -1,4 +1,4 @@
-let _sidebarGroupInstances = null;
+﻿let _sidebarGroupInstances = null;
 
 const RVF_THROTTLE_MS = 300;
 let _rvfTimer = null;
@@ -196,7 +196,46 @@ function renderVrcFriends(friends, counts) {
         }
     }
 
-    appendSection('favorites', favFriends.length, favFriends.slice(0, 100), f => f.presence);
+    const _favGroupOf = new Map(favFriendsData.map(f => [f.favoriteId, f.groupName || '']));
+    const _favGroupList = (typeof favFriendGroups !== 'undefined' && Array.isArray(favFriendGroups)) ? favFriendGroups : [];
+    const _favByGroup = new Map();
+    favFriends.forEach(f => {
+        const gn = _favGroupOf.get(f.id) || '';
+        if (!_favByGroup.has(gn)) _favByGroup.set(gn, []);
+        _favByGroup.get(gn).push(f);
+    });
+    const _favSubs = _favGroupList
+        .filter(g => (_favByGroup.get(g.name) || []).length > 0)
+        .map(g => ({ g, list: _favByGroup.get(g.name) }));
+    const _favKnown = new Set(_favGroupList.map(g => g.name));
+    const _favOther = [];
+    _favByGroup.forEach((list, gn) => { if (!_favKnown.has(gn)) _favOther.push(...list); });
+
+    if (!rsidebarCollapsed && _favSubs.length > 1) {
+        const _fvChev = friendSectionCollapsed.favorites ? 'expand_more' : 'expand_less';
+        const _fvActive = !friendSectionCollapsed.favorites ? ' active' : '';
+        h += `<div class="vrc-section-label vrc-offline-toggle${_fvActive}" id="favoritesSectionLabel" onclick="toggleFriendSection('favorites')" style="cursor:pointer;"><span class="ni msi">favorite</span><span class="nl">${getFriendSectionLabel('favorites', favFriends.length)}</span><span class="nav-group-arrow msi nl" id="favoritesChevron">${_fvChev}</span></div>`;
+        h += `<div id="favoritesFriendsSection" class="friend-section-items${friendSectionCollapsed.favorites ? ' collapsed' : ''}">`;
+
+        const _favSub = (key, label, badge, list) => {
+            const _sChev = friendSectionCollapsed[key] ? 'expand_more' : 'expand_less';
+            const _sActive = !friendSectionCollapsed[key] ? ' active' : '';
+            h += `<div class="vrc-section-label vrc-gi-group-header vrc-offline-toggle${_sActive}" onclick="toggleFriendSection('${key}')" style="cursor:pointer;padding-left:16px;"><span class="ni msi">favorite</span><span class="nl" style="display:flex;align-items:center;gap:5px;overflow:hidden;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(label)}</span>${badge}<span style="flex-shrink:0;">· ${list.length}</span></span><span class="nav-group-arrow msi nl" id="${key}Chevron">${_sChev}</span></div>`;
+            h += `<div id="${key}FriendsSection" class="friend-section-items${friendSectionCollapsed[key] ? ' collapsed' : ''}">`;
+            list.slice(0, 100).forEach(f => { h += renderCard(f, f.presence); });
+            h += `</div>`;
+        };
+
+        _favSubs.forEach(({ g, list }) => {
+            const badge = typeof favGroupBadge === 'function' ? favGroupBadge(g) : '';
+            _favSub(`fav_${g.name}`, g.displayName || g.name, badge, list);
+        });
+        if (_favOther.length) _favSub('fav__other', t('sidebar.favorites.other', 'Other'), '', _favOther);
+
+        h += `</div>`;
+    } else {
+        appendSection('favorites', favFriends.length, favFriends.slice(0, 100), f => f.presence);
+    }
 
     // Group Instances section (expanded sidebar only, same as Same Location)
     if (!rsidebarCollapsed && _sidebarGroupInstances !== null && _sidebarGroupInstances.length > 0) {

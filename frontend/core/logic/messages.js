@@ -1,4 +1,4 @@
-/* === Photino message handler === */
+﻿/* === Photino message handler === */
 window.external.receiveMessage(rawMsg => {
     const { type, payload } = JSON.parse(rawMsg);
     // Forward every incoming event to Action Flow's websocket-trigger router.
@@ -367,6 +367,10 @@ window.external.receiveMessage(rawMsg => {
             case 'vrcActionResult':
                 if (payload.action === 'sendChatMessage') { if (typeof handleChatActionResult === 'function') handleChatActionResult(payload); break; }
                 if (payload.action === 'boop') { showToast(payload.success, payload.message); break; }
+                if (payload.action === 'hideNotif') {
+                    if (!payload.success) showToast(false, t('notifications.toast.decline_failed', 'Could not decline notification'));
+                    break;
+                }
                 if (payload.action === 'representGroup') {
                     showToast(payload.success, payload.message);
                     if (payload.success && payload.groupId && typeof myGroups !== 'undefined') {

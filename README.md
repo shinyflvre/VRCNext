@@ -8,15 +8,14 @@ With VRCNext you can check the status of your friends, watch their profiles, see
 **About Linux Support**
 As of version 2026.42.X AppImage support has been added. it is currently in beta expect bugs!
 
-
 ---
 
 ## Table of Contents
 
-- [FAQ](#faq)
-- [Feature Overview](#feature-overview)
-- [License](#license)
-- [Disclaimer](#disclaimer)
+* [FAQ](#faq)
+* [Feature Overview](#feature-overview)
+* [License](#license)
+* [Disclaimer](#disclaimer)
 
 ---
 
@@ -25,7 +24,7 @@ As of version 2026.42.X AppImage support has been added. it is currently in beta
 <details>
 <summary><b>Is this a hack client for VRChat?</b></summary>
 
-No. This is not a hack client for VRChat.  
+No. This is not a hack client for VRChat.
 It is simply a launcher that communicates with VRChat's WebSocket and REST API.
 
 The launcher does not modify any game files and does not provide any way to hack or alter the game.
@@ -35,7 +34,7 @@ The launcher does not modify any game files and does not provide any way to hack
 <details>
 <summary><b>Is there any ban risk when I use this?</b></summary>
 
-No. VRCNext follows VRChat's Community Guidelines and Terms of Service.  
+No. VRCNext follows VRChat's Community Guidelines and Terms of Service.
 Since it is only a launcher with group and friends management plus some additional tools, there should be no ban risk.
 
 It is essentially VRChat.com presented in its own interface.
@@ -45,7 +44,7 @@ It is essentially VRChat.com presented in its own interface.
 <details>
 <summary><b>Can I use this without logging into VRChat?</b></summary>
 
-Yes. You can use VRCNext without logging into your VRChat account.  
+Yes. You can use VRCNext without logging into your VRChat account.
 However you will only be able to use the additional tools and parts of the timeline.
 
 All management systems require a connection to your VRChat account, so they will not work without login.
@@ -59,7 +58,7 @@ Login is always optional, but if you want to use all features you will need to l
 
 No. VRCNext does not store any data and does not operate any external servers.
 
-When you log into your VRChat account you communicate directly with VRChat's API.  
+When you log into your VRChat account you communicate directly with VRChat's API.
 There are no servers between VRCNext and VRChat. No storage, no data collection, and full privacy.
 
 </details>
@@ -69,12 +68,12 @@ There are no servers between VRCNext and VRChat. No storage, no data collection,
 
 No. VRCNext exists in a small grey area related to login.
 
-VRChat states that applications should not request login for API access, although VRCX does this as well.  
+VRChat states that applications should not request login for API access, although VRCX does this as well.
 To respect this guideline, login in VRCNext is completely optional and most features can be used without it.
 
 If you want full functionality you will need to log in. When you do, the communication happens directly with VRChat's API.
 
-The code is open source so everything can be inspected for transparency.
+The source code is publicly available so everything can be inspected for transparency.
 
 </details>
 
@@ -94,10 +93,10 @@ You can ignore the warning, build the application yourself from the source code,
 
 Theoretical risk always exists, just like with VRCX.
 
-For example if you repeatedly open profiles extremely quickly you could trigger many API requests and receive a 429 rate limit.  
+For example if you repeatedly open profiles extremely quickly you could trigger many API requests and receive a 429 rate limit.
 This would temporarily block further interactions for a short time.
 
-The same behavior can happen on the VRChat website. As long as you use the application normally there should be no issues.  
+The same behavior can happen on the VRChat website. As long as you use the application normally there should be no issues.
 VRCNext also includes internal rate limiting to prevent this from happening.
 
 </details>
@@ -119,14 +118,12 @@ VRCNext is not a replacement for VRCX and never will be. It is a hobby project f
 * Change your profile picture / user icon
 * Change your profile banner image
 
-
 ### Messenger
 
 Yes, you heard it right. VRCN has a messenger, and the best part is that it uses the VRChat API. More specifically, it uses the InviteMessage and ResponseMessage system of the API.
 You can send simple messages such as: "Hey Shiny! Do you want to play VRChat later?"
 Keep in mind that VRChat rate-limits message changes. Do not spam messages, as you will be rate limited by VRChat. As an additional safety measure, VRCN also applies its own rate limit.
 This is not a full messenger like Discord or WhatsApp. It is intended only for simple messages, such as asking a friend if they want to play together. Use it responsibly.
-
 
 ### Manage Your Friends
 
@@ -326,7 +323,21 @@ This is not a full messenger like Discord or WhatsApp. It is intended only for s
 
 ---
 
-> Forks must visibly credit **all contributors** of the original project (e.g. in the README or a CREDITS file).
+## License
+
+VRCNext is **source-available** under the custom **VRCNext Non-Commercial Source-Available License (VNCOL)**.
+
+VNCOL is a custom non-commercial source-available license and is not an OSI-approved open-source license.
+
+The source code may be inspected, modified, forked, and redistributed subject to the terms of VNCOL.
+
+Commercialization of VRCNext, forks, or derived versions is prohibited unless explicit permission is granted under the license terms.
+
+Voluntary donations, tips, sponsorships, and crowdfunding are allowed and do not by themselves constitute commercialization.
+
+Fork maintainers are encouraged, but not required, to preserve a contributor list containing contributors who were part of the project when the fork was created, where practical.
+
+Existing copyright, license, and attribution notices must still be preserved.
 
 See [LICENSE](LICENSE) for the full license text.
 
@@ -334,12 +345,12 @@ See [LICENSE](LICENSE) for the full license text.
 
 ## Disclaimer
 
-AI Disclaimer: The frontend (the visual interface you see) was partially created with AI assistance. AI helped with parts of the frontend, mainly CSS and JavaScript such as styling and animations, because design is not really my strength. It did not write the whole frontend. The communication between the frontend and backend, as well as the backend itself, was written entirely by a human. 
+AI Disclaimer: The frontend (the visual interface you see) was partially created with AI assistance. AI helped with parts of the frontend, mainly CSS and JavaScript such as styling and animations, because design is not really my strength. It did not write the whole frontend. The communication between the frontend and backend, as well as the backend itself, was written entirely by a human.
 "and yes i did use DeepL to translate from german to english because english is not my first language, so is this whole descirption translated except this part here :D"
 
 > [!WARNING]
-> **VRCNext requires you to log in to VRChat in order to function.**  
-> VRCNext does **not** store any sensitive data and is fully open source, so you can verify this yourself in the source code. You can also build the app manually if you do not trust prebuilt `.exe` files.
+> **VRCNext requires you to log in to VRChat in order to function.**
+> VRCNext does **not** store any sensitive data and its source code is publicly available, so you can verify this yourself in the source code. You can also build the app manually if you do not trust prebuilt `.exe` files.
 >
 > According to VRChat:
 >
@@ -354,7 +365,7 @@ AI Disclaimer: The frontend (the visual interface you see) was partially created
 > While there is no expectation of problems, it is important to note that tools like these exist in a kind of grey area. **Use them at your own risk.**
 
 > [!NOTE]
-> **Note for VRChat developers and managers**  
+> **Note for VRChat developers and managers**
 > This application does not violate copyright and does not manipulate the game in any way. It is essentially a compact launcher-style interface for VRChat.com.
 >
 > The app does not modify VRChat, inject into the game, or alter gameplay or platform behavior. It only communicates with VRChat through the REST API and WebSocket connections needed for its features.

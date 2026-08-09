@@ -1,4 +1,4 @@
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -335,34 +335,53 @@ public class AvatarsAPI(VRChatApiService ctx)
         return all;
     }
 
+    private static readonly AvtrdbResolver _avtrdbResolver = new();
+
+    private static (string? id, JObject? data) MapResolved(JObject? o)
+    {
+        if (o == null) return (null, null);
+        var id = o["vrc_id"]?.ToString();
+        if (string.IsNullOrEmpty(id)) return (null, null);
+
+        var mapped = new JObject
+        {
+            ["id"]          = id,
+            ["name"]        = o["name"],
+            ["description"] = o["description"],
+            ["imageUrl"]    = o["image_url"],
+            ["authorName"]  = o["author"]?["name"],
+            ["authorId"]    = o["author"]?["vrc_id"],
+            ["created_at"]  = o["created_at"],
+            ["updated_at"]  = o["updated_at"],
+            ["compatibility"] = o["compatibility"],
+            ["performance"] = o["performance"],
+            ["tags"]        = o["tags"],
+            ["styles"]      = o["styles"],
+            ["explicit"]    = o["explicit"],
+        };
+        return (id, mapped);
+    }
+
     public async Task<(string? id, JObject? data)> GetAvatarIdByFileIdAsync(string fileId)
     {
-        var url = $"https://api.avtrdb.com/v3/avatar/search/vrcx?fileId={Uri.EscapeDataString(fileId)}";
-        using var client = new HttpClient();
-        client.DefaultRequestVersion = System.Net.HttpVersion.Version20;
-        client.DefaultVersionPolicy = System.Net.Http.HttpVersionPolicy.RequestVersionOrLower;
-        client.Timeout = TimeSpan.FromSeconds(15);
-        client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", UA);
-        client.DefaultRequestHeaders.TryAddWithoutValidation("Referer", $"https://{AppInfo.Website}");
-        client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
         try
         {
-            ctx.Log($"GetAvatarIdByFileId: {url}");
-            var resp = await client.GetAsync(url);
-            var body = await resp.Content.ReadAsStringAsync();
-            ctx.Log($"GetAvatarIdByFileId [{(int)resp.StatusCode}]: {body[..Math.Min(400, body.Length)]}");
-            if (!resp.IsSuccessStatusCode || string.IsNullOrWhiteSpace(body)) return (null, null);
-            var parsed = JToken.Parse(body);
-            const string robotId = "avtr_c38a1615-5bf5-42b4-84eb-a8b6c37cbd11";
-            JObject? data = null;
-            if (parsed is JObject single) data = single;
-            else if (parsed is JArray arr && arr.Count > 0) data = arr[0] as JObject;
-            var id = data?["id"]?.ToString();
-            if (id == robotId) return (null, null);
-            return (id, data);
+            return MapResolved(await _avtrdbResolver.ResolveAsync(fileId));
         }
         catch (Exception ex) { ctx.Log($"GetAvatarIdByFileId exception: {ex.Message}"); }
         return (null, null);
+    }
+
+    public async Task<Dictionary<string, (string? id, JObject? data)>> GetAvatarIdsByFileIdsAsync(IEnumerable<string> fileIds)
+    {
+        var result = new Dictionary<string, (string? id, JObject? data)>();
+        try
+        {
+            var raw = await _avtrdbResolver.ResolveManyAsync(fileIds);
+            foreach (var kv in raw) result[kv.Key] = MapResolved(kv.Value);
+        }
+        catch (Exception ex) { ctx.Log($"GetAvatarIdsByFileIds exception: {ex.Message}"); }
+        return result;
     }
 
     public async Task<bool> CheckAvatarExistsAvtrIcuAsync(string avatarId)

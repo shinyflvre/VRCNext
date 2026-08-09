@@ -80,7 +80,10 @@ internal static class WatchdogRunner
             }
             catch { }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            try { Console.Error.WriteLine($"WatchdogRunner report write failed: {ex}"); } catch { }
+        }
 
         // Restart after crash, only for native crashes (exitCode < 0 = Windows exception code like 0xC0000005)
         // Still sending reports in case of an crash lol

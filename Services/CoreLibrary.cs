@@ -210,10 +210,10 @@ public class CoreLibrary
     // Disposes the three DB services, which afterwards are unusable due to readonly connection fields.
     public void DisposeDatabaseServices()
     {
-        try { Timeline?.Dispose(); } catch { }
-        try { PhotoPlayersStore?.Dispose(); } catch { }
-        try { TimeEngine?.Dispose(); } catch { }
-        try { LocalFavorites?.Dispose(); } catch { }
+        try { Timeline?.Dispose(); } catch (Exception ex) { CrashHandler.WriteEntry("DisposeDatabaseServices.Timeline", ex); }
+        try { PhotoPlayersStore?.Dispose(); } catch (Exception ex) { CrashHandler.WriteEntry("DisposeDatabaseServices.PhotoPlayersStore", ex); }
+        try { TimeEngine?.Dispose(); } catch (Exception ex) { CrashHandler.WriteEntry("DisposeDatabaseServices.TimeEngine", ex); }
+        try { LocalFavorites?.Dispose(); } catch (Exception ex) { CrashHandler.WriteEntry("DisposeDatabaseServices.LocalFavorites", ex); }
     }
 
     // Creates fresh DB service instances using their static Load factories at the path set on Database.

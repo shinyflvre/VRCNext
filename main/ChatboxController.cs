@@ -35,7 +35,7 @@ public class ChatboxController : IDisposable
                 {
                     _chatbox ??= new ChatboxService(s => Invoke(() => _core.SendToJS("log", new { msg = s, color = "sec" })));
                     _chatbox.SetUpdateCallback(data => {
-                        try { Invoke(() => _core.SendToJS("chatboxUpdate", data)); } catch { }
+                        try { Invoke(() => _core.SendToJS("chatboxUpdate", data)); } catch (Exception ex) { CrashHandler.WriteEntry("Chatbox.SetUpdateCallback", ex); }
 #if WINDOWS
                         try
                         {
@@ -48,7 +48,7 @@ public class ChatboxController : IDisposable
                             if (!string.IsNullOrEmpty(title))
                                 _core.VrOverlay?.UpdateMediaInfo(title, artist, posMs / 1000.0, durMs / 1000.0, playing);
                         }
-                        catch { }
+                        catch (Exception ex) { CrashHandler.WriteEntry("Chatbox.UpdateMediaInfo", ex); }
 #endif
                     });
 
@@ -121,7 +121,7 @@ public class ChatboxController : IDisposable
                 {
                     _osc ??= new OscService(s => Invoke(() => _core.SendToJS("log", new { msg = s, color = "sec" })));
                     _osc.SetParamCallback((name, val, type) => {
-                        try { Invoke(() => _core.SendToJS("oscParam", new { name, value = val, type })); } catch { }
+                        try { Invoke(() => _core.SendToJS("oscParam", new { name, value = val, type })); } catch (Exception ex) { CrashHandler.WriteEntry("Osc.SetParamCallback", ex); }
                     });
                     _osc.SetAvatarChangeCallback((avatarId, paramDefs) => {
                         try
@@ -129,7 +129,7 @@ public class ChatboxController : IDisposable
                             var paramList = paramDefs.Select(p => new { p.Name, p.Type, p.HasInput, p.HasOutput }).ToList();
                             Invoke(() => _core.SendToJS("oscAvatarParams", new { avatarId, paramList }));
                         }
-                        catch { }
+                        catch (Exception ex) { CrashHandler.WriteEntry("Osc.SetAvatarChangeCallback", ex); }
                     });
                     bool oscOk = _osc.Start();
                     _core.SendToJS("oscState", new { connected = oscOk });
@@ -140,7 +140,7 @@ public class ChatboxController : IDisposable
                             // Try OSCQuery first; gets all live values instantly (VRChat v2023.3.1+)
                             bool gotLive = await _osc.TryOscQueryAsync((name, val, type) =>
                             {
-                                try { Invoke(() => _core.SendToJS("oscParam", new { name, value = val, type })); } catch { }
+                                try { Invoke(() => _core.SendToJS("oscParam", new { name, value = val, type })); } catch (Exception ex) { CrashHandler.WriteEntry("Osc.TryOscQueryAsync", ex); }
                             });
                             // Fallback: load config file as pending params so the full list is visible
                             if (!gotLive)
@@ -217,7 +217,7 @@ public class ChatboxController : IDisposable
         else
         {
             _chatbox = new ChatboxService(s => Invoke(() => _core.SendToJS("log", new { msg = s, color = "sec" })));
-            _chatbox.SetUpdateCallback(data => { try { Invoke(() => _core.SendToJS("chatboxUpdate", data)); } catch { } });
+            _chatbox.SetUpdateCallback(data => { try { Invoke(() => _core.SendToJS("chatboxUpdate", data)); } catch (Exception ex) { CrashHandler.WriteEntry("Chatbox.SetUpdateCallback", ex); } });
             _chatbox.ApplyConfig(true, _core.Settings.CbShowTime, _core.Settings.CbShowMedia, _core.Settings.CbShowPlaytime,
                 _core.Settings.CbShowCustomText, _core.Settings.CbShowSystemStats, _core.Settings.CbShowAfk, _core.Settings.CbAfkMessage,
                 _core.Settings.CbSuppressSound, _core.Settings.CbTimeFormat, _core.Settings.CbSeparator, _core.Settings.CbIntervalMs, _core.Settings.CbCustomLines, _core.Settings.CbHideBackground);

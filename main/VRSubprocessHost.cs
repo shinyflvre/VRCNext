@@ -1,4 +1,4 @@
-#if WINDOWS
+﻿#if WINDOWS
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -299,8 +299,8 @@ public sealed class VRSubprocessHost : IDisposable
         => Send("vro_update_notif", new { notifId, newText, newImageUrl, newFriendName });
 
     public void EnqueueToast(string evType, string friendName, string evText, string time,
-        string imageUrl, bool isFavorited)
-        => Send("vro_enqueue_toast", new { evType, friendName, evText, time, imageUrl, isFavorited });
+        string imageUrl, bool isFavorited, string friendId = "")
+        => Send("vro_enqueue_toast", new { evType, friendName, evText, time, imageUrl, isFavorited, friendId });
 
     public void SetFriendLocations(IReadOnlyList<(string worldId, string instanceId, string worldName,
         string worldImageUrl, string friendId, string friendName, string friendImageUrl, string location)> entries)
@@ -330,6 +330,10 @@ public sealed class VRSubprocessHost : IDisposable
 
     public void SetToolStates(bool discord, bool voice, bool kikitan, bool space, bool relay, bool chatbox, bool frameShot)
         => Send("vro_tool_states", new { discord, voice, kikitan, space, relay, chatbox, frameShot });
+
+    public void SetKikitanState(string sourceText, string translatedText, bool isFinal,
+        string sourceLang, string targetLang, string engine, bool translateEnabled)
+        => Send("vro_kikitan", new { sourceText, translatedText, isFinal, sourceLang, targetLang, engine, translateEnabled });
 
     public void SfConnect(float multiplier, bool lockX, bool lockY, bool lockZ,
         uint leftResetBtn, uint rightResetBtn, uint leftDragBtn, uint rightDragBtn,
@@ -429,12 +433,13 @@ public sealed class VRSubprocessHost : IDisposable
     public void AddNotification(string a, string b, string c, string d,
         string e = "", string f = "", string g = "", string h = "", string i = "") { }
     public void UpdateNotification(string a, string? b = null, string? c = null, string? d = null) { }
-    public void EnqueueToast(string a, string b, string c, string d, string e, bool f) { }
+    public void EnqueueToast(string a, string b, string c, string d, string e, bool f, string g = "") { }
     public void SetFriendLocations(System.Collections.Generic.IReadOnlyList<(string, string, string, string, string, string, string, string)> entries) { }
     public void SetOnlineFriends(System.Collections.Generic.IReadOnlyList<(string, string, string, string, string, string, string)> entries) { }
     public void SetSelfUser(string userId, string imageUrl, string status) { }
     public void UpdateMediaInfo(string a, string b, double c, double d, bool e) { }
     public void SetToolStates(bool a, bool b, bool c, bool d, bool e, bool f, bool g) { }
+    public void SetKikitanState(string a, string b, bool c, string d, string e, string f, bool g) { }
     public void SfConnect(float a, bool b, bool c, bool d, uint e, uint f, uint g, uint h, uint i, uint j, float k) { }
     public void SfDisconnect() { }
     public void SfConfig(float a, bool b, bool c, bool d, uint e, uint f, uint g, uint h, uint i, uint j, float k) { }

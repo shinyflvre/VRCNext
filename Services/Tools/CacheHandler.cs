@@ -76,7 +76,7 @@ public class CacheHandler
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             File.WriteAllText(path, JsonConvert.SerializeObject(data));
         }
-        catch { /* non-critical */ }
+        catch (Exception ex) { CrashHandler.WriteEntry("CacheHandler.Save", ex); }
     }
 
     public bool Has(string key) => File.Exists(Resolve(key));
@@ -116,6 +116,6 @@ public class CacheHandler
             var profilesCacheDir = Path.Combine(root, "Caches", "Profiles");
             if (Directory.Exists(profilesCacheDir)) Directory.Delete(profilesCacheDir, true);
         }
-        catch { }
+        catch (Exception ex) { CrashHandler.WriteEntry("CacheHandler.ClearAll", ex); }
     }
 }

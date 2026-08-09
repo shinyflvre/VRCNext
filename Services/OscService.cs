@@ -160,7 +160,7 @@ namespace VRCNext
 
                 _onParam?.Invoke(paramName, value, typeName);
             }
-            catch { }
+            catch (Exception ex) { _log($"[OSC] Parse error: {ex.Message}"); }
         }
 
         private static string GetOscConfigDir()

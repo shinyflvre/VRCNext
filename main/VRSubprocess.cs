@@ -1,4 +1,4 @@
-#if WINDOWS
+﻿#if WINDOWS
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -208,6 +208,13 @@ static class VRSubprocess
                 break;
             }
 
+            case "vro_kikitan":
+                vro.SetKikitanState(
+                    S(cmd, "sourceText"), S(cmd, "translatedText"), B(cmd, "isFinal"),
+                    S(cmd, "sourceLang"), S(cmd, "targetLang"), S(cmd, "engine"),
+                    B(cmd, "translateEnabled"));
+                break;
+
             case "vro_tool_states":
                 vro.SetToolStates(
                     B(cmd, "discord"), B(cmd, "voice"), B(cmd, "kikitan"),
@@ -230,7 +237,7 @@ static class VRSubprocess
             case "vro_enqueue_toast":
                 vro.EnqueueToast(
                     S(cmd, "evType"), S(cmd, "friendName"), S(cmd, "evText"), S(cmd, "time"),
-                    S(cmd, "imageUrl"), B(cmd, "isFavorited"));
+                    S(cmd, "imageUrl"), B(cmd, "isFavorited"), S(cmd, "friendId"));
                 break;
 
             case "vro_set_locations":

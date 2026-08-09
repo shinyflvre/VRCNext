@@ -103,6 +103,14 @@ namespace VRCNext.Services
         private Bitmap?   _bitmap;
         private const int W = 512;
         private const int H = 384;
+        private const int ContentVShift = (H - 384) / 2 > 0 ? (H - 384) / 2 : 0;
+        private const int MusicArtSize  = 128;
+        private const int MusicArtY     = 68 + 10 + ContentVShift;
+        private const int MusicBarY     = MusicArtY + MusicArtSize + 62;
+        private const int MusicBarH     = 6;
+        private const int MusicCtrlCY   = MusicBarY + MusicBarH + 38;
+        private const int MusicPlayR    = 26;
+        private const int TabBarBottom  = 60;
         private const int HeaderH = 58;
         private const int TexH = H + HeaderH;
         private const int RenderScale = 2; // render at 2× resolution for sharper overlay
@@ -201,7 +209,7 @@ namespace VRCNext.Services
         private bool  _toastJoined     = true;
 
         // Toast animation state
-        private record ToastItem(string EvType, string FriendName, string EvText, string Time, string ImageUrl);
+        private record ToastItem(string EvType, string FriendName, string EvText, string Time, string ImageUrl, string FriendId = "");
         private record ActiveToast(ToastItem Item, DateTime StartTime);
         private readonly Queue<ToastItem> _toastQueue = new();
         private readonly List<ActiveToast> _activeToasts = new();
@@ -254,14 +262,14 @@ namespace VRCNext.Services
             _scaleKeybindHand        = keybindHand;
             _scaleValue              = currentScale;
             _scaleScrollSensitivity  = Math.Clamp(scrollSensitivity, 1, 100);
-            if (!scaleEnabled && _activeTab == 6) _activeTab = 1;
+            ClampActiveTab();
             _dirty = true;
         }
 
         public void SetCurrentScale(float scale)
         {
             _scaleValue = scale;
-            if (_activeTab == 6) _dirty = true;
+            if (_activeTab == TabSize) _dirty = true;
         }
 
         public void StartScaleKeybindRecording()
@@ -373,6 +381,19 @@ namespace VRCNext.Services
             OnWaterDismissed?.Invoke();
         }
 
+        public void SetKikitanState(string sourceText, string translatedText, bool isFinal,
+                                    string sourceLang, string targetLang, string engine, bool translateEnabled)
+        {
+            _kxSource      = sourceText ?? "";
+            _kxTranslation = translatedText ?? "";
+            _kxFinal       = isFinal;
+            _kxSourceLang  = string.IsNullOrWhiteSpace(sourceLang) ? "Auto" : sourceLang;
+            _kxTargetLang  = string.IsNullOrWhiteSpace(targetLang) ? "" : targetLang;
+            _kxEngine      = string.IsNullOrWhiteSpace(engine) ? "" : engine;
+            _kxTranslate   = translateEnabled;
+            if (_activeTab == TabKikitan) _dirty = true;
+        }
+
         public void SetToolStates(bool discord, bool voiceFight, bool kikitan, bool spaceFlight, bool relay, bool chatbox, bool frameShot)
         {
             _toolDiscord    = discord;
@@ -382,6 +403,7 @@ namespace VRCNext.Services
             _toolRelay      = relay;
             _toolChatbox    = chatbox;
             _toolFrameShot  = frameShot;
+            ClampActiveTab();
             _dirty = true;
         }
 
@@ -461,7 +483,7 @@ namespace VRCNext.Services
         private const double TOAST_FRIEND_COOLDOWN_MS = 2000; // 2 seconds — blocks WebSocket rapid-fire but allows real events
 
         /// <summary>Called from AppShell after AddNotification returns isNew=true.</summary>
-        public void EnqueueToast(string evType, string friendName, string evText, string time, string imageUrl, bool isFavorited)
+        public void EnqueueToast(string evType, string friendName, string evText, string time, string imageUrl, bool isFavorited, string friendId = "")
         {
             // Global enable
             if (!_toastEnabled || !IsConnected) return;
@@ -496,7 +518,7 @@ namespace VRCNext.Services
 
             lock (_toastQueue)
             {
-                _toastQueue.Enqueue(new ToastItem(evType, friendName, evText, time, imageUrl));
+                _toastQueue.Enqueue(new ToastItem(evType, friendName, evText, time, imageUrl, friendId));
             }
         }
 
@@ -523,8 +545,20 @@ namespace VRCNext.Services
         private readonly List<LocationEntry>         _friendLocations  = new();
         private readonly Dictionary<string, Bitmap?> _locationImgCache = new(); 
         // Scroll state — replaces integer page fields
-        private float _locationScrollY  = 0f; 
+        private float _locationScrollY  = 0f;
         private float _locationScrollVY = 0f;
+        private string? _openWorldKey   = null;
+        private float _wdAnim           = 0f;
+        private float _wdTarget         = 0f;
+        private float _notifScrollY     = 0f;
+        private float _notifScrollVY    = 0f;
+        private string _kxSource        = "";
+        private string _kxTranslation   = "";
+        private string _kxSourceLang    = "Auto";
+        private string _kxTargetLang    = "";
+        private string _kxEngine        = "";
+        private bool   _kxFinal         = true;
+        private bool   _kxTranslate     = false;
         private float _friendsScrollY   = 0f;
         private float _friendsScrollVY  = 0f;
 
@@ -555,9 +589,25 @@ namespace VRCNext.Services
         private const int FrdContentY = 72;
 
         // Shared scroll area (used by both location + friends tabs)
-        private const int ScrollContentBottom = H - 12;    
-        private const int ScrollContentH      = ScrollContentBottom - LocContentY; 
-        private const int ScrollBarW          = 3;      
+        private const int ScrollContentBottom = H - 12;
+        private const int ScrollContentH      = ScrollContentBottom - LocContentY;
+        private const int ScrollBarW          = 3;
+
+        private const int TabAlerts = 1, TabLocation = 2, TabMusic = 3, TabTools = 4,
+                          TabFriends = 5, TabKikitan = 6, TabSize = 7;
+
+        private List<int> VisibleTabs()
+        {
+            var t = new List<int> { TabAlerts, TabLocation, TabMusic, TabTools, TabFriends };
+            if (_toolKikitan) t.Add(TabKikitan);
+            if (_scaleEnabled) t.Add(TabSize);
+            return t;
+        }
+
+        private void ClampActiveTab()
+        {
+            if (!VisibleTabs().Contains(_activeTab)) { _activeTab = TabAlerts; _dirty = true; }
+        }
 
         // Theme colors
         private OverlayTheme _theme = OverlayTheme.FromName("vrcn");
@@ -997,7 +1047,7 @@ namespace VRCNext.Services
             {
                 var entry = new NotifEntry(evType, friendName, evText, time, imageUrl, friendId, location, notifId, notifData);
                 _notifications.Insert(0, entry);
-                while (_notifications.Count > 4) _notifications.RemoveAt(_notifications.Count - 1);
+                while (_notifications.Count > MaxNotifications) _notifications.RemoveAt(_notifications.Count - 1);
             }
             if (!string.IsNullOrEmpty(imageUrl))
             {
@@ -1081,6 +1131,7 @@ namespace VRCNext.Services
 
         public void SetFriendLocations(IReadOnlyList<(string worldId, string instanceId, string worldName, string worldImageUrl, string friendId, string friendName, string friendImageUrl, string location)> entries)
         {
+            _worldGroupsCache = null;
             lock (_friendLocations)
             {
                 _friendLocations.Clear();
@@ -1500,6 +1551,7 @@ namespace VRCNext.Services
                     }
 
                     UpdateDynamicVisibility();
+                    UpdateToastFollow();
 
                     // Proximity-based interaction: enable Mouse+Interactive when free
                     // hand is near the wrist, revert to None otherwise.
@@ -1507,10 +1559,22 @@ namespace VRCNext.Services
 
                     if (IsVisible)
                     {
-                        // Animate tab indicator slide
                         const int tabX = 8;
-                        int tabW = (W - 16) / (_scaleEnabled ? 6 : 5);
-                        float targetX = tabX + 2f + (_activeTab - 1) * tabW;
+                        var visTabs = VisibleTabs();
+                        int tabW = (W - 16) / Math.Max(1, visTabs.Count);
+                        int tabPos = Math.Max(0, visTabs.IndexOf(_activeTab));
+                        float targetX = tabX + 2f + tabPos * tabW;
+                        if (MathF.Abs(_wdAnim - _wdTarget) > 0.004f)
+                        {
+                            _wdAnim += (_wdTarget - _wdAnim) * 0.34f;
+                            _dirty = true;
+                        }
+                        else if (_wdAnim != _wdTarget)
+                        {
+                            _wdAnim = _wdTarget;
+                            if (_wdTarget <= 0f) _openWorldKey = null;
+                            _dirty = true;
+                        }
                         if (MathF.Abs(_tabIndicatorX - targetX) > 0.5f)
                         {
                             _tabIndicatorX += (targetX - _tabIndicatorX) * 0.25f; // lerp
@@ -1525,6 +1589,12 @@ namespace VRCNext.Services
                         // Scroll inertia — decays to 0, marks dirty while moving
                         if (!_scrollDragging)
                         {
+                            if (MathF.Abs(_notifScrollVY) > 0.3f)
+                            {
+                                _notifScrollVY *= 0.87f;
+                                _notifScrollY   = Math.Clamp(_notifScrollY + _notifScrollVY, 0f, GetNotifMaxScroll());
+                                _dirty = true;
+                            }
                             if (MathF.Abs(_locationScrollVY) > 0.3f)
                             {
                                 _locationScrollVY *= 0.87f;
@@ -1578,7 +1648,7 @@ namespace VRCNext.Services
                         }
 
                         // Scale tab: poll thumbstick and apply scale when keybind held
-                        if (_activeTab == 6)
+                        if (_activeTab == TabSize)
                         {
                             float tx = 0f, ty = 0f;
                             var sys2 = _vrSystem;
@@ -1784,13 +1854,14 @@ namespace VRCNext.Services
                         _scrollLastNY    = ny;
                         _scrollLastDeltaY = 0f;
                         // Kill inertia on touch-down for scroll tabs
+                        if (_activeTab == 1) _notifScrollVY   = 0f;
                         if (_activeTab == 2) _locationScrollVY = 0f;
                         if (_activeTab == 5) _friendsScrollVY  = 0f;
                         if (_activeTab == 4) _toolsScrollVY    = 0f;
                     }
                     else if (oType == EVREventType.VREvent_MouseMove)
                     {
-                        if (_mouseDown && (_activeTab == 2 || _activeTab == 4 || _activeTab == 5) && _mouseDownNY < 0.82f)
+                        if (_mouseDown && (_activeTab == 1 || _activeTab == 2 || _activeTab == 4 || _activeTab == 5) && _mouseDownNY < 1f - (float)(LocContentY - 6) / H)
                         {
                             var mu = evt.data.mouse;
                             float ny = mu.y / H;
@@ -1802,7 +1873,9 @@ namespace VRCNext.Services
                                 float delta = (ny - _scrollLastNY) * H; // drag up → scroll down (OpenVR y=0 is bottom)
                                 _scrollLastDeltaY = delta;
                                 _scrollLastNY     = ny;
-                                if (_activeTab == 2)
+                                if (_activeTab == 1)
+                                    _notifScrollY    = Math.Clamp(_notifScrollY    + delta, 0f, GetNotifMaxScroll());
+                                else if (_activeTab == 2)
                                     _locationScrollY = Math.Clamp(_locationScrollY + delta, 0f, GetLocationMaxScroll());
                                 else if (_activeTab == 4)
                                     _toolsScrollY    = Math.Clamp(_toolsScrollY    + delta, 0f, GetToolsMaxScroll());
@@ -1819,6 +1892,7 @@ namespace VRCNext.Services
                         if (_scrollDragging && totalMove >= 20f)
                         {
                             // Real scroll flick — seed inertia
+                            if (_activeTab == 1) _notifScrollVY   = _scrollLastDeltaY * 0.5f;
                             if (_activeTab == 2) _locationScrollVY = _scrollLastDeltaY * 0.5f;
                             if (_activeTab == 4) _toolsScrollVY    = _scrollLastDeltaY * 0.5f;
                             if (_activeTab == 5) _friendsScrollVY  = _scrollLastDeltaY * 0.5f;
@@ -1840,13 +1914,21 @@ namespace VRCNext.Services
             if (ny > 1f) return;
             // Tab bar: GDI+ y=8–58 → OpenVR ny ≈ 0.85–0.98 (y=0 at bottom)
             // 4 tabs, each 124px: tabTW=496/4=124 → thresholds at nx 0.25, 0.50, 0.75
-            if (ny > 0.84f)
+            if (ny > 1f - (float)TabBarBottom / H)
             {
-                if (_scaleEnabled)
-                    _activeTab = nx < (1f/6f) ? 1 : nx < (2f/6f) ? 2 : nx < (3f/6f) ? 3 : nx < (4f/6f) ? 4 : nx < (5f/6f) ? 5 : 6;
-                else
-                    _activeTab = nx < (1f/5f) ? 1 : nx < (2f/5f) ? 2 : nx < (3f/5f) ? 3 : nx < (4f/5f) ? 4 : 5;
+                var hitTabs = VisibleTabs();
+                int hitIdx = Math.Clamp((int)(nx * hitTabs.Count), 0, hitTabs.Count - 1);
+                int hitTab = hitTabs[hitIdx];
+                if (hitTab == TabLocation && _activeTab == TabLocation && _openWorldKey != null)
+                {
+                    _wdTarget = 0f;
+                    _locationScrollY = 0f; _locationScrollVY = 0f;
+                    _dirty = true;
+                    return;
+                }
+                _activeTab = hitTab;
                 _lastDisplayedSecond = -1;
+                _notifScrollY    = 0f; _notifScrollVY    = 0f;
                 _locationScrollY = 0f; _locationScrollVY = 0f;
                 _friendsScrollY  = 0f; _friendsScrollVY  = 0f;
                 _toolsScrollY    = 0f; _toolsScrollVY    = 0f;
@@ -1862,7 +1944,9 @@ namespace VRCNext.Services
             }
 
             // Music player
-            if (_activeTab == 3 && ny >= 0.27f && ny <= 0.35f && _mediaDuration > 0)
+            if (_activeTab == 3 && _mediaDuration > 0
+                && ny <= 1f - (float)(MusicBarY - 8) / H
+                && ny >= 1f - (float)(MusicBarY + MusicBarH + 8) / H)
             {
                 const int barPad = 22;
                 float barNxStart = (float)barPad / W;
@@ -1879,7 +1963,9 @@ namespace VRCNext.Services
             // Music player controls:
             //  Controls GDI+ y 286–338 → ny 0.12–0.25
             //  Prev cx=172±18 → nx 0.27–0.40, Play cx=256±26 → nx 0.43–0.57, Next cx=340±18 → nx 0.60–0.73
-            if (_activeTab == 3 && ny >= 0.11f && ny <= 0.27f)
+            if (_activeTab == 3
+                && ny <= 1f - (float)(MusicCtrlCY - MusicPlayR) / H
+                && ny >= 1f - (float)(MusicCtrlCY + MusicPlayR) / H)
             {
                 if      (nx >= 0.27f && nx <= 0.40f) SendSmtcCommand("prev");
                 else if (nx >= 0.43f && nx <= 0.57f) SendSmtcCommand("playpause");
@@ -1915,11 +2001,59 @@ namespace VRCNext.Services
             {
                 int gdixL = (int)(nx * W);
                 int gdiyL = (int)((1f - ny) * H);
-                int colW  = LocColW;
 
+                var openWg = OpenWorldGroup();
+                if (openWg != null)
+                {
+                    int listTop = LocContentY + WdHeadH;
+                    if (gdiyL >= listTop && gdiyL < ScrollContentBottom)
+                    {
+                        int scrolled = gdiyL - listTop + (int)_locationScrollY;
+                        int cursor = 0;
+                        foreach (var inst in openWg.Instances)
+                        {
+                            cursor += WdInstH;
+                            foreach (var e in inst)
+                            {
+                                if (scrolled >= cursor && scrolled < cursor + FrdCardH)
+                                {
+                                    int invX  = W - LocPadX - ActBtnW - 6;
+                                    int joinX = invX - ActBtnW - 6;
+                                    if (gdixL >= joinX && gdixL < joinX + ActBtnW)
+                                    {
+                                        bool cd = _joinCooldowns.TryGetValue(e.FriendId, out var t1)
+                                            && (DateTime.UtcNow - t1).TotalSeconds < 5;
+                                        if (!cd)
+                                        {
+                                            _joinCooldowns[e.FriendId] = DateTime.UtcNow;
+                                            _dirty = true;
+                                            OnJoinRequest?.Invoke(e.FriendId, e.Location);
+                                        }
+                                    }
+                                    else if (gdixL >= invX && gdixL < invX + ActBtnW)
+                                    {
+                                        string key = e.FriendId + "#inv";
+                                        bool cd = _joinCooldowns.TryGetValue(key, out var t2)
+                                            && (DateTime.UtcNow - t2).TotalSeconds < 5;
+                                        if (!cd)
+                                        {
+                                            _joinCooldowns[key] = DateTime.UtcNow;
+                                            _dirty = true;
+                                            OnInviteFriend?.Invoke(e.FriendId);
+                                        }
+                                    }
+                                    return;
+                                }
+                                cursor += FrdCardH + WdRowGap;
+                            }
+                        }
+                    }
+                    return;
+                }
+
+                int colW = LocColW;
                 if (gdiyL >= LocContentY && gdiyL < ScrollContentBottom)
                 {
-                    // Account for scroll offset when calculating which card was tapped
                     int scrolledY = gdiyL - LocContentY + (int)_locationScrollY;
                     int row    = scrolledY / (LocCardH + LocRowGap);
                     int localY = scrolledY % (LocCardH + LocRowGap);
@@ -1927,39 +2061,35 @@ namespace VRCNext.Services
                     int cardX  = LocPadX + col * (colW + LocColGap);
                     if (localY < LocCardH && gdixL >= cardX && gdixL < cardX + colW)
                     {
-                        var groups = GetLocationGroups();
+                        var groups = GetWorldGroups();
                         int absIdx = row * 2 + col;
                         if (absIdx >= 0 && absIdx < groups.Count)
                         {
-                            var first = groups[absIdx][0];
-                            string locKey = first.WorldId + ":" + first.InstanceId;
-                            bool inCooldown = _joinCooldowns.TryGetValue(locKey, out var cdL)
-                                && (DateTime.UtcNow - cdL).TotalSeconds < 5;
-                            if (!inCooldown)
-                            {
-                                _joinCooldowns[locKey] = DateTime.UtcNow;
-                                _dirty = true;
-                                OnJoinRequest?.Invoke(first.FriendId, first.Location);
-                            }
+                            _openWorldKey     = groups[absIdx].WorldId;
+                            _wdTarget         = 1f;
+                            _locationScrollY  = 0f;
+                            _locationScrollVY = 0f;
+                            _dirty = true;
                         }
                     }
                 }
             }
 
-
             if (_activeTab == 1)
             {
-                const int contentY2 = 72, itemH2 = 78;
                 int gdix2 = (int)(nx * W);
                 int gdiy2 = (int)((1f - ny) * H);
+                int btnLeft2 = W - 12 - NotifBtnW - 10;
 
-                if (gdix2 >= W - 86 && gdix2 <= W - 14)
+                if (gdix2 >= btnLeft2 && gdix2 <= btnLeft2 + NotifBtnW
+                    && gdiy2 >= NotifContentY && gdiy2 < ScrollContentBottom)
                 {
-                    int row2 = (gdiy2 - contentY2) / itemH2;
-                    if (row2 >= 0 && row2 < 4)
+                    int scrolled2 = gdiy2 - NotifContentY + (int)_notifScrollY;
+                    int row2   = scrolled2 / NotifItemH;
+                    int local2 = scrolled2 % NotifItemH;
+                    int btnTop2 = NotifItemH - 4 - NotifBtnH - 7;
+                    if (row2 >= 0 && local2 >= btnTop2 && local2 <= btnTop2 + NotifBtnH)
                     {
-                        int itemGdiY2 = contentY2 + row2 * itemH2;
-                        if (gdiy2 >= itemGdiY2 && gdiy2 <= itemGdiY2 + itemH2 - 4)
                         {
                             List<NotifEntry> snapJ;
                             lock (_notifications) snapJ = new List<NotifEntry>(_notifications);
@@ -2057,7 +2187,7 @@ namespace VRCNext.Services
 
             // Scale tab: +/- buttons
             // Layout (GDI): [-] x=68..156  [+] x=356..444  y=303..337
-            if (_activeTab == 6 && !_isScaleRecording)
+            if (_activeTab == TabSize && !_isScaleRecording)
             {
                 int gx = (int)(nx * W);
                 int gy = (int)((1f - ny) * H);
@@ -2081,30 +2211,6 @@ namespace VRCNext.Services
                     }
                 }
             }
-        }
-
-        private List<List<LocationEntry>> GetLocationGroups()
-        {
-            lock (_friendLocations)
-                return _friendLocations
-                    .GroupBy(e => e.WorldId + ":" + e.InstanceId)
-                    .Select(g => g.ToList())
-                    .ToList();
-        }
-
-        private int GetLocationGroupCount()
-        {
-            lock (_friendLocations)
-                return _friendLocations.GroupBy(e => e.WorldId + ":" + e.InstanceId).Count();
-        }
-
-        private float GetLocationMaxScroll()
-        {
-            var groups = GetLocationGroups();
-            if (groups.Count == 0) return 0f;
-            int rows    = (groups.Count + 1) / 2;
-            int totalH  = rows * (LocCardH + LocRowGap) - LocRowGap;
-            return Math.Max(0f, totalH - ScrollContentH);
         }
 
         private float GetFriendsMaxScroll()
@@ -2508,6 +2614,76 @@ namespace VRCNext.Services
             }
         }
 
+        private const float ToastFollowTau  = 0.20f;
+        private const float ToastFollowDist = 0.45f;
+        private readonly TrackedDevicePose_t[] _toastPoses = new TrackedDevicePose_t[OpenVR.k_unMaxTrackedDeviceCount];
+        private Vector3 _toastPos;
+        private Vector3 _toastFwd = -Vector3.UnitZ;
+        private bool    _toastPoseInit;
+        private DateTime _toastPoseLast = DateTime.UtcNow;
+
+        private void UpdateToastFollow()
+        {
+            if (_toastHandle == 0 || OpenVR.Overlay == null || _vrSystem == null) return;
+
+            lock (_activeToasts) { if (_activeToasts.Count == 0) { _toastPoseInit = false; return; } }
+
+            _vrSystem.GetDeviceToAbsoluteTrackingPose(
+                ETrackingUniverseOrigin.TrackingUniverseStanding, 0f, _toastPoses);
+
+            var hmdIdx = OpenVR.k_unTrackedDeviceIndex_Hmd;
+            if (!_toastPoses[hmdIdx].bPoseIsValid) return;
+            var m = _toastPoses[hmdIdx].mDeviceToAbsoluteTracking;
+
+            var hmdPos = new Vector3(m.m3, m.m7, m.m11);
+            var fwd    = new Vector3(-m.m2, -m.m6, -m.m10);
+            if (fwd.LengthSquared() < 1e-6f) return;
+            fwd = Vector3.Normalize(fwd);
+
+            var right = Vector3.Cross(fwd, Vector3.UnitY);
+            if (right.LengthSquared() < 1e-6f) right = new Vector3(m.m0, m.m4, m.m8);
+            right = Vector3.Normalize(right);
+            var up = Vector3.Normalize(Vector3.Cross(right, fwd));
+
+            float widthMeters = 0.10f + _toastSize * 0.002f;
+            float yComp = (widthMeters * TH_FULL / TW - widthMeters * TH / TW) / 2f;
+            var target = hmdPos + fwd * ToastFollowDist
+                       + right * _toastOffsetX
+                       + up * (_toastOffsetY + yComp);
+
+            var now = DateTime.UtcNow;
+            float dt = Math.Clamp((float)(now - _toastPoseLast).TotalSeconds, 0.001f, 0.1f);
+            _toastPoseLast = now;
+
+            if (!_toastPoseInit)
+            {
+                _toastPos = target;
+                _toastFwd = fwd;
+                _toastPoseInit = true;
+            }
+            else
+            {
+                float a = 1f - MathF.Exp(-dt / ToastFollowTau);
+                _toastPos = Vector3.Lerp(_toastPos, target, a);
+                var blended = Vector3.Lerp(_toastFwd, fwd, a);
+                if (blended.LengthSquared() > 1e-6f) _toastFwd = Vector3.Normalize(blended);
+            }
+
+            var r2 = Vector3.Cross(_toastFwd, Vector3.UnitY);
+            if (r2.LengthSquared() < 1e-6f) r2 = right;
+            r2 = Vector3.Normalize(r2);
+            var u2 = Vector3.Normalize(Vector3.Cross(r2, _toastFwd));
+
+            var t = new HmdMatrix34_t
+            {
+                m0 = r2.X, m1 = u2.X, m2  = -_toastFwd.X, m3  = _toastPos.X,
+                m4 = r2.Y, m5 = u2.Y, m6  = -_toastFwd.Y, m7  = _toastPos.Y,
+                m8 = r2.Z, m9 = u2.Z, m10 = -_toastFwd.Z, m11 = _toastPos.Z
+            };
+            OpenVR.Overlay.SetOverlayTransformAbsolute(_toastHandle,
+                ETrackingUniverseOrigin.TrackingUniverseStanding, ref t);
+        }
+
         private void ApplyToastTransform()
         {
             if (_toastHandle == 0 || OpenVR.Overlay == null) return;
@@ -2518,9 +2694,9 @@ namespace VRCNext.Services
             float fullHeightM = widthMeters * TH_FULL / TW;
             float singleHeightM = widthMeters * TH / TW;
             float yCompensation = (fullHeightM - singleHeightM) / 2f;
-            var transform = BuildTransform(_toastOffsetX, _toastOffsetY + yCompensation, -0.45f, 0f, 0f, 0f);
-            OpenVR.Overlay.SetOverlayTransformTrackedDeviceRelative(_toastHandle,
-                OpenVR.k_unTrackedDeviceIndex_Hmd, ref transform);
+            _toastPoseInit = false;
+            _toastPoseLast = DateTime.UtcNow;
+            UpdateToastFollow();
         }
 
         private float ComputeToastAlpha(double elapsedMs)
@@ -2585,7 +2761,7 @@ namespace VRCNext.Services
 
             var oldClip = g.Clip;
             using var avPath = RoundedRectPath(avX, avY, avSize, avSize, avR);
-            g.SetClip(avPath);
+            g.SetClip(avPath, System.Drawing.Drawing2D.CombineMode.Intersect);
             if (avatar != null)
             {
                 if (fade >= 0.99f)
@@ -2616,51 +2792,28 @@ namespace VRCNext.Services
             }
             g.SetClip(oldClip, CombineMode.Replace);
 
-            // Text
+            if (EventHasStatusDot(toast.EvType))
+            {
+                var toastSt = FriendStatus(toast.FriendId);
+                if (!string.IsNullOrEmpty(toastSt))
+                    DrawStatusDot(g, toastSt, avX + avSize - 3f, avY + avSize - 3f, 5f,
+                                  Color.FromArgb(A(220, fade), th.BgCard));
+            }
+
             int textX = avX + avSize + 10;
             int textRight = TW - 14;
 
-            // Row 1: dot + name
             var evColor = EventColor(toast.EvType);
-            const float dotSz = 7f;
-            float dotX = textX;
             float row1Y = avY + 2f;
-            float dotY = row1Y + (16f - dotSz) / 2f;
-            using var dotBrush = new SolidBrush(Color.FromArgb(A(255, fade), evColor));
-            g.FillEllipse(dotBrush, dotX, dotY, dotSz, dotSz);
-
-            float nameX = dotX + dotSz + 6f;
             using var nameFont  = new Font("Segoe UI", 10.5f, FontStyle.Bold, GraphicsUnit.Point);
             using var nameBrush = new SolidBrush(Color.FromArgb(A(255, fade), th.Tx1));
             var ellipsisFmt = new StringFormat { Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap };
-            var nameSz = g.MeasureString(toast.FriendName, nameFont);
-            float nameDrawW = Math.Min(nameSz.Width, textRight - nameX - 70f);
             g.DrawString(toast.FriendName, nameFont, nameBrush,
-                new RectangleF(nameX, row1Y, Math.Max(nameDrawW, 20f), 18f), ellipsisFmt);
-
-            // Event type badge (colored, after name)
-            string badge = EventTypeLabel(toast.EvType);
-            if (!string.IsNullOrEmpty(badge))
-            {
-                using var badgeFont = new Font("Segoe UI", 7.5f, FontStyle.Bold, GraphicsUnit.Point);
-                var badgeSz = g.MeasureString(badge, badgeFont);
-                float badgeX = nameX + Math.Min(nameSz.Width, nameDrawW) + 5f;
-                float badgeW = badgeSz.Width + 8f;
-                float badgeH = 14f;
-                float badgeY = row1Y + (18f - badgeH) / 2f;
-                if (badgeX + badgeW < textRight)
-                {
-                    using var badgeBg = new SolidBrush(Color.FromArgb(A(40, fade), evColor));
-                    FillRoundedRect(g, badgeBg, (int)badgeX, (int)badgeY, (int)badgeW, (int)badgeH, 4);
-                    using var badgeBrush = new SolidBrush(Color.FromArgb(A(255, fade), evColor));
-                    var badgeFmt = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
-                    g.DrawString(badge, badgeFont, badgeBrush, new RectangleF(badgeX, badgeY, badgeW, badgeH), badgeFmt);
-                }
-            }
+                new RectangleF(textX, row1Y, Math.Max(textRight - textX, 20f), 18f), ellipsisFmt);
 
             // Row 2: event content text
             float row2Y = row1Y + 18f + 1f;
-            string evText = EventBadgeLabel(toast.EvType, toast.EvText);
+            string evText = EventSentence(toast.EvType, toast.EvText);
             using var evFont  = new Font("Segoe UI", 9f, FontStyle.Regular, GraphicsUnit.Point);
             using var evBrush = new SolidBrush(Color.FromArgb(A(255, fade), th.Tx3));
             g.DrawString(evText, evFont, evBrush,
@@ -2761,12 +2914,18 @@ namespace VRCNext.Services
                 var hdrState = g.Save();
                 g.TranslateTransform(0, HeaderH);
                 DrawTabBar(g);
+                var tabClip = g.Clip;
+                g.SetClip(new System.Drawing.Rectangle(0, TabBarBottom, W, H - TabBarBottom),
+                          System.Drawing.Drawing2D.CombineMode.Intersect);
                 if      (_activeTab == 1) DrawNotifications(g);
                 else if (_activeTab == 2) DrawLocations(g);
                 else if (_activeTab == 3) DrawMusicPlayer(g);
                 else if (_activeTab == 4) DrawTools(g);
                 else if (_activeTab == 5) DrawFriends(g);
-                else if (_activeTab == 6) DrawScaleTab(g);
+                else if (_activeTab == TabKikitan) DrawKikitan(g);
+                else if (_activeTab == TabSize) DrawScaleTab(g);
+                g.SetClip(tabClip, System.Drawing.Drawing2D.CombineMode.Replace);
+                tabClip.Dispose();
                 if (_waterAlarmActive) DrawDashboardAlarm(g);
                 g.Restore(hdrState);
 
@@ -2791,7 +2950,7 @@ namespace VRCNext.Services
                 // Clip drawing to rounded card shape
                 using var cardClip = RoundedRectPath(0, HeaderH, W, H, r);
                 using var oldClip = g.Clip;
-                g.SetClip(cardClip);
+                g.SetClip(cardClip, System.Drawing.Drawing2D.CombineMode.Intersect);
 
                 // Downscale → upscale = cheap blur
                 using var tiny = new Bitmap(64, 48);
@@ -2931,8 +3090,8 @@ namespace VRCNext.Services
             int tabH   = 50;
             int tabX   = 8;
             int tabTW  = W - 16;
-            int numTabs = _scaleEnabled ? 6 : 5;
-            int tabW   = tabTW / numTabs;
+            var tabs   = VisibleTabs();
+            int tabW   = tabTW / Math.Max(1, tabs.Count);
 
             bool artBg = _activeTab == 3 && _albumArt != null && !string.IsNullOrWhiteSpace(_mediaTitle);
             if (!artBg)
@@ -2946,13 +3105,22 @@ namespace VRCNext.Services
             using var indicatorBg = new SolidBrush(Color.FromArgb(200, th.Accent));
             FillRoundedRect(g, indicatorBg, (int)_tabIndicatorX, 10, indicatorW, tabH - 4, 12);
 
-            DrawTab(g, "\uE7F4", "Alerts",   1, tabX,           8, tabW, tabH);
-            DrawTab(g, "\uE0C8", "Location", 2, tabX + tabW,     8, tabW, tabH);
-            DrawTab(g, "\uE405", "Music",    3, tabX + tabW * 2, 8, tabW, tabH);
-            DrawTab(g, "\uE869", "Tools",    4, tabX + tabW * 3, 8, tabW, tabH);
-            DrawTab(g, "\uE7FB", "Friends",  5, tabX + tabW * 4, 8, _scaleEnabled ? tabW : tabTW - tabW * 4, tabH);
-            if (_scaleEnabled)
-                DrawTab(g, "\uEA16", "Size", 6, tabX + tabW * 5, 8, tabTW - tabW * 5, tabH);
+            for (int i = 0; i < tabs.Count; i++)
+            {
+                int id = tabs[i];
+                int tw = i == tabs.Count - 1 ? tabTW - tabW * i : tabW;
+                string icon = id switch
+                {
+                    TabAlerts   => "\uE7F4",
+                    TabLocation => _activeTab == TabLocation && _openWorldKey != null ? "\uE5C4" : "\uE0C8",
+                    TabMusic    => "\uE405",
+                    TabTools    => "\uE869",
+                    TabFriends  => "\uE7FB",
+                    TabKikitan  => "\uE8E2",
+                    _           => "\uEA16",
+                };
+                DrawTab(g, icon, "", id, tabX + tabW * i, 8, tw, tabH);
+            }
 
             if (!artBg)
             {
@@ -2986,7 +3154,7 @@ namespace VRCNext.Services
             // Clip to overlay's rounded shape (r=24, same as DrawBackground)
             var oldClip = g.Clip;
             using var alarmClip = RoundedRectPath(0, 0, W, H, 24);
-            g.SetClip(alarmClip);
+            g.SetClip(alarmClip, System.Drawing.Drawing2D.CombineMode.Intersect);
 
             // Dark overlay — covers everything inside rounded rect
             using (var ovBr = new SolidBrush(Color.FromArgb(250, 6, 9, 20)))
@@ -3043,50 +3211,154 @@ namespace VRCNext.Services
             fmtC.Dispose();
         }
 
+        private const int WdHeadH   = 50;
+        private const int WdInstH   = 20;
+        private const int WdRowGap  = 5;
+        private const int ActBtnW   = 58;
+        private const int ActBtnH   = 42;
+
+        private record WorldGroup(string WorldId, string WorldName, string WorldImageUrl,
+                                  List<List<LocationEntry>> Instances, List<LocationEntry> All);
+
+        private List<WorldGroup>? _worldGroupsCache;
+
+        private List<WorldGroup> GetWorldGroups()
+        {
+            var cached = _worldGroupsCache;
+            if (cached != null) return cached;
+
+            List<WorldGroup> built;
+            lock (_friendLocations)
+                built = _friendLocations
+                    .GroupBy(e => e.WorldId)
+                    .Select(w =>
+                    {
+                        var all = w.ToList();
+                        var inst = all.GroupBy(e => e.InstanceId).Select(i => i.ToList()).ToList();
+                        return new WorldGroup(w.Key, all[0].WorldName, all[0].WorldImageUrl, inst, all);
+                    })
+                    .ToList();
+            _worldGroupsCache = built;
+            return built;
+        }
+
+        private WorldGroup? OpenWorldGroup()
+            => _openWorldKey == null ? null : GetWorldGroups().FirstOrDefault(w => w.WorldId == _openWorldKey);
+
+        private float GetLocationMaxScroll()
+        {
+            var open = OpenWorldGroup();
+            if (open != null)
+            {
+                int total = 0;
+                foreach (var inst in open.Instances)
+                    total += WdInstH + inst.Count * (FrdCardH + WdRowGap);
+                return Math.Max(0f, total - (ScrollContentH - WdHeadH));
+            }
+            int rows = (GetWorldGroups().Count + 1) / 2;
+            return Math.Max(0f, rows * (LocCardH + LocRowGap) - ScrollContentH);
+        }
+
+        private static string InstanceShortId(string instanceId)
+        {
+            if (string.IsNullOrEmpty(instanceId)) return "#?";
+            var cut = instanceId.IndexOf('~');
+            var id = cut > 0 ? instanceId.Substring(0, cut) : instanceId;
+            return "#" + id;
+        }
+
+        private void DrawCircleAvatar(Graphics g, string imageUrl, string name, int cx, int cy, int size, Color ring)
+        {
+            Bitmap? img = null;
+            if (!string.IsNullOrEmpty(imageUrl))
+                lock (_locationImgCache) { _locationImgCache.TryGetValue(imageUrl, out img); }
+
+            using (var ringBr = new SolidBrush(ring))
+                g.FillEllipse(ringBr, cx - 2, cy - 2, size + 4, size + 4);
+
+            var oldClip = g.Clip;
+            using var path = new System.Drawing.Drawing2D.GraphicsPath();
+            path.AddEllipse(cx, cy, size, size);
+            g.SetClip(path, System.Drawing.Drawing2D.CombineMode.Intersect);
+            if (img != null)
+            {
+                var prevMode = g.InterpolationMode;
+                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.Bilinear;
+                DrawImageCover(g, img, new Rectangle(cx, cy, size, size));
+                g.InterpolationMode = prevMode;
+                g.SetClip(oldClip, System.Drawing.Drawing2D.CombineMode.Replace);
+            }
+            else
+            {
+                using var bg = new SolidBrush(_theme.BgHover);
+                g.FillPath(bg, path);
+                g.SetClip(oldClip, System.Drawing.Drawing2D.CombineMode.Replace);
+                string init = name.Length > 0 ? name[0].ToString().ToUpper() : "?";
+                using var f = new Font("Segoe UI", size * 0.46f, FontStyle.Bold, GraphicsUnit.Pixel);
+                using var b = new SolidBrush(_theme.Tx2);
+                var fmt = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+                g.DrawString(init, f, b, new RectangleF(cx, cy, size, size), fmt);
+            }
+        }
+
         private void DrawLocations(Graphics g)
         {
-            var th     = _theme;
-            int colW   = LocColW;
-            var groups = GetLocationGroups();
+            var open = OpenWorldGroup();
+            float t = _wdAnim;
 
+            if (open == null && t <= 0.001f) { DrawLocationGrid(g, GetWorldGroups()); return; }
+
+            bool showDetail = t >= 0.5f && open != null;
+            if (showDetail) DrawWorldDetail(g, open!);
+            else            DrawLocationGrid(g, GetWorldGroups());
+
+            float veil = Math.Clamp(showDetail ? (1f - t) * 2f : t * 2f, 0f, 1f);
+            if (veil > 0.01f)
+            {
+                using var veilBrush = new SolidBrush(Color.FromArgb((int)(235 * veil), _theme.BgCard));
+                g.FillRectangle(veilBrush, 0, LocContentY - 6, W, ScrollContentBottom - LocContentY + 12);
+            }
+        }
+
+        private void DrawLocationGrid(Graphics g, List<WorldGroup> groups)
+        {
+            var th = _theme;
             if (groups.Count == 0)
             {
                 using var emptyFont  = new Font("Segoe UI", 11f, FontStyle.Regular, GraphicsUnit.Point);
                 using var emptyBrush = new SolidBrush(th.Tx3);
                 var emptyFmt = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
                 g.DrawString("No friends online in worlds", emptyFont, emptyBrush,
-                    new RectangleF(LocPadX, LocContentY, 2 * colW + LocColGap, ScrollContentH), emptyFmt);
+                    new RectangleF(LocPadX, LocContentY, W - 2 * LocPadX, ScrollContentH), emptyFmt);
                 return;
             }
 
             float maxScroll = GetLocationMaxScroll();
             _locationScrollY = Math.Clamp(_locationScrollY, 0f, maxScroll);
             int scrollY = (int)_locationScrollY;
+            int colW = LocColW;
 
-            // Clip cards to content area so they don't bleed into tab bar or bottom
             var oldClip = g.Clip;
-            g.SetClip(new System.Drawing.Rectangle(0, LocContentY, W, ScrollContentH));
+            g.SetClip(new System.Drawing.Rectangle(0, LocContentY, W, ScrollContentH), System.Drawing.Drawing2D.CombineMode.Intersect);
 
             for (int i = 0; i < groups.Count; i++)
             {
-                int row = i / 2;
-                int col = i % 2;
-                int cx  = LocPadX + col * (colW + LocColGap);
-                int cy  = LocContentY + row * (LocCardH + LocRowGap) - scrollY;
+                int row = i / 2, col = i % 2;
+                int cx = LocPadX + col * (colW + LocColGap);
+                int cy = LocContentY + row * (LocCardH + LocRowGap) - scrollY;
                 if (cy + LocCardH < LocContentY || cy >= ScrollContentBottom) continue;
-                DrawLocationCard(g, groups[i], cx, cy, colW, LocCardH);
+                DrawWorldCard(g, groups[i], cx, cy, colW, LocCardH);
             }
 
             g.SetClip(oldClip, System.Drawing.Drawing2D.CombineMode.Replace);
             oldClip.Dispose();
 
-            // Thin scrollbar strip on right edge
             if (maxScroll > 0)
             {
-                float trackH  = ScrollContentH;
-                float thumbH  = Math.Max(20f, trackH * trackH / (trackH + maxScroll));
-                float thumbY  = LocContentY + (_locationScrollY / maxScroll) * (trackH - thumbH);
-                int   sbX     = W - LocPadX / 2 - ScrollBarW;
+                float trackH = ScrollContentH;
+                float thumbH = Math.Max(20f, trackH * trackH / (trackH + maxScroll));
+                float thumbY = LocContentY + (_locationScrollY / maxScroll) * (trackH - thumbH);
+                int sbX = W - LocPadX / 2 - ScrollBarW;
                 using var trackBr = new SolidBrush(Color.FromArgb(25, th.Tx3));
                 g.FillRectangle(trackBr, sbX, LocContentY, ScrollBarW, (int)trackH);
                 using var thumbBr = new SolidBrush(Color.FromArgb(90, th.Tx2));
@@ -3094,135 +3366,268 @@ namespace VRCNext.Services
             }
         }
 
-        private void DrawLocationCard(Graphics g, List<LocationEntry> friends, int x, int y, int w, int h)
+        private void DrawWorldCard(Graphics g, WorldGroup wg, int x, int y, int w, int h)
         {
             var th = _theme;
-            var first = friends[0];
-            string locKey = first.WorldId + ":" + first.InstanceId;
-            bool inCooldown = _joinCooldowns.TryGetValue(locKey, out var cdT)
-                && (DateTime.UtcNow - cdT).TotalSeconds < 5;
+            var cardColor = Color.FromArgb(190, th.BgCard);
+            using (var cardBg = new SolidBrush(cardColor))
+                FillRoundedRect(g, cardBg, x, y, w, h, 8);
 
-            // Card background
-            using var cardBg = new SolidBrush(Color.FromArgb(inCooldown ? 200 : 190, inCooldown ? th.Ok : th.BgCard));
-            FillRoundedRect(g, cardBg, x, y, w, h, 8);
-
-            // Cooldown state: green card + centred checkmark only
-            if (inCooldown)
-            {
-                using var checkFont = _matSymFamily != null
-                    ? new Font(_matSymFamily, 26f, FontStyle.Regular, GraphicsUnit.Point)
-                    : new Font("Segoe MDL2 Assets", 26f, FontStyle.Regular, GraphicsUnit.Point);
-                using var checkBrush = new SolidBrush(Color.White);
-                var checkFmt = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
-                g.DrawString("\uE876", checkFont, checkBrush, new RectangleF(x, y, w, h), checkFmt);
-                return;
-            }
-
-            // World image (left strip 52×h-4)
             const int imgW = 52;
             Bitmap? worldImg = null;
-            if (!string.IsNullOrEmpty(first.WorldImageUrl))
-                lock (_locationImgCache) { _locationImgCache.TryGetValue(first.WorldImageUrl, out worldImg); }
+            if (!string.IsNullOrEmpty(wg.WorldImageUrl))
+                lock (_locationImgCache) { _locationImgCache.TryGetValue(wg.WorldImageUrl, out worldImg); }
 
-            var imgRect = new Rectangle(x + 2, y + 2, imgW, h - 4);
+            var imgRect = new Rectangle(x + 8, y + 8, imgW, h - 16);
             var oldClip = g.Clip;
-            using var imgPath = RoundedRectPath(imgRect.X, imgRect.Y, imgRect.Width, imgRect.Height, 6);
-            g.SetClip(imgPath, System.Drawing.Drawing2D.CombineMode.Intersect);
-            if (worldImg != null)
-                DrawImageCover(g, worldImg, imgRect);
-            else
+            using (var imgPath = RoundedRectPath(imgRect.X, imgRect.Y, imgRect.Width, imgRect.Height, 6))
             {
-                using var imgFallback = new SolidBrush(Color.FromArgb(80, th.Accent));
-                g.FillPath(imgFallback, imgPath);
-            }
-            g.SetClip(oldClip, System.Drawing.Drawing2D.CombineMode.Replace);
-
-            // Avatar (right side, 24×24)
-            const int avSz = 24, avRadius = 5;
-            int avX = x + w - avSz - 6;
-            int avY = y + (h - avSz) / 2;
-
-            Bitmap? avImg = null;
-            if (!string.IsNullOrEmpty(first.FriendImageUrl))
-                lock (_locationImgCache) { _locationImgCache.TryGetValue(first.FriendImageUrl, out avImg); }
-
-            var avRect = new Rectangle(avX, avY, avSz, avSz);
-            var oldClip2 = g.Clip;
-            using var avPath = RoundedRectPath(avX, avY, avSz, avSz, avRadius);
-            g.SetClip(avPath, System.Drawing.Drawing2D.CombineMode.Intersect);
-            if (avImg != null)
-            {
-                DrawImageCover(g, avImg, avRect);
-            }
-            else
-            {
-                using var avFallback = new SolidBrush(th.BgHover);
-                g.FillPath(avFallback, avPath);
-                g.SetClip(oldClip2, System.Drawing.Drawing2D.CombineMode.Replace);
-                string init = first.FriendName.Length > 0 ? first.FriendName[0].ToString().ToUpper() : "?";
-                using var initFont  = new Font("Segoe UI", 8f, FontStyle.Bold, GraphicsUnit.Point);
-                using var initBrush = new SolidBrush(th.Tx2);
-                var initFmt = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
-                g.DrawString(init, initFont, initBrush, new RectangleF(avX, avY, avSz, avSz), initFmt);
-            }
-            g.SetClip(oldClip2, System.Drawing.Drawing2D.CombineMode.Replace);
-            using var avBorder = new Pen(Color.FromArgb(60, th.Brd), 1f);
-            DrawRoundedRect(g, avBorder, avX, avY, avSz, avSz, avRadius);
-
-            // "+N" badge for multiple friends in same instance
-            if (friends.Count > 1)
-            {
-                int badgeX = avX - 18;
-                int badgeY = avY + avSz - 12;
-                using var badgeBg    = new SolidBrush(Color.FromArgb(200, th.Accent));
-                using var badgeFont  = new Font("Segoe UI", 6.5f, FontStyle.Bold, GraphicsUnit.Point);
-                using var badgeBrush = new SolidBrush(Color.White);
-                var bFmt = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
-                FillRoundedRect(g, badgeBg, badgeX, badgeY, 16, 12, 4);
-                g.DrawString($"+{friends.Count - 1}", badgeFont, badgeBrush,
-                    new RectangleF(badgeX, badgeY, 16, 12), bFmt);
+                g.SetClip(imgPath, System.Drawing.Drawing2D.CombineMode.Intersect);
+                if (worldImg != null) DrawImageCover(g, worldImg, imgRect);
+                else
+                {
+                    using var fb = new SolidBrush(Color.FromArgb(80, th.Accent));
+                    g.FillPath(fb, imgPath);
+                }
+                g.SetClip(oldClip, System.Drawing.Drawing2D.CombineMode.Replace);
             }
 
-            // Text area
-            int textX = x + imgW + 6;
-            int textW = w - imgW - 6 - avSz - 10;
+            int tx = imgRect.Right + 8;
+            int tr = x + w - 8;
+            var ellip = new StringFormat { Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap };
 
-            // World name (bold 9pt)
-            using var worldNameFont  = new Font("Segoe UI", 9f, FontStyle.Bold, GraphicsUnit.Point);
-            using var worldNameBrush = new SolidBrush(th.Tx1);
-            var ellipsisFmt = new StringFormat { Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap };
-            string worldDisplay = !string.IsNullOrEmpty(first.WorldName) ? first.WorldName : first.WorldId;
-            g.DrawString(worldDisplay, worldNameFont, worldNameBrush,
-                new RectangleF(textX, y + 8, textW, 16), ellipsisFmt);
+            string chip = wg.Instances.Count + " Inst.";
+            using (var chipFont = new Font("Segoe UI", 7.5f, FontStyle.Bold, GraphicsUnit.Point))
+            {
+                var chipSz = g.MeasureString(chip, chipFont);
+                float chipW = chipSz.Width + 10f, chipH = 14f;
+                float chipX = tr - chipW, chipY = y + 9f;
+                using (var chipBg = new SolidBrush(Color.FromArgb(40, th.Accent)))
+                    FillRoundedRect(g, chipBg, (int)chipX, (int)chipY, (int)chipW, (int)chipH, 4);
+                using var chipBr = new SolidBrush(th.Accent);
+                var chipFmt = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+                g.DrawString(chip, chipFont, chipBr, new RectangleF(chipX, chipY, chipW, chipH), chipFmt);
+                tr = (int)chipX - 6;
+            }
 
-            // Friend name (7.5pt gray)
-            string subText = friends.Count == 1
-                ? first.FriendName
-                : $"{friends.Count} friends";
-            using var subFont  = new Font("Segoe UI", 7.5f, FontStyle.Regular, GraphicsUnit.Point);
-            using var subBrush = new SolidBrush(th.Tx3);
-            g.DrawString(subText, subFont, subBrush,
-                new RectangleF(textX, y + 28, textW, 14), ellipsisFmt);
+            using (var nameFont = new Font("Segoe UI", 9.5f, FontStyle.Bold, GraphicsUnit.Point))
+            using (var nameBr = new SolidBrush(th.Tx1))
+                g.DrawString(wg.WorldName, nameFont, nameBr,
+                    new RectangleF(tx, y + 8f, Math.Max(tr - tx, 10f), 16f), ellip);
 
-            // Instance type (7pt, accent-ish)
-            string instanceType = ParseInstanceType(first.Location);
-            using var typeFont  = new Font("Segoe UI", 7f, FontStyle.Regular, GraphicsUnit.Point);
-            using var typeBrush = new SolidBrush(Color.FromArgb(160, th.Tx2));
-            g.DrawString(instanceType, typeFont, typeBrush,
-                new RectangleF(textX, y + 44, textW, 13), ellipsisFmt);
+            var names = string.Join(", ", wg.All.Take(3).Select(e => e.FriendName));
+            using (var nmFont = new Font("Segoe UI", 8f, FontStyle.Regular, GraphicsUnit.Point))
+            using (var nmBr = new SolidBrush(th.Tx3))
+                g.DrawString(names, nmFont, nmBr,
+                    new RectangleF(tx, y + 26f, Math.Max(x + w - 8 - tx, 10f), 14f), ellip);
 
+            const int avSz = 20;
+            int avY = y + h - avSz - 8;
+            int avX = tx;
+            int shown = Math.Min(3, wg.All.Count);
+            for (int i = 0; i < shown; i++)
+            {
+                DrawCircleAvatar(g, wg.All[i].FriendImageUrl, wg.All[i].FriendName, avX, avY, avSz, cardColor);
+                avX += avSz - 6;
+            }
+            int more = wg.All.Count - shown;
+            if (more > 0)
+            {
+                using var mf = new Font("Segoe UI", 8f, FontStyle.Bold, GraphicsUnit.Point);
+                using var mb = new SolidBrush(th.Accent);
+                g.DrawString("+" + more, mf, mb, new RectangleF(avX + 11f, avY + 3f, 40f, 14f));
+            }
         }
 
-        private static string ParseInstanceType(string location)
+        private void DrawWorldDetail(Graphics g, WorldGroup wg)
         {
-            if (string.IsNullOrEmpty(location)) return "Unknown";
-            if (location.Contains("~private("))  return "Private";
-            if (location.Contains("~friends("))  return "Friends";
-            if (location.Contains("~hidden("))   return "Friends+";
-            if (location.Contains("~group("))    return "Group";
-            if (location.Contains("~groupPublic(")) return "Group Public";
-            if (location.Contains(':'))          return "Public";
-            return "Unknown";
+            var th = _theme;
+
+            const int thumb = 42;
+            int hx = LocPadX, hy = LocContentY;
+            Bitmap? worldImg = null;
+            if (!string.IsNullOrEmpty(wg.WorldImageUrl))
+                lock (_locationImgCache) { _locationImgCache.TryGetValue(wg.WorldImageUrl, out worldImg); }
+
+            var imgRect = new Rectangle(hx, hy, thumb, thumb);
+            var oldClip0 = g.Clip;
+            using (var imgPath = RoundedRectPath(hx, hy, thumb, thumb, 6))
+            {
+                g.SetClip(imgPath, System.Drawing.Drawing2D.CombineMode.Intersect);
+                if (worldImg != null) DrawImageCover(g, worldImg, imgRect);
+                else
+                {
+                    using var fb = new SolidBrush(Color.FromArgb(80, th.Accent));
+                    g.FillPath(fb, imgPath);
+                }
+                g.SetClip(oldClip0, System.Drawing.Drawing2D.CombineMode.Replace);
+            }
+
+            var ellip = new StringFormat { Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap };
+            int mx = hx + thumb + 10;
+            using (var nameFont = new Font("Segoe UI", 11f, FontStyle.Bold, GraphicsUnit.Point))
+            using (var nameBr = new SolidBrush(th.Tx1))
+                g.DrawString(wg.WorldName, nameFont, nameBr,
+                    new RectangleF(mx, hy + 1f, W - mx - LocPadX, 18f), ellip);
+
+            float chipX = mx;
+            void Chip(string text, Color fg, Color bg)
+            {
+                using var f = new Font("Segoe UI", 7.5f, FontStyle.Bold, GraphicsUnit.Point);
+                var sz = g.MeasureString(text, f);
+                float cw = sz.Width + 12f, ch = 15f, cy = hy + 22f;
+                using (var b = new SolidBrush(bg)) FillRoundedRect(g, b, (int)chipX, (int)cy, (int)cw, (int)ch, 4);
+                using var br = new SolidBrush(fg);
+                var fmt = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+                g.DrawString(text, f, br, new RectangleF(chipX, cy, cw, ch), fmt);
+                chipX += cw + 6f;
+            }
+            Chip(wg.Instances.Count + (wg.Instances.Count == 1 ? " instance" : " instances"), th.Tx2, Color.FromArgb(200, th.BgHover));
+            Chip(wg.All.Count + (wg.All.Count == 1 ? " friend" : " friends"), th.Accent, Color.FromArgb(40, th.Accent));
+
+            int listTop = LocContentY + WdHeadH;
+            int listH   = ScrollContentBottom - listTop;
+            float maxScroll = GetLocationMaxScroll();
+            _locationScrollY = Math.Clamp(_locationScrollY, 0f, maxScroll);
+            int scrollY = (int)_locationScrollY;
+
+            var oldClip = g.Clip;
+            g.SetClip(new System.Drawing.Rectangle(0, listTop, W, listH), System.Drawing.Drawing2D.CombineMode.Intersect);
+
+            int cy2 = listTop - scrollY;
+            foreach (var inst in wg.Instances)
+            {
+                if (cy2 + WdInstH >= listTop && cy2 < ScrollContentBottom)
+                {
+                    using var idFont = new Font("Segoe UI", 8.5f, FontStyle.Bold, GraphicsUnit.Point);
+                    using var idBr   = new SolidBrush(th.Tx1);
+                    string idTxt = InstanceShortId(inst[0].InstanceId);
+                    g.DrawString(idTxt, idFont, idBr, new RectangleF(LocPadX + 2, cy2 + 2, 160f, 14f));
+                    var idSz = g.MeasureString(idTxt, idFont);
+
+                    using var cntFont = new Font("Segoe UI", 7.5f, FontStyle.Regular, GraphicsUnit.Point);
+                    using var cntBr   = new SolidBrush(th.Tx3);
+                    string cntTxt = inst.Count + (inst.Count == 1 ? " friend" : " friends");
+                    g.DrawString(cntTxt, cntFont, cntBr, new RectangleF(LocPadX + 6 + idSz.Width, cy2 + 4, 120f, 13f));
+
+                    using var linePen = new Pen(Color.FromArgb(90, th.Brd), 1f);
+                    float lineX = LocPadX + 12 + idSz.Width + g.MeasureString(cntTxt, cntFont).Width;
+                    g.DrawLine(linePen, lineX, cy2 + 10, W - LocPadX, cy2 + 10);
+                }
+                cy2 += WdInstH;
+
+                foreach (var e in inst)
+                {
+                    if (cy2 + FrdCardH >= listTop && cy2 < ScrollContentBottom)
+                        DrawInstanceFriendRow(g, e, wg.WorldName, LocPadX, cy2, W - 2 * LocPadX, FrdCardH);
+                    cy2 += FrdCardH + WdRowGap;
+                }
+            }
+
+            g.SetClip(oldClip, System.Drawing.Drawing2D.CombineMode.Replace);
+            oldClip.Dispose();
+
+            if (maxScroll > 0)
+            {
+                float trackH = listH;
+                float thumbH = Math.Max(20f, trackH * trackH / (trackH + maxScroll));
+                float thumbY = listTop + (_locationScrollY / maxScroll) * (trackH - thumbH);
+                int sbX = W - LocPadX / 2 - ScrollBarW;
+                using var trackBr = new SolidBrush(Color.FromArgb(25, th.Tx3));
+                g.FillRectangle(trackBr, sbX, listTop, ScrollBarW, (int)trackH);
+                using var thumbBr = new SolidBrush(Color.FromArgb(90, th.Tx2));
+                g.FillRectangle(thumbBr, sbX, (int)thumbY, ScrollBarW, (int)thumbH);
+            }
+        }
+
+        private void DrawInstanceFriendRow(Graphics g, LocationEntry e, string worldName, int x, int y, int w, int h)
+        {
+            var th = _theme;
+            var cardColor = Color.FromArgb(190, th.BgCard);
+            using (var bg = new SolidBrush(cardColor))
+                FillRoundedRect(g, bg, x, y, w, h, 8);
+
+            const int avSize = 34, avR = 7;
+            int avX = x + 8, avY = y + (h - avSize) / 2;
+            DrawLocPortrait(g, e.FriendImageUrl, e.FriendName, e.FriendId, avX, avY, avSize, avR, cardColor);
+
+            int invX  = x + w - ActBtnW - 6;
+            int joinX = invX - ActBtnW - 6;
+            int btnY  = y + (h - ActBtnH) / 2;
+
+            bool joinCd = _joinCooldowns.TryGetValue(e.FriendId, out var jc) && (DateTime.UtcNow - jc).TotalSeconds < 5;
+            bool invCd  = _joinCooldowns.TryGetValue(e.FriendId + "#inv", out var ic) && (DateTime.UtcNow - ic).TotalSeconds < 5;
+            DrawActionButton(g, joinX, btnY, "Join",   joinCd);
+            DrawActionButton(g, invX,  btnY, "Invite", invCd);
+
+            int tx = avX + avSize + 10;
+            int tr = joinX - 8;
+            var ellip = new StringFormat { Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap };
+
+            using (var nameFont = new Font("Segoe UI", 9.5f, FontStyle.Bold, GraphicsUnit.Point))
+            using (var nameBr = new SolidBrush(th.Tx1))
+                g.DrawString(e.FriendName, nameFont, nameBr,
+                    new RectangleF(tx, y + 8f, Math.Max(tr - tx, 10f), 16f), ellip);
+
+            using (var subFont = new Font("Segoe UI", 8f, FontStyle.Regular, GraphicsUnit.Point))
+            using (var subBr = new SolidBrush(th.Tx3))
+                g.DrawString(worldName + " " + InstanceShortId(e.InstanceId), subFont, subBr,
+                    new RectangleF(tx, y + 25f, Math.Max(tr - tx, 10f), 14f), ellip);
+        }
+
+        private void DrawLocPortrait(Graphics g, string imageUrl, string name, string friendId,
+                                     int avX, int avY, int avSize, int avR, Color ringColor)
+        {
+            Bitmap? img = null;
+            if (!string.IsNullOrEmpty(imageUrl))
+                lock (_locationImgCache) { _locationImgCache.TryGetValue(imageUrl, out img); }
+
+            var oldClip = g.Clip;
+            using (var path = RoundedRectPath(avX, avY, avSize, avSize, avR))
+            {
+                g.SetClip(path, System.Drawing.Drawing2D.CombineMode.Intersect);
+                if (img != null)
+                {
+                    DrawImageCover(g, img, new Rectangle(avX, avY, avSize, avSize));
+                    g.SetClip(oldClip, System.Drawing.Drawing2D.CombineMode.Replace);
+                }
+                else
+                {
+                    using var bg = new SolidBrush(_theme.BgHover);
+                    g.FillPath(bg, path);
+                    g.SetClip(oldClip, System.Drawing.Drawing2D.CombineMode.Replace);
+                    string init = name.Length > 0 ? name[0].ToString().ToUpper() : "?";
+                    using var f = new Font("Segoe UI", avSize * 0.42f, FontStyle.Bold, GraphicsUnit.Pixel);
+                    using var b = new SolidBrush(_theme.Tx2);
+                    var fmt = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+                    g.DrawString(init, f, b, new RectangleF(avX, avY, avSize, avSize), fmt);
+                }
+            }
+
+            var st = FriendStatus(friendId);
+            if (!string.IsNullOrEmpty(st))
+                DrawStatusDot(g, st, avX + avSize - 3f, avY + avSize - 3f, 5f, ringColor);
+        }
+
+        private void DrawActionButton(Graphics g, int x, int y, string label, bool inCooldown)
+        {
+            var th = _theme;
+            using var bg = new SolidBrush(inCooldown ? Color.FromArgb(170, th.Ok) : Color.FromArgb(210, th.Accent));
+            FillRoundedRect(g, bg, x, y, ActBtnW, ActBtnH, 6);
+            using var br = new SolidBrush(Color.White);
+            var fmt = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+            if (inCooldown)
+            {
+                using var iconFont = _matSymFamily != null
+                    ? new Font(_matSymFamily, 16f, FontStyle.Regular, GraphicsUnit.Point)
+                    : new Font("Segoe MDL2 Assets", 14f, FontStyle.Regular, GraphicsUnit.Point);
+                g.DrawString("\uE876", iconFont, br, new RectangleF(x, y, ActBtnW, ActBtnH), fmt);
+            }
+            else
+            {
+                using var f = new Font("Segoe UI", 9f, FontStyle.Bold, GraphicsUnit.Point);
+                g.DrawString(label, f, br, new RectangleF(x, y, ActBtnW, ActBtnH), fmt);
+            }
         }
 
         private static bool CanJoinLocation(string location)
@@ -3232,8 +3637,6 @@ namespace VRCNext.Services
             if (!location.Contains(':')) return false;
             return !location.Contains("~private(");
         }
-
-        // Friends tab rendering
 
         private void DrawFriends(Graphics g)
         {
@@ -3258,7 +3661,7 @@ namespace VRCNext.Services
             int scrollY = (int)_friendsScrollY;
 
             var oldClip = g.Clip;
-            g.SetClip(new System.Drawing.Rectangle(0, FrdContentY, W, ScrollContentH));
+            g.SetClip(new System.Drawing.Rectangle(0, FrdContentY, W, ScrollContentH), System.Drawing.Drawing2D.CombineMode.Intersect);
 
             for (int i = 0; i < snap.Count; i++)
             {
@@ -3384,41 +3787,10 @@ namespace VRCNext.Services
             int textW = jrX - 6 - textX;
             var ellipsisFmt = new StringFormat { Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap };
 
-            // Row 1: Username + Status badge
             using var nameFont  = new Font("Segoe UI", 9.5f, FontStyle.Bold, GraphicsUnit.Point);
             using var nameBrush = new SolidBrush(th.Tx1);
-            var nameSz = g.MeasureString(friend.FriendName, nameFont);
-            float nameDrawW = Math.Min(nameSz.Width, textW - 60f);
             g.DrawString(friend.FriendName, nameFont, nameBrush,
-                new RectangleF(textX, y + 4, Math.Max(nameDrawW, 20f), 16), ellipsisFmt);
-
-            // Status badge (colored pill)
-            string statusLabel = friend.Status switch
-            {
-                "join me" => "Join Me",
-                "active"  => "Online",
-                "online"  => "Online",
-                "ask me"  => "Ask Me",
-                "busy"    => "Do Not Disturb",
-                _         => ""
-            };
-            if (!string.IsNullOrEmpty(statusLabel))
-            {
-                using var badgeFont = new Font("Segoe UI", 6.5f, FontStyle.Bold, GraphicsUnit.Point);
-                var badgeSz = g.MeasureString(statusLabel, badgeFont);
-                float badgeX = textX + Math.Min(nameSz.Width, nameDrawW) + 5f;
-                float badgeW = badgeSz.Width + 8f;
-                float badgeH = 13f;
-                float badgeY2 = y + 4 + (16 - badgeH) / 2f;
-                if (badgeX + badgeW < textX + textW)
-                {
-                    using var badgeBg = new SolidBrush(Color.FromArgb(40, statusColor));
-                    FillRoundedRect(g, badgeBg, (int)badgeX, (int)badgeY2, (int)badgeW, (int)badgeH, 3);
-                    using var badgeBrush = new SolidBrush(statusColor);
-                    var badgeFmt = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
-                    g.DrawString(statusLabel, badgeFont, badgeBrush, new RectangleF(badgeX, badgeY2, badgeW, badgeH), badgeFmt);
-                }
-            }
+                new RectangleF(textX, y + 4, Math.Max(textW, 20f), 16), ellipsisFmt);
 
             // Row 2: Status description (if any)
             string row2 = !string.IsNullOrEmpty(friend.StatusDescription) ? friend.StatusDescription : "";
@@ -3432,7 +3804,7 @@ namespace VRCNext.Services
             // Row 3: World location
             string worldDisplay = !string.IsNullOrEmpty(friend.WorldName) ? friend.WorldName : (hasLocation ? "In a world" : "Online");
             using var locFont  = new Font("Segoe UI", 7f, FontStyle.Regular, GraphicsUnit.Point);
-            using var locBrush = new SolidBrush(Color.FromArgb(160, th.Accent));
+            using var locBrush = new SolidBrush(th.Tx3);
             g.DrawString(worldDisplay, locFont, locBrush, new RectangleF(textX, y + 35, textW, 13), ellipsisFmt);
         }
 
@@ -3486,7 +3858,7 @@ namespace VRCNext.Services
             _toolsScrollY = Math.Clamp(_toolsScrollY, 0f, maxScroll);
             int scrollY = (int)_toolsScrollY;
             var oldClip = g.Clip;
-            g.SetClip(new System.Drawing.Rectangle(0, ToolsStartY, W, ToolsViewportH));
+            g.SetClip(new System.Drawing.Rectangle(0, ToolsStartY, W, ToolsViewportH), System.Drawing.Drawing2D.CombineMode.Intersect);
 
             // Layout: 2 cols × 3 rows
             // Icons: Material Symbols Rounded codepoints — 1:1 same as sidebar
@@ -3575,6 +3947,112 @@ namespace VRCNext.Services
             g.FillEllipse(dotBr, dotX, dotY, dotR * 2, dotR * 2);
         }
 
+        private const int KxPadX     = 12;
+        private const int KxTopY     = 72;
+        private const int KxTopH     = 26;
+        private const int KxCardGap  = 8;
+        private const int KxLabelH   = 22;
+        private const int KxCardPad  = 8;
+
+        private void DrawKikitanChip(Graphics g, string text, Color fg, Color bg, ref float x, float y)
+        {
+            using var f = new Font("Segoe UI", 8f, FontStyle.Bold, GraphicsUnit.Point);
+            var sz = g.MeasureString(text, f);
+            float cw = sz.Width + 14f, ch = 18f;
+            using (var b = new SolidBrush(bg)) FillRoundedRect(g, b, (int)x, (int)y, (int)cw, (int)ch, 5);
+            using var br = new SolidBrush(fg);
+            var fmt = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+            g.DrawString(text, f, br, new RectangleF(x, y, cw, ch), fmt);
+            x += cw + 6f;
+        }
+
+        private void DrawKikitanCard(Graphics g, string label, string icon, string text, bool isFinal,
+                                     bool translated, int x, int y, int w, int h, float fontSize)
+        {
+            var th = _theme;
+            using (var bg = new SolidBrush(Color.FromArgb(190, th.BgCard)))
+                FillRoundedRect(g, bg, x, y, w, h, 8);
+
+            int lx = x + KxCardPad;
+            if (_matSymFamily != null)
+            {
+                using var iconFont = new Font(_matSymFamily, 11f, FontStyle.Regular, GraphicsUnit.Point);
+                using var iconBr   = new SolidBrush(th.Tx2);
+                g.DrawString(icon, iconFont, iconBr, new RectangleF(lx, y + KxCardPad, 18f, 16f));
+                lx += 20;
+            }
+
+            using (var lf = new Font("Segoe UI", 8f, FontStyle.Bold, GraphicsUnit.Point))
+            using (var lb = new SolidBrush(th.Tx2))
+                g.DrawString(label, lf, lb, new RectangleF(lx, y + KxCardPad + 1f, w - 110f, 16f));
+
+            string state = isFinal ? "final" : "partial";
+            var stateFg  = isFinal ? th.Ok : th.Warn;
+            using (var sf = new Font("Segoe UI", 8f, FontStyle.Bold, GraphicsUnit.Point))
+            {
+                var sz = g.MeasureString(state, sf);
+                float sw = sz.Width + 12f, sh = 16f;
+                float sx = x + w - KxCardPad - sw, sy = y + KxCardPad;
+                using (var sb = new SolidBrush(Color.FromArgb(45, stateFg)))
+                    FillRoundedRect(g, sb, (int)sx, (int)sy, (int)sw, (int)sh, 4);
+                using var sbr = new SolidBrush(stateFg);
+                var sfmt = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+                g.DrawString(state, sf, sbr, new RectangleF(sx, sy, sw, sh), sfmt);
+            }
+
+            var body = new RectangleF(x + KxCardPad, y + KxLabelH + KxCardPad,
+                                      w - KxCardPad * 2, h - KxLabelH - KxCardPad * 2);
+            var textColor = translated ? th.Cyan : (isFinal ? th.Tx1 : th.Tx2);
+            using var bodyFont  = new Font("Segoe UI", fontSize, FontStyle.Regular, GraphicsUnit.Point);
+            using var bodyBrush = new SolidBrush(textColor);
+            var bodyFmt = new StringFormat { Trimming = StringTrimming.EllipsisWord };
+
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                using var phBrush = new SolidBrush(Color.FromArgb(110, th.Tx3));
+                g.DrawString("Listening...", bodyFont, phBrush, body, bodyFmt);
+                return;
+            }
+            g.DrawString(text, bodyFont, bodyBrush, body, bodyFmt);
+        }
+
+        private void DrawKikitan(Graphics g)
+        {
+            var th = _theme;
+            bool withTr = _kxTranslate && !string.IsNullOrEmpty(_kxTargetLang);
+
+            float chipX = KxPadX, chipY = KxTopY + 2f;
+            if (!string.IsNullOrEmpty(_kxEngine))
+                DrawKikitanChip(g, _kxEngine, th.Accent, Color.FromArgb(40, th.Accent), ref chipX, chipY);
+            DrawKikitanChip(g, _kxSourceLang, th.Tx2, Color.FromArgb(200, th.BgHover), ref chipX, chipY);
+            if (withTr)
+            {
+                using (var af = new Font("Segoe UI", 9f, FontStyle.Regular, GraphicsUnit.Point))
+                using (var ab = new SolidBrush(th.Tx3))
+                    g.DrawString("→", af, ab, new RectangleF(chipX, chipY + 1f, 16f, 16f));
+                chipX += 16f;
+                DrawKikitanChip(g, _kxTargetLang, th.Tx2, Color.FromArgb(200, th.BgHover), ref chipX, chipY);
+            }
+
+            int top    = KxTopY + KxTopH;
+            int availH = ScrollContentBottom - top;
+            int cardW  = W - KxPadX * 2;
+
+            if (withTr)
+            {
+                int cardH = (availH - KxCardGap) / 2;
+                DrawKikitanCard(g, "Source · " + _kxSourceLang, "", _kxSource, _kxFinal, false,
+                                KxPadX, top, cardW, cardH, 14f);
+                DrawKikitanCard(g, "Translation · " + _kxTargetLang, "", _kxTranslation, _kxFinal, true,
+                                KxPadX, top + cardH + KxCardGap, cardW, cardH, 14f);
+            }
+            else
+            {
+                DrawKikitanCard(g, "Source · " + _kxSourceLang, "", _kxSource, _kxFinal, false,
+                                KxPadX, top, cardW, availH, 21f);
+            }
+        }
+
         private void DrawScaleTab(Graphics g)
         {
             var th   = _theme;
@@ -3583,11 +4061,11 @@ namespace VRCNext.Services
             // Header label
             using (var hf = new Font("Segoe UI", 7.5f, FontStyle.Bold, GraphicsUnit.Point))
             using (var hb = new SolidBrush(th.Tx3))
-                g.DrawString("AVATAR SIZE", hf, hb, new RectangleF(0, 62, W, 16), fmtC);
+                g.DrawString("AVATAR SIZE", hf, hb, new RectangleF(0, 62 + ContentVShift, W, 16), fmtC);
 
             // Ring + thumbstick circle
             int cx = W / 2;
-            int cy = 178;
+            int cy = 178 + ContentVShift;
             int outerR = 72;
             int innerR = 56;
             int dotR   = 13;
@@ -3616,7 +4094,7 @@ namespace VRCNext.Services
             string scaleText = $"{_scaleValue:F2} m";
             using (var sf = new Font("Segoe UI", 18f, FontStyle.Bold, GraphicsUnit.Point))
             using (var sb = new SolidBrush(th.Tx1))
-                g.DrawString(scaleText, sf, sb, new RectangleF(0, 260, W, 32), fmtC);
+                g.DrawString(scaleText, sf, sb, new RectangleF(0, 260 + ContentVShift, W, 32), fmtC);
 
             // Recording hint (overlays button row when recording)
             if (_isScaleRecording)
@@ -3624,14 +4102,16 @@ namespace VRCNext.Services
                 using var hf = new Font("Segoe UI", 9f, FontStyle.Regular, GraphicsUnit.Point);
                 using var hb = new SolidBrush(th.Warn);
                 g.DrawString("Hold 1-4 buttons to record hold keybind...", hf, hb,
-                    new RectangleF(12, 303, W - 24, 34), fmtC);
+                    new RectangleF(12, 303 + ContentVShift, W - 24, 34), fmtC);
                 return;
             }
 
             // [-] and [+] buttons (pill style, same as notification invite buttons)
             // [-]: x=68 y=303 w=88 h=34  [+]: x=356 y=303 w=88 h=34
-            DrawScaleButton(g, "", 68,  303, 88, 34); // remove icon
-            DrawScaleButton(g, "", 356, 303, 88, 34); // add icon
+            const int szBtnW = 88, szBtnGap = 200;
+            int szBtnY = 303 + ContentVShift, szLeftX = (W - szBtnW * 2 - szBtnGap) / 2;
+            DrawScaleButton(g, "", szLeftX,                     szBtnY, szBtnW, 34);
+            DrawScaleButton(g, "", szLeftX + szBtnW + szBtnGap, szBtnY, szBtnW, 34);
 
             // Hint: grip keybind
             string holdHint = _scaleKeybind.Count > 0
@@ -3639,7 +4119,7 @@ namespace VRCNext.Services
                 : "Set hold keybind in settings to scale with Stick";
             using (var hf2 = new Font("Segoe UI", 7f, FontStyle.Regular, GraphicsUnit.Point))
             using (var hb2 = new SolidBrush(th.Tx3))
-                g.DrawString(holdHint, hf2, hb2, new RectangleF(12, 346, W - 24, 30), fmtC);
+                g.DrawString(holdHint, hf2, hb2, new RectangleF(12, 346 + ContentVShift, W - 24, 30), fmtC);
         }
 
         private void DrawScaleButton(Graphics g, string icon, int x, int y, int w, int h)
@@ -3657,11 +4137,21 @@ namespace VRCNext.Services
             g.DrawString(icon, iconFont, iconBrush, new RectangleF(x, y, w, h), fmt);
         }
 
+        private const int MaxNotifications = 32;
+        private const int NotifContentY    = 72;
+        private const int NotifItemH       = 75;
+        private const int NotifViewportH   = ScrollContentBottom - NotifContentY;
+
+        private float GetNotifMaxScroll()
+        {
+            int count;
+            lock (_notifications) count = _notifications.Count;
+            return Math.Max(0f, count * NotifItemH - NotifViewportH);
+        }
+
         private void DrawNotifications(Graphics g)
         {
-            int contentY = 72;
-            int contentH = H - contentY - 12;
-            int itemH    = contentH / 4;
+            var th = _theme;
 
             List<NotifEntry> snap;
             lock (_notifications) snap = new List<NotifEntry>(_notifications);
@@ -3669,154 +4159,192 @@ namespace VRCNext.Services
             if (snap.Count == 0)
             {
                 using var font = new Font("Segoe UI", 11f, FontStyle.Regular, GraphicsUnit.Point);
-                using var brush = new SolidBrush(_theme.Tx3);
+                using var brush = new SolidBrush(th.Tx3);
                 var fmt = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
                 g.DrawString("No recent notifications", font, brush,
-                    new RectangleF(12, contentY, W - 24, contentH), fmt);
+                    new RectangleF(12, NotifContentY, W - 24, NotifViewportH), fmt);
                 return;
             }
 
-            for (int i = 0; i < Math.Min(4, snap.Count); i++)
+            float maxScroll = GetNotifMaxScroll();
+            _notifScrollY = Math.Clamp(_notifScrollY, 0f, maxScroll);
+            int scrollY = (int)_notifScrollY;
+
+            var oldClip = g.Clip;
+            g.SetClip(new System.Drawing.Rectangle(0, NotifContentY, W, NotifViewportH), System.Drawing.Drawing2D.CombineMode.Intersect);
+
+            for (int i = 0; i < snap.Count; i++)
             {
-                var entry = snap[i];
-                int iy = contentY + i * itemH;
-                DrawNotificationItem(g, entry, 12, iy, W - 24, itemH - 4);
+                int iy = NotifContentY + i * NotifItemH - scrollY;
+                if (iy + NotifItemH < NotifContentY || iy >= ScrollContentBottom) continue;
+                DrawNotificationItem(g, snap[i], 12, iy, W - 24, NotifItemH - 4);
+            }
+
+            g.SetClip(oldClip, System.Drawing.Drawing2D.CombineMode.Replace);
+            oldClip.Dispose();
+
+            if (maxScroll > 0)
+            {
+                float trackH = NotifViewportH;
+                float thumbH = Math.Max(20f, trackH * trackH / (trackH + maxScroll));
+                float thumbY = NotifContentY + (_notifScrollY / maxScroll) * (trackH - thumbH);
+                int sbX = W - LocPadX / 2 - ScrollBarW;
+                using var trackBr = new SolidBrush(Color.FromArgb(25, th.Tx3));
+                g.FillRectangle(trackBr, sbX, NotifContentY, ScrollBarW, (int)trackH);
+                using var thumbBr = new SolidBrush(Color.FromArgb(90, th.Tx2));
+                g.FillRectangle(thumbBr, sbX, (int)thumbY, ScrollBarW, (int)thumbH);
+            }
+        }
+
+        private const int NotifBtnW = 58, NotifBtnH = 30;
+
+        private string FriendStatus(string friendId)
+        {
+            if (string.IsNullOrEmpty(friendId)) return "";
+            lock (_onlineFriends)
+                return _onlineFriends.FirstOrDefault(e => e.FriendId == friendId)?.Status ?? "";
+        }
+
+        private void DrawStatusDot(Graphics g, string status, float cx, float cy, float r, Color ring)
+        {
+            using var ringBr = new SolidBrush(ring);
+            g.FillEllipse(ringBr, cx - r - 2f, cy - r - 2f, (r + 2f) * 2f, (r + 2f) * 2f);
+            using var dotBr = new SolidBrush(StatusColor(status));
+            g.FillEllipse(dotBr, cx - r, cy - r, r * 2f, r * 2f);
+        }
+
+        private void DrawNotifPortrait(Graphics g, string imageUrl, string name, string friendId,
+                                       bool showDot, int avX, int avY, int avSize, int avR, Color ringColor)
+        {
+            Bitmap? avatar = null;
+            if (!string.IsNullOrEmpty(imageUrl))
+                lock (_notifImgCache) { _notifImgCache.TryGetValue(imageUrl, out avatar); }
+
+            var oldClip = g.Clip;
+            using (var avPath = RoundedRectPath(avX, avY, avSize, avSize, avR))
+            {
+                g.SetClip(avPath, System.Drawing.Drawing2D.CombineMode.Intersect);
+                if (avatar != null)
+                {
+                    DrawImageCover(g, avatar, new Rectangle(avX, avY, avSize, avSize));
+                    g.SetClip(oldClip, System.Drawing.Drawing2D.CombineMode.Replace);
+                }
+                else
+                {
+                    using var avBg = new SolidBrush(_theme.BgHover);
+                    g.FillPath(avBg, avPath);
+                    g.SetClip(oldClip, System.Drawing.Drawing2D.CombineMode.Replace);
+                    string initials = name.Length > 0 ? name[0].ToString().ToUpper() : "?";
+                    using var initFont  = new Font("Segoe UI", avSize * 0.42f, FontStyle.Bold, GraphicsUnit.Pixel);
+                    using var initBrush = new SolidBrush(_theme.Tx2);
+                    var initFmt = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+                    g.DrawString(initials, initFont, initBrush, new RectangleF(avX, avY, avSize, avSize), initFmt);
+                }
+            }
+
+            if (showDot)
+            {
+                var st = FriendStatus(friendId);
+                if (!string.IsNullOrEmpty(st))
+                    DrawStatusDot(g, st, avX + avSize - 3f, avY + avSize - 3f, 5f, ringColor);
             }
         }
 
         private void DrawNotificationItem(Graphics g, NotifEntry entry, int x, int y, int w, int h, bool showButton = true)
         {
-            var th       = _theme;
-            var evColor  = EventColor(entry.EvType);
-            bool hasJoin = showButton && entry.EvType == "friend_gps" && !string.IsNullOrEmpty(entry.Location);
+            var th        = _theme;
+            bool hasJoin  = showButton && entry.EvType == "friend_gps" && !string.IsNullOrEmpty(entry.Location);
             bool hasAccept = showButton && entry.EvType is "notif_friendreq" or "notif_groupinvite"
                           && !string.IsNullOrEmpty(entry.NotifId);
             bool hasButton = hasJoin || hasAccept;
             string buttonCdKey = hasJoin ? entry.FriendId : entry.NotifId;
 
-            // Card background (matches sidebar bg-card)
-            using var bg = new SolidBrush(Color.FromArgb(190, th.BgCard));
-            FillRoundedRect(g, bg, x, y, w, h, 8);
+            var cardColor = Color.FromArgb(190, th.BgCard);
+            using (var bg = new SolidBrush(cardColor))
+                FillRoundedRect(g, bg, x, y, w, h, 8);
 
-            // Action button — square (width = height), right edge of card
-            int jbW = h - 4;   // square: width equals height (h minus 2px top+bottom margin)
-            int jbX = x + w - jbW - 2;
+            int jbX = x + w - NotifBtnW - 10;
+
+            using (var timeFont  = new Font("Segoe UI", 8f, FontStyle.Regular, GraphicsUnit.Point))
+            using (var timeBrush = new SolidBrush(Color.FromArgb(220, th.Tx3)))
+            {
+                var timeFmt = new StringFormat { Alignment = StringAlignment.Far, LineAlignment = StringAlignment.Near };
+                g.DrawString(entry.Time, timeFont, timeBrush,
+                    new RectangleF(jbX, y + 7, NotifBtnW, 14f), timeFmt);
+            }
+
             if (hasButton)
             {
                 bool inCooldown = _joinCooldowns.TryGetValue(buttonCdKey, out var cdTime)
                     && (DateTime.UtcNow - cdTime).TotalSeconds < 5;
-                var jbBgColor = inCooldown ? Color.FromArgb(170, th.Ok) : Color.FromArgb(210, hasAccept ? evColor : th.Accent);
-                using var jbBg = new SolidBrush(jbBgColor);
-                FillRoundedRect(g, jbBg, jbX, y + 2, jbW, h - 4, 6);
-                // Icons: done=\uE876 (checkmark), login=\uE879 (door), check=\uE5CA (accept)
-                string icon = inCooldown ? "\uE876" : (hasJoin ? "\uE879" : "\uE5CA");
-                using var iconFont = _matSymFamily != null
-                    ? new Font(_matSymFamily, 16f, FontStyle.Regular, GraphicsUnit.Point)
-                    : new Font("Segoe MDL2 Assets", 14f, FontStyle.Regular, GraphicsUnit.Point);
-                using var iconBrush = new SolidBrush(Color.White);
-                var iconFmt = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
-                g.DrawString(icon, iconFont, iconBrush, new RectangleF(jbX, y + 2, jbW, h - 4), iconFmt);
-            }
-
-            // Avatar — 32×32 rounded square (8px radius), like sidebar
-            const int avSize = 32, avR = 8;
-            int avX = x + 8;
-            int avY = y + (h - avSize) / 2;
-
-            Bitmap? avatar = null;
-            if (!string.IsNullOrEmpty(entry.ImageUrl))
-                lock (_notifImgCache) { _notifImgCache.TryGetValue(entry.ImageUrl, out avatar); }
-
-            var avRect  = new Rectangle(avX, avY, avSize, avSize);
-            var oldClip = g.Clip;
-            using var avPath = RoundedRectPath(avX, avY, avSize, avSize, avR);
-            g.SetClip(avPath);
-            if (avatar != null)
-            {
-                DrawImageCover(g, avatar, avRect);
-            }
-            else
-            {
-                using var avBg = new SolidBrush(th.BgHover);
-                g.FillPath(avBg, avPath);
-                g.ResetClip();
-                string initials = entry.FriendName.Length > 0 ? entry.FriendName[0].ToString().ToUpper() : "?";
-                using var initFont  = new Font("Segoe UI", 13f, FontStyle.Bold, GraphicsUnit.Point);
-                using var initBrush = new SolidBrush(th.Tx2);
-                var initFmt = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
-                g.DrawString(initials, initFont, initBrush, new RectangleF(avX, avY, avSize, avSize), initFmt);
-            }
-            g.SetClip(oldClip, System.Drawing.Drawing2D.CombineMode.Replace);
-
-            // Text area layout
-            // textX: start after avatar + 8px gap (matches sidebar gap)
-            // textRight: stop before join button (or right margin 8px)
-            int textX     = avX + avSize + 8;
-            int textRight = hasButton ? jbX - 6 : x + w - 8;
-
-            // Two-row vertical centering
-            // Row 1: time · dot · name   (~15px)
-            // Row 2: event text          (~13px)
-            // Gap between rows: 3px
-            const float row1H = 15f, row2H = 13f, rowGap = 3f;
-            float row1Y = y + (h - row1H - rowGap - row2H) / 2f;
-            float row2Y = row1Y + row1H + rowGap;
-
-            // Row 1: Time · Dot · Name
-            using var timeFont  = new Font("Segoe UI", 7.5f, FontStyle.Regular, GraphicsUnit.Point);
-            using var timeBrush = new SolidBrush(th.Tx3);
-            var timeSz = g.MeasureString(entry.Time, timeFont);
-            float timeW = timeSz.Width;
-
-            // Time
-            g.DrawString(entry.Time, timeFont, timeBrush,
-                new RectangleF(textX, row1Y, timeW, row1H));
-
-            // Status dot (7px filled circle, event color)
-            const float dotSz = 7f;
-            float dotX = textX + timeW + 5f;
-            float dotY = row1Y + (row1H - dotSz) / 2f;
-            using var dotBrush = new SolidBrush(evColor);
-            g.FillEllipse(dotBrush, dotX, dotY, dotSz, dotSz);
-
-            // Name (bold)
-            float nameX = dotX + dotSz + 5f;
-            using var nameFont  = new Font("Segoe UI", 10f, FontStyle.Bold, GraphicsUnit.Point);
-            using var nameBrush = new SolidBrush(th.Tx1);
-            var ellipsisFmt = new StringFormat { Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap };
-            var nameSz = g.MeasureString(entry.FriendName, nameFont);
-            float nameDrawW = Math.Min(nameSz.Width, textRight - nameX - 60f); // leave room for badge
-            g.DrawString(entry.FriendName, nameFont, nameBrush,
-                new RectangleF(nameX, row1Y, Math.Max(nameDrawW, 20f), row1H), ellipsisFmt);
-
-            // Event type badge (colored, after name)
-            string badge = EventTypeLabel(entry.EvType);
-            if (!string.IsNullOrEmpty(badge))
-            {
-                using var badgeFont = new Font("Segoe UI", 7f, FontStyle.Bold, GraphicsUnit.Point);
-                var badgeSz = g.MeasureString(badge, badgeFont);
-                float badgeX = nameX + Math.Min(nameSz.Width, nameDrawW) + 4f;
-                float badgeW = badgeSz.Width + 6f;
-                float badgeH = 13f;
-                float badgeY = row1Y + (row1H - badgeH) / 2f;
-                if (badgeX + badgeW < textRight)
+                int jbY = y + h - NotifBtnH - 7;
+                using var jbBg = new SolidBrush(inCooldown ? Color.FromArgb(170, th.Ok) : Color.FromArgb(210, th.Accent));
+                FillRoundedRect(g, jbBg, jbX, jbY, NotifBtnW, NotifBtnH, 6);
+                using var jbBrush = new SolidBrush(Color.White);
+                var jbFmt = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+                if (inCooldown)
                 {
-                    using var badgeBg = new SolidBrush(Color.FromArgb(40, evColor));
-                    FillRoundedRect(g, badgeBg, (int)badgeX, (int)badgeY, (int)badgeW, (int)badgeH, 3);
-                    using var badgeBrush = new SolidBrush(evColor);
-                    var badgeFmt = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
-                    g.DrawString(badge, badgeFont, badgeBrush, new RectangleF(badgeX, badgeY, badgeW, badgeH), badgeFmt);
+                    using var iconFont = _matSymFamily != null
+                        ? new Font(_matSymFamily, 16f, FontStyle.Regular, GraphicsUnit.Point)
+                        : new Font("Segoe MDL2 Assets", 14f, FontStyle.Regular, GraphicsUnit.Point);
+                    g.DrawString("", iconFont, jbBrush, new RectangleF(jbX, jbY, NotifBtnW, NotifBtnH), jbFmt);
+                }
+                else
+                {
+                    using var lblFont = new Font("Segoe UI", 9f, FontStyle.Bold, GraphicsUnit.Point);
+                    g.DrawString(hasJoin ? "Join" : "Accept", lblFont, jbBrush,
+                        new RectangleF(jbX, jbY, NotifBtnW, NotifBtnH), jbFmt);
                 }
             }
 
-            // Row 2: Event content text
-            string evText = EventBadgeLabel(entry.EvType, entry.EvText);
-            using var evFont  = new Font("Segoe UI", 8.5f, FontStyle.Regular, GraphicsUnit.Point);
-            using var evBrush = new SolidBrush(th.Tx3);
-            var evFmt = new StringFormat { Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap };
-            g.DrawString(evText, evFont, evBrush,
-                new RectangleF(textX, row2Y, Math.Max(textRight - textX, 10f), row2H), evFmt);
+            const int avSize = 40, avR = 8;
+            int avX = x + 10;
+            int avY = y + (h - avSize) / 2;
+            DrawNotifPortrait(g, entry.ImageUrl, entry.FriendName, entry.FriendId,
+                              EventHasStatusDot(entry.EvType), avX, avY, avSize, avR, cardColor);
+
+            int textX     = avX + avSize + 11;
+            int textRight = jbX - 8;
+
+            const float row1H = 17f, row2H = 15f, rowGap = 3f;
+            float row1Y = y + (h - row1H - rowGap - row2H) / 2f;
+            float row2Y = row1Y + row1H + rowGap;
+            var ellipsisFmt = new StringFormat { Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap };
+
+            using (var nameFont  = new Font("Segoe UI", 10.5f, FontStyle.Bold, GraphicsUnit.Point))
+            using (var nameBrush = new SolidBrush(th.Tx1))
+                g.DrawString(entry.FriendName, nameFont, nameBrush,
+                    new RectangleF(textX, row1Y, Math.Max(textRight - textX, 10f), row1H), ellipsisFmt);
+
+            using (var evFont  = new Font("Segoe UI", 9f, FontStyle.Regular, GraphicsUnit.Point))
+            using (var evBrush = new SolidBrush(th.Tx3))
+                g.DrawString(EventSentence(entry.EvType, entry.EvText), evFont, evBrush,
+                    new RectangleF(textX, row2Y, Math.Max(textRight - textX, 10f), row2H), ellipsisFmt);
         }
+
+        private static bool EventHasStatusDot(string evType) => evType switch
+        {
+            "friend_removed"    => false,
+            "notif_friendreq"   => false,
+            "notif_groupinvite" => false,
+            _                   => true,
+        };
+
+        private static string EventSentence(string evType, string evText) => evType switch
+        {
+            "friend_online"      => "Went Online",
+            "friend_offline"     => "Went Offline",
+            "friend_gps"         => string.IsNullOrWhiteSpace(evText) ? "Changed world" : "Joined \"" + evText.TrimStart('→', ' ') + "\"",
+            "friend_status"      => string.IsNullOrWhiteSpace(evText) ? "Changed status" : "Changed status to \"" + evText + "\"",
+            "friend_statusdesc"  => string.IsNullOrWhiteSpace(evText) ? "Changed status text" : "\"" + evText + "\"",
+            "friend_bio"         => "Updated their bio",
+            "friend_added"       => "Added you as a friend",
+            "friend_removed"     => "Removed you as a friend",
+            "notif_friendreq"    => "Has sent you a friend request",
+            "notif_invite"       => string.IsNullOrWhiteSpace(evText) ? "Invited you" : "Invited you to \"" + evText + "\"",
+            "notif_groupinvite"  => string.IsNullOrWhiteSpace(evText) ? "Invited you to a group" : "Invited you to the group \"" + evText + "\"",
+            _                    => evText ?? "",
+        };
 
         private Color EventColor(string evType) => evType switch
         {
@@ -3887,9 +4415,9 @@ namespace VRCNext.Services
             // Background is drawn by DrawBackground() — no duplicate here.
 
             // Layout constants
-            const int artSize = 128;
+            const int artSize = MusicArtSize;
             int artX = (W - artSize) / 2;   // centered
-            int artY = tabBottom + 10;
+            int artY = MusicArtY;
 
             // Album art (centered, rounded)
             if (_albumArt != null)
@@ -3897,7 +4425,7 @@ namespace VRCNext.Services
                 var artRect = new Rectangle(artX, artY, artSize, artSize);
                 using var artPath = RoundedRectPath(artX, artY, artSize, artSize, 14);
                 var oldClip = g.Clip;
-                g.SetClip(artPath);
+                g.SetClip(artPath, System.Drawing.Drawing2D.CombineMode.Intersect);
                 g.DrawImage(_albumArt, artRect);
                 g.SetClip(oldClip, System.Drawing.Drawing2D.CombineMode.Replace);
             }
@@ -3932,8 +4460,8 @@ namespace VRCNext.Services
             }
 
             // Progress bar
-            int barY = artBottom + 62;
-            int barH = 6;
+            int barY = MusicBarY;
+            int barH = MusicBarH;
             int barX = pad + 4;
             int barW = W - (barX + pad + 4);
 
@@ -3972,9 +4500,9 @@ namespace VRCNext.Services
             // Controls
             // Play button: large filled accent circle, center at (W/2, ctrlCY)
             // Prev/Next: smaller, subtle bg circle
-            int ctrlCY = barY + barH + 38;   // center Y of all controls
+            int ctrlCY = MusicCtrlCY;
             int ctrlCX = W / 2;
-            const int playR  = 26;            // play circle radius
+            const int playR  = MusicPlayR;
             const int skipR  = 18;            // skip circle radius
             const int skipGap = 84;           // center-to-center from play
 

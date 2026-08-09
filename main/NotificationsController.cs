@@ -1,4 +1,4 @@
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using VRCNext.Services;
 using VRCNext.Services.Helpers;
 
@@ -346,8 +346,7 @@ public class NotificationsController
                         {
                             ok = await _core.Notifications.HideNotificationAsync(hnId, hnV2);
                         }
-                        // Don't show "Failed" toast — notification is already removed locally
-                        if (ok) Invoke(() => _core.SendToJS("vrcActionResult", new { action = "hideNotif", success = true, message = "Declined" }));
+                        if (!ok) Invoke(() => _core.SendToJS("vrcActionResult", new { action = "hideNotif", success = false, message = "" }));
                     });
                 }
                 break;
