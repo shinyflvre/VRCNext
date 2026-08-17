@@ -1,5 +1,20 @@
-**2026.42.0**
+**2026.42.3**
+* Temporarily disabled the **"VRCN has crashed"** modal.
+* The current watchdog is too aggressive and can count a simple **taskkill** as a crash, so the crash handler has been disabled for now.
+* Crash logs are still generated when an actual crash occurs.
 
+**2026.42.2**
+* Added an option to use the SteamVR Overlay without movement blocking.
+* HOTFIX - Fixed Voice Fight having no entries.
+* HOTFIX - Fixed being unable to add new sound files to Voice Fight.
+
+**2026.42.1**
+* HOTFIX - Fixed the Pin system showing the world ID instead of the world name.
+* HOTFIX - Fixed usernames displaying incorrectly in the Pin system.
+* HOTFIX - Fixed incorrect names, images, and icons in the Pin system.
+
+
+**2026.42.0**
 **Smart Search**
 * Added **Friends** and **Personal Timeline** buttons to Smart Search, allowing you to quickly search the timeline for a keyword without opening the Timeline first.
 

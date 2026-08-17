@@ -2239,6 +2239,8 @@
   "vro.notifications.group_invite": "群組邀請",
   "vro.attachment.title": "附加",
   "vro.attachment.hand": "手部",
+  "vro.attachment.seamless": "使用無縫控制",
+  "vro.attachment.seamless_desc": "啟用後，VRCNext 會使用自己的指標 API 而非 SteamVR 的控制 API，讓你可以用控制器操作疊加層，而不會被 Steam 的 API 攔截。在 VRChat 中使用疊加層時非常實用，不會失去對遊戲輸入的控制。選擇/點擊/捲動透過左手或右手控制器上的扳機鍵完成，具體取決於疊加層位於你手腕的哪一側。",
   "vro.transform.title": "變換",
   "vro.transform.position": "位置（米）",
   "vro.transform.rotation": "旋轉（度）",

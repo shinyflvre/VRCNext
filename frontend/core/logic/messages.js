@@ -1271,6 +1271,8 @@ case 'vrcNews':
 // Crash Report Modal
 
 function showCrashModal(payload) {
+    const CRASH_MODAL_ENABLED = false;
+    if (!CRASH_MODAL_ENABLED) return;
     const preview = document.getElementById('crashLogPreview');
     if (preview) {
         preview.innerHTML = '';

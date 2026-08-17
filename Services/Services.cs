@@ -503,6 +503,7 @@ public class AppSettings
     public int        VroControlRadius { get; set; } = 16; // cm, 3–28; 16 = default
     public bool       VroDynVis        { get; set; } = false;
     public int        VroFocusRadius   { get; set; } = 35; // cm, 20–60; 35 = default
+    public bool       VroSeamless      { get; set; } = false;
     public List<uint> VroIdxKeybind       { get; set; } = new();
     public int        VroIdxKeybindHand   { get; set; } = 0;
     public List<uint> VroIdxKeybindDt     { get; set; } = new();

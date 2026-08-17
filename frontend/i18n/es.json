@@ -2188,6 +2188,8 @@
   "vro.notifications.group_invite": "Invitación a grupo",
   "vro.attachment.title": "Fijación",
   "vro.attachment.hand": "Mano",
+  "vro.attachment.seamless": "Usar controles fluidos",
+  "vro.attachment.seamless_desc": "Cuando está activado, en lugar de usar la API de control de SteamVR, VRCNext usa su propia API de puntero, que te permite controlar la superposición con tus mandos sin que la API de Steam la bloquee. Es útil al usar la superposición en VRChat sin perder el control sobre la entrada del juego. Seleccionar/Hacer clic/Desplazar se hace con el botón Gatillo de tu mando izquierdo o derecho, según en qué lado tengas la superposición en la muñeca.",
   "vro.transform.title": "Transformación",
   "vro.transform.position": "Posición (metros)",
   "vro.transform.rotation": "Rotación (grados)",

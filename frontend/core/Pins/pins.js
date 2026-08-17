@@ -22,33 +22,84 @@ function pinsHas(type, id) {
     return _pins.some(p => p.type === type && p.id === id);
 }
 
-function pinsList() { return _pins.slice(); }
+function pinsList() { _pinsRefresh(); return _pins.slice(); }
 
 // Data lookup
 
 // Pulls name/image from the caches SmartSearch already reads, so a pin created from a
 // context menu that only knows an id still gets a label and a thumbnail.
-function _pinsResolve(type, id) {
-    const find = (arr, key = 'id') => Array.isArray(arr) ? arr.find(x => x && x[key] === id) : null;
-    let m = null;
+function _pinsVar(name) {
+    try { return eval(`typeof ${name} !== 'undefined' ? ${name} : undefined`); } catch { return undefined; }
+}
 
-    switch (type) {
-        case 'user':
-            m = (typeof vrcFriendsData !== 'undefined') ? find(vrcFriendsData) : null;
-            return m ? { name: m.displayName || '', image: m.image || '' } : null;
-        case 'world':
-            m = (typeof favWorldsData !== 'undefined') ? find(favWorldsData) : null;
-            return m ? { name: m.name || '', image: m.thumbnailImageUrl || m.imageUrl || '' } : null;
-        case 'group':
-            m = (typeof myGroups !== 'undefined') ? find(myGroups) : null;
-            return m ? { name: m.name || '', image: m.iconUrl || '', sub: m.shortCode || '' } : null;
-        case 'avatar':
-            m = (typeof avatarsData !== 'undefined') ? find(avatarsData) : null;
-            if (!m && typeof favAvatarsData !== 'undefined') m = find(favAvatarsData);
-            return m ? { name: m.name || '', image: m.thumbnailImageUrl || m.imageUrl || '' } : null;
-        default:
-            return null;
+function _pinsSources(type) {
+    const S = {
+        user:   ['vrcFriendsData', 'searchState.people.results', 'currentInstanceData.users'],
+        world:  ['favWorldsData', '_visitedWorldsData', '_myWorldsData', 'dashWorldCache',
+                 'searchState.worlds.results', '_popularCache.worlds', '_activeCache.worlds', '_recentCache.worlds'],
+        group:  ['myGroups', 'searchState.groups.results'],
+        avatar: ['avatarsData', 'favAvatarsData', 'avatarFavData', 'hiddenAvatarData',
+                 '_recentAvatarsData', 'avatarSearchResults'],
+    }[type] || [];
+    const out = [];
+    for (const path of S) {
+        const root = _pinsVar(path.split('.')[0]);
+        if (root === undefined) continue;
+        let v = root;
+        for (const part of path.split('.').slice(1)) {
+            if (v == null) break;
+            v = v[part];
+        }
+        if (v) out.push(v);
     }
+    return out;
+}
+
+function _pinsFind(type, id) {
+    for (const src of _pinsSources(type)) {
+        const arr = Array.isArray(src) ? src : (typeof src === 'object' ? Object.values(src) : []);
+        const hit = arr.find(x => x && (x.id === id || x.vrc_id === id));
+        if (hit) return hit;
+    }
+    return null;
+}
+
+function _pinsResolve(type, id) {
+    let m = _pinsFind(type, id);
+
+    if (type === 'user') {
+        if (!m) {
+            const cur = _pinsVar('currentFriendDetail');
+            if (cur && cur.id === id) m = cur;
+        }
+        if (!m) {
+            const me = _pinsVar('currentVrcUser');
+            if (me && me.id === id) m = me;
+        }
+        if (!m) return null;
+        return { name: m.displayName || '', image: m.image || m.currentAvatarThumbnailImageUrl || '' };
+    }
+    if (type === 'world') {
+        if (!m) {
+            const d = _pinsVar('_currentWorldDetail');
+            if (d && d.id === id) m = d;
+        }
+        if (!m) return null;
+        return { name: m.name || '', image: m.thumbnailImageUrl || m.imageUrl || '' };
+    }
+    if (type === 'group') {
+        if (!m) {
+            const d = _pinsVar('_currentGroupDetailFull') || _pinsVar('currentGroupDetail');
+            if (d && d.id === id) m = d;
+        }
+        if (!m) return null;
+        return { name: m.name || '', image: m.iconUrl || m.bannerUrl || '', sub: m.shortCode || '' };
+    }
+    if (type === 'avatar') {
+        if (!m) return null;
+        return { name: m.name || '', image: m.thumbnailImageUrl || m.imageUrl || m.image_url || '' };
+    }
+    return null;
 }
 
 const _PINS_TYPE_ICON = {
@@ -90,9 +141,9 @@ function pinsAdd(entry) {
         id:      entry.id,
         // Left empty on purpose when unknown - the id is only a display fallback, and an
         // empty name is what marks the pin as still needing a lookup.
-        name:    entry.name || resolved.name || '',
-        image:   entry.image || resolved.image || '',
-        sub:     entry.sub || resolved.sub || '',
+        name:    resolved.name || entry.name || '',
+        image:   resolved.image || entry.image || '',
+        sub:     resolved.sub || entry.sub || '',
         ownerId: entry.ownerId || '',
         tab:     typeof entry.tab === 'number' ? entry.tab : null,
         icon:    entry.icon || '',
@@ -106,12 +157,27 @@ function pinsAdd(entry) {
 
 // Profiles pinned from search or a group log are not in any local cache, so ask the
 // backend for the display name and avatar and patch the pin once it answers.
+function _pinsRefresh() {
+    let changed = false;
+    _pins.forEach(p => {
+        if (p.name === p.id) { p.name = ''; changed = true; }
+        const r = _pinsResolve(p.type, p.id);
+        if (!r) return;
+        if (r.name && r.name !== p.name)   { p.name = r.name;   changed = true; }
+        if (r.image && r.image !== p.image) { p.image = r.image; changed = true; }
+        if (r.sub && r.sub !== p.sub)       { p.sub = r.sub;     changed = true; }
+    });
+    if (changed) _pinsSave();
+    return changed;
+}
+
 function _pinsBackfill() {
+    _pinsRefresh();
     if (typeof sendToCS !== 'function') return;
     _pins.forEach(p => {
-        if (p.type === 'user' && !p.name) {
-            sendToCS({ action: 'vrcGetUserBasic', userId: p.id, contextId: 'pin' });
-        }
+        if (p.type !== 'user') return;
+        if (_pinsResolve('user', p.id)) return;
+        sendToCS({ action: 'vrcGetUserBasic', userId: p.id, contextId: 'pin' });
     });
 }
 
@@ -192,6 +258,7 @@ function _pinsCloseMenu() {
 
 // Built via DOM rather than innerHTML so pinned names cannot inject markup.
 function _pinsRenderMenu() {
+    _pinsRefresh();
     if (typeof dashHeroRefreshPins === 'function') dashHeroRefreshPins();
     const drop = document.getElementById('pinsDropdown');
     if (!drop) return;

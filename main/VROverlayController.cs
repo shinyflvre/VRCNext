@@ -171,7 +171,8 @@ public class VROverlayController : IDisposable
                     _core.Settings.VrInputMode == 1 ? _core.Settings.VroIdxKeybindDt : _core.Settings.VroKeybindDt,
                     _core.Settings.VrInputMode == 1 ? _core.Settings.VroIdxKeybindDtHand : _core.Settings.VroKeybindDtHand,
                     _core.Settings.VroControlRadius,
-                    _core.Settings.VroDynVis, _core.Settings.VroFocusRadius);
+                    _core.Settings.VroDynVis, _core.Settings.VroFocusRadius,
+                    _core.Settings.VroSeamless);
 
                 // Send toast config
                 host.VroApplyToastConfig(
@@ -253,6 +254,7 @@ public class VROverlayController : IDisposable
                 int ctrlR    = msg["controlRadius"]?.Value<int>() ?? 28;
                 bool dynVis  = msg["dynVis"]?.Value<bool>() ?? false;
                 int focusR   = msg["focusRadius"]?.Value<int>() ?? 35;
+                bool seamless = msg["seamless"]?.Value<bool>() ?? false;
                 int inputMode   = msg["inputMode"]?.Value<int>() ?? -1;
                 bool persistKb  = inputMode >= 0;
                 if (!persistKb) inputMode = _core.Settings.VrInputMode;
@@ -280,6 +282,7 @@ public class VROverlayController : IDisposable
                 _core.Settings.VroControlRadius = ctrlR;
                 _core.Settings.VroDynVis        = dynVis;
                 _core.Settings.VroFocusRadius   = focusR;
+                _core.Settings.VroSeamless      = seamless;
                 if (persistKb && inputMode != _core.Settings.VrInputMode)
                 {
                     _core.Settings.VrInputMode = inputMode;
@@ -288,7 +291,7 @@ public class VROverlayController : IDisposable
                 _core.Settings.Save();
 
                 _core.VrOverlay?.VroConfig(left, hand, px, py, pz, rx, ry, rz, width,
-                    kb, kbHand, kbMode, kbDt, kbDtHand, ctrlR, dynVis, focusR);
+                    kb, kbHand, kbMode, kbDt, kbDtHand, ctrlR, dynVis, focusR, seamless);
                 break;
             }
 

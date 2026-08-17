@@ -44,6 +44,8 @@
                                 <option value="right" data-i18n="common.right">Right</option>
                             </select>
                         </div>
+                        <div class="sf-toggle-row" style="margin-top:10px;"><span data-i18n="vro.attachment.seamless">Use seamless controls</span><label class="toggle"><input type="checkbox" id="vroSeamless" onchange="vroAutoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                        <div class="set-desc" data-i18n="vro.attachment.seamless_desc">When enabled, instead of using SteamVR control API it uses VRCNexts own pointer API which allows to control the overlay with your controllers without being blocked by steams api. This is good when using the overlay in VRChat without losing any controls over the game input. Picking/Clicking/Scrolling things uses the Trigger button on either your left or right controller depending on which side the overlay is on your wrist.</div>
                     </div>
 
                     <!-- Keybind -->

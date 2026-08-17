@@ -221,7 +221,7 @@ function _dashFlocsCardHtml(f) {
             : '';
         const fid = (f.id || '').replace(/'/g, "\'");
     const click = worldId ? `openFriendLocationDetail('${wid}','${safeLoc}')` : `openFriendDetail('${fid}')`;
-    return `<div class="dash-flocs-card" onclick="${click}">
+    return `<div class="dash-flocs-card" data-uid="${esc(f.id || '')}" onclick="${click}">
             ${(typeof nameplateDecoHtml === 'function') ? nameplateDecoHtml(f.nameplateUrl) : ''}
             <div class="dash-flocs-avatar-wrap">
                 ${avatarEl}

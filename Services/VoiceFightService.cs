@@ -5,8 +5,7 @@ using System.IO;
 using System.Threading;
 #if WINDOWS
 using NAudio.Wave;
-using NAudio.Vorbis;
-using NAudio.MediaFoundation;
+using NAudio.Wave.SampleProviders;
 using Vosk;
 using System.Runtime.InteropServices;
 #endif
@@ -64,7 +63,7 @@ public sealed class VoiceFightService : IDisposable
     private static readonly string[] BlockListDefaults = ["huh", "heh", "hah"];
     private HashSet<string> _blockList = new(StringComparer.OrdinalIgnoreCase);
 
-    private WaveInEvent? _waveIn;
+    private WaveIn? _waveIn;
     private volatile float _meterLevel;
     public float MeterLevel => _meterLevel;
 
@@ -73,8 +72,8 @@ public sealed class VoiceFightService : IDisposable
     private Thread? _workerThread;
     private volatile bool _workerRunning;
 
-    private WaveOutEvent? _waveOut;
-    private WaveStream? _currentReader;
+    private WaveOut? _waveOut;
+    private IDisposable? _currentReader;
     private int _outputDeviceIndex = -1;
     private readonly object _playLock = new();
 
@@ -89,8 +88,7 @@ public sealed class VoiceFightService : IDisposable
         try
         {
             string ext = Path.GetExtension(path).ToLowerInvariant();
-            if (ext == ".mp3") using (var r = new Mp3FileReader(path)) return r.TotalTime;
-            if (ext == ".ogg") using (var r = new VorbisWaveReader(path)) return r.TotalTime;
+            if (ext == ".ogg") using (var r = new NVorbis.VorbisReader(path)) return r.TotalTime;
             if (ext == ".wav") using (var r = new WaveFileReader(path)) return r.TotalTime;
             using (var r = new MediaFoundationReader(path)) return r.TotalTime;
         }
@@ -105,9 +103,9 @@ public sealed class VoiceFightService : IDisposable
         EnsureModel();
 
         _outputDeviceIndex = outputDeviceIndex;
-        _waveOut = new WaveOutEvent { DeviceNumber = _outputDeviceIndex };
+        _waveOut = new WaveOut { DeviceNumber = _outputDeviceIndex };
 
-        _waveIn = new WaveInEvent
+        _waveIn = new WaveIn
         {
             DeviceNumber = deviceIndex,
             WaveFormat = new WaveFormat(16000, 1),
@@ -346,18 +344,17 @@ public sealed class VoiceFightService : IDisposable
         {
             if (_waveOut == null) return;
 
-            try { _waveOut.Stop(); _waveOut.Dispose(); _waveOut = new WaveOutEvent { DeviceNumber = _outputDeviceIndex }; }
-            catch { _waveOut = new WaveOutEvent { DeviceNumber = _outputDeviceIndex }; }
+            try { _waveOut.Stop(); _waveOut.Dispose(); _waveOut = new WaveOut { DeviceNumber = _outputDeviceIndex }; }
+            catch { _waveOut = new WaveOut { DeviceNumber = _outputDeviceIndex }; }
 
             if (!File.Exists(StopSoundPath)) return;
             try
             {
                 _currentReader?.Dispose();
                 _currentReader = null;
-                WaveStream reader = OpenAudioFile(StopSoundPath);
-                _currentReader = reader;
-                var vol = new VolumeWaveProvider16(reader) { Volume = 1f };
-                _waveOut.Init(vol);
+                var (disposable, provider) = OpenForPlayback(StopSoundPath, 1f);
+                _currentReader = disposable;
+                _waveOut.Init(provider);
                 _waveOut.Play();
             }
             catch (Exception ex)
@@ -439,18 +436,17 @@ public sealed class VoiceFightService : IDisposable
             {
                 _waveOut.Stop();
                 _waveOut.Dispose();
-                _waveOut = new WaveOutEvent { DeviceNumber = _outputDeviceIndex };
+                _waveOut = new WaveOut { DeviceNumber = _outputDeviceIndex };
             }
-            catch { _waveOut = new WaveOutEvent { DeviceNumber = _outputDeviceIndex }; }
+            catch { _waveOut = new WaveOut { DeviceNumber = _outputDeviceIndex }; }
 
             try
             {
                 _currentReader?.Dispose();
                 _currentReader = null;
-                WaveStream reader = OpenAudioFile(filePath);
-                _currentReader = reader;
-                var volume = new VolumeWaveProvider16(reader) { Volume = Math.Clamp(volumePercent / 100f, 0f, 1f) };
-                _waveOut.Init(volume);
+                var (disposable, provider) = OpenForPlayback(filePath, Math.Clamp(volumePercent / 100f, 0f, 1f));
+                _currentReader = disposable;
+                _waveOut.Init(provider);
                 _waveOut.Play();
             }
             catch (Exception ex)
@@ -460,13 +456,32 @@ public sealed class VoiceFightService : IDisposable
         }
     }
 
-    private static WaveStream OpenAudioFile(string path)
+    private static (IDisposable disposable, IWaveProvider provider) OpenForPlayback(string path, float volume01)
     {
         string ext = Path.GetExtension(path).ToLowerInvariant();
-        if (ext == ".mp3") return new Mp3FileReader(path);
-        if (ext == ".ogg") return new VorbisWaveReader(path);
-        if (ext == ".wav") return new WaveFileReader(path);
-        return new MediaFoundationReader(path);
+        if (ext == ".ogg")
+        {
+            var vs = new VorbisSampleProvider(path);
+            var vol = new VolumeSampleProvider(vs) { Volume = volume01 };
+            return (vs, vol.ToWaveProvider());
+        }
+        WaveStream stream = ext == ".wav" ? new WaveFileReader(path) : new MediaFoundationReader(path);
+        var volume = new VolumeSampleProvider(stream.ToSampleProvider()) { Volume = volume01 };
+        return (stream, volume.ToWaveProvider());
+    }
+
+    private sealed class VorbisSampleProvider : ISampleProvider, IDisposable
+    {
+        private readonly NVorbis.VorbisReader _reader;
+        private readonly WaveFormat _format;
+        public VorbisSampleProvider(string path)
+        {
+            _reader = new NVorbis.VorbisReader(path);
+            _format = WaveFormat.CreateIeeeFloatWaveFormat(_reader.SampleRate, _reader.Channels);
+        }
+        public WaveFormat WaveFormat => _format;
+        public int Read(Span<float> buffer) => _reader.ReadSamples(buffer);
+        public void Dispose() => _reader.Dispose();
     }
 
     private static string NormalizeWord(string input)

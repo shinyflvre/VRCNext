@@ -245,6 +245,7 @@ function vroSendConfig() {
         controlRadius:  parseFloat(document.getElementById('vroControlRadius')?.value) || 28,
         dynVis:         !!document.getElementById('vroDynVis')?.checked,
         focusRadius:    parseInt(document.getElementById('vroFocusRadius')?.value) || 35,
+        seamless:       !!document.getElementById('vroSeamless')?.checked,
     });
 }
 
@@ -924,6 +925,9 @@ function vroLoadSettings(s) {
 
     const dynVisEl = document.getElementById('vroDynVis');
     if (dynVisEl) dynVisEl.checked = !!(s.vroDynVis ?? false);
+
+    const seamlessEl = document.getElementById('vroSeamless');
+    if (seamlessEl) seamlessEl.checked = !!(s.vroSeamless ?? false);
 
     const focusInput = document.getElementById('vroFocusRadius');
     const focusLabel = document.getElementById('vroFocusRadiusVal');

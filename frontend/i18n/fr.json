@@ -2188,6 +2188,8 @@
   "vro.notifications.group_invite": "Invitation groupe",
   "vro.attachment.title": "Attachement",
   "vro.attachment.hand": "Main",
+  "vro.attachment.seamless": "Utiliser les contrôles fluides",
+  "vro.attachment.seamless_desc": "Lorsque cette option est activée, au lieu d'utiliser l'API de contrôle de SteamVR, VRCNext utilise sa propre API de pointeur, qui permet de contrôler l'overlay avec vos manettes sans être bloqué par l'API de Steam. C'est pratique pour utiliser l'overlay dans VRChat sans perdre le contrôle des entrées du jeu. Sélectionner/Cliquer/Faire défiler se fait avec la Gâchette de votre manette gauche ou droite, selon le côté où se trouve l'overlay sur votre poignet.",
   "vro.transform.title": "Transformation",
   "vro.transform.position": "Position (mètres)",
   "vro.transform.rotation": "Rotation (degrés)",

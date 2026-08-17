@@ -2187,6 +2187,8 @@
   "vro.notifications.group_invite": "グループ招待",
   "vro.attachment.title": "アタッチメント",
   "vro.attachment.hand": "ハンド",
+  "vro.attachment.seamless": "シームレスな操作を使用",
+  "vro.attachment.seamless_desc": "有効にすると、SteamVR の操作 API の代わりに VRCNext 独自のポインター API を使用し、Steam の API にブロックされることなくコントローラーでオーバーレイを操作できます。VRChat でオーバーレイを使うときに、ゲーム入力の操作を失わずに済むので便利です。選択・クリック・スクロールは、オーバーレイが手首のどちら側にあるかに応じて、左右いずれかのコントローラーのトリガーボタンで行います。",
   "vro.transform.title": "トランスフォーム",
   "vro.transform.position": "位置（メートル）",
   "vro.transform.rotation": "回転（度）",

@@ -2243,6 +2243,8 @@
   "vro.notifications.group_invite": "Group Invite",
   "vro.attachment.title": "Attachment",
   "vro.attachment.hand": "Hand",
+  "vro.attachment.seamless": "Use seamless controls",
+  "vro.attachment.seamless_desc": "When enabled, instead of using SteamVR control API it uses VRCNexts own pointer API which allows to control the overlay with your controllers without being blocked by steams api. This is good when using the overlay in VRChat without losing any controls over the game input. Picking/Clicking/Scrolling things uses the Trigger button on either your left or right controller depending on which side the overlay is on your wrist.",
   "vro.transform.title": "Transform",
   "vro.transform.position": "Position (meters)",
   "vro.transform.rotation": "Rotation (degrees)",

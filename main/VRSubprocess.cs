@@ -181,7 +181,8 @@ static class VRSubprocess
                     F(cmd, "width", 0.22f),
                     UList(cmd, "keybind"), I(cmd, "keybindHand"), I(cmd, "keybindMode"),
                     UList(cmd, "keybindDt"), I(cmd, "keybindDtHand"), F(cmd, "controlRadius", 28f),
-                    B(cmd, "dynVis", false), F(cmd, "focusRadius", 35f));
+                    B(cmd, "dynVis", false), F(cmd, "focusRadius", 35f),
+                    B(cmd, "seamless", false));
                 break;
 
             case "vro_toast_config":

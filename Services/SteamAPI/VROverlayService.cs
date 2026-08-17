@@ -148,6 +148,23 @@ namespace VRCNext.Services
         private float InteractEnterDist => Math.Max(0.03f, ControlRadius);
         private float InteractLeaveDist => InteractEnterDist + 0.08f;
 
+        // Seamless pointer (own laser, SteamVR never captures the controller)
+        private bool  _seamless   = false;
+        private ulong _laserHandle;
+        private ulong _dotHandle;
+        private bool  _laserShown;
+        private bool  _dotShown;
+        private bool  _ptrDown;
+        private bool  _ptrArmed;
+        private float _ptrNY;
+        private Vector3 _tipPosL = Vector3.Zero, _tipDirL = -Vector3.UnitZ;
+        private Vector3 _tipPosR = Vector3.Zero, _tipDirR = -Vector3.UnitZ;
+        private uint  _tipIdxL = OpenVR.k_unTrackedDeviceIndexInvalid;
+        private uint  _tipIdxR = OpenVR.k_unTrackedDeviceIndexInvalid;
+        private const float LaserThickness = 0.0035f;
+        private const int   LaserTexSize   = 32;
+        private const int   DotTexSize     = 64;
+
         private bool  _dynVisEnabled = false;
         public float  FocusRadius { get; private set; } = 0.35f;
         private bool  _inFocus     = true;
@@ -633,6 +650,7 @@ namespace VRCNext.Services
         public void SetThemeColors(Dictionary<string, string> colors)
         {
             _theme = OverlayTheme.FromColors(colors);
+            ApplyPointerTint();
             _dirty = true;
         }
 
@@ -839,6 +857,8 @@ namespace VRCNext.Services
                     _log($"[VROverlay] Toast overlay created: {tErr}");
                 }
 
+                CreatePointerOverlays();
+
                 UpdateControllerIndices();
                 ApplyTransform();
 
@@ -881,6 +901,8 @@ namespace VRCNext.Services
                 catch { }
                 _toastHandle = 0;
             }
+            DestroyPointerOverlays();
+
             _toastBitmap?.Dispose(); _toastBitmap = null;
             _toastStagingTex?.Dispose(); _toastStagingTex = null;
             _toastOverlayTex?.Dispose(); _toastOverlayTex = null;
@@ -1025,8 +1047,13 @@ namespace VRCNext.Services
             float rx, float ry, float rz,
             float width, List<uint> keybind, int keybindHand = 0, int keybindMode = 0,
             List<uint>? keybindDt = null, int keybindDtHand = 0, float controlRadius = 28f,
-            bool dynVis = false, float focusRadius = 35f)
+            bool dynVis = false, float focusRadius = 35f, bool seamless = false)
         {
+            if (seamless != _seamless)
+            {
+                _seamless = seamless;
+                DisableInteract();
+            }
             AttachToLeft  = attachLeft;
             AttachToHand  = attachHand;
             PosX = px; PosY = py; PosZ = pz;
@@ -1512,9 +1539,13 @@ namespace VRCNext.Services
             if (!_interactMode && dist < InteractEnterDist)
             {
                 _interactMode = true;
-                OpenVR.Overlay.SetOverlayInputMethod(_overlayHandle, VROverlayInputMethod.Mouse);
-                OpenVR.Overlay.SetOverlayFlag(_overlayHandle,
-                    VROverlayFlags.MakeOverlaysInteractiveIfVisible, true);
+                _ptrArmed     = false;
+                if (!_seamless)
+                {
+                    OpenVR.Overlay.SetOverlayInputMethod(_overlayHandle, VROverlayInputMethod.Mouse);
+                    OpenVR.Overlay.SetOverlayFlag(_overlayHandle,
+                        VROverlayFlags.MakeOverlaysInteractiveIfVisible, true);
+                }
             }
             else if (_interactMode && dist > InteractLeaveDist)
             {
@@ -1525,10 +1556,408 @@ namespace VRCNext.Services
         private void DisableInteract()
         {
             _interactMode = false;
+            _ptrArmed     = false;
+            CancelPointer();
+            HidePointer();
             if (OpenVR.Overlay == null || _overlayHandle == 0) return;
             OpenVR.Overlay.SetOverlayFlag(_overlayHandle,
                 VROverlayFlags.MakeOverlaysInteractiveIfVisible, false);
             OpenVR.Overlay.SetOverlayInputMethod(_overlayHandle, VROverlayInputMethod.None);
+        }
+
+        // Seamless pointer: own ray-cast + own laser so SteamVR never takes the
+        // controller away from the running game.
+
+        private void UpdateSeamlessPointer()
+        {
+            if (!_seamless || OpenVR.Overlay == null || _overlayHandle == 0) return;
+
+            var sys = _vrSystem;
+            if (sys == null || !IsVisible || !_interactMode) { HidePointer(); return; }
+
+            uint freeIdx  = AttachToLeft ? _rightIdx : _leftIdx;
+            uint wristIdx = AttachToLeft ? _leftIdx  : _rightIdx;
+            if (freeIdx  == OpenVR.k_unTrackedDeviceIndexInvalid ||
+                wristIdx == OpenVR.k_unTrackedDeviceIndexInvalid ||
+                !_poses[freeIdx].bPoseIsValid)
+            { HidePointer(); return; }
+
+            Vector3 tipPos, tipDir;
+            if (AttachToLeft)
+            {
+                ResolveTip(freeIdx, ref _tipPosR, ref _tipDirR, ref _tipIdxR);
+                tipPos = _tipPosR; tipDir = _tipDirR;
+            }
+            else
+            {
+                ResolveTip(freeIdx, ref _tipPosL, ref _tipDirL, ref _tipIdxL);
+                tipPos = _tipPosL; tipDir = _tipDirL;
+            }
+
+            var fm = _poses[freeIdx].mDeviceToAbsoluteTracking;
+            var origin = XformPoint(fm, tipPos);
+            var dir    = Vector3.Normalize(XformDir(fm, tipDir));
+
+            var ip = new VROverlayIntersectionParams_t
+            {
+                vSource    = new HmdVector3_t { v0 = origin.X, v1 = origin.Y, v2 = origin.Z },
+                vDirection = new HmdVector3_t { v0 = dir.X,    v1 = dir.Y,    v2 = dir.Z    },
+                eOrigin    = ETrackingUniverseOrigin.TrackingUniverseStanding,
+            };
+            var ir  = new VROverlayIntersectionResults_t();
+            bool hit = OpenVR.Overlay.ComputeOverlayIntersection(_overlayHandle, ref ip, ref ir)
+                       && ir.fDistance > 0.001f;
+
+            float nx = 0f, ny = 0f;
+            if (hit)
+            {
+                nx = ir.vUVs.v0;
+                ny = ir.vUVs.v1 * TexH / H;
+            }
+
+            ulong trigger = VrInputActions.Active
+                ? 1UL << (int)VrInputActions.BtnTrigger
+                : 1UL << (int)EVRButtonId.k_EButton_SteamVR_Trigger;
+            bool held = (GetSideButtonState(AttachToLeft ? 2 : 1) & trigger) != 0;
+            if (!held) _ptrArmed = true;
+
+            if (!_ptrDown)
+            {
+                if (held && hit && _ptrArmed)
+                {
+                    _ptrDown = true;
+                    _ptrNY   = ny;
+                    PointerDown(nx, ny);
+                }
+            }
+            else if (!held)
+            {
+                _ptrDown = false;
+                PointerUp(_ptrNY);
+            }
+            else if (hit)
+            {
+                _ptrNY = ny;
+                PointerMove(ny);
+            }
+            else
+            {
+                _ptrDown = false;
+                CancelPointer();
+            }
+
+            float len = hit ? Math.Clamp(ir.fDistance, 0.01f, 4f) : 0.2f;
+            ShowLaser(freeIdx, tipPos, tipDir, len);
+            if (hit) ShowDot(wristIdx, ir.vUVs.v0, ir.vUVs.v1); else HideDot();
+        }
+
+        private void ShowLaser(uint freeIdx, Vector3 tipPos, Vector3 tipDir, float len)
+        {
+            if (OpenVR.Overlay == null || _laserHandle == 0) return;
+
+            var hmdIdx = OpenVR.k_unTrackedDeviceIndex_Hmd;
+            var fm     = _poses[freeIdx].mDeviceToAbsoluteTracking;
+            var mid    = tipPos + tipDir * (len * 0.5f);
+
+            var toView = -Vector3.UnitZ;
+            if (_poses[hmdIdx].bPoseIsValid)
+            {
+                var hm      = _poses[hmdIdx].mDeviceToAbsoluteTracking;
+                var hmdWorld = new Vector3(hm.m3, hm.m7, hm.m11);
+                var hmdLocal = InvXformPoint(fm, hmdWorld);
+                toView = hmdLocal - mid;
+            }
+
+            var right = Vector3.Cross(tipDir, toView);
+            if (right.LengthSquared() < 1e-8f) right = Vector3.Cross(tipDir, Vector3.UnitY);
+            if (right.LengthSquared() < 1e-8f) right = Vector3.UnitX;
+            right = Vector3.Normalize(right);
+            var normal = Vector3.Normalize(Vector3.Cross(right, tipDir));
+
+            var m = new HmdMatrix34_t
+            {
+                m0 = right.X * LaserThickness, m1 = tipDir.X * len, m2  = normal.X, m3  = mid.X,
+                m4 = right.Y * LaserThickness, m5 = tipDir.Y * len, m6  = normal.Y, m7  = mid.Y,
+                m8 = right.Z * LaserThickness, m9 = tipDir.Z * len, m10 = normal.Z, m11 = mid.Z,
+            };
+            OpenVR.Overlay.SetOverlayTransformTrackedDeviceRelative(_laserHandle, freeIdx, ref m);
+
+            if (!_laserShown)
+            {
+                OpenVR.Overlay.ShowOverlay(_laserHandle);
+                _laserShown = true;
+            }
+        }
+
+        private void ShowDot(uint wristIdx, float u, float v)
+        {
+            if (OpenVR.Overlay == null || _dotHandle == 0) return;
+
+            float panelH = WidthMeters * TexH / W;
+            float lx     = (u - 0.5f) * WidthMeters;
+            float ly     = (v - 0.5f) * panelH;
+            float size   = Math.Clamp(WidthMeters * 0.045f, 0.004f, 0.02f);
+
+            var t   = BuildTransform(PosX, PosY, PosZ, RotX, RotY, RotZ);
+            var off = XformDir(t, new Vector3(lx, ly, 0.0015f));
+
+            var m = new HmdMatrix34_t
+            {
+                m0 = t.m0 * size, m1 = t.m1 * size, m2  = t.m2,  m3  = t.m3  + off.X,
+                m4 = t.m4 * size, m5 = t.m5 * size, m6  = t.m6,  m7  = t.m7  + off.Y,
+                m8 = t.m8 * size, m9 = t.m9 * size, m10 = t.m10, m11 = t.m11 + off.Z,
+            };
+            OpenVR.Overlay.SetOverlayTransformTrackedDeviceRelative(_dotHandle, wristIdx, ref m);
+
+            if (!_dotShown)
+            {
+                OpenVR.Overlay.ShowOverlay(_dotHandle);
+                _dotShown = true;
+            }
+        }
+
+        private void HideDot()
+        {
+            if (!_dotShown || OpenVR.Overlay == null || _dotHandle == 0) return;
+            OpenVR.Overlay.HideOverlay(_dotHandle);
+            _dotShown = false;
+        }
+
+        private void HidePointer()
+        {
+            if (OpenVR.Overlay == null) return;
+            if (_laserShown && _laserHandle != 0)
+            {
+                OpenVR.Overlay.HideOverlay(_laserHandle);
+                _laserShown = false;
+            }
+            HideDot();
+        }
+
+        private void ResolveTip(uint idx, ref Vector3 pos, ref Vector3 dir, ref uint cachedIdx)
+        {
+            if (cachedIdx == idx) return;
+            cachedIdx = idx;
+            pos = Vector3.Zero;
+            dir = -Vector3.UnitZ;
+
+            var sys = _vrSystem;
+            var rm  = OpenVR.RenderModels;
+            if (sys == null || rm == null) return;
+
+            try
+            {
+                var err = ETrackedPropertyError.TrackedProp_Success;
+                var sb  = new System.Text.StringBuilder(256);
+                sys.GetStringTrackedDeviceProperty(idx,
+                    ETrackedDeviceProperty.Prop_RenderModelName_String, sb, 256, ref err);
+                if (err != ETrackedPropertyError.TrackedProp_Success || sb.Length == 0) return;
+
+                var cs   = new VRControllerState_t();
+                var mode = new RenderModel_ControllerMode_State_t();
+                var comp = new RenderModel_ComponentState_t();
+                if (!rm.GetComponentState(sb.ToString(), OpenVR.k_pch_Controller_Component_Tip,
+                        ref cs, ref mode, ref comp)) return;
+
+                var m  = comp.mTrackingToComponentLocal;
+                var fw = new Vector3(-m.m2, -m.m6, -m.m10);
+                if (fw.LengthSquared() < 1e-8f) return;
+                pos = new Vector3(m.m3, m.m7, m.m11);
+                dir = Vector3.Normalize(fw);
+                _log($"[VROverlay] Pointer tip resolved for device {idx}");
+            }
+            catch { }
+        }
+
+        private static Vector3 XformPoint(in HmdMatrix34_t m, Vector3 v) => new(
+            m.m0 * v.X + m.m1 * v.Y + m.m2  * v.Z + m.m3,
+            m.m4 * v.X + m.m5 * v.Y + m.m6  * v.Z + m.m7,
+            m.m8 * v.X + m.m9 * v.Y + m.m10 * v.Z + m.m11);
+
+        private static Vector3 XformDir(in HmdMatrix34_t m, Vector3 v) => new(
+            m.m0 * v.X + m.m1 * v.Y + m.m2  * v.Z,
+            m.m4 * v.X + m.m5 * v.Y + m.m6  * v.Z,
+            m.m8 * v.X + m.m9 * v.Y + m.m10 * v.Z);
+
+        private static Vector3 InvXformPoint(in HmdMatrix34_t m, Vector3 v)
+        {
+            float x = v.X - m.m3, y = v.Y - m.m7, z = v.Z - m.m11;
+            return new Vector3(
+                m.m0 * x + m.m4 * y + m.m8  * z,
+                m.m1 * x + m.m5 * y + m.m9  * z,
+                m.m2 * x + m.m6 * y + m.m10 * z);
+        }
+
+        private void PointerDown(float nx, float ny)
+        {
+            _mouseDown        = true;
+            _mouseDownNX      = nx;
+            _mouseDownNY      = ny;
+            _scrollDragging   = false;
+            _scrollLastNY     = ny;
+            _scrollLastDeltaY = 0f;
+            if (_activeTab == 1) _notifScrollVY    = 0f;
+            if (_activeTab == 2) _locationScrollVY = 0f;
+            if (_activeTab == 5) _friendsScrollVY  = 0f;
+            if (_activeTab == 4) _toolsScrollVY    = 0f;
+        }
+
+        private void PointerMove(float ny)
+        {
+            if (!_mouseDown) return;
+            if (_activeTab != 1 && _activeTab != 2 && _activeTab != 4 && _activeTab != 5) return;
+            if (_mouseDownNY >= 1f - (float)(LocContentY - 6) / H) return;
+
+            if (!_scrollDragging && MathF.Abs((ny - _mouseDownNY) * H) > 20f)
+                _scrollDragging = true;
+            if (!_scrollDragging) return;
+
+            float delta = (ny - _scrollLastNY) * H;
+            _scrollLastDeltaY = delta;
+            _scrollLastNY     = ny;
+            if (_activeTab == 1)
+                _notifScrollY    = Math.Clamp(_notifScrollY    + delta, 0f, GetNotifMaxScroll());
+            else if (_activeTab == 2)
+                _locationScrollY = Math.Clamp(_locationScrollY + delta, 0f, GetLocationMaxScroll());
+            else if (_activeTab == 4)
+                _toolsScrollY    = Math.Clamp(_toolsScrollY    + delta, 0f, GetToolsMaxScroll());
+            else
+                _friendsScrollY  = Math.Clamp(_friendsScrollY  + delta, 0f, GetFriendsMaxScroll());
+            _dirty = true;
+        }
+
+        private void PointerUp(float ny)
+        {
+            float totalMove = MathF.Abs((ny - _mouseDownNY) * H);
+            if (_scrollDragging && totalMove >= 20f)
+            {
+                if (_activeTab == 1) _notifScrollVY    = _scrollLastDeltaY * 0.5f;
+                if (_activeTab == 2) _locationScrollVY = _scrollLastDeltaY * 0.5f;
+                if (_activeTab == 4) _toolsScrollVY    = _scrollLastDeltaY * 0.5f;
+                if (_activeTab == 5) _friendsScrollVY  = _scrollLastDeltaY * 0.5f;
+            }
+            else
+            {
+                HandleOverlayClick(_mouseDownNX, _mouseDownNY);
+            }
+            _mouseDown      = false;
+            _scrollDragging = false;
+        }
+
+        private void CancelPointer()
+        {
+            if (!_mouseDown) return;
+            if (_scrollDragging)
+            {
+                if (_activeTab == 1) _notifScrollVY    = _scrollLastDeltaY * 0.5f;
+                if (_activeTab == 2) _locationScrollVY = _scrollLastDeltaY * 0.5f;
+                if (_activeTab == 4) _toolsScrollVY    = _scrollLastDeltaY * 0.5f;
+                if (_activeTab == 5) _friendsScrollVY  = _scrollLastDeltaY * 0.5f;
+            }
+            _mouseDown      = false;
+            _scrollDragging = false;
+            _ptrDown        = false;
+        }
+
+        private void CreatePointerOverlays()
+        {
+            if (OpenVR.Overlay == null) return;
+
+            var lErr = OpenVR.Overlay.CreateOverlay("vrcnext.laser", "VRCNext Laser", ref _laserHandle);
+            if (lErr == EVROverlayError.KeyInUse)
+                OpenVR.Overlay.FindOverlay("vrcnext.laser", ref _laserHandle);
+            if (_laserHandle != 0)
+            {
+                OpenVR.Overlay.SetOverlayWidthInMeters(_laserHandle, 1f);
+                OpenVR.Overlay.SetOverlayInputMethod(_laserHandle, VROverlayInputMethod.None);
+                OpenVR.Overlay.SetOverlaySortOrder(_laserHandle, 150);
+                OpenVR.Overlay.SetOverlayAlpha(_laserHandle, 0.85f);
+                UploadPointerTexture(_laserHandle, BuildBeamTexture(), LaserTexSize, LaserTexSize);
+            }
+
+            var dErr = OpenVR.Overlay.CreateOverlay("vrcnext.laserdot", "VRCNext Pointer", ref _dotHandle);
+            if (dErr == EVROverlayError.KeyInUse)
+                OpenVR.Overlay.FindOverlay("vrcnext.laserdot", ref _dotHandle);
+            if (_dotHandle != 0)
+            {
+                OpenVR.Overlay.SetOverlayWidthInMeters(_dotHandle, 1f);
+                OpenVR.Overlay.SetOverlayInputMethod(_dotHandle, VROverlayInputMethod.None);
+                OpenVR.Overlay.SetOverlaySortOrder(_dotHandle, 160);
+                UploadPointerTexture(_dotHandle, BuildDotTexture(), DotTexSize, DotTexSize);
+            }
+
+            ApplyPointerTint();
+            _laserShown = false;
+            _dotShown   = false;
+            _log($"[VROverlay] Pointer overlays created: {lErr} / {dErr}");
+        }
+
+        private void DestroyPointerOverlays()
+        {
+            if (OpenVR.Overlay != null)
+            {
+                if (_laserHandle != 0)
+                    try { OpenVR.Overlay.HideOverlay(_laserHandle); OpenVR.Overlay.DestroyOverlay(_laserHandle); } catch { }
+                if (_dotHandle != 0)
+                    try { OpenVR.Overlay.HideOverlay(_dotHandle); OpenVR.Overlay.DestroyOverlay(_dotHandle); } catch { }
+            }
+            _laserHandle = 0; _dotHandle = 0;
+            _laserShown  = false; _dotShown = false;
+        }
+
+        private void ApplyPointerTint()
+        {
+            if (OpenVR.Overlay == null) return;
+            var c = _theme.Accent;
+            if (c.A == 0) return;
+            float r = c.R / 255f, g = c.G / 255f, b = c.B / 255f;
+            if (_laserHandle != 0) OpenVR.Overlay.SetOverlayColor(_laserHandle, r, g, b);
+            if (_dotHandle   != 0) OpenVR.Overlay.SetOverlayColor(_dotHandle,   r, g, b);
+        }
+
+        private static void UploadPointerTexture(ulong handle, byte[] buf, int w, int h)
+        {
+            if (OpenVR.Overlay == null || handle == 0) return;
+            var pinned = GCHandle.Alloc(buf, GCHandleType.Pinned);
+            try { OpenVR.Overlay.SetOverlayRaw(handle, pinned.AddrOfPinnedObject(), (uint)w, (uint)h, 4); }
+            finally { pinned.Free(); }
+        }
+
+        private static byte[] BuildBeamTexture()
+        {
+            var buf = new byte[LaserTexSize * LaserTexSize * 4];
+            for (int x = 0; x < LaserTexSize; x++)
+            {
+                float d = MathF.Abs((x + 0.5f) / LaserTexSize - 0.5f) * 2f;
+                float a = MathF.Max(0f, 1f - d);
+                a = a * a * (0.4f + 0.6f * a);
+                byte alpha = (byte)Math.Clamp(a * 255f, 0f, 255f);
+                for (int y = 0; y < LaserTexSize; y++)
+                {
+                    int i = (y * LaserTexSize + x) * 4;
+                    buf[i] = 255; buf[i + 1] = 255; buf[i + 2] = 255; buf[i + 3] = alpha;
+                }
+            }
+            return buf;
+        }
+
+        private static byte[] BuildDotTexture()
+        {
+            var buf = new byte[DotTexSize * DotTexSize * 4];
+            float c = DotTexSize * 0.5f;
+            for (int y = 0; y < DotTexSize; y++)
+            {
+                for (int x = 0; x < DotTexSize; x++)
+                {
+                    float dx = (x + 0.5f - c) / c, dy = (y + 0.5f - c) / c;
+                    float r  = MathF.Sqrt(dx * dx + dy * dy);
+                    float a  = r <= 0.5f ? 1f : (r >= 0.9f ? 0f : 1f - (r - 0.5f) / 0.4f);
+                    int i = (y * DotTexSize + x) * 4;
+                    buf[i] = 255; buf[i + 1] = 255; buf[i + 2] = 255;
+                    buf[i + 3] = (byte)Math.Clamp(a * 255f, 0f, 255f);
+                }
+            }
+            return buf;
         }
 
         private void UpdateDynamicVisibility()
@@ -1607,6 +2036,7 @@ namespace VRCNext.Services
                     // Proximity-based interaction: enable Mouse+Interactive when free
                     // hand is near the wrist, revert to None otherwise.
                     UpdateProximityInteract();
+                    UpdateSeamlessPointer();
 
                     if (IsVisible)
                     {
@@ -1888,64 +2318,15 @@ namespace VRCNext.Services
                     else if (oType == EVREventType.VREvent_MouseButtonDown)
                     {
                         var mu = evt.data.mouse;
-                        float nx = mu.x / W, ny = mu.y / H;
-                        _mouseDown       = true;
-                        _mouseDownNX     = nx;
-                        _mouseDownNY     = ny;
-                        _scrollDragging  = false;
-                        _scrollLastNY    = ny;
-                        _scrollLastDeltaY = 0f;
-                        // Kill inertia on touch-down for scroll tabs
-                        if (_activeTab == 1) _notifScrollVY   = 0f;
-                        if (_activeTab == 2) _locationScrollVY = 0f;
-                        if (_activeTab == 5) _friendsScrollVY  = 0f;
-                        if (_activeTab == 4) _toolsScrollVY    = 0f;
+                        PointerDown(mu.x / W, mu.y / H);
                     }
                     else if (oType == EVREventType.VREvent_MouseMove)
                     {
-                        if (_mouseDown && (_activeTab == 1 || _activeTab == 2 || _activeTab == 4 || _activeTab == 5) && _mouseDownNY < 1f - (float)(LocContentY - 6) / H)
-                        {
-                            var mu = evt.data.mouse;
-                            float ny = mu.y / H;
-                            // Activate drag once pointer has moved > 20px vertically (VR hand tremor tolerance)
-                            if (!_scrollDragging && MathF.Abs((ny - _mouseDownNY) * H) > 20f)
-                                _scrollDragging = true;
-                            if (_scrollDragging)
-                            {
-                                float delta = (ny - _scrollLastNY) * H; // drag up → scroll down (OpenVR y=0 is bottom)
-                                _scrollLastDeltaY = delta;
-                                _scrollLastNY     = ny;
-                                if (_activeTab == 1)
-                                    _notifScrollY    = Math.Clamp(_notifScrollY    + delta, 0f, GetNotifMaxScroll());
-                                else if (_activeTab == 2)
-                                    _locationScrollY = Math.Clamp(_locationScrollY + delta, 0f, GetLocationMaxScroll());
-                                else if (_activeTab == 4)
-                                    _toolsScrollY    = Math.Clamp(_toolsScrollY    + delta, 0f, GetToolsMaxScroll());
-                                else
-                                    _friendsScrollY  = Math.Clamp(_friendsScrollY  + delta, 0f, GetFriendsMaxScroll());
-                                _dirty = true;
-                            }
-                        }
+                        PointerMove(evt.data.mouse.y / H);
                     }
                     else if (oType == EVREventType.VREvent_MouseButtonUp)
                     {
-                        var muUp = evt.data.mouse;
-                        float totalMove = MathF.Abs((muUp.y / H - _mouseDownNY) * H);
-                        if (_scrollDragging && totalMove >= 20f)
-                        {
-                            // Real scroll flick — seed inertia
-                            if (_activeTab == 1) _notifScrollVY   = _scrollLastDeltaY * 0.5f;
-                            if (_activeTab == 2) _locationScrollVY = _scrollLastDeltaY * 0.5f;
-                            if (_activeTab == 4) _toolsScrollVY    = _scrollLastDeltaY * 0.5f;
-                            if (_activeTab == 5) _friendsScrollVY  = _scrollLastDeltaY * 0.5f;
-                        }
-                        else
-                        {
-                            // Tap (total movement < 20px) → always treat as click
-                            HandleOverlayClick(_mouseDownNX, _mouseDownNY);
-                        }
-                        _mouseDown      = false;
-                        _scrollDragging = false;
+                        PointerUp(evt.data.mouse.y / H);
                     }
                 }
             }

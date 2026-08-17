@@ -491,22 +491,6 @@
     // (which only receive an id) can still read a name and thumbnail off the card.
     let _ctxEl = null;
 
-    function _pinCardData() {
-        const card = _ctxEl?.closest?.('.vrcn-content-card, .av-card, .vrcn-user-item, .vrcn-mini-content, .vrcn-world-card-small, .dash-flocs-card, .tl-list-row');
-        if (!card) return {};
-
-        const name = (card.querySelector('.cc-name, .vrcn-user-item-name, .vrcn-mini-title, .flocs-world, .lv-name, .pl-name')?.textContent
-            || card.getAttribute('title') || '').trim();
-
-        let image = card.querySelector('img')?.getAttribute('src') || '';
-        if (!image) {
-            const holder = card.querySelector('.cc-bg, .vrcn-mini-thumb, .vrcn-user-item-avatar, .lv-icon, .pl-av') || card;
-            const bg = holder.style?.backgroundImage || '';
-            image = bg.match(/url\(["']?([^"')]+)/)?.[1] || '';
-        }
-        return { name, image };
-    }
-
     function getMenuConfig(e) {
         const el = e.target;
         _ctxEl = el;
@@ -665,13 +649,13 @@
                 // Pin the world behind the instance, not the instance itself.
                 const instWid = extractWorldId(myInstCard);
                 const instPin = instWid && typeof pinsContextItem === 'function'
-                    ? pinsContextItem('world', instWid, _pinCardData()) : null;
+                    ? pinsContextItem('world', instWid) : null;
                 if (instPin) { instItems.push('sep'); instItems.push(instPin); }
                 return instItems;
             }
         }
 
-        const dashWorld = el.closest('#dashFavWorlds .vrcn-content-card, #dashDiscoveryGrid .vrcn-content-card, #dashFavWorldsShelf .vrcn-content-card, #dashRecentlyVisitedShelf .vrcn-content-card, #dashPopularWorldsShelf .vrcn-content-card, #dashActiveWorldsShelf .vrcn-content-card, #dashFriendLocSmallShelf .dash-flocs-card, .dash-hero-slot .dash-flocs-card');
+        const dashWorld = el.closest('#dashFavWorlds .vrcn-content-card, #dashDiscoveryGrid .vrcn-content-card, #dashFavWorldsShelf .vrcn-content-card, #dashRecentlyVisitedShelf .vrcn-content-card, #dashPopularWorldsShelf .vrcn-content-card, #dashActiveWorldsShelf .vrcn-content-card');
         if (dashWorld) {
             const id = extractWorldId(dashWorld)
                 || extractId(dashWorld, /openFriendLocationDetail\('([^']+)'/);
@@ -867,7 +851,7 @@
         items.push({ icon: 'visibility', label: cm('group.visibility', 'Visibility'), submenuFn: btn => showGroupVisibilitySubmenu(id, curVis, btn) });
         items.push('sep');
         items.push({ icon: 'logout', label: cm('group.leave', 'Leave Group'), action: () => sendToCS({ action: 'vrcLeaveGroup', groupId: id }), danger: true, confirm: true });
-        const _pinGroup = (typeof pinsContextItem === 'function') ? pinsContextItem('group', id, _pinCardData()) : null;
+        const _pinGroup = (typeof pinsContextItem === 'function') ? pinsContextItem('group', id) : null;
         if (_pinGroup) { items.push('sep'); items.push(_pinGroup); }
         return items;
     }
@@ -1256,7 +1240,7 @@
         } else {
             items.push({ icon: 'favorite', label: cm('avatar.add_favorites', 'Add to Favorites'), submenuFn: btn => showAvFavGroupSubmenu(id, btn) });
         }
-        const _pinAvatar = (typeof pinsContextItem === 'function') ? pinsContextItem('avatar', id, _pinCardData()) : null;
+        const _pinAvatar = (typeof pinsContextItem === 'function') ? pinsContextItem('avatar', id) : null;
         if (_pinAvatar) { items.push('sep'); items.push(_pinAvatar); }
         return items;
     }
@@ -1355,7 +1339,7 @@
         } else {
             items.push({ icon: 'favorite', label: cm('world.add_favorites', 'Add to Favorites'), submenuFn: btn => showFavGroupSubmenu(id, btn) });
         }
-        const _pinWorld = (typeof pinsContextItem === 'function') ? pinsContextItem('world', id, _pinCardData()) : null;
+        const _pinWorld = (typeof pinsContextItem === 'function') ? pinsContextItem('world', id) : null;
         if (_pinWorld) { items.push('sep'); items.push(_pinWorld); }
         return items;
     }
@@ -1435,7 +1419,7 @@
             items.push('sep');
             items.push({ icon: 'shield_person', label: cm('friend.moderate', 'Moderate'), submenuFn: btn => showModerateSubmenu(id, btn) });
         }
-        const _pinUser = (typeof pinsContextItem === 'function') ? pinsContextItem('user', id, _pinCardData()) : null;
+        const _pinUser = (typeof pinsContextItem === 'function') ? pinsContextItem('user', id) : null;
         if (_pinUser) { items.push('sep'); items.push(_pinUser); }
         return items;
     }
