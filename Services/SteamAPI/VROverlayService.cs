@@ -723,6 +723,7 @@ namespace VRCNext.Services
                 ["halloween"] = new() { BgCard=H("#110F26"),BgHover=H("#1B1936"),Accent=H("#DF462A"),Ok=H("#2DD48C"),Warn=H("#FFBA37"),Err=H("#FF4B55"),Cyan=H("#DCA956"),Tx1=H("#F0EFF5"),Tx2=H("#F0EFF5"),Tx3=H("#F0EFF5"),Brd=H("#1E1B3C") },
                 ["miku"]      = new() { BgCard=H("#080D14"),BgHover=H("#66B4D2"),Accent=H("#66B4D2"),Ok=H("#2DD48C"),Warn=H("#FFBA37"),Err=H("#FF4B55"),Cyan=H("#66B4D2"),Tx1=H("#FFFFFF"),Tx2=H("#FFFFFF"),Tx3=H("#FFFFFF"),Brd=H("#13223F") },
                 ["vrchat"]    = new() { BgCard=H("#181B1F"),BgHover=H("#042E39"),Accent=H("#0B748E"),Ok=H("#18A86A"),Warn=H("#D4860A"),Err=H("#D93040"),Cyan=H("#53C0D5"),Tx1=H("#FFFFFF"),Tx2=H("#FFFFFF"),Tx3=H("#FFFFFF"),Brd=H("#042E39") },
+                ["copper"]    = new() { BgCard=H("#151517"),BgHover=H("#232326"),Accent=H("#D08A4F"),Ok=H("#46C88C"),Warn=H("#E0A43C"),Err=H("#E05555"),Cyan=H("#8FB4D9"),Tx1=H("#E4DFDA"),Tx2=H("#ABA49D"),Tx3=H("#7C7670"),Brd=H("#232326") },
             };
         }
 

@@ -1,6 +1,7 @@
 **2026.48.3**
 
 **Improvements**
+- New built-in **Copper** theme: graphite surfaces with a copper accent, steel-blue highlights and cool-tinted badges.
 - **Create Instance**: group instances can now set a **Minimum Avatar Performance** limit.
 - Profile status heatmap is more accurate — statuses are recorded live and backfilled on startup.
 
@@ -17,5 +18,7 @@
 - Removed the VRCX, Slates, Rose, Unicorn, Baby and Flipper Zero themes. Active ones fall back to VRCN.
 
 **Fixed Bugs**
+- With **Enable Profile Themes** on, the Join/Favorite buttons and the Info/Groups/Mutuals tabs in profiles are tinted with the person's VRC+ theme again instead of showing the app theme colors.
+- Taskbar hover highlights are now 50% transparent so they no longer cover active icons.
 - Lots of hardcoded colors replaced with theme colors: controller illustrations, VR Overlay keybind card/dropdowns, profile "Most Visited Worlds" and "Interacted the most with" cards, and hover highlights across taskbar menus, dropdowns, Pins, Smart Search, sidebars and the navigation editor.
 - Heatmap no longer marks unobserved periods as **Online** — they're gray **Unknown** and excluded from the "Mostly" summary.

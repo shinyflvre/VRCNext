@@ -10,6 +10,10 @@
     --bg-btn-h:   var(--pt-bg-btn-h) !important;
     --brd:        var(--pt-brd) !important;
     --brd-lt:     var(--pt-brd) !important;
+    --ui-input-bg:        var(--pt-bg-btn) !important;
+    --ui-input-hover-bg:  var(--pt-bg-btn-h) !important;
+    --ui-input-active-bg: var(--pt-accent) !important;
+    --badge-bg:           var(--pt-bg-hover) !important;
 }
 
 .pt-has-text {

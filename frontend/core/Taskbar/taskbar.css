@@ -191,7 +191,7 @@ body:has(#rsidebar:not(.collapsed)) #taskbar::before {
 
 .tb-menu-item:hover,
 .tb-menu-item.open {
-    background: var(--bg-hover);
+    background: color-mix(in srgb, var(--bg-hover) 50%, transparent);
     color: var(--tx0);
 }
 
@@ -453,7 +453,7 @@ body:has(#rsidebar:not(.collapsed)) #taskbar::before {
 }
 
 .tb-sidebar-btn:hover {
-    background: var(--bg-hover);
+    background: color-mix(in srgb, var(--bg-hover) 50%, transparent);
     color: var(--tx0);
 }
 
@@ -521,7 +521,7 @@ html.no-animations .tb-title-anim { animation: none !important; }
     border-radius: 5px;
     transition: color 0.1s, background 0.1s;
 }
-.tb-crumb:hover { color: var(--tx0); background: var(--bg-hover); }
+.tb-crumb:hover { color: var(--tx0); background: color-mix(in srgb, var(--bg-hover) 50%, transparent); }
 .tb-crumb-current { color: var(--tx0); font-weight: 700; padding: 2px 2px; }
 .tb-crumb-sep { color: rgba(255, 255, 255, 0.3); font-size: calc(13px + var(--fs-off, 0px)); flex-shrink: 0; }
 
@@ -539,7 +539,7 @@ html.no-animations .tb-title-anim { animation: none !important; }
     padding: 0 12px;
     transition: background 0.1s, color 0.1s;
 }
-.tb-modal-action:hover { background: var(--bg-hover); color: #fff; }
+.tb-modal-action:hover { background: color-mix(in srgb, var(--bg-hover) 50%, transparent); color: #fff; }
 .tb-modal-action-danger { color: #EF5350; }
 .tb-modal-action-danger:hover { background: rgba(239, 83, 80, 0.12); color: #EF5350; }
 .tb-modal-action:disabled { opacity: 0.4; cursor: default; }
@@ -612,7 +612,7 @@ html.no-animations .tb-modal-dropdown { animation: none !important; }
 }
 
 .tb-win-btn:hover {
-    background: var(--bg-hover);
+    background: color-mix(in srgb, var(--bg-hover) 50%, transparent);
     color: var(--tx0);
 }
 
