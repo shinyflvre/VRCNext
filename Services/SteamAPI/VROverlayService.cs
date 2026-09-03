@@ -724,6 +724,10 @@ namespace VRCNext.Services
                 ["miku"]      = new() { BgCard=H("#080D14"),BgHover=H("#66B4D2"),Accent=H("#66B4D2"),Ok=H("#2DD48C"),Warn=H("#FFBA37"),Err=H("#FF4B55"),Cyan=H("#66B4D2"),Tx1=H("#FFFFFF"),Tx2=H("#FFFFFF"),Tx3=H("#FFFFFF"),Brd=H("#13223F") },
                 ["vrchat"]    = new() { BgCard=H("#181B1F"),BgHover=H("#042E39"),Accent=H("#0B748E"),Ok=H("#18A86A"),Warn=H("#D4860A"),Err=H("#D93040"),Cyan=H("#53C0D5"),Tx1=H("#FFFFFF"),Tx2=H("#FFFFFF"),Tx3=H("#FFFFFF"),Brd=H("#042E39") },
                 ["copper"]    = new() { BgCard=H("#151517"),BgHover=H("#232326"),Accent=H("#D08A4F"),Ok=H("#46C88C"),Warn=H("#E0A43C"),Err=H("#E05555"),Cyan=H("#8FB4D9"),Tx1=H("#E4DFDA"),Tx2=H("#ABA49D"),Tx3=H("#7C7670"),Brd=H("#232326") },
+                ["nature"]    = new() { BgCard=H("#151714"),BgHover=H("#232620"),Accent=H("#8DBF63"),Ok=H("#6ECB86"),Warn=H("#D9A441"),Err=H("#E05C5C"),Cyan=H("#D8926A"),Tx1=H("#E0E4DA"),Tx2=H("#A6AC9E"),Tx3=H("#767C6F"),Brd=H("#232620") },
+                ["flippernano"] = new() { BgCard=H("#E7EAF8"),BgHover=H("#FF896F"),Accent=H("#FF896F"),Ok=H("#2BFF00"),Warn=H("#FF7455"),Err=H("#FF2E00"),Cyan=H("#FF896F"),Tx1=H("#494949"),Tx2=H("#494949"),Tx3=H("#494949"),Brd=H("#D3D6E6") },
+                ["spaceout"]    = new() { BgCard=H("#0A0714"),BgHover=H("#191327"),Accent=H("#FF9F60"),Ok=H("#2DD48C"),Warn=H("#FFBA37"),Err=H("#FF4B55"),Cyan=H("#8CA5FF"),Tx1=H("#EBEBFF"),Tx2=H("#B7B7C3"),Tx3=H("#FFFFFF"),Brd=H("#1C162C") },
+                ["fluffy"]      = new() { BgCard=H("#FAE8FF"),BgHover=H("#FFCCE9"),Accent=H("#DFBFFF"),Ok=H("#2BFF00"),Warn=H("#FF7455"),Err=H("#FF2E00"),Cyan=H("#DCAFFF"),Tx1=H("#49414E"),Tx2=H("#3D3547"),Tx3=H("#3B3441"),Brd=H("#E5D3E6") },
             };
         }
 
