@@ -29,7 +29,7 @@
 }
 
 .ss-badge:hover {
-    background: rgba(255, 255, 255, 0.07);
+    background: var(--bg-hover);
     color: var(--tx0);
 }
 
@@ -160,7 +160,7 @@
 
 .ss-item:hover,
 .ss-item.ss-item-focused {
-    background: rgba(255,255,255,.05);
+    background: var(--bg-hover);
 }
 
 .ss-search-in-actions .vrcn-button.ss-chip-focused {

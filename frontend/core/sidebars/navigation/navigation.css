@@ -195,7 +195,7 @@ body:has(#tab0.active) .rsidebar.collapsed .sidebar-sep {
 }
 
 .nav-btn:hover {
-    background: rgba(255,255,255,.04);
+    background: var(--bg-hover);
 }
 
 .nav-btn.active {
@@ -255,7 +255,7 @@ body:has(#tab0.active) .rsidebar.collapsed .sidebar-sep {
     margin-left: auto;
     padding: 2px 7px;
     border-radius: 5px;
-    background: var(--bg-hover);
+    background: var(--badge-bg);
     color: var(--tx2);
     font-size: calc(9px + var(--fs-off, 0px));
     font-weight: 700;
@@ -280,7 +280,7 @@ body:has(#tab0.active) .rsidebar.collapsed .sidebar-sep {
 }
 
 .nav-group-btn:hover {
-    background: rgba(255,255,255,.04);
+    background: var(--bg-hover);
 }
 
 .nav-group-btn .ni {

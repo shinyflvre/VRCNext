@@ -57,7 +57,7 @@
     transition: background .08s;
 }
 
-.li-f:hover { background: rgba(255,255,255,.02); }
+.li-f:hover { background: var(--bg-hover); }
 
 #logArea.log-tail .li-f { display: none; }
 #logArea.log-tail .li-f:nth-last-child(-n+100) { display: flex; }

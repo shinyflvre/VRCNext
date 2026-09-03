@@ -20,6 +20,6 @@
 /* .fd-tab.active only swaps the background; keep the accent so the selected filter
    still reads at a glance against the world grid below. */
 #worldFilterBtns .fd-tab.active {
-    background: var(--accent);
+    background: var(--ui-input-active-bg);
     color: #fff;
 }

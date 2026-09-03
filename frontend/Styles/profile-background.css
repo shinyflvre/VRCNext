@@ -69,7 +69,7 @@ html.profile-cards-transparent #modalMyProfile .inst-item:hover {
 
 html.profile-cards-transparent #modalFriendDetail .fd-tab.active,
 html.profile-cards-transparent #modalMyProfile .fd-tab.active {
-    background: color-mix(in srgb, var(--bg-hover) 50%, transparent);
+    background: color-mix(in srgb, var(--ui-input-active-bg) 50%, transparent);
 }
 
 html.profile-cards-transparent #modalFriendDetail .fd-modal-bar,
@@ -89,7 +89,7 @@ html.profile-cards-transparent #modalMyProfile .vrcn-button:not(.active):hover {
 
 html.profile-cards-transparent #modalFriendDetail .vrcn-button-round:not(.active):not(:hover),
 html.profile-cards-transparent #modalMyProfile .vrcn-button-round:not(.active):not(:hover) {
-    background: color-mix(in srgb, var(--bg-hover) 50%, transparent);
+    background: color-mix(in srgb, var(--ui-input-bg) 50%, transparent);
 }
 
 /* --- Gradient picker (profile background) --- */

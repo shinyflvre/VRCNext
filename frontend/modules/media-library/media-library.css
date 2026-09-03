@@ -213,7 +213,7 @@
     border-radius: 5px;
     background-size: cover;
     background-position: center;
-    background-color: var(--bg-hover);
+    background-color: var(--badge-bg);
 }
 
 .lib-players-overlay {

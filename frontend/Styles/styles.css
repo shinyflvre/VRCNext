@@ -9,6 +9,8 @@
     --bg-btn-h: #1C1C1F;
     --ui-input-bg: var(--bg-card);
     --ui-input-hover-bg: var(--bg-hover);
+    --ui-input-active-bg: var(--accent);
+    --badge-bg: var(--bg-hover);
     --accent: #5C76FF;
     --accent-lt: #9797B1;
     --cyan: #8CA5FF;
@@ -736,7 +738,7 @@ html.deco-dashboard-on.nameplate-deco-on .dash-flocs-card > .dash-flocs-world-th
     margin-bottom: 14px;
     border-radius: 8px;
     overflow: hidden;
-    background: var(--bg-input);
+    background: var(--ui-input-bg);
 }
 
 .fd-tab {
@@ -754,12 +756,13 @@ html.deco-dashboard-on.nameplate-deco-on .dash-flocs-card > .dash-flocs-world-th
 }
 
 .fd-tab.active {
-    background: var(--bg-hover);
-    color: var(--tx1);
+    background: var(--ui-input-active-bg);
+    color: #fff;
 }
 
 .fd-tab:hover:not(.active) {
-    color: var(--tx2);
+    background: var(--ui-input-hover-bg);
+    color: var(--tx1);
 }
 
 .fd-tab-badge {
@@ -834,7 +837,7 @@ html.deco-dashboard-on.nameplate-deco-on .dash-flocs-card > .dash-flocs-world-th
     margin-bottom: 14px;
     border-radius: 8px;
     overflow: hidden;
-    background: var(--bg-input);
+    background: var(--ui-input-bg);
 }
 
 .ci-group-list {

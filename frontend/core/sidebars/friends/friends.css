@@ -265,7 +265,7 @@
     padding: 6.5px 9px 6.5px 31px;
     font-size: calc(12px + var(--fs-off, 0px));
     border-radius: 7px;
-    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    background: var(--ui-input-bg);
     /* allow the flex input to shrink so the refresh button stays inside the
        sidebar instead of overflowing past the right edge */
     min-width: 0;
@@ -275,7 +275,7 @@
 .vrc-fs-refresh-btn {
     flex-shrink: 0;
     width: 31px;
-    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    background: var(--ui-input-bg);
     /* match the search input's height exactly (override .vrcn-button's fixed 32px) */
     height: auto;
     align-self: stretch;
@@ -284,7 +284,7 @@
     justify-content: center;
     color: var(--tx3);
 }
-.vrc-fs-refresh-btn:hover { background: color-mix(in srgb, var(--accent) 20%, transparent); }
+.vrc-fs-refresh-btn:hover { background: var(--ui-input-hover-bg); }
 .vrc-fs-refresh-btn .msi { font-size: 14px; }
 .vrc-fs-refresh-btn.spinning .msi { animation: vrc-fs-spin .6s linear infinite; }
 @keyframes vrc-fs-spin { to { transform: rotate(360deg); } }
@@ -326,7 +326,7 @@
 .vrc-fs-tabs.fd-tabs {
     gap: 2px;
     margin-bottom: 0;
-    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    background: var(--ui-input-bg);
     border-radius: 9px;
     padding: 2px;
 }
@@ -355,7 +355,7 @@
 
 .rsidebar.collapsed .vrc-fs-icon:hover {
     color: var(--tx1);
-    background: rgba(255,255,255,.04);
+    background: var(--bg-hover);
 }
 
 .vrc-login-collapsed-btn { display: none; }

@@ -167,7 +167,7 @@ function openInstanceInfoModal() {
 
     const authorHtml = worldAuthor
         ? `<div class="mi-world-author">${t('worlds.meta.by', 'by')} ${worldAuthorId
-            ? `<span onclick="closeInstanceInfoModal();navOpenModal('friend','${jsq(worldAuthorId)}','${jsq(worldAuthor)}')" style="display:inline-flex;align-items:center;padding:1px 8px;border-radius:20px;background:var(--bg-hover);font-size:calc(11px + var(--fs-off, 0px));font-weight:600;color:var(--tx1);cursor:pointer;line-height:1.8;">${esc(worldAuthor)}</span>`
+            ? `<span onclick="closeInstanceInfoModal();navOpenModal('friend','${jsq(worldAuthorId)}','${jsq(worldAuthor)}')" style="display:inline-flex;align-items:center;padding:1px 8px;border-radius:20px;background:var(--badge-bg);font-size:calc(11px + var(--fs-off, 0px));font-weight:600;color:var(--tx1);cursor:pointer;line-height:1.8;">${esc(worldAuthor)}</span>`
             : esc(worldAuthor)}</div>`
         : '';
     const descHtml = worldDesc ? `<div class="mi-world-description">${esc(worldDesc)}</div>` : '';

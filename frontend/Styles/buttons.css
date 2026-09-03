@@ -10,7 +10,7 @@
 }
 
 .win-btn .msi { font-size: 15px; }
-.win-btn:hover { background: rgba(255,255,255,.1); color: var(--tx0); }
+.win-btn:hover { background: var(--bg-hover); color: var(--tx0); }
 
 .vrcn-button, .vrcn-button-round {
     border: none;
@@ -34,7 +34,7 @@
 }
 .vrcn-button:hover { background: var(--ui-input-hover-bg); color: var(--tx1); }
 .vrcn-button:disabled { opacity: .4; cursor: not-allowed; }
-.vrcn-button.active { background: var(--accent); color: #fff; }
+.vrcn-button.active { background: var(--ui-input-active-bg); color: #fff; }
 
 .vrcn-icon-button {
     background: none;
@@ -57,14 +57,14 @@
 .vrcn-button-round {
     padding: 6px 14px;
     border-radius: 7px; 
-    background: var(--bg-hover);
+    background: var(--ui-input-bg);
     color: var(--tx1);
     font-size: calc(11px + var(--fs-off, 0px));
     gap: 5px;
 }
-.vrcn-button-round:hover { background: var(--accent-lt); color: #fff; }
+.vrcn-button-round:hover { background: var(--ui-input-hover-bg); color: var(--tx0); }
 .vrcn-button-round:disabled { opacity: .4; cursor: not-allowed; }
-.vrcn-button-round.active { background: var(--accent); color: #fff; }
+.vrcn-button-round.active { background: var(--ui-input-active-bg); color: #fff; }
 .vrcn-button-round .msi { font-size: 14px !important; line-height: 1; }
 
 .vrcn-mini-pill-group {
@@ -118,7 +118,7 @@
 
 .sub-tab-btn.active {
     opacity: 1;
-    background: var(--accent);
+    background: var(--ui-input-active-bg);
     color: #fff;
 }
 

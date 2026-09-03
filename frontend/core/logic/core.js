@@ -558,7 +558,7 @@ function emptyStateHtml(icon, title, desc) {
 }
 
 const THEMES = {
-    vrcn:      { label: 'VRCN',      dot: '#58586F', c: { 'bg-base': '#0A0A0A', 'bg-side': '#0A0A0A', 'bg-card': '#0D0D0E', 'bg-hover': '#1C1C1F', 'bg-input': '#141416', 'tab-card-bg': '#101011', 'ui-input-bg': '#1C1C1F', 'ui-input-hover-bg': '#26262A', 'accent': '#58586F', 'accent-lt': '#9797B1', 'cyan': '#8CA5FF', 'ok': '#2DD48C', 'warn': '#FFBA37', 'err': '#FF4B55', 'tx0': '#EBEBFF', 'tx1': '#EBEBFF', 'tx2': '#B7B7C3', 'tx3': '#FFFFFF', 'brd': '#1E1E22', 'brd-lt': '#1E1E22', 'bdg-user-pc': '#9797B1', 'bdg-user-quest': '#9797B1', 'bdg-user-web': '#9797B1', 'bdg-user-friend': '#2DD48C', 'bdg-rank-visitor': '#CCCCCC', 'bdg-rank-new': '#1778FF', 'bdg-rank-user': '#2BCF5C', 'bdg-rank-known': '#FF7B42', 'bdg-rank-trusted': '#8143E6' } },
+    vrcn:      { label: 'VRCN',      dot: '#58586F', c: { 'bg-base': '#0A0A0A', 'bg-side': '#0A0A0A', 'bg-card': '#0D0D0E', 'bg-hover': '#1C1C1F', 'bg-input': '#141416', 'tab-card-bg': '#101011', 'ui-input-bg': '#1C1C1F', 'ui-input-hover-bg': '#26262A', 'ui-input-active-bg': '#58586F', 'badge-bg': '#1C1C1F', 'accent': '#58586F', 'accent-lt': '#9797B1', 'cyan': '#8CA5FF', 'ok': '#2DD48C', 'warn': '#FFBA37', 'err': '#FF4B55', 'tx0': '#EBEBFF', 'tx1': '#EBEBFF', 'tx2': '#B7B7C3', 'tx3': '#FFFFFF', 'brd': '#1E1E22', 'brd-lt': '#1E1E22', 'bdg-user-pc': '#9797B1', 'bdg-user-quest': '#9797B1', 'bdg-user-web': '#9797B1', 'bdg-user-friend': '#2DD48C', 'bdg-rank-visitor': '#CCCCCC', 'bdg-rank-new': '#1778FF', 'bdg-rank-user': '#2BCF5C', 'bdg-rank-known': '#FF7B42', 'bdg-rank-trusted': '#8143E6' } },
     slates:    { label: 'Slates',    dot: '#6F6CFF', c: { 'bg-base': '#090814', 'bg-side': '#090814', 'bg-card': '#131125', 'bg-hover': '#4B4998', 'bg-input': '#161428', 'tab-card-bg': '#110F23', 'accent': '#6F6CFF', 'accent-lt': '#6F6CFF', 'cyan': '#8CA5FF', 'ok': '#2DD48C', 'warn': '#FFBA37', 'err': '#FF4B55', 'tx0': '#FFFFFF', 'tx1': '#FFFFFF', 'tx2': '#FFFFFF', 'tx3': '#FFFFFF', 'brd': '#1A1833', 'brd-lt': '#1F2357' } },
     blood:     { label: 'Blood',     dot: '#DF2A4E', c: { 'bg-base': '#0B0611', 'bg-side': '#10091A', 'bg-card': '#190F26', 'bg-hover': '#251936', 'bg-input': '#1C1229', 'tab-card-bg': '#170D24', 'accent': '#DF2A4E', 'accent-lt': '#E16B82', 'cyan': '#DC7A56', 'ok': '#2DD48C', 'warn': '#FFBA37', 'err': '#FF4B55', 'tx0': '#F2EFF5', 'tx1': '#D2CCDB', 'tx2': '#D2CCDB', 'tx3': '#D2CCDB', 'brd': '#291B3C', 'brd-lt': '#38284D' } },
     halloween: { label: 'Halloween', dot: '#DF462A', c: { 'bg-base': '#0B091A', 'bg-side': '#0B091A', 'bg-card': '#110F26', 'bg-hover': '#1B1936', 'bg-input': '#141229', 'tab-card-bg': '#0F0D24', 'accent': '#DF462A', 'accent-lt': '#E17D6B', 'cyan': '#DCA956', 'ok': '#2DD48C', 'warn': '#FFBA37', 'err': '#FF4B55', 'tx0': '#F0EFF5', 'tx1': '#F0EFF5', 'tx2': '#F0EFF5', 'tx3': '#F0EFF5', 'brd': '#1E1B3C', 'brd-lt': '#2B284D' } },
@@ -706,7 +706,7 @@ document.documentElement.addEventListener('tabchange', function () {
 const _TE_GROUPS = [
     { title: 'Theme', vars: [
         ['bg-base',   'Base BG'],   ['bg-side',  'Sidebar BG'], ['bg-card',  'Card BG'],
-        ['bg-hover',  'Hover BG'],  ['bg-input', 'Input BG'], ['tab-card-bg', 'Tab Card BG'],   ['ui-input-bg', 'UI Input BG'], ['ui-input-hover-bg', 'UI Input Hover BG'],
+        ['bg-hover',  'Hover BG'],  ['bg-input', 'Input BG'], ['tab-card-bg', 'Tab Card BG'],   ['ui-input-bg', 'Buttons Base'], ['ui-input-hover-bg', 'Buttons Hover'], ['ui-input-active-bg', 'Buttons Active'], ['badge-bg', 'Badge Base'],
         ['accent',    'Accent'],    ['accent-lt','Accent Light'],['cyan',     'Highlight'],
         ['ok',        'Success'],   ['warn',     'Warning'],     ['err',      'Error'],
         ['tx0',       'Text 0'],    ['tx1',      'Text 1'],      ['tx2',      'Text 2'],    ['tx3','Text 3'],
@@ -1356,7 +1356,7 @@ function deleteCustomTheme(key) {
 
 function addCustomThemeFromAuto() {
     const style = getComputedStyle(document.documentElement);
-    const colorKeys = ['bg-base','bg-side','bg-card','bg-hover','bg-input','ui-input-bg','ui-input-hover-bg','accent','accent-lt','cyan','ok','warn','err','tx0','tx1','tx2','tx3','brd','brd-lt'];
+    const colorKeys = ['bg-base','bg-side','bg-card','bg-hover','bg-input','ui-input-bg','ui-input-hover-bg','ui-input-active-bg','badge-bg','accent','accent-lt','cyan','ok','warn','err','tx0','tx1','tx2','tx3','brd','brd-lt'];
     const c = {};
     colorKeys.forEach(k => { c[k] = style.getPropertyValue('--' + k).trim(); });
     const dot = c['accent'] || '#3884FF';

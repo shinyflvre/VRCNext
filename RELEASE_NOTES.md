@@ -1,14 +1,17 @@
 **2026.48.3**
 
 **Improvements**
-- **Create Instance**: Group instances can now set a **Minimum Avatar Performance** limit (No Limit, Good, Medium or Poor) next to Queue and Age Gate, matching what VRChat supports for group instances.
-- The profile status heatmap is now much more accurate. A friend's status is recorded the moment they come online, and any changes that happened while VRCNext was closed are filled in on the next start.
+- **Create Instance**: Group instances can now set a **Minimum Avatar Performance** limit (No Limit, Good, Medium, Poor).
+- Profile status heatmap is much more accurate — statuses are recorded live and backfilled on startup.
 
 **Changes**
-- The **Create Instance** modal has been updated to the v2 vrcn design.
-- Calendar **Help Sort** now uses a soft candy color palette, with each group keeping a fixed color based on a stable seed.
+- New **Badge Base** theme color for badges and tags (defaults to Hover BG, so no visual change).
+- New **UI Input Active BG** theme color for active buttons (defaults to accent, so no visual change).
+- **Create Instance** modal updated to the v2 vrcn design.
+- Calendar **Help Sort** now uses a soft candy color palette with stable per-group colors.
 - Stats are no longer bold.
-- Empty tab pages now show clearer placeholder text.
+- Clearer placeholder text on empty tab pages.
 
 **Fixed Bugs**
-- The heatmap no longer marks unobserved periods as green **Online**. They now show as gray **Unknown** and are excluded from the "Mostly" summary.
+- Hover highlights across taskbar menus, dropdowns, Pins, Smart Search, sidebars and the navigation editor now use the theme's **Hover BG** instead of hardcoded white.
+- Heatmap no longer shows unobserved periods as **Online** — they're now gray **Unknown** and excluded from the "Mostly" summary.

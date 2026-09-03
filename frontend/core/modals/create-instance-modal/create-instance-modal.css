@@ -31,17 +31,6 @@
     gap: 24px;
     align-items: flex-start;
 }
-.ci-cols .fd-tabs {
-    background: var(--ui-input-bg);
-}
-.ci-cols .fd-tab:hover:not(.active) {
-    background: var(--ui-input-hover-bg);
-    color: var(--tx1);
-}
-.ci-cols .fd-tab.active {
-    background: var(--accent);
-    color: var(--tx0);
-}
 .ci-col-main {
     flex: 1;
     min-width: 0;

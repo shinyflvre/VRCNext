@@ -2,7 +2,7 @@
 
 .vrcn-badge.current        { background: rgba(0,214,143,.2);    color: var(--ok); }
 
-#avVrcnFtBtn.active { background: var(--accent); color: #fff; }
+#avVrcnFtBtn.active { background: var(--ui-input-active-bg); color: #fff; }
 .cc-perf-top {
     position: absolute;
     top: 14px;

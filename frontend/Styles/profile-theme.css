@@ -37,13 +37,13 @@
     --cyan: #8CA5FF;
 }
 
-.has-profile-theme .vrcn-badge { background: #1C1C1F; }
+.has-profile-theme .vrcn-badge { background: var(--badge-bg); }
 
 .has-profile-theme .vrcn-badge.fd-tab-badge {
     background: var(--pt-icon, var(--accent));
     color: var(--pt-icon-fg, #fff);
 }
-.has-profile-theme .fd-lang-tags .vrcn-badge { background: var(--bg-hover); }
+.has-profile-theme .fd-lang-tags .vrcn-badge { background: var(--badge-bg); }
 
 .has-profile-theme .vrcn-badge.public  { background: color-mix(in srgb, #78F1AE 12%, #141414); }
 .has-profile-theme .vrcn-badge.ok      { background: color-mix(in srgb, var(--bdg-user-friend) 14%, #141414); }

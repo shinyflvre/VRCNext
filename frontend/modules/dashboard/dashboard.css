@@ -72,7 +72,7 @@ body:has(.rsidebar.collapsed) .dash-hero-content { padding-right: calc(var(--rsi
     color: inherit;
     gap: 8px;
 }
-.dash-sub .myp-status-row:hover { background: rgba(255,255,255,.12); }
+.dash-sub .myp-status-row:hover { background: var(--bg-hover); }
 
 .dash-hero-stats {
     display: flex;

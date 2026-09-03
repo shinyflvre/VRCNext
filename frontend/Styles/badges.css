@@ -19,7 +19,7 @@
     font-weight: 600;
     padding: 3px 7px;
     border-radius: 5px;
-    background: var(--bg-hover);
+    background: var(--badge-bg);
     color: var(--tx2);
     letter-spacing: .3px;
     flex-shrink: 0;

@@ -9,6 +9,8 @@
     --bg-btn-h: #1C1C1F;
     --ui-input-bg: #1C1C1F;
     --ui-input-hover-bg: #26262A;
+    --ui-input-active-bg: var(--accent);
+    --badge-bg: var(--bg-hover);
     --accent: #5C76FF;
     --accent-lt: #9797B1;
     --cyan: #8CA5FF;
@@ -84,7 +86,7 @@ html, body {
     color: var(--tx2); transition: background 0.1s, color 0.1s;
     padding: 0; flex-shrink: 0;
 }
-.tb-win-btn:hover { background: rgba(255, 255, 255, 0.1); color: var(--tx0); }
+.tb-win-btn:hover { background: var(--bg-hover); color: var(--tx0); }
 .tb-win-btn.tb-close:hover { background: #c42b1c; color: #fff; }
 
 /* Maximize / Restore icon swap via body class */

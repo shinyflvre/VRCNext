@@ -287,7 +287,7 @@ html.modal-refreshing .fd-refresh-spin { animation: modal-refresh-spin 0.8s line
 .cl-version-badge {
     display: inline-flex; align-items: center;
     padding: 3px 10px; border-radius: 20px;
-    background: var(--bg-hover);
+    background: var(--badge-bg);
     font-size: calc(11px + var(--fs-off, 0px)); font-weight: 600;
     color: var(--tx1);
 }

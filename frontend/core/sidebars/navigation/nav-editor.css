@@ -19,7 +19,7 @@
 }
 
 .ne-row:hover {
-    background: rgba(255, 255, 255, .03);
+    background: var(--bg-hover);
 }
 
 .ne-sub {
@@ -56,7 +56,7 @@
 
 .ne-icon:hover {
     color: var(--tx0);
-    background: rgba(255, 255, 255, .06);
+    background: var(--bg-hover);
 }
 
 .ne-label {
@@ -89,7 +89,7 @@
 
 .ne-btn:hover {
     color: var(--tx1);
-    background: rgba(255, 255, 255, .05);
+    background: var(--bg-hover);
 }
 
 .ne-home-btn.active,
@@ -116,7 +116,7 @@
 }
 
 .ne-folder-row:hover {
-    background: rgba(255, 255, 255, .04);
+    background: var(--bg-hover);
 }
 
 .ne-folder-name,
@@ -217,7 +217,7 @@
 
 .ne-icon-opt:hover {
     color: var(--tx0);
-    background: rgba(255, 255, 255, .06);
+    background: var(--bg-hover);
 }
 
 .ne-icon-opt.active {
