@@ -3809,6 +3809,8 @@
   "worlds.instances.instance_name": "Nombre de la instancia",
   "worlds.instances.instance_name_placeholder": "Nombre opcional...",
   "worlds.instances.queue": "Cola",
+  "worlds.instances.min_perf": "Rendimiento mínimo del avatar",
+  "worlds.instances.min_perf_none": "Sin límite",
   "worlds.instances.region": "Región",
   "worlds.instances.types.group_root": "Grupo",
   "worlds.photos.empty": "No se han tomado fotos en este mundo."

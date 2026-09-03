@@ -99,6 +99,20 @@
 .ci-toggle input:checked + .ci-toggle-slider { background: var(--accent); }
 .ci-toggle input:checked + .ci-toggle-slider::before { transform: translateX(16px); background: #fff; }
 
+.ci-opt-row {
+    display: flex;
+    gap: 6px;
+}
+.ci-opt-row .vrcn-button {
+    flex: 1;
+    justify-content: center;
+    min-width: 0;
+}
+.ci-opt-row .vrcn-button img {
+    height: 14px;
+    width: auto;
+}
+
 .ci-instance-name-input {
     width: 100%;
     box-sizing: border-box;

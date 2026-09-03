@@ -3774,6 +3774,8 @@
   "worlds.instances.instance_name": "Instanzname",
   "worlds.instances.instance_name_placeholder": "Optionaler Name...",
   "worlds.instances.queue": "Warteschlange",
+  "worlds.instances.min_perf": "Minimale Avatar-Performance",
+  "worlds.instances.min_perf_none": "Kein Limit",
   "worlds.instances.region": "Region",
   "worlds.instances.types.group_root": "Gruppe",
   "worlds.photos.empty": "Keine Fotos in dieser Welt aufgenommen.",

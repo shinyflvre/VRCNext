@@ -3809,6 +3809,8 @@
   "worlds.instances.instance_name": "Nom de l'instance",
   "worlds.instances.instance_name_placeholder": "Nom facultatif...",
   "worlds.instances.queue": "File d'attente",
+  "worlds.instances.min_perf": "Performance minimale des avatars",
+  "worlds.instances.min_perf_none": "Aucune limite",
   "worlds.instances.region": "Région",
   "worlds.instances.types.group_root": "Groupe",
   "worlds.photos.empty": "Aucune photo prise dans ce monde."

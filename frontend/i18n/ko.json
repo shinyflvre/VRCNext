@@ -3809,6 +3809,8 @@
   "worlds.instances.instance_name": "인스턴스 이름",
   "worlds.instances.instance_name_placeholder": "이름 (선택)...",
   "worlds.instances.queue": "대기열",
+  "worlds.instances.min_perf": "최소 아바타 성능",
+  "worlds.instances.min_perf_none": "제한 없음",
   "worlds.instances.region": "지역",
   "worlds.instances.types.group_root": "그룹",
   "worlds.photos.empty": "이 월드에서 찍은 사진이 없습니다."

@@ -112,7 +112,7 @@ public class InstancesAPI(VRChatApiService ctx)
     }
 
     public async Task<string?> CreateGroupInstanceAsync(string worldId, string groupId, string groupAccessType, string region,
-        string instanceName = "", bool queueEnabled = false, bool ageGateEnabled = false)
+        string instanceName = "", bool queueEnabled = false, bool ageGateEnabled = false, string minAvatarPerf = "")
     {
         if (!ctx.IsLoggedIn) return null;
         try
@@ -129,6 +129,8 @@ public class InstancesAPI(VRChatApiService ctx)
             };
             if (!string.IsNullOrWhiteSpace(instanceName))
                 body["displayName"] = instanceName;
+            if (minAvatarPerf == "Good" || minAvatarPerf == "Medium" || minAvatarPerf == "Poor")
+                body["minimumAvatarPerformance"] = minAvatarPerf;
             var resp = await ctx._http.PostAsync($"{VRChatApiService.BASE}/instances",
                 new StringContent(body.ToString(Newtonsoft.Json.Formatting.None), Encoding.UTF8, "application/json"));
             var respBody = await resp.Content.ReadAsStringAsync();

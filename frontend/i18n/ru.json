@@ -3813,6 +3813,8 @@
   "worlds.instances.instance_name": "Название инстанса",
   "worlds.instances.instance_name_placeholder": "Необязательное название...",
   "worlds.instances.queue": "Очередь",
+  "worlds.instances.min_perf": "Минимальная производительность аватара",
+  "worlds.instances.min_perf_none": "Без ограничений",
   "worlds.instances.region": "Регион",
   "worlds.instances.types.group_root": "Группа",
   "worlds.photos.empty": "В этом мире нет сделанных фото."

@@ -1243,6 +1243,7 @@ public class GroupsController
                 var cgiInstanceName = msg["instanceName"]?.ToString() ?? "";
                 var cgiQueueEnabled = msg["queueEnabled"]?.ToObject<bool>() ?? false;
                 var cgiAgeGateEnabled = msg["ageGateEnabled"]?.ToObject<bool>() ?? false;
+                var cgiMinPerf = msg["minAvatarPerf"]?.ToString() ?? "";
                 var cgiAndJoin = msg["andJoin"]?.ToObject<bool>() ?? true;
                 if (!string.IsNullOrEmpty(cgiWorldId) && !string.IsNullOrEmpty(cgiGroupId))
                 {
@@ -1250,7 +1251,7 @@ public class GroupsController
                     {
                         var location = await _core.Instances.CreateGroupInstanceAsync(
                             cgiWorldId, cgiGroupId, cgiAccessType, cgiRegion,
-                            cgiInstanceName, cgiQueueEnabled, cgiAgeGateEnabled);
+                            cgiInstanceName, cgiQueueEnabled, cgiAgeGateEnabled, cgiMinPerf);
                         if (!string.IsNullOrEmpty(location))
                         {
                             bool ok;

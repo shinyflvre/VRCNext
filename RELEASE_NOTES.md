@@ -1,6 +1,7 @@
 **2026.48.3**
 
 **Improvements**
+- **Create Instance**: Group instances can now set a **Minimum Avatar Performance** limit (No Limit, Good, Medium or Poor) next to Queue and Age Gate, matching what VRChat supports for group instances.
 - The profile status heatmap is now much more accurate. A friend's status is recorded the moment they come online, and any changes that happened while VRCNext was closed are filled in on the next start.
 
 **Changes**

@@ -3809,6 +3809,8 @@
   "worlds.instances.instance_name": "Instance Name",
   "worlds.instances.instance_name_placeholder": "Optional name...",
   "worlds.instances.queue": "Queue",
+  "worlds.instances.min_perf": "Minimum Avatar Performance",
+  "worlds.instances.min_perf_none": "No Limit",
   "worlds.instances.region": "Region",
   "worlds.instances.types.group_root": "Group",
   "worlds.photos.empty": "No photos taken in this world."

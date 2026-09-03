@@ -9,10 +9,8 @@ function onCiTypeChange() {
     if (box) box.style.width = isGroup ? '840px' : '506px';
     const subPills = document.getElementById('ciGroupSubPillsWrap');
     if (subPills) subPills.style.display = isGroup ? '' : 'none';
-    const queueRow = document.getElementById('ciQueueRow');
-    if (queueRow) queueRow.style.display = isGroup ? '' : 'none';
-    const ageRow = document.getElementById('ciAgeGateRow');
-    if (ageRow) ageRow.style.display = isGroup ? '' : 'none';
+    const groupOpts = document.getElementById('ciGroupOptions');
+    if (groupOpts) groupOpts.style.display = isGroup ? '' : 'none';
     const hidden = document.getElementById('ciGroupId');
     if (hidden) hidden.value = '';
     document.querySelectorAll('.ci-group-card').forEach(c => c.classList.remove('ci-group-selected'));
@@ -104,13 +102,23 @@ function openCreateInstanceModal() {
                 </div>
             </div>
 
-            <div class="ci-toggle-row" id="ciQueueRow">
-                <span>${t('worlds.instances.queue', 'Queue')}</span>
-                <label class="ci-toggle"><input type="checkbox" id="ciQueueEnabled"><span class="ci-toggle-slider"></span></label>
-            </div>
-            <div class="ci-toggle-row" id="ciAgeGateRow">
-                <span>${t('worlds.instances.age_gate', 'Age Gate')}</span>
-                <label class="ci-toggle"><input type="checkbox" id="ciAgeGateEnabled"><span class="ci-toggle-slider"></span></label>
+            <div id="ciGroupOptions">
+                <div class="ci-toggle-row" id="ciQueueRow">
+                    <span>${t('worlds.instances.queue', 'Queue')}</span>
+                    <label class="ci-toggle"><input type="checkbox" id="ciQueueEnabled"><span class="ci-toggle-slider"></span></label>
+                </div>
+                <div class="ci-toggle-row" id="ciAgeGateRow">
+                    <span>${t('worlds.instances.age_gate', 'Age Gate')}</span>
+                    <label class="ci-toggle"><input type="checkbox" id="ciAgeGateEnabled"><span class="ci-toggle-slider"></span></label>
+                </div>
+                <div class="sf-section-label">${t('worlds.instances.min_perf', 'Minimum Avatar Performance')}</div>
+                <div class="ci-opt-row" id="ciMinPerfRow">
+                    <button type="button" class="vrcn-button active" onclick="ciSetMinPerf('', this)">${t('worlds.instances.min_perf_none', 'No Limit')}</button>
+                    <button type="button" class="vrcn-button" onclick="ciSetMinPerf('Good', this)"><img src="assets/Avatars/good.png" alt=""> ${t('avatars.perf.good', 'Good')}</button>
+                    <button type="button" class="vrcn-button" onclick="ciSetMinPerf('Medium', this)"><img src="assets/Avatars/medium.png" alt=""> ${t('avatars.perf.medium', 'Medium')}</button>
+                    <button type="button" class="vrcn-button" onclick="ciSetMinPerf('Poor', this)"><img src="assets/Avatars/poor.png" alt=""> ${t('avatars.perf.poor', 'Poor')}</button>
+                </div>
+                <input type="hidden" id="ciMinPerf" value="">
             </div>
 
             <div style="margin-top:14px;display:flex;gap:10px;align-items:flex-end;">
@@ -175,6 +183,13 @@ function setCiGroupType(type, btn) {
     if (hidden) hidden.value = type;
 }
 
+function ciSetMinPerf(value, btn) {
+    document.querySelectorAll('#ciMinPerfRow .vrcn-button').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    const hidden = document.getElementById('ciMinPerf');
+    if (hidden) hidden.value = value;
+}
+
 function doCreateInstance(andJoin) {
     const worldId = _ciWorldId;
     const type = document.getElementById('ciTypeValue')?.value || 'public';
@@ -182,6 +197,7 @@ function doCreateInstance(andJoin) {
     const instanceName = (document.getElementById('ciInstanceName')?.value || '').trim();
     const queueEnabled = document.getElementById('ciQueueEnabled')?.checked ?? false;
     const ageGateEnabled = document.getElementById('ciAgeGateEnabled')?.checked ?? false;
+    const minAvatarPerf = document.getElementById('ciMinPerf')?.value || '';
 
     const createBtn = document.getElementById('ciCreateBtn');
     const joinBtn = document.getElementById('ciCreateJoinBtn');
@@ -198,7 +214,7 @@ function doCreateInstance(andJoin) {
             return;
         }
         const accessType = groupSubType === 'group_public' ? 'public' : groupSubType === 'group_plus' ? 'plus' : 'members';
-        sendToCS({ action: 'vrcCreateGroupInstance', worldId, groupId, groupAccessType: accessType, region, instanceName, queueEnabled, ageGateEnabled, andJoin });
+        sendToCS({ action: 'vrcCreateGroupInstance', worldId, groupId, groupAccessType: accessType, region, instanceName, queueEnabled, ageGateEnabled, minAvatarPerf, andJoin });
     } else {
         sendToCS({ action: 'vrcCreateInstance', worldId, type, region, instanceName, andJoin });
     }

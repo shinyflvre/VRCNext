@@ -3808,6 +3808,8 @@
   "worlds.instances.instance_name": "インスタンス名",
   "worlds.instances.instance_name_placeholder": "任意の名前...",
   "worlds.instances.queue": "キュー",
+  "worlds.instances.min_perf": "アバターの最低パフォーマンス",
+  "worlds.instances.min_perf_none": "制限なし",
   "worlds.instances.region": "リージョン",
   "worlds.instances.types.group_root": "グループ",
   "worlds.photos.empty": "このワールドで撮影した写真はありません。",
