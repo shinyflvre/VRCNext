@@ -10,7 +10,7 @@
 }
 .vro-setting-row label { color: var(--tx1); min-width: 60px; }
 .vrcn-select {
-    background: var(--bg-hover);
+    background: var(--ui-input-bg);
     border: 1px solid var(--bdr);
     border-radius: 6px;
     color: var(--tx1);
@@ -55,7 +55,7 @@
     margin: 10px 0 4px;
 }
 .vro-ctrl-diagram {
-    background: var(--bg-hover);
+    background: var(--ui-input-bg);
     border-radius: 12px;
     border: 1px solid var(--bdr);
     padding: 12px;
@@ -130,11 +130,17 @@
     inset: 0;
     width: 100%;
     height: 100%;
-    object-fit: contain;
+    background: var(--tx1);
+    -webkit-mask: url('../../../assets/VR/Quest/Controller.png') center / contain no-repeat;
+    mask: url('../../../assets/VR/Quest/Controller.png') center / contain no-repeat;
     opacity: .5;
     pointer-events: none;
     user-select: none;
     -webkit-user-drag: none;
+}
+.vro-controller-visual.index .vro-ctrl-base {
+    -webkit-mask-image: url('../../../assets/VR/Index/Controller.png');
+    mask-image: url('../../../assets/VR/Index/Controller.png');
 }
 
 .vro-btn {
@@ -166,7 +172,7 @@
 .vn-select.vro-input-mode + .vro-view-toggle { margin-left: 6px; }
 
 .vn-select.vro-input-mode .vn-select-trigger {
-    background: var(--bg-hover);
+    background: var(--ui-input-bg);
     border: 1px solid var(--bdr);
     color: var(--tx1);
     height: 32px;
@@ -177,6 +183,7 @@
 }
 .vn-select.vro-input-mode .vn-select-trigger:hover,
 .vn-select.vro-input-mode.vn-open .vn-select-trigger {
+    background: var(--ui-input-hover-bg);
     border-color: var(--accent);
     color: var(--tx0);
 }
@@ -258,7 +265,7 @@
     flex-wrap: wrap;
     gap: 4px;
     min-height: 28px;
-    background: var(--bg-hover);
+    background: var(--ui-input-bg);
     border-radius: 8px;
     border: 1px solid var(--bdr);
     padding: 4px 8px;

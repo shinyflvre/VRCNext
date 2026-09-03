@@ -177,7 +177,6 @@ function vriApplyMode() {
 
     document.querySelectorAll('.vro-controller-visual').forEach(v => {
         v.classList.toggle('index', index);
-        v.querySelectorAll('.vro-ctrl-base').forEach(img => { img.src = vriBaseImage(); });
 
         v.querySelectorAll('.vro-controller').forEach(c => {
             const side  = c.classList.contains('vro-controller-left') ? 'left' : 'right';

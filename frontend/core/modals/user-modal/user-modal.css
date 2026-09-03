@@ -21,14 +21,13 @@
 #modalMyProfile #mypInsightsWorlds .ts-item,
 #modalFriendDetail #fdInsightsPersons .ts-item,
 #modalMyProfile #mypInsightsPersons .ts-item{
-    background: color-mix(in srgb, var(--bg-input) 85%, #000);
+    background: var(--bg-input);
 }
 #modalFriendDetail #fdInsightsWorlds .ts-item:hover,
 #modalMyProfile #mypInsightsWorlds .ts-item:hover,
 #modalFriendDetail #fdInsightsPersons .ts-item:hover,
 #modalMyProfile #mypInsightsPersons .ts-item:hover{
-    background: color-mix(in srgb, var(--bg-input) 85%, #000);
-    filter: brightness(1.08);
+    background: var(--bg-hover);
 }
 
 

@@ -719,7 +719,6 @@ namespace VRCNext.Services
             private static readonly Dictionary<string, OverlayTheme> _palettes = new()
             {
                 ["vrcn"]      = new() { BgCard=H("#0F0F0F"),BgHover=H("#1C1C1F"),Accent=H("#5C76FF"),Ok=H("#2DD48C"),Warn=H("#FFBA37"),Err=H("#FF4B55"),Cyan=H("#8CA5FF"),Tx1=H("#EBEBFF"),Tx2=H("#B7B7C3"),Tx3=H("#FFFFFF"),Brd=H("#1C1C1F") },
-                ["slates"]    = new() { BgCard=H("#131125"),BgHover=H("#4B4998"),Accent=H("#6F6CFF"),Ok=H("#2DD48C"),Warn=H("#FFBA37"),Err=H("#FF4B55"),Cyan=H("#8CA5FF"),Tx1=H("#FFFFFF"),Tx2=H("#FFFFFF"),Tx3=H("#FFFFFF"),Brd=H("#6F6CFF") },
                 ["blood"]     = new() { BgCard=H("#190F26"),BgHover=H("#251936"),Accent=H("#DF2A4E"),Ok=H("#2DD48C"),Warn=H("#FFBA37"),Err=H("#FF4B55"),Cyan=H("#DC7A56"),Tx1=H("#D2CCDB"),Tx2=H("#D2CCDB"),Tx3=H("#D2CCDB"),Brd=H("#291B3C") },
                 ["halloween"] = new() { BgCard=H("#110F26"),BgHover=H("#1B1936"),Accent=H("#DF462A"),Ok=H("#2DD48C"),Warn=H("#FFBA37"),Err=H("#FF4B55"),Cyan=H("#DCA956"),Tx1=H("#F0EFF5"),Tx2=H("#F0EFF5"),Tx3=H("#F0EFF5"),Brd=H("#1E1B3C") },
                 ["miku"]      = new() { BgCard=H("#080D14"),BgHover=H("#66B4D2"),Accent=H("#66B4D2"),Ok=H("#2DD48C"),Warn=H("#FFBA37"),Err=H("#FF4B55"),Cyan=H("#66B4D2"),Tx1=H("#FFFFFF"),Tx2=H("#FFFFFF"),Tx3=H("#FFFFFF"),Brd=H("#13223F") },
