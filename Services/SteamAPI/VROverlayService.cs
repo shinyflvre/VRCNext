@@ -728,6 +728,7 @@ namespace VRCNext.Services
                 ["flippernano"] = new() { BgCard=H("#E7EAF8"),BgHover=H("#FF896F"),Accent=H("#FF896F"),Ok=H("#2BFF00"),Warn=H("#FF7455"),Err=H("#FF2E00"),Cyan=H("#FF896F"),Tx1=H("#494949"),Tx2=H("#494949"),Tx3=H("#494949"),Brd=H("#D3D6E6") },
                 ["spaceout"]    = new() { BgCard=H("#0A0714"),BgHover=H("#191327"),Accent=H("#FF9F60"),Ok=H("#2DD48C"),Warn=H("#FFBA37"),Err=H("#FF4B55"),Cyan=H("#8CA5FF"),Tx1=H("#EBEBFF"),Tx2=H("#B7B7C3"),Tx3=H("#FFFFFF"),Brd=H("#1C162C") },
                 ["fluffy"]      = new() { BgCard=H("#FAE8FF"),BgHover=H("#FFCCE9"),Accent=H("#DFBFFF"),Ok=H("#2BFF00"),Warn=H("#FF7455"),Err=H("#FF2E00"),Cyan=H("#DCAFFF"),Tx1=H("#49414E"),Tx2=H("#3D3547"),Tx3=H("#3B3441"),Brd=H("#E5D3E6") },
+                ["ender"]       = new() { BgCard=H("#0A0714"),BgHover=H("#191327"),Accent=H("#CC60FF"),Ok=H("#2DD48C"),Warn=H("#FFBA37"),Err=H("#FF4B55"),Cyan=H("#8CA5FF"),Tx1=H("#EBEBFF"),Tx2=H("#B7B7C3"),Tx3=H("#FFFFFF"),Brd=H("#1C162C") },
             };
         }
 

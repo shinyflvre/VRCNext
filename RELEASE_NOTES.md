@@ -1,7 +1,7 @@
 **2026.48.3**
 
 **Improvements**
-- Five new built-in themes: **Copper**, **Nature**, **Spaceout**, **Flipper Nano** and **Fluffy**, all with matching VR overlay palettes.
+- Six new built-in themes: **Copper**, **Nature**, **Spaceout**, **Flipper Nano**, **Fluffy** and **Ender**, all with matching VR overlay palettes.
 - **Create Instance**: group instances can now set a **Minimum Avatar Performance** limit.
 - Profile status heatmap is more accurate — statuses are recorded live and backfilled on startup.
 
