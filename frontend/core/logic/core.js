@@ -82,19 +82,40 @@ const thumbCache = {};
 let currentTheme = 'vrcn', currentSpecialTheme = '', autoColorAccuracy = 50, notifyAudio = null, messageAudio = null, mediaRelayAudio = null, steamOverlayAudio = null, waterAudio = null, currentVrcUser = null;
 let customThemes = []; // user-saved themes from auto color
 
+function decoMasterOn() {
+    return !!(typeof settings !== 'undefined' && settings.enableVrcPlusDecorations);
+}
+function decoSettingSelf(key) {
+    return decoMasterOn() && !!settings[key];
+}
+function decoSettingOthers(key) {
+    if (!decoMasterOn()) return false;
+    const v = settings[key + 'Others'];
+    return (v === undefined || v === null) ? !!settings[key] : !!v;
+}
+function _decoIsSelf(u) {
+    if (!u) return false;
+    const id = typeof u === 'string' ? u : (u.id || u.userId || '');
+    return !!(id && typeof currentVrcUser !== 'undefined' && currentVrcUser && currentVrcUser.id === id);
+}
+function decoSelfCls(u) {
+    return _decoIsSelf(u) ? ' deco-self' : '';
+}
 function applyDecorationsSetting() {
-    const frames = !!(typeof settings !== 'undefined' && settings.enableProfileIconFrames);
-    const nameplate = !!(typeof settings !== 'undefined' && settings.enableNameplateDecoration);
-    const effects = !!(typeof settings !== 'undefined' && settings.enableProfileEffects);
-    const square = !!(typeof settings !== 'undefined' && settings.squareIconFrames);
-    const onDash = !!(typeof settings !== 'undefined' && settings.showDecorationsOnDashboard);
-    const glassCards = !!(typeof settings !== 'undefined' && settings.transparentProfileCards);
-    document.documentElement.classList.toggle('icon-frames-on', frames);
-    document.documentElement.classList.toggle('icon-frames-square', frames && square);
-    document.documentElement.classList.toggle('nameplate-deco-on', nameplate);
-    document.documentElement.classList.toggle('profile-effect-on', effects);
-    document.documentElement.classList.toggle('deco-dashboard-on', onDash);
-    document.documentElement.classList.toggle('profile-cards-transparent', glassCards);
+    const cls = document.documentElement.classList;
+    const scopes = [['frames', 'enableProfileIconFrames'], ['square', 'squareIconFrames'], ['nameplate', 'enableNameplateDecoration'], ['effect', 'enableProfileEffects'], ['dash', 'showDecorationsOnDashboard'], ['glass', 'transparentProfileCards']];
+    for (const [n, k] of scopes) {
+        cls.toggle('deco-self-' + n, decoSettingSelf(k));
+        cls.toggle('deco-others-' + n, decoSettingOthers(k));
+    }
+    const any = k => decoSettingSelf(k) || decoSettingOthers(k);
+    const frames = any('enableProfileIconFrames');
+    cls.toggle('icon-frames-on', frames);
+    cls.toggle('icon-frames-square', frames && any('squareIconFrames'));
+    cls.toggle('nameplate-deco-on', any('enableNameplateDecoration'));
+    cls.toggle('profile-effect-on', any('enableProfileEffects'));
+    cls.toggle('deco-dashboard-on', any('showDecorationsOnDashboard'));
+    cls.toggle('profile-cards-transparent', any('transparentProfileCards'));
 }
 function iconFrameHtml(frameUrl, animated) {
     if (!frameUrl) return '';

@@ -1,9 +1,9 @@
 ﻿**2026.48.4**
 
 **Profile Customizations**
-- **Customize Profile** is now a two-column editor: settings on the right, live preview on the left.
-- The preview has a **VRCN / VRChat** switch to see your profile as it looks in VRCNext or on the official VRChat web profile.
-- The VRChat preview now follows your active profile theme colors.
+- VRC+ Decorations settings simplified: one **Enable VRC+ Decorations** switch (off by default) that hides everything when off and restores your saved choices when on. Each decoration now has separate **Myself** and **Others** toggles.
+- **Customize Profile** redesigned as a two-column editor with live preview.
+- Preview can be switched between **VRCN** and **VRChat** views; the VRChat view now follows your profile theme colors.
 
 **Fixed Bugs**
 - **Media Library** uploads work again — no more "Failed to load image".

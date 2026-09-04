@@ -2,8 +2,17 @@
 
 const PROFILE_THEME_DEFAULTS = { button: '064b5c', icon: '6ae3f9', subtext: 'a9a9a9' };
 
-function profileThemeEnabled() {
-    return !!(typeof settings !== 'undefined' && settings.enableProfileThemes);
+let _ptCtxUser = null;
+function _ptOthers(user) {
+    return !!(user && typeof _decoIsSelf === 'function' && !_decoIsSelf(user));
+}
+function profileThemeEnabled(user) {
+    if (typeof settings === 'undefined' || !settings.enableVrcPlusDecorations) return false;
+    if (_ptOthers(user)) {
+        const v = settings.enableProfileThemesOthers;
+        return (v === undefined || v === null) ? !!settings.enableProfileThemes : !!v;
+    }
+    return !!settings.enableProfileThemes;
 }
 
 function ptHex(value, fallback = '') {
@@ -21,8 +30,15 @@ function _ptShade(hex, factor) {
     return '#' + [r, g, b].map(v => Math.max(0, Math.min(255, v)).toString(16).padStart(2, '0')).join('');
 }
 
-function profileThemeContrastEnabled() {
-    return !(typeof settings !== 'undefined' && settings.profileThemeContrast === false);
+function profileThemeContrastEnabled(user) {
+    if (typeof settings === 'undefined') return true;
+    const u = user === undefined ? _ptCtxUser : user;
+    const self = settings.profileThemeContrast !== false;
+    if (_ptOthers(u)) {
+        const v = settings.profileThemeContrastOthers;
+        return (v === undefined || v === null) ? self : v !== false;
+    }
+    return self;
 }
 
 function _ptToHex(value) {
@@ -85,7 +101,8 @@ function _ptSurface(el, buttonColor) {
 }
 
 function profileThemeColors(user, force) {
-    if ((!force && !profileThemeEnabled()) || !user) return null;
+    if ((!force && !profileThemeEnabled(user)) || !user) return null;
+    _ptCtxUser = user;
 
     let button  = ptHex(user.themeButtonColor);
     let icon    = ptHex(user.themeIconColor);

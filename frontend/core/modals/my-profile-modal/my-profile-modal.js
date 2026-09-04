@@ -164,8 +164,10 @@ function _pdAfterRender(u) {
     const bannerSrc = u.bannerUrl || u.profilePicOverride || u.currentAvatarImageUrl || u.image || '';
     const slot = document.getElementById('pd-banner-slot');
     if (slot && bannerSrc) {
-        const img = (typeof _getFdBannerImg === 'function') ? _getFdBannerImg(u.id, bannerSrc) : null;
-        if (img) slot.insertBefore(img, slot.firstChild);
+        const img = new Image();
+        img.src = bannerSrc;
+        img.onerror = () => { img.style.display = 'none'; };
+        slot.insertBefore(img, slot.firstChild);
     }
     const left = root.querySelector('.fd-left');
     if (typeof applyProfileBg === 'function' && left) applyProfileBg(left, u, undefined, true);

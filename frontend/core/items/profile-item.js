@@ -53,7 +53,7 @@ function renderUserItem(user, onclick, opts) {
         ? buildPeopleStatsRow(id)
         : '';
 
-    return `<div class="vrcn-user-item${cls}"${idAttr}${attrs} onclick="${onclick}">
+    return `<div class="vrcn-user-item${cls}${(typeof decoSelfCls === 'function') ? decoSelfCls(user) : ''}"${idAttr}${attrs} onclick="${onclick}">
         ${_nameDeco}
         <div class="vrcn-user-item-avatar-wrap">${avatar}${_frameDeco}${dot}</div>
         <div class="vrcn-user-item-info">

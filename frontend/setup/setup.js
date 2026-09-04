@@ -89,27 +89,28 @@ function selectSetupLang(key) {
 function vrcPlusDecoPrefs(on) {
     if (on) {
         return {
+            enableVrcPlusDecorations: true,
             enableProfileIconFrames: true,
+            enableProfileIconFramesOthers: true,
             squareIconFrames: true,
+            squareIconFramesOthers: true,
             enableNameplateDecoration: true,
+            enableNameplateDecorationOthers: true,
             enableProfileBackgrounds: true,
+            enableProfileBackgroundsOthers: true,
             enableProfileThemes: true,
+            enableProfileThemesOthers: true,
             profileThemeContrast: true,
+            profileThemeContrastOthers: true,
             showDecorationsOnDashboard: true,
+            showDecorationsOnDashboardOthers: true,
             enableProfileEffects: true,
+            enableProfileEffectsOthers: true,
             transparentProfileCards: false,
+            transparentProfileCardsOthers: false,
         };
     }
-    return {
-        enableProfileIconFrames: false,
-        squareIconFrames: false,
-        enableNameplateDecoration: false,
-        enableProfileBackgrounds: false,
-        enableProfileThemes: false,
-        showDecorationsOnDashboard: false,
-        enableProfileEffects: false,
-        transparentProfileCards: false,
-    };
+    return { enableVrcPlusDecorations: false };
 }
 
 function onVrcPlusDecoToggle(on) {
@@ -274,7 +275,7 @@ function onBackendMessage(e) {
             }
             if (p && p.prefs) {
                 var pr = p.prefs;
-                var decoOn = !!pr.enableProfileIconFrames;
+                var decoOn = pr.enableVrcPlusDecorations !== undefined ? !!pr.enableVrcPlusDecorations : !!pr.enableProfileIconFrames;
                 document.getElementById('setupVrcPlusDeco').checked = decoOn;
                 onVrcPlusDecoToggle(decoOn);
                 document.getElementById('setupSidebarLocationOnly').checked = !!pr.friendsSidebarLocationOnly;

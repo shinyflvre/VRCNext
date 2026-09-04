@@ -1202,6 +1202,8 @@ function renderFriendDetail(d) {
     if (userId && !isSelf) sendToCS({ action: 'getUserStatusTime', userId, days: 30 });
 
     // VRC+ profile background skins the left identity sidebar.
+    const _fdSelfBox = document.querySelector('#modalFriendDetail .modal-box');
+    if (_fdSelfBox) _fdSelfBox.classList.toggle('deco-self', typeof _decoIsSelf === 'function' && _decoIsSelf(d));
     if (typeof applyProfileBg === 'function') {
         const _bgBox  = document.querySelector('#modalFriendDetail .modal-box');
         const _bgLeft = c.querySelector('.fd-left');

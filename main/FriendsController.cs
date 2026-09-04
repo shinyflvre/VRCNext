@@ -474,8 +474,8 @@ public class FriendsController
 
                     // Only pulled when the feature is on - this fires on every hover and
                     // the appearance endpoint is a separate request per user.
-                    var needAppearance = (_core.Settings.EnableProfileBackgrounds && string.IsNullOrEmpty(bgType))
-                                     || (_core.Settings.EnableProfileThemes && string.IsNullOrEmpty(thBtn));
+                    var needAppearance = _core.Settings.EnableVrcPlusDecorations && (((_core.Settings.EnableProfileBackgroundsOthers ?? _core.Settings.EnableProfileBackgrounds) && string.IsNullOrEmpty(bgType))
+                                     || ((_core.Settings.EnableProfileThemesOthers ?? _core.Settings.EnableProfileThemes) && string.IsNullOrEmpty(thBtn)));
                     if (needAppearance)
                     {
                         var prevAppearance = await _core.Users.GetProfileAppearanceAsync(prevId);

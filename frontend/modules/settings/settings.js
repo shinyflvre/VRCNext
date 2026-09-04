@@ -132,6 +132,7 @@ function saveSettings() {
             commentsOnWorldsEnabled: document.getElementById('setCommentsOnWorlds')?.checked ?? true,
             modernFolderLayout: document.getElementById('setModernFolderLayout')?.checked ?? true,
             navSidebarHoverText: document.getElementById('setNavSidebarHoverText')?.checked ?? true,
+            enableVrcPlusDecorations: document.getElementById('setVrcPlusDecorations')?.checked ?? false,
             enableProfileIconFrames: document.getElementById('setEnableIconFrames')?.checked ?? false,
             squareIconFrames: document.getElementById('setSquareIconFrames')?.checked ?? false,
             enableNameplateDecoration: document.getElementById('setEnableNameplateDeco')?.checked ?? false,
@@ -141,6 +142,15 @@ function saveSettings() {
             profileThemeContrast: document.getElementById('setProfileThemeContrast')?.checked ?? true,
             transparentProfileCards: document.getElementById('setTransparentProfileCards')?.checked ?? false,
             showDecorationsOnDashboard: document.getElementById('setDecoOnDashboard')?.checked ?? false,
+            enableProfileIconFramesOthers: document.getElementById('setEnableIconFramesOthers')?.checked ?? false,
+            squareIconFramesOthers: document.getElementById('setSquareIconFramesOthers')?.checked ?? false,
+            enableNameplateDecorationOthers: document.getElementById('setEnableNameplateDecoOthers')?.checked ?? false,
+            enableProfileEffectsOthers: document.getElementById('setEnableProfileEffectOthers')?.checked ?? false,
+            enableProfileBackgroundsOthers: document.getElementById('setEnableProfileBgOthers')?.checked ?? false,
+            enableProfileThemesOthers: document.getElementById('setEnableProfileThemesOthers')?.checked ?? false,
+            profileThemeContrastOthers: document.getElementById('setProfileThemeContrastOthers')?.checked ?? true,
+            transparentProfileCardsOthers: document.getElementById('setTransparentProfileCardsOthers')?.checked ?? false,
+            showDecorationsOnDashboardOthers: document.getElementById('setDecoOnDashboardOthers')?.checked ?? false,
             language: currentLanguage,
             theme: currentTheme,
             specialTheme: currentSpecialTheme,
@@ -419,11 +429,14 @@ function initAutoSave() {
 }
 
 function updateSquareFrameToggle() {
-    const el = document.getElementById('setSquareIconFrames');
-    if (!el) return;
-    el.disabled = !(typeof settings !== 'undefined' && settings.enableProfileIconFrames);
-    const row = el.closest('.sf-toggle-row');
-    if (row) row.style.opacity = el.disabled ? '.45' : '';
+    const pairs = [['setSquareIconFrames', typeof decoSettingSelf === 'function' ? decoSettingSelf('enableProfileIconFrames') : !!(typeof settings !== 'undefined' && settings.enableProfileIconFrames)], ['setSquareIconFramesOthers', typeof decoSettingOthers === 'function' ? decoSettingOthers('enableProfileIconFrames') : !!(typeof settings !== 'undefined' && settings.enableProfileIconFramesOthers)]];
+    for (const [id, framesOn] of pairs) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        el.disabled = !framesOn;
+        const item = el.closest('.deco-dual-item') || el.closest('.sf-toggle-row');
+        if (item) item.style.opacity = el.disabled ? '.45' : '';
+    }
 }
 
 const SND_SLOT_IDS = {
@@ -520,23 +533,28 @@ function loadSettingsToUI(s) {
     const _nshtEl = document.getElementById('setNavSidebarHoverText');
     if (_nshtEl) _nshtEl.checked = settings.navSidebarHoverText;
     if (typeof applyNavFolderMode === 'function') applyNavFolderMode();
-    settings.enableProfileIconFrames = s.EnableProfileIconFrames ?? s.enableProfileIconFrames ?? false;
+    settings.enableVrcPlusDecorations = s.EnableVrcPlusDecorations ?? s.enableVrcPlusDecorations ?? false;
+    const _vpdEl = document.getElementById('setVrcPlusDecorations');
+    if (_vpdEl) _vpdEl.checked = settings.enableVrcPlusDecorations;
+    const _vpdRows = document.getElementById('vrcPlusDecoRows');
+    if (_vpdRows) _vpdRows.style.display = settings.enableVrcPlusDecorations ? '' : 'none';
+    settings.enableProfileIconFrames = s.EnableProfileIconFrames ?? s.enableProfileIconFrames ?? true;
     const _eifEl = document.getElementById('setEnableIconFrames');
     if (_eifEl) _eifEl.checked = settings.enableProfileIconFrames;
-    settings.squareIconFrames = s.SquareIconFrames ?? s.squareIconFrames ?? false;
+    settings.squareIconFrames = s.SquareIconFrames ?? s.squareIconFrames ?? true;
     const _sifEl = document.getElementById('setSquareIconFrames');
     if (_sifEl) _sifEl.checked = settings.squareIconFrames;
     if (typeof updateSquareFrameToggle === 'function') updateSquareFrameToggle();
-    settings.enableNameplateDecoration = s.EnableNameplateDecoration ?? s.enableNameplateDecoration ?? false;
+    settings.enableNameplateDecoration = s.EnableNameplateDecoration ?? s.enableNameplateDecoration ?? true;
     const _endEl = document.getElementById('setEnableNameplateDeco');
     if (_endEl) _endEl.checked = settings.enableNameplateDecoration;
-    settings.enableProfileEffects = s.EnableProfileEffects ?? s.enableProfileEffects ?? false;
+    settings.enableProfileEffects = s.EnableProfileEffects ?? s.enableProfileEffects ?? true;
     const _epeEl = document.getElementById('setEnableProfileEffect');
     if (_epeEl) _epeEl.checked = settings.enableProfileEffects;
-    settings.enableProfileBackgrounds = s.EnableProfileBackgrounds ?? s.enableProfileBackgrounds ?? false;
+    settings.enableProfileBackgrounds = s.EnableProfileBackgrounds ?? s.enableProfileBackgrounds ?? true;
     const _epbEl = document.getElementById('setEnableProfileBg');
     if (_epbEl) _epbEl.checked = settings.enableProfileBackgrounds;
-    settings.enableProfileThemes = s.EnableProfileThemes ?? s.enableProfileThemes ?? false;
+    settings.enableProfileThemes = s.EnableProfileThemes ?? s.enableProfileThemes ?? true;
     const _eptEl = document.getElementById('setEnableProfileThemes');
     if (_eptEl) _eptEl.checked = settings.enableProfileThemes;
     settings.profileThemeContrast = s.ProfileThemeContrast ?? s.profileThemeContrast ?? true;
@@ -545,9 +563,36 @@ function loadSettingsToUI(s) {
     settings.transparentProfileCards = s.TransparentProfileCards ?? s.transparentProfileCards ?? false;
     const _tpcEl = document.getElementById('setTransparentProfileCards');
     if (_tpcEl) _tpcEl.checked = settings.transparentProfileCards;
-    settings.showDecorationsOnDashboard = s.ShowDecorationsOnDashboard ?? s.showDecorationsOnDashboard ?? false;
+    settings.showDecorationsOnDashboard = s.ShowDecorationsOnDashboard ?? s.showDecorationsOnDashboard ?? true;
     const _dodEl = document.getElementById('setDecoOnDashboard');
     if (_dodEl) _dodEl.checked = settings.showDecorationsOnDashboard;
+    settings.enableProfileIconFramesOthers = s.EnableProfileIconFramesOthers ?? s.enableProfileIconFramesOthers ?? settings.enableProfileIconFrames;
+    const _dO0 = document.getElementById('setEnableIconFramesOthers');
+    if (_dO0) _dO0.checked = settings.enableProfileIconFramesOthers;
+    settings.squareIconFramesOthers = s.SquareIconFramesOthers ?? s.squareIconFramesOthers ?? settings.squareIconFrames;
+    const _dO1 = document.getElementById('setSquareIconFramesOthers');
+    if (_dO1) _dO1.checked = settings.squareIconFramesOthers;
+    settings.enableNameplateDecorationOthers = s.EnableNameplateDecorationOthers ?? s.enableNameplateDecorationOthers ?? settings.enableNameplateDecoration;
+    const _dO2 = document.getElementById('setEnableNameplateDecoOthers');
+    if (_dO2) _dO2.checked = settings.enableNameplateDecorationOthers;
+    settings.enableProfileEffectsOthers = s.EnableProfileEffectsOthers ?? s.enableProfileEffectsOthers ?? settings.enableProfileEffects;
+    const _dO3 = document.getElementById('setEnableProfileEffectOthers');
+    if (_dO3) _dO3.checked = settings.enableProfileEffectsOthers;
+    settings.enableProfileBackgroundsOthers = s.EnableProfileBackgroundsOthers ?? s.enableProfileBackgroundsOthers ?? settings.enableProfileBackgrounds;
+    const _dO4 = document.getElementById('setEnableProfileBgOthers');
+    if (_dO4) _dO4.checked = settings.enableProfileBackgroundsOthers;
+    settings.enableProfileThemesOthers = s.EnableProfileThemesOthers ?? s.enableProfileThemesOthers ?? settings.enableProfileThemes;
+    const _dO5 = document.getElementById('setEnableProfileThemesOthers');
+    if (_dO5) _dO5.checked = settings.enableProfileThemesOthers;
+    settings.profileThemeContrastOthers = s.ProfileThemeContrastOthers ?? s.profileThemeContrastOthers ?? settings.profileThemeContrast;
+    const _dO6 = document.getElementById('setProfileThemeContrastOthers');
+    if (_dO6) _dO6.checked = settings.profileThemeContrastOthers;
+    settings.transparentProfileCardsOthers = s.TransparentProfileCardsOthers ?? s.transparentProfileCardsOthers ?? settings.transparentProfileCards;
+    const _dO7 = document.getElementById('setTransparentProfileCardsOthers');
+    if (_dO7) _dO7.checked = settings.transparentProfileCardsOthers;
+    settings.showDecorationsOnDashboardOthers = s.ShowDecorationsOnDashboardOthers ?? s.showDecorationsOnDashboardOthers ?? settings.showDecorationsOnDashboard;
+    const _dO8 = document.getElementById('setDecoOnDashboardOthers');
+    if (_dO8) _dO8.checked = settings.showDecorationsOnDashboardOthers;
     if (typeof applyDecorationsSetting === 'function') applyDecorationsSetting();
     settings.folders = s.WatchFolders || s.watchFolders || s.folders || [];
     settings.relayEnabledFolders = s.RelayEnabledFolders ?? s.relayEnabledFolders ?? null;
@@ -1104,6 +1149,43 @@ function startForceOptimize() {
     const btn = document.getElementById('btnForceOptimize');
     if (btn) btn.disabled = true;
     sendToCS({ action: 'optimizeImgCache' });
+}
+
+const VRC_PLUS_DECO_TOGGLES = {
+    setEnableIconFrames: 'enableProfileIconFrames',
+    setEnableIconFramesOthers: 'enableProfileIconFramesOthers',
+    setSquareIconFrames: 'squareIconFrames',
+    setSquareIconFramesOthers: 'squareIconFramesOthers',
+    setEnableNameplateDeco: 'enableNameplateDecoration',
+    setEnableNameplateDecoOthers: 'enableNameplateDecorationOthers',
+    setEnableProfileEffect: 'enableProfileEffects',
+    setEnableProfileEffectOthers: 'enableProfileEffectsOthers',
+    setEnableProfileBg: 'enableProfileBackgrounds',
+    setEnableProfileBgOthers: 'enableProfileBackgroundsOthers',
+    setEnableProfileThemes: 'enableProfileThemes',
+    setEnableProfileThemesOthers: 'enableProfileThemesOthers',
+    setProfileThemeContrast: 'profileThemeContrast',
+    setProfileThemeContrastOthers: 'profileThemeContrastOthers',
+    setTransparentProfileCards: 'transparentProfileCards',
+    setTransparentProfileCardsOthers: 'transparentProfileCardsOthers',
+    setDecoOnDashboard: 'showDecorationsOnDashboard',
+    setDecoOnDashboardOthers: 'showDecorationsOnDashboardOthers',
+};
+
+function onVrcPlusDecorationsToggle(on) {
+    settings.enableVrcPlusDecorations = !!on;
+    const rows = document.getElementById('vrcPlusDecoRows');
+    if (rows) rows.style.display = on ? '' : 'none';
+    autoSave();
+    if (typeof applyDecorationsSetting === 'function') applyDecorationsSetting();
+    if (typeof updateSquareFrameToggle === 'function') updateSquareFrameToggle();
+}
+
+function onDecoToggle(key, on) {
+    settings[key] = !!on;
+    autoSave();
+    if (typeof applyDecorationsSetting === 'function') applyDecorationsSetting();
+    if (typeof updateSquareFrameToggle === 'function') updateSquareFrameToggle();
 }
 
 function onVrcPlusOptimizeToggle() {

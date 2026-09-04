@@ -43,50 +43,50 @@
    the interaction feedback stays readable, and hover sits at 75% instead of 50% so
    pointing at a card still visibly lifts it. */
 
-html.profile-cards-transparent #modalFriendDetail .fd-info-card,
-html.profile-cards-transparent #modalMyProfile .fd-info-card,
-html.profile-cards-transparent #modalFriendDetail .fd-group-card,
-html.profile-cards-transparent #modalMyProfile .fd-group-card,
-html.profile-cards-transparent #modalFriendDetail .vrcn-user-item,
-html.profile-cards-transparent #modalMyProfile .vrcn-user-item,
-html.profile-cards-transparent #modalFriendDetail .inst-item,
-html.profile-cards-transparent #modalMyProfile .inst-item,
-html.profile-cards-transparent #modalFriendDetail .fd-tabs,
-html.profile-cards-transparent #modalMyProfile .fd-tabs {
+html.deco-others-glass #modalFriendDetail .fd-info-card,
+html.deco-self-glass #modalMyProfile .fd-info-card,
+html.deco-others-glass #modalFriendDetail .fd-group-card,
+html.deco-self-glass #modalMyProfile .fd-group-card,
+html.deco-others-glass #modalFriendDetail .vrcn-user-item,
+html.deco-self-glass #modalMyProfile .vrcn-user-item,
+html.deco-others-glass #modalFriendDetail .inst-item,
+html.deco-self-glass #modalMyProfile .inst-item,
+html.deco-others-glass #modalFriendDetail .fd-tabs,
+html.deco-self-glass #modalMyProfile .fd-tabs {
     background: color-mix(in srgb, var(--bg-input) 50%, transparent);
 }
 
-html.profile-cards-transparent #modalFriendDetail .fd-group-card:hover,
-html.profile-cards-transparent #modalMyProfile .fd-group-card:hover,
-html.profile-cards-transparent #modalFriendDetail .vrcn-user-item:hover,
-html.profile-cards-transparent #modalMyProfile .vrcn-user-item:hover,
-html.profile-cards-transparent #modalFriendDetail .inst-item:hover,
-html.profile-cards-transparent #modalMyProfile .inst-item:hover {
+html.deco-others-glass #modalFriendDetail .fd-group-card:hover,
+html.deco-self-glass #modalMyProfile .fd-group-card:hover,
+html.deco-others-glass #modalFriendDetail .vrcn-user-item:hover,
+html.deco-self-glass #modalMyProfile .vrcn-user-item:hover,
+html.deco-others-glass #modalFriendDetail .inst-item:hover,
+html.deco-self-glass #modalMyProfile .inst-item:hover {
     background: color-mix(in srgb, var(--bg-hover) 75%, transparent);
 }
 
-html.profile-cards-transparent #modalFriendDetail .fd-tab.active,
-html.profile-cards-transparent #modalMyProfile .fd-tab.active {
+html.deco-others-glass #modalFriendDetail .fd-tab.active,
+html.deco-self-glass #modalMyProfile .fd-tab.active {
     background: color-mix(in srgb, var(--ui-input-active-bg) 50%, transparent);
 }
 
-html.profile-cards-transparent #modalFriendDetail .fd-modal-bar,
-html.profile-cards-transparent #modalMyProfile .fd-modal-bar {
+html.deco-others-glass #modalFriendDetail .fd-modal-bar,
+html.deco-self-glass #modalMyProfile .fd-modal-bar {
     background: color-mix(in srgb, var(--bg-card) 50%, transparent);
 }
 
-html.profile-cards-transparent #modalFriendDetail .vrcn-button:not(.active),
-html.profile-cards-transparent #modalMyProfile .vrcn-button:not(.active) {
+html.deco-others-glass #modalFriendDetail .vrcn-button:not(.active),
+html.deco-self-glass #modalMyProfile .vrcn-button:not(.active) {
     background: color-mix(in srgb, var(--bg-btn) 50%, transparent);
 }
 
-html.profile-cards-transparent #modalFriendDetail .vrcn-button:not(.active):hover,
-html.profile-cards-transparent #modalMyProfile .vrcn-button:not(.active):hover {
+html.deco-others-glass #modalFriendDetail .vrcn-button:not(.active):hover,
+html.deco-self-glass #modalMyProfile .vrcn-button:not(.active):hover {
     background: color-mix(in srgb, var(--bg-btn-h) 75%, transparent);
 }
 
-html.profile-cards-transparent #modalFriendDetail .vrcn-button-round:not(.active):not(:hover),
-html.profile-cards-transparent #modalMyProfile .vrcn-button-round:not(.active):not(:hover) {
+html.deco-others-glass #modalFriendDetail .vrcn-button-round:not(.active):not(:hover),
+html.deco-self-glass #modalMyProfile .vrcn-button-round:not(.active):not(:hover) {
     background: color-mix(in srgb, var(--ui-input-bg) 50%, transparent);
 }
 

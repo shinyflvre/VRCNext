@@ -323,7 +323,7 @@ html.text-tools-active * { user-select: text !important; }
     pointer-events: none;
     z-index: 3;
 }
-html.icon-frames-on .user-frame-deco { display: block; }
+html.deco-others-frames .user-frame-deco:not(.deco-self *), html.deco-self-frames .deco-self .user-frame-deco { display: block; }
 
 /* The frame sits at z-index 3 and overhangs the avatar by 19% on every side, which
    covers the bottom-right corner where the status dot lives. The dots are positioned
@@ -332,8 +332,8 @@ html.icon-frames-on .vrcn-user-item-dot,
 html.icon-frames-on .vrc-friend-status-badge,
 html.icon-frames-on .fp-av-dot,
 html.icon-frames-on .dash-flocs-dot { z-index: 4; }
-html.icon-frames-on:not(.icon-frames-square) .fd-avatar, html.icon-frames-on:not(.icon-frames-square) .vrc-avatar, html.icon-frames-on:not(.icon-frames-square) .vrc-friend-avatar, html.icon-frames-on:not(.icon-frames-square) .vrcn-user-item-avatar, html.icon-frames-on:not(.icon-frames-square) .fp-av { border-radius: 50% !important; }
-html.icon-frames-on.icon-frames-square .fd-avatar:has(+ .user-frame-deco), html.icon-frames-on.icon-frames-square .vrc-avatar:has(+ .user-frame-deco), html.icon-frames-on.icon-frames-square .vrc-friend-avatar:has(+ .user-frame-deco), html.icon-frames-on.icon-frames-square .vrcn-user-item-avatar:has(+ .user-frame-deco), html.icon-frames-on.icon-frames-square .fp-av:has(+ .user-frame-deco) { border-radius: 50% !important; }
+html.deco-others-frames:not(.deco-others-square) .fd-avatar:not(.deco-self *), html.deco-self-frames:not(.deco-self-square) .deco-self .fd-avatar, html.deco-others-frames:not(.deco-others-square) .vrc-avatar:not(.deco-self *), html.deco-self-frames:not(.deco-self-square) .deco-self .vrc-avatar, html.deco-others-frames:not(.deco-others-square) .vrc-friend-avatar:not(.deco-self *), html.deco-self-frames:not(.deco-self-square) .deco-self .vrc-friend-avatar, html.deco-others-frames:not(.deco-others-square) .vrcn-user-item-avatar:not(.deco-self *), html.deco-self-frames:not(.deco-self-square) .deco-self .vrcn-user-item-avatar, html.deco-others-frames:not(.deco-others-square) .fp-av:not(.deco-self *), html.deco-self-frames:not(.deco-self-square) .deco-self .fp-av { border-radius: 50% !important; }
+html.deco-others-frames.deco-others-square .fd-avatar:has(+ .user-frame-deco):not(.deco-self *), html.deco-self-frames.deco-self-square .deco-self .fd-avatar:has(+ .user-frame-deco), html.deco-others-frames.deco-others-square .vrc-avatar:has(+ .user-frame-deco):not(.deco-self *), html.deco-self-frames.deco-self-square .deco-self .vrc-avatar:has(+ .user-frame-deco), html.deco-others-frames.deco-others-square .vrc-friend-avatar:has(+ .user-frame-deco):not(.deco-self *), html.deco-self-frames.deco-self-square .deco-self .vrc-friend-avatar:has(+ .user-frame-deco), html.deco-others-frames.deco-others-square .vrcn-user-item-avatar:has(+ .user-frame-deco):not(.deco-self *), html.deco-self-frames.deco-self-square .deco-self .vrcn-user-item-avatar:has(+ .user-frame-deco), html.deco-others-frames.deco-others-square .fp-av:has(+ .user-frame-deco):not(.deco-self *), html.deco-self-frames.deco-self-square .deco-self .fp-av:has(+ .user-frame-deco) { border-radius: 50% !important; }
 
 .nameplate-deco {
     display: none;
@@ -347,7 +347,7 @@ html.icon-frames-on.icon-frames-square .fd-avatar:has(+ .user-frame-deco), html.
     z-index: 0;
     border-radius: inherit;
 }
-html.nameplate-deco-on .nameplate-deco { display: block; }
+html.deco-others-nameplate .nameplate-deco:not(.deco-self *), html.deco-self-nameplate .deco-self .nameplate-deco { display: block; }
 html.nameplate-deco-on .vrc-friend-card,
 html.nameplate-deco-on .vrc-profile,
 html.nameplate-deco-on .vrcn-user-item { position: relative; }
@@ -373,21 +373,24 @@ html.nameplate-deco-on .vrcn-user-item > .vrcn-user-item-stats { position: relat
     -webkit-mask-image: linear-gradient(to bottom, #000 45%, transparent 100%);
     mask-image: linear-gradient(to bottom, #000 45%, transparent 100%);
 }
-html.profile-effect-on .profile-effect-deco { display: block !important; }
+html.deco-others-effect .profile-effect-deco:not(.deco-self *), html.deco-self-effect .deco-self .profile-effect-deco { display: block !important; }
 html.profile-effect-on .fd-banner,
 html.profile-effect-on .fd-left-banner { position: relative; }
 
-html.icon-frames-on .dash-flocs-card .user-frame-deco { display: none; }
-html.nameplate-deco-on .dash-flocs-card .nameplate-deco { display: none; }
-html.deco-dashboard-on.icon-frames-on .dash-flocs-card .user-frame-deco { display: block; }
-html.deco-dashboard-on.nameplate-deco-on .dash-flocs-card .nameplate-deco { display: block; }
-html.deco-dashboard-on.icon-frames-on:not(.icon-frames-square) .dash-flocs-avatar { border-radius: 50% !important; }
-html.deco-dashboard-on.icon-frames-on.icon-frames-square .dash-flocs-avatar:has(+ .user-frame-deco) { border-radius: 50% !important; }
+html.deco-others-frames .dash-flocs-card .user-frame-deco:not(.deco-self *), html.deco-self-frames .dash-flocs-card.deco-self .user-frame-deco { display: none; }
+html.deco-others-nameplate .dash-flocs-card .nameplate-deco:not(.deco-self *), html.deco-self-nameplate .dash-flocs-card.deco-self .nameplate-deco { display: none; }
+html.deco-others-dash.deco-others-frames .dash-flocs-card .user-frame-deco:not(.deco-self *), html.deco-self-dash.deco-self-frames .dash-flocs-card.deco-self .user-frame-deco { display: block; }
+html.deco-others-dash.deco-others-nameplate .dash-flocs-card .nameplate-deco:not(.deco-self *), html.deco-self-dash.deco-self-nameplate .dash-flocs-card.deco-self .nameplate-deco { display: block; }
+html.deco-others-dash.deco-others-frames:not(.deco-others-square) .dash-flocs-avatar:not(.deco-self *), html.deco-self-dash.deco-self-frames:not(.deco-self-square) .dash-flocs-card.deco-self .dash-flocs-avatar { border-radius: 50% !important; }
+html.deco-others-dash.deco-others-frames.deco-others-square .dash-flocs-avatar:has(+ .user-frame-deco):not(.deco-self *), html.deco-self-dash.deco-self-frames.deco-self-square .dash-flocs-card.deco-self .dash-flocs-avatar:has(+ .user-frame-deco) { border-radius: 50% !important; }
 html.deco-dashboard-on.nameplate-deco-on .dash-flocs-card { position: relative; }
 html.deco-dashboard-on.nameplate-deco-on .dash-flocs-card > .dash-flocs-avatar-wrap,
 html.deco-dashboard-on.nameplate-deco-on .dash-flocs-card > .dash-flocs-info,
 html.deco-dashboard-on.nameplate-deco-on .dash-flocs-card > .dash-flocs-world-thumb { position: relative; z-index: 1; }
 
+.deco-dual-row { align-items: center; }
+.deco-dual { display: flex; align-items: center; gap: 16px; margin-left: auto; flex-shrink: 0; }
+.deco-dual-item { display: flex; align-items: center; gap: 8px; font-size: calc(12px + var(--fs-off, 0px)); color: var(--tx2); }
 .pd-section { margin-bottom: 16px; }
 .pd-section-title { font-size: calc(12px + var(--fs-off, 0px)); font-weight: 700; color: var(--tx3); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
 .pd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
@@ -406,6 +409,7 @@ html.deco-dashboard-on.nameplate-deco-on .dash-flocs-card > .dash-flocs-world-th
 .pd-preview-vrcn { border: 1px solid var(--brd); border-radius: 14px; overflow: hidden; background: var(--bg-card); }
 .pd-preview-vrcn.fd-style-compact .fd-left { border-right: none; overflow: visible; }
 .pd-preview-vrcn .user-frame-deco, .pd-preview-vrcn .profile-effect-deco, .pd-preview-mini .user-frame-deco, .pd-preview-mini .profile-effect-deco, .pdo-card .user-frame-deco, .pdo-card .profile-effect-deco { display: block !important; }
+.pd-preview-vrcn .fd-avatar, .pd-preview-mini .fp-av { border-radius: 50% !important; }
 .pd-preview-mini { display: flex; justify-content: center; padding-top: 4px; }
 .pd-settings-col { flex: 1; min-width: 0; }
 .pd-settings-col .pd-grid { grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); }

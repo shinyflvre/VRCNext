@@ -39,8 +39,13 @@ const PROFILE_BG_FILES = {
     'escape':           'BG_Escape.png',
 };
 
-function profileBgEnabled() {
-    return !!(typeof settings !== 'undefined' && settings.enableProfileBackgrounds);
+function profileBgEnabled(user) {
+    if (typeof settings === 'undefined' || !settings.enableVrcPlusDecorations) return false;
+    if (user && typeof _decoIsSelf === 'function' && !_decoIsSelf(user)) {
+        const v = settings.enableProfileBackgroundsOthers;
+        return (v === undefined || v === null) ? !!settings.enableProfileBackgrounds : !!v;
+    }
+    return !!settings.enableProfileBackgrounds;
 }
 
 function _profileBgColor(value) {
@@ -61,7 +66,7 @@ function profileBgTextureUrl(user) {
 // Returns a CSS value for `background`, or '' when the user has none or the setting
 // is off. `scrim` is layered on top so text stays readable over busy textures.
 function profileBgCss(user, scrim = 'rgba(15,15,15,.62)', force) {
-    if ((!force && !profileBgEnabled()) || !user) return '';
+    if ((!force && !profileBgEnabled(user)) || !user) return '';
 
     const type = String(user.backgroundType || '').trim();
 

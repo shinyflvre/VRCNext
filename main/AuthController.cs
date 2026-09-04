@@ -239,6 +239,7 @@ public class AuthController
                     prefs = new
                     {
                         enableProfileIconFrames        = _core.Settings.EnableProfileIconFrames,
+                        enableVrcPlusDecorations       = _core.Settings.EnableVrcPlusDecorations,
                         friendsSidebarLocationOnly     = _core.Settings.FriendsSidebarLocationOnly,
                         friendsSidebarPreviewCollapsed = _core.Settings.FriendsSidebarPreviewCollapsed,
                     },
@@ -1887,6 +1888,7 @@ public class AuthController
             var v = prefs[key];
             if (v != null && v.Type != JTokenType.Null) set(v.Value<bool>());
         }
+        Flag("enableVrcPlusDecorations",       v => _core.Settings.EnableVrcPlusDecorations = v);
         Flag("enableProfileIconFrames",        v => _core.Settings.EnableProfileIconFrames = v);
         Flag("squareIconFrames",               v => _core.Settings.SquareIconFrames = v);
         Flag("enableNameplateDecoration",      v => _core.Settings.EnableNameplateDecoration = v);
@@ -1896,6 +1898,15 @@ public class AuthController
         Flag("profileThemeContrast",           v => _core.Settings.ProfileThemeContrast = v);
         Flag("transparentProfileCards",        v => _core.Settings.TransparentProfileCards = v);
         Flag("showDecorationsOnDashboard",     v => _core.Settings.ShowDecorationsOnDashboard = v);
+        Flag("enableProfileIconFramesOthers", v => _core.Settings.EnableProfileIconFramesOthers = v);
+        Flag("squareIconFramesOthers", v => _core.Settings.SquareIconFramesOthers = v);
+        Flag("enableNameplateDecorationOthers", v => _core.Settings.EnableNameplateDecorationOthers = v);
+        Flag("enableProfileEffectsOthers", v => _core.Settings.EnableProfileEffectsOthers = v);
+        Flag("enableProfileBackgroundsOthers", v => _core.Settings.EnableProfileBackgroundsOthers = v);
+        Flag("enableProfileThemesOthers", v => _core.Settings.EnableProfileThemesOthers = v);
+        Flag("profileThemeContrastOthers", v => _core.Settings.ProfileThemeContrastOthers = v);
+        Flag("transparentProfileCardsOthers", v => _core.Settings.TransparentProfileCardsOthers = v);
+        Flag("showDecorationsOnDashboardOthers", v => _core.Settings.ShowDecorationsOnDashboardOthers = v);
         Flag("friendsSidebarLocationOnly",     v => _core.Settings.FriendsSidebarLocationOnly = v);
         Flag("friendsSidebarPreviewCollapsed", v => _core.Settings.FriendsSidebarPreviewCollapsed = v);
 
@@ -1937,6 +1948,7 @@ public class AuthController
             _core.Settings.CommentsOnWorldsEnabled = data["commentsOnWorldsEnabled"]?.Value<bool>() ?? true;
             _core.Settings.ModernFolderLayout = data["modernFolderLayout"]?.Value<bool>() ?? true;
             _core.Settings.NavSidebarHoverText = data["navSidebarHoverText"]?.Value<bool>() ?? true;
+            _core.Settings.EnableVrcPlusDecorations = data["enableVrcPlusDecorations"]?.Value<bool>() ?? false;
             _core.Settings.EnableProfileIconFrames = data["enableProfileIconFrames"]?.Value<bool>() ?? false;
             _core.Settings.SquareIconFrames = data["squareIconFrames"]?.Value<bool>() ?? false;
             _core.Settings.EnableNameplateDecoration = data["enableNameplateDecoration"]?.Value<bool>() ?? false;
@@ -1946,6 +1958,15 @@ public class AuthController
             _core.Settings.ProfileThemeContrast = data["profileThemeContrast"]?.Value<bool>() ?? true;
             _core.Settings.TransparentProfileCards = data["transparentProfileCards"]?.Value<bool>() ?? false;
             _core.Settings.ShowDecorationsOnDashboard = data["showDecorationsOnDashboard"]?.Value<bool>() ?? false;
+            _core.Settings.EnableProfileIconFramesOthers = data["enableProfileIconFramesOthers"]?.Value<bool>() ?? _core.Settings.EnableProfileIconFramesOthers;
+            _core.Settings.SquareIconFramesOthers = data["squareIconFramesOthers"]?.Value<bool>() ?? _core.Settings.SquareIconFramesOthers;
+            _core.Settings.EnableNameplateDecorationOthers = data["enableNameplateDecorationOthers"]?.Value<bool>() ?? _core.Settings.EnableNameplateDecorationOthers;
+            _core.Settings.EnableProfileEffectsOthers = data["enableProfileEffectsOthers"]?.Value<bool>() ?? _core.Settings.EnableProfileEffectsOthers;
+            _core.Settings.EnableProfileBackgroundsOthers = data["enableProfileBackgroundsOthers"]?.Value<bool>() ?? _core.Settings.EnableProfileBackgroundsOthers;
+            _core.Settings.EnableProfileThemesOthers = data["enableProfileThemesOthers"]?.Value<bool>() ?? _core.Settings.EnableProfileThemesOthers;
+            _core.Settings.ProfileThemeContrastOthers = data["profileThemeContrastOthers"]?.Value<bool>() ?? _core.Settings.ProfileThemeContrastOthers;
+            _core.Settings.TransparentProfileCardsOthers = data["transparentProfileCardsOthers"]?.Value<bool>() ?? _core.Settings.TransparentProfileCardsOthers;
+            _core.Settings.ShowDecorationsOnDashboardOthers = data["showDecorationsOnDashboardOthers"]?.Value<bool>() ?? _core.Settings.ShowDecorationsOnDashboardOthers;
             _core.Settings.MinimizeToTray = data["minimizeToTray"]?.Value<bool>() ?? false;
             _core.Settings.TrayNotificationsEnabled = data["trayNotificationsEnabled"]?.Value<bool>() ?? false;
 #if WINDOWS

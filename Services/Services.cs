@@ -312,15 +312,25 @@ public class AppSettings
     public bool ModernFolderLayout { get; set; } = true;
     public bool NavSidebarHoverText { get; set; } = true;
     public bool VrcPlusOptimizeEnabled { get; set; } = true;
-    public bool EnableProfileIconFrames { get; set; } = false;
-    public bool SquareIconFrames { get; set; } = false;
-    public bool EnableNameplateDecoration { get; set; } = false;
-    public bool EnableProfileEffects { get; set; } = false;
-    public bool EnableProfileBackgrounds { get; set; } = false;
-    public bool EnableProfileThemes { get; set; } = false;
+    public bool EnableVrcPlusDecorations { get; set; } = false;
+    public bool EnableProfileIconFrames { get; set; } = true;
+    public bool SquareIconFrames { get; set; } = true;
+    public bool EnableNameplateDecoration { get; set; } = true;
+    public bool EnableProfileEffects { get; set; } = true;
+    public bool EnableProfileBackgrounds { get; set; } = true;
+    public bool EnableProfileThemes { get; set; } = true;
     public bool ProfileThemeContrast { get; set; } = true;
     public bool TransparentProfileCards { get; set; } = false;
-    public bool ShowDecorationsOnDashboard { get; set; } = false;
+    public bool ShowDecorationsOnDashboard { get; set; } = true;
+    public bool? EnableProfileIconFramesOthers { get; set; }
+    public bool? SquareIconFramesOthers { get; set; }
+    public bool? EnableNameplateDecorationOthers { get; set; }
+    public bool? EnableProfileEffectsOthers { get; set; }
+    public bool? EnableProfileBackgroundsOthers { get; set; }
+    public bool? EnableProfileThemesOthers { get; set; }
+    public bool? ProfileThemeContrastOthers { get; set; }
+    public bool? TransparentProfileCardsOthers { get; set; }
+    public bool? ShowDecorationsOnDashboardOthers { get; set; }
     public bool MinimizeToTray { get; set; }
     public bool TrayNotificationsEnabled { get; set; }
     public string Language { get; set; } = "en";

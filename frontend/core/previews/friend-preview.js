@@ -182,6 +182,7 @@
             ? `<img class="fp-av" src="${esc(imgThumb(img, 96))}" onerror="this.style.display='none'">`
             : `<div class="fp-av fp-av-letter">${esc((f.displayName || '?')[0].toUpperCase())}</div>`;
 
+        popup.classList.toggle('deco-self', typeof _decoIsSelf === 'function' && _decoIsSelf(f));
         popup.innerHTML = `
             <div class="fd-banner">
                 ${banner ? `<div class="fp-banner-bg" style="background-image:url('${cssUrl(banner)}')"></div>` : ''}

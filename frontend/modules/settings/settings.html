@@ -318,77 +318,87 @@
                         </div>
                         <div class="set-desc" data-i18n="settings.decorations.optimize.desc">Shows animated decorations as static images in friend lists and cards to greatly reduce memory and GPU usage. Animations still play in profile modals and on your own profile.</div>
                         <div class="sf-toggle-row" style="margin-top:14px;">
-                            <span data-i18n="settings.decorations.icon_frames">Enable Profile Icon Frames</span>
+                            <span data-i18n="settings.decorations.enable_all">Enable VRC+ Decorations</span>
                             <label class="toggle">
-                                <input type="checkbox" id="setEnableIconFrames" onchange="settings.enableProfileIconFrames=this.checked;autoSave();if(typeof applyDecorationsSetting==='function')applyDecorationsSetting();if(typeof updateSquareFrameToggle==='function')updateSquareFrameToggle();">
+                                <input type="checkbox" id="setVrcPlusDecorations" onchange="onVrcPlusDecorationsToggle(this.checked)">
                                 <div class="toggle-track"><div class="toggle-knob"></div></div>
                             </label>
+                        </div>
+                        <div class="set-desc" data-i18n="settings.decorations.enable_all_desc">Turns on all VRC+ decorations at once: icon frames, name plates, profile effects, backgrounds, themes and dashboard effects.</div>
+                        <div id="vrcPlusDecoRows" style="display:none;">
+                        <div class="sf-toggle-row deco-dual-row" style="margin-top:14px;">
+                            <span data-i18n="settings.decorations.icon_frames">Enable Profile Icon Frames</span>
+                            <div class="deco-dual">
+                                <div class="deco-dual-item"><span data-i18n="settings.decorations.myself">Myself</span><label class="toggle"><input type="checkbox" id="setEnableIconFrames" onchange="onDecoToggle('enableProfileIconFrames', this.checked)"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                                <div class="deco-dual-item"><span data-i18n="settings.decorations.others">Others</span><label class="toggle"><input type="checkbox" id="setEnableIconFramesOthers" onchange="onDecoToggle('enableProfileIconFramesOthers', this.checked)"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                            </div>
                         </div>
                         <div class="set-desc" data-i18n="settings.decorations.icon_frames_desc">When enabled all profile icons including your own will be round instead of square, and the profile frame decoration is shown on every player that has one.</div>
-                        <div class="sf-toggle-row" style="margin-top:10px;">
+                        <div class="sf-toggle-row deco-dual-row" style="margin-top:10px;">
                             <span data-i18n="settings.decorations.square_frames">Show Non-Icon-Frame Profiles as Square</span>
-                            <label class="toggle">
-                                <input type="checkbox" id="setSquareIconFrames" onchange="settings.squareIconFrames=this.checked;autoSave();if(typeof applyDecorationsSetting==='function')applyDecorationsSetting();">
-                                <div class="toggle-track"><div class="toggle-knob"></div></div>
-                            </label>
+                            <div class="deco-dual">
+                                <div class="deco-dual-item"><span data-i18n="settings.decorations.myself">Myself</span><label class="toggle"><input type="checkbox" id="setSquareIconFrames" onchange="onDecoToggle('squareIconFrames', this.checked)"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                                <div class="deco-dual-item"><span data-i18n="settings.decorations.others">Others</span><label class="toggle"><input type="checkbox" id="setSquareIconFramesOthers" onchange="onDecoToggle('squareIconFramesOthers', this.checked)"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                            </div>
                         </div>
                         <div class="set-desc" data-i18n="settings.decorations.square_frames_desc">When enabled, every profile without an icon frame decoration stays a square image. Only profiles that have a decoration get a round image.</div>
-                        <div class="sf-toggle-row" style="margin-top:14px;">
+                        <div class="sf-toggle-row deco-dual-row" style="margin-top:14px;">
                             <span data-i18n="settings.decorations.nameplate">Enable Name Plate Decoration</span>
-                            <label class="toggle">
-                                <input type="checkbox" id="setEnableNameplateDeco" onchange="settings.enableNameplateDecoration=this.checked;autoSave();if(typeof applyDecorationsSetting==='function')applyDecorationsSetting();">
-                                <div class="toggle-track"><div class="toggle-knob"></div></div>
-                            </label>
+                            <div class="deco-dual">
+                                <div class="deco-dual-item"><span data-i18n="settings.decorations.myself">Myself</span><label class="toggle"><input type="checkbox" id="setEnableNameplateDeco" onchange="onDecoToggle('enableNameplateDecoration', this.checked)"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                                <div class="deco-dual-item"><span data-i18n="settings.decorations.others">Others</span><label class="toggle"><input type="checkbox" id="setEnableNameplateDecoOthers" onchange="onDecoToggle('enableNameplateDecorationOthers', this.checked)"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                            </div>
                         </div>
                         <div class="set-desc" data-i18n="settings.decorations.nameplate_desc">When enabled, a player's VRC+ nameplate decoration is shown behind their entry in the friends sidebar and other places they appear.</div>
-                        <div class="sf-toggle-row" style="margin-top:14px;">
+                        <div class="sf-toggle-row deco-dual-row" style="margin-top:14px;">
                             <span data-i18n="settings.decorations.profile_effect">Enable Profile Effects</span>
-                            <label class="toggle">
-                                <input type="checkbox" id="setEnableProfileEffect" onchange="settings.enableProfileEffects=this.checked;autoSave();if(typeof applyDecorationsSetting==='function')applyDecorationsSetting();">
-                                <div class="toggle-track"><div class="toggle-knob"></div></div>
-                            </label>
+                            <div class="deco-dual">
+                                <div class="deco-dual-item"><span data-i18n="settings.decorations.myself">Myself</span><label class="toggle"><input type="checkbox" id="setEnableProfileEffect" onchange="onDecoToggle('enableProfileEffects', this.checked)"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                                <div class="deco-dual-item"><span data-i18n="settings.decorations.others">Others</span><label class="toggle"><input type="checkbox" id="setEnableProfileEffectOthers" onchange="onDecoToggle('enableProfileEffectsOthers', this.checked)"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                            </div>
                         </div>
                         <div class="set-desc" data-i18n="settings.decorations.profile_effect_desc">When enabled, a player's VRC+ profile effect is shown as a frame over the banner in their profile modal.</div>
-                        <div class="sf-toggle-row" style="margin-top:14px;">
+                        <div class="sf-toggle-row deco-dual-row" style="margin-top:14px;">
                             <span data-i18n="settings.decorations.profile_background">Enable Profile Backgrounds</span>
-                            <label class="toggle">
-                                <input type="checkbox" id="setEnableProfileBg" onchange="settings.enableProfileBackgrounds=this.checked;autoSave();if(typeof applyDecorationsSetting==='function')applyDecorationsSetting();">
-                                <div class="toggle-track"><div class="toggle-knob"></div></div>
-                            </label>
+                            <div class="deco-dual">
+                                <div class="deco-dual-item"><span data-i18n="settings.decorations.myself">Myself</span><label class="toggle"><input type="checkbox" id="setEnableProfileBg" onchange="onDecoToggle('enableProfileBackgrounds', this.checked)"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                                <div class="deco-dual-item"><span data-i18n="settings.decorations.others">Others</span><label class="toggle"><input type="checkbox" id="setEnableProfileBgOthers" onchange="onDecoToggle('enableProfileBackgroundsOthers', this.checked)"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                            </div>
                         </div>
                         <div class="set-desc" data-i18n="settings.decorations.profile_background_desc">When enabled, VRCN will show your and your friends VRChat Background they have set on their profile.</div>
-                        <div class="sf-toggle-row" style="margin-top:14px;">
+                        <div class="sf-toggle-row deco-dual-row" style="margin-top:14px;">
                             <span data-i18n="settings.decorations.profile_theme">Enable Profile Themes</span>
-                            <label class="toggle">
-                                <input type="checkbox" id="setEnableProfileThemes" onchange="settings.enableProfileThemes=this.checked;autoSave();if(typeof applyDecorationsSetting==='function')applyDecorationsSetting();">
-                                <div class="toggle-track"><div class="toggle-knob"></div></div>
-                            </label>
+                            <div class="deco-dual">
+                                <div class="deco-dual-item"><span data-i18n="settings.decorations.myself">Myself</span><label class="toggle"><input type="checkbox" id="setEnableProfileThemes" onchange="onDecoToggle('enableProfileThemes', this.checked)"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                                <div class="deco-dual-item"><span data-i18n="settings.decorations.others">Others</span><label class="toggle"><input type="checkbox" id="setEnableProfileThemesOthers" onchange="onDecoToggle('enableProfileThemesOthers', this.checked)"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                            </div>
                         </div>
                         <div class="set-desc" data-i18n="settings.decorations.profile_theme_desc">When enabled, a player's VRC+ profile theme colours are applied to their profile modal. The button colour also tints the modal itself, about 25% darker.</div>
-                        <div class="sf-toggle-row" style="margin-top:14px;">
+                        <div class="sf-toggle-row deco-dual-row" style="margin-top:14px;">
                             <span data-i18n="settings.decorations.theme_contrast">Keep Theme Text Readable</span>
-                            <label class="toggle">
-                                <input type="checkbox" id="setProfileThemeContrast" onchange="settings.profileThemeContrast=this.checked;autoSave();if(typeof applyDecorationsSetting==='function')applyDecorationsSetting();">
-                                <div class="toggle-track"><div class="toggle-knob"></div></div>
-                            </label>
+                            <div class="deco-dual">
+                                <div class="deco-dual-item"><span data-i18n="settings.decorations.myself">Myself</span><label class="toggle"><input type="checkbox" id="setProfileThemeContrast" onchange="onDecoToggle('profileThemeContrast', this.checked)"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                                <div class="deco-dual-item"><span data-i18n="settings.decorations.others">Others</span><label class="toggle"><input type="checkbox" id="setProfileThemeContrastOthers" onchange="onDecoToggle('profileThemeContrastOthers', this.checked)"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                            </div>
                         </div>
                         <div class="set-desc" data-i18n="settings.decorations.theme_contrast_desc">When enabled, text and icons of a VRC+ profile theme are darkened or lightened just enough to stay readable on the theme's own background. Turn this off to show the raw theme colours.</div>
-                        <div class="sf-toggle-row" style="margin-top:14px;">
+                        <div class="sf-toggle-row deco-dual-row" style="margin-top:14px;">
                             <span data-i18n="settings.decorations.transparent_cards">Transparent Profile Cards</span>
-                            <label class="toggle">
-                                <input type="checkbox" id="setTransparentProfileCards" onchange="settings.transparentProfileCards=this.checked;autoSave();if(typeof applyDecorationsSetting==='function')applyDecorationsSetting();">
-                                <div class="toggle-track"><div class="toggle-knob"></div></div>
-                            </label>
+                            <div class="deco-dual">
+                                <div class="deco-dual-item"><span data-i18n="settings.decorations.myself">Myself</span><label class="toggle"><input type="checkbox" id="setTransparentProfileCards" onchange="onDecoToggle('transparentProfileCards', this.checked)"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                                <div class="deco-dual-item"><span data-i18n="settings.decorations.others">Others</span><label class="toggle"><input type="checkbox" id="setTransparentProfileCardsOthers" onchange="onDecoToggle('transparentProfileCardsOthers', this.checked)"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                            </div>
                         </div>
                         <div class="set-desc" data-i18n="settings.decorations.transparent_cards_desc">When enabled, the content cards, tab bar and buttons inside profile modals become 50% transparent so the profile background image stays visible behind them.</div>
-                        <div class="sf-toggle-row" style="margin-top:14px;">
+                        <div class="sf-toggle-row deco-dual-row" style="margin-top:14px;">
                             <span data-i18n="settings.decorations.on_dashboard">Show Effects on Dashboard</span>
-                            <label class="toggle">
-                                <input type="checkbox" id="setDecoOnDashboard" onchange="settings.showDecorationsOnDashboard=this.checked;autoSave();if(typeof applyDecorationsSetting==='function')applyDecorationsSetting();">
-                                <div class="toggle-track"><div class="toggle-knob"></div></div>
-                            </label>
+                            <div class="deco-dual">
+                                <div class="deco-dual-item"><span data-i18n="settings.decorations.myself">Myself</span><label class="toggle"><input type="checkbox" id="setDecoOnDashboard" onchange="onDecoToggle('showDecorationsOnDashboard', this.checked)"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                                <div class="deco-dual-item"><span data-i18n="settings.decorations.others">Others</span><label class="toggle"><input type="checkbox" id="setDecoOnDashboardOthers" onchange="onDecoToggle('showDecorationsOnDashboardOthers', this.checked)"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                            </div>
                         </div>
                         <div class="set-desc" data-i18n="settings.decorations.on_dashboard_desc">When enabled, VRC+ decorations are also shown on the Dashboard, for example in the Friends Location (Small) section.</div>
+                        </div>
                     </div>
 
                     <!-- FRIENDS SIDEBAR -->
