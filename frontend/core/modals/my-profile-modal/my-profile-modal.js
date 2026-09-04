@@ -168,13 +168,15 @@ function _pdAfterRender(u) {
         if (img) slot.insertBefore(img, slot.firstChild);
     }
     const left = root.querySelector('.fd-left');
-    if (typeof applyProfileBg === 'function' && left) applyProfileBg(left, u);
-    if (typeof applyProfileTheme === 'function') applyProfileTheme(root, u);
+    if (typeof applyProfileBg === 'function' && left) applyProfileBg(left, u, undefined, true);
+    if (typeof applyProfileTheme === 'function') applyProfileTheme(root, u, true);
     const mini = document.getElementById('pdMiniCard');
     if (mini && typeof fpRenderPreviewInto === 'function') {
         const f = Object.assign({}, u, { presence: u.state === 'offline' ? 'offline' : (u.state === 'active' ? 'web' : 'game'), platform: u.platform || u.lastPlatform || '' });
         const extra = Object.assign({}, u, { banner: u.bannerUrl || '', bio: u.bio || '' });
         fpRenderPreviewInto(mini, f, extra);
+        if (typeof applyProfileBg === 'function') applyProfileBg(mini, extra, undefined, true);
+        if (typeof applyProfileTheme === 'function') applyProfileTheme(mini, extra, true);
     }
     const vrc = document.getElementById('pdPreviewVrc');
     if (vrc) {

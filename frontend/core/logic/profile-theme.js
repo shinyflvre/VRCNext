@@ -84,8 +84,8 @@ function _ptSurface(el, buttonColor) {
     return '#0f0f0f';
 }
 
-function profileThemeColors(user) {
-    if (!profileThemeEnabled() || !user) return null;
+function profileThemeColors(user, force) {
+    if ((!force && !profileThemeEnabled()) || !user) return null;
 
     let button  = ptHex(user.themeButtonColor);
     let icon    = ptHex(user.themeIconColor);
@@ -143,13 +143,13 @@ function _ptPaint(el, c) {
     el.classList.toggle('pt-has-text', !!c.subtext);
 }
 
-function applyProfileTheme(el, user) {
+function applyProfileTheme(el, user, force) {
     if (!el) return false;
 
     for (const k of PT_VARS) el.style.removeProperty(k);
     el.classList.remove('has-profile-theme', 'pt-has-button', 'pt-has-text');
 
-    const c = profileThemeColors(user);
+    const c = profileThemeColors(user, force);
     if (!c) return false;
 
     _ptPaint(el, c);

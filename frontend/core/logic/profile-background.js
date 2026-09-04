@@ -60,8 +60,8 @@ function profileBgTextureUrl(user) {
 
 // Returns a CSS value for `background`, or '' when the user has none or the setting
 // is off. `scrim` is layered on top so text stays readable over busy textures.
-function profileBgCss(user, scrim = 'rgba(15,15,15,.62)') {
-    if (!profileBgEnabled() || !user) return '';
+function profileBgCss(user, scrim = 'rgba(15,15,15,.62)', force) {
+    if ((!force && !profileBgEnabled()) || !user) return '';
 
     const type = String(user.backgroundType || '').trim();
 
@@ -82,9 +82,9 @@ function profileBgCss(user, scrim = 'rgba(15,15,15,.62)') {
 
 // Applies (or clears) the background on an element. Kept as one helper so the modal
 // and the hover preview cannot drift apart.
-function applyProfileBg(el, user, scrim) {
+function applyProfileBg(el, user, scrim, force) {
     if (!el) return false;
-    const css = profileBgCss(user, scrim);
+    const css = profileBgCss(user, scrim, force);
     el.style.background = css || '';
     el.classList.toggle('has-profile-bg', !!css);
     return !!css;

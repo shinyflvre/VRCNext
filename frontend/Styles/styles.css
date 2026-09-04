@@ -405,7 +405,7 @@ html.deco-dashboard-on.nameplate-deco-on .dash-flocs-card > .dash-flocs-world-th
 .pd-preview-scroll { flex: 1; min-height: 0; overflow-y: auto; }
 .pd-preview-vrcn { border: 1px solid var(--brd); border-radius: 14px; overflow: hidden; background: var(--bg-card); }
 .pd-preview-vrcn.fd-style-compact .fd-left { border-right: none; overflow: visible; }
-.pd-preview-vrcn .user-frame-deco, .pd-preview-vrcn .profile-effect-deco, .pdo-card .user-frame-deco, .pdo-card .profile-effect-deco { display: block !important; }
+.pd-preview-vrcn .user-frame-deco, .pd-preview-vrcn .profile-effect-deco, .pd-preview-mini .user-frame-deco, .pd-preview-mini .profile-effect-deco, .pdo-card .user-frame-deco, .pdo-card .profile-effect-deco { display: block !important; }
 .pd-preview-mini { display: flex; justify-content: center; padding-top: 4px; }
 .pd-settings-col { flex: 1; min-width: 0; }
 .pd-settings-col .pd-grid { grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); }
