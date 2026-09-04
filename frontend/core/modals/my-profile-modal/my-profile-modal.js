@@ -88,16 +88,20 @@ function onProfileDecorations(data) {
     renderProfileDecoPicker(false);
 }
 
+let _pdPreviewMode = 'vrcn';
+
 function renderProfileDecoPicker(loading) {
     const m = document.getElementById('profileDecoModal');
     if (!m || m.style.display === 'none') return;
+    const keepSettingsTop = m.querySelector('.pd-settings-col')?.scrollTop || 0;
+    const keepPreviewTop  = m.querySelector('.pd-preview-scroll')?.scrollTop || 0;
     const u = currentVrcUser || {};
     const slots = [
         { key: 'iconFrame',       label: t('profiles.deco.icon_frame', 'Icon Frame'),       cur: u.iconFrame || '' },
         { key: 'nameplateEffect', label: t('profiles.deco.nameplate', 'Nameplate'),         cur: u.nameplateEffect || '' },
         { key: 'profileEffect',   label: t('profiles.deco.profile_effect', 'Profile Effect'), cur: u.profileEffect || '' },
     ];
-    const body = loading
+    const settings = loading
         ? `<div class="pd-loading">${t('common.loading', 'Loading...')}</div>`
         : slots.map(s => {
             const items = _profileDecoData[s.key] || [];
@@ -108,14 +112,163 @@ function renderProfileDecoPicker(loading) {
             const empty = items.length === 0 ? `<div class="pd-empty">${t('profiles.deco.empty', 'You do not own any of these')}</div>` : '';
             return `<div class="pd-section"><div class="pd-section-title">${esc(s.label)}</div><div class="pd-grid">${noneCell}${cells}</div>${empty}</div>`;
         }).join('') + _mypThemeSection() + _mypBackgroundSection();
-    m.innerHTML = `<div class="gp-modal" style="width:560px;max-width:92vw;max-height:80vh;display:flex;flex-direction:column;">
+    const isVrc = _pdPreviewMode === 'vrc';
+    m.innerHTML = `<div class="gp-modal pd-modal" style="width:1040px;max-width:94vw;max-height:86vh;display:flex;flex-direction:column;">
         ${renderModalBar(t('profiles.deco.title', 'Customize Profile'), [modalCloseAction('closeProfileDecoPicker()')])}
-        <div class="gp-modal-body" style="flex:1;overflow-y:auto;">${body}</div>
+        <div class="pd-layout">
+            <div class="pd-preview-col">
+                <div class="fd-tabs pd-preview-tabs">
+                    <button class="fd-tab${isVrc ? '' : ' active'}" onclick="pdSetPreview('vrcn',this)">VRCN</button>
+                    <button class="fd-tab${isVrc ? ' active' : ''}" onclick="pdSetPreview('vrc',this)">VRChat</button>
+                </div>
+                <div class="pd-preview-scroll">
+                    <div id="pdPreviewVrcn" class="pd-preview-vrcn fd-style-compact"${isVrc ? ' style="display:none;"' : ''}>${_pdVrcnPreviewHtml(u)}</div>
+                    <div id="pdPreviewVrc" class="pd-preview-vrc"${isVrc ? '' : ' style="display:none;"'}>${_pdVrcOfficialHtml(u)}</div>
+                </div>
+            </div>
+            <div class="pd-settings-col gp-modal-body">${settings}</div>
+        </div>
+    </div>`;
+    const settingsCol = m.querySelector('.pd-settings-col');
+    if (settingsCol) settingsCol.scrollTop = keepSettingsTop;
+    const previewCol = m.querySelector('.pd-preview-scroll');
+    if (previewCol) previewCol.scrollTop = keepPreviewTop;
+    _pdAfterRender(u);
+}
+
+function pdoToggleBio(btn) {
+    const p = btn.previousElementSibling;
+    if (!p) return;
+    const open = p.classList.toggle('open');
+    btn.textContent = open ? 'Read Less' : 'Read More';
+}
+
+function pdSetPreview(mode, btn) {
+    _pdPreviewMode = mode;
+    document.querySelectorAll('#profileDecoModal .pd-preview-tabs .fd-tab').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    const a = document.getElementById('pdPreviewVrcn');
+    const b = document.getElementById('pdPreviewVrc');
+    if (a) a.style.display = mode === 'vrc' ? 'none' : '';
+    if (b) b.style.display = mode === 'vrc' ? '' : 'none';
+}
+
+function _pdAfterRender(u) {
+    const root = document.getElementById('pdPreviewVrcn');
+    if (!root) return;
+    const bannerSrc = u.bannerUrl || u.profilePicOverride || u.currentAvatarImageUrl || u.image || '';
+    const slot = document.getElementById('pd-banner-slot');
+    if (slot && bannerSrc) {
+        const img = (typeof _getFdBannerImg === 'function') ? _getFdBannerImg(u.id, bannerSrc) : null;
+        if (img) slot.insertBefore(img, slot.firstChild);
+    }
+    const left = root.querySelector('.fd-left');
+    if (typeof applyProfileBg === 'function' && left) applyProfileBg(left, u);
+    if (typeof applyProfileTheme === 'function') applyProfileTheme(root, u);
+    const vrc = document.getElementById('pdPreviewVrc');
+    if (vrc) {
+        const type = String(u.backgroundType || '').trim();
+        let css = '';
+        if (type === 'gradient') {
+            const top = _pbgHex(u.backgroundGradientTop, '');
+            const bot = _pbgHex(u.backgroundGradientBottom, '');
+            if (top && bot) css = `linear-gradient(180deg, ${top}, ${bot})`;
+        } else if (type === 'texture' && typeof profileBgTextureUrl === 'function') {
+            const url = profileBgTextureUrl(u);
+            if (url) css = `linear-gradient(rgba(14,16,19,.35), rgba(14,16,19,.35)), url("${cssUrl(url)}") top center / cover no-repeat`;
+        }
+        vrc.style.background = css;
+    }
+}
+
+function _pdVrcnPreviewHtml(u) {
+    const bannerSrc = u.bannerUrl || u.profilePicOverride || u.currentAvatarImageUrl || u.image || '';
+    const effect = (typeof profileEffectHtml === 'function') ? profileEffectHtml(u.profileEffectUrl) : '';
+    const banner = `<div class="fd-left-banner" id="pd-banner-slot">${bannerSrc ? '<div class="fd-banner-fade"></div>' : ''}${effect}</div>`;
+    const avatarImg = u.image
+        ? `<img class="fd-avatar" src="${esc(u.image)}" onerror="this.style.display='none'">`
+        : `<div class="fd-avatar" style="display:flex;align-items:center;justify-content:center;font-size:calc(20px + var(--fs-off, 0px));font-weight:700;color:var(--tx3)">${esc((u.displayName || '?')[0])}</div>`;
+    const frame = (typeof iconFrameHtml === 'function') ? iconFrameHtml(u.iconFrameUrl, true) : '';
+    const dotCls = `${u.vrcRunning ? 'vrc-status-dot' : 'vrc-status-ring'} ${statusDotClass(u.status)}`;
+    const vrcPlus = (u.tags || []).includes('system_supporter') ? '<span class="vrcn-supporter-badge">VRC+</span>' : '';
+    const pron = u.pronouns ? `<div class="fd-pronouns">${esc(u.pronouns)}</div>` : '';
+    const status = `<div class="fd-status-row"><div class="myp-status-row" style="cursor:default;"><span class="${dotCls}" style="width:7px;height:7px;flex-shrink:0;"></span><span>${getStatusText(u.status, u.statusDescription)}</span></div></div>`;
+    const showcased = (u.badges || []).filter(b => b.showcased);
+    const badgesCard = showcased.length ? `<div class="fd-info-card"><div class="fd-group-rep-label">${t('profiles.my_profile.sections.badges', 'Badges')}</div><div class="myp-badges-row">${showcased.map(b => `<div class="myp-badge-item fd-vrc-badge-wrap" data-badge-img="${esc(b.imageUrl)}" data-badge-name="${encodeURIComponent(b.name)}" data-badge-desc="${encodeURIComponent(b.description || '')}"><img class="fd-vrc-badge-icon" src="${esc(imgThumb(b.imageUrl, 64))}" alt="${esc(b.name)}" onerror="this.closest('.myp-badge-item').style.display='none'"></div>`).join('')}</div></div>` : '';
+    const row = (label, valueHtml) => `<div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-size:calc(11px + var(--fs-off, 0px));"><span style="color:var(--tx3);">${label}</span><span style="color:var(--tx1);text-align:right;">${valueHtml}</span></div>`;
+    const infos = [
+        row(t('profiles.meta.joined', 'Joined'), u.dateJoined ? fmtShortDate(new Date(u.dateJoined + 'T00:00:00')) : '—'),
+        row(t('profiles.meta.last_login', 'Last Login'), u.lastLogin ? fmtShortDate(new Date(u.lastLogin)) : '—'),
+        row(t('profiles.meta.platform', 'Platform'), esc(u.platform || u.lastPlatform || '—')),
+        row(t('profiles.meta.age_verified', 'Age Verified'), u.ageVerified ? t('common.yes', 'Yes') : t('common.no', 'No')),
+    ].join('');
+    const infosCard = `<div class="fd-info-card"><div class="fd-group-rep-label">${t('profiles.meta.infos_title', 'Infos')}</div><div style="display:grid;gap:6px;">${infos}</div></div>`;
+    const bioCard = `<div class="fd-info-card"><div class="myp-section-header"><span class="myp-section-title">${t('profiles.my_profile.sections.bio', 'Bio')}</span></div>${u.bio ? `<div class="fd-bio pd-bio-clamp">${esc(u.bio)}</div>` : `<div class="myp-empty">${t('profiles.my_profile.empty.no_bio', 'No bio written yet')}</div>`}</div>`;
+    return `<div class="fd-left">${banner}<div class="fd-left-body">
+        <div class="fd-left-id">
+            <div class="fd-left-avatar-wrap"><div style="position:relative;display:inline-block;flex-shrink:0;line-height:0;">${avatarImg}${frame}</div><span class="${dotCls} fd-left-status-dot"></span></div>
+            <div class="fd-left-name-wrap">
+                <div class="fd-name" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${esc(u.displayName || '')}${vrcPlus}</div>
+                ${pron}
+                ${status}
+            </div>
+        </div>
+        ${badgesCard}
+        ${bioCard}
+        ${infosCard}
+    </div></div>`;
+}
+
+function _pdVrcOfficialHtml(u) {
+    const bannerSrc = u.bannerUrl || u.profilePicOverride || u.currentAvatarImageUrl || u.image || '';
+    const icon = u.image || u.currentAvatarImageUrl || '';
+    const statusColor = { active: '#2ED319', 'join me': '#42CAFF', 'ask me': '#E8A54B', busy: '#E73A52' }[String(u.status || '').toLowerCase()] || '#6E7681';
+    const rank = getTrustRank(u.tags || []);
+    const vrcPlus = (u.tags || []).includes('system_supporter') ? '<span class="pdo-plus">VRC+</span>' : '';
+    const repG = myRepresentedGroup || ((typeof myGroups !== 'undefined' && Array.isArray(myGroups)) ? myGroups.find(g => g.isRepresenting === true) : null);
+    const meta = [];
+    if (u.pronouns) meta.push(`<span>${esc(u.pronouns)}</span>`);
+    if (u.ageVerificationStatus === '18+' || u.ageVerified) meta.push(`<span class="pdo-meta-item"><svg viewBox="0 0 64 64" class="pdo-ico"><path fill="currentColor" d="M13.42,24.09a5.16,5.16 0 1,0 10.32,0a5.16,5.16 0 1,0 -10.32,0M25.62,42.14l-1.33-8.03c-.39-2.36-2.65-4.1-5.32-4.1h-.77c-2.67,0-4.93,1.75-5.32,4.1l-1.32,7.97c-.07.41.19.8.58.9,1.06.28,3.3.74,6.44.74,3.65,0,5.59-.41,6.49-.69.38-.12.61-.5.55-.89ZM55.97,12H9.03c-2.77,0-5.03,2.26-5.03,5.03v30.94c0,2.77,2.26,5.03,5.03,5.03h46.93c2.77,0,5.03-2.26,5.03-5.03v-30.94c0-2.77-2.26-5.03-5.03-5.03ZM57,47.97c0,.57-.46,1.03-1.03,1.03H9.03c-.57,0-1.03-.46-1.03-1.03v-30.94c0-.57.46-1.03,1.03-1.03h46.93c.57,0,1.03.46,1.03,1.03v30.94ZM30.5,31H37.5a1.5,1.5 0 0,1 1.5,1.5V32.5a1.5,1.5 0 0,1 -1.5,1.5H30.5a1.5,1.5 0 0,1 -1.5,-1.5V32.5a1.5,1.5 0 0,1 1.5,-1.5ZM30.5,25H52.5a1.5,1.5 0 0,1 1.5,1.5V26.5a1.5,1.5 0 0,1 -1.5,1.5H30.5a1.5,1.5 0 0,1 -1.5,-1.5V26.5a1.5,1.5 0 0,1 1.5,-1.5ZM30.5,19H45.5a1.5,1.5 0 0,1 1.5,1.5V20.5a1.5,1.5 0 0,1 -1.5,1.5H30.5a1.5,1.5 0 0,1 -1.5,-1.5V20.5a1.5,1.5 0 0,1 1.5,-1.5Z"/></svg>${u.ageVerificationStatus === '18+' ? 'Verified 18+' : t('profiles.meta.age_verified', 'Age Verified')}</span>`);
+    if (rank) meta.push(`<span class="pdo-meta-item"><svg viewBox="0 0 64 64" class="pdo-ico"><path fill="currentColor" d="M55.49 10.87C45.49 10.57 36.95 6.42 32.99 0.53C32.75 0.17 32.37 0 32 0C31.63 0 31.25 0.18 31.01 0.53C27.05 6.42 18.51 10.57 8.51 10.87C7.87 10.89 7.36 11.41 7.36 12.05V34.83C7.36 42.25 10.88 49.23 16.85 53.65L29.93 63.32C30.55 63.78 31.27 64 32 64C32.73 64 33.46 63.77 34.07 63.32L47.15 53.65C53.12 49.24 56.64 42.26 56.64 34.83V12.05C56.64 11.41 56.13 10.89 55.49 10.87ZM53.37 34.83C53.37 41.19 50.32 47.24 45.21 51.02L32.13 60.69C32.13 60.69 32.05 60.73 32 60.73C31.95 60.73 31.91 60.72 31.87 60.69L18.79 51.02C13.68 47.24 10.63 41.19 10.63 34.83V14.03C19.44 13.33 27.28 9.85 32.01 4.57C36.74 9.85 44.57 13.34 53.39 14.03V34.83H53.37Z"/></svg>${esc(rank.label)}</span>`);
+    if (repG) meta.push(`<span class="pdo-group">${repG.iconUrl ? `<img src="${esc(imgThumb(repG.iconUrl, 64))}" onerror="this.style.display='none'">` : ''}<span>${esc(repG.name)}</span></span>`);
+    const links = (u.bioLinks || []).filter(Boolean).map(l => {
+        let host = l; try { host = new URL(l).hostname.replace(/^www\./, ''); } catch (e) {}
+        return `<span class="pdo-link" title="${esc(host)}"><svg viewBox="0 0 64 64" class="pdo-ico-lg"><path fill="currentColor" d="M20.3 25.7c5.1-5.1 13.4-5.1 18.5 0 1.4 1.4 1.4 3.6 0 4.9-1.4 1.4-3.6 1.4-4.9 0-2.4-2.4-6.2-2.4-8.6 0L12.1 43.8c-2.4 2.4-2.4 6.2 0 8.6l2.7 2.7c2.4 2.4 6.2 2.4 8.6 0l9.5-9.5c1.4-1.4 3.6-1.4 4.9 0 1.4 1.4 1.4 3.6 0 4.9l-9.5 9.5c-5.1 5.1-13.4 5.1-18.5 0l-2.7-2.7c-5.1-5.1-5.1-13.4 0-18.5L20.3 25.7ZM37.4 4.4c5.1-5.1 13.4-5.1 18.5 0l2.7 2.7c5.1 5.1 5.1 13.4 0 18.5L45.5 38.7c-5.1 5.1-13.4 5.1-18.5 0-1.4-1.4-1.4-3.6 0-4.9 1.4-1.4 3.6-1.4 4.9 0 2.4 2.4 6.2 2.4 8.6 0l13.1-13.1c2.4-2.4 2.4-6.2 0-8.6l-2.7-2.7c-2.4-2.4-6.2-2.4-8.6 0l-9.5 9.5c-1.4 1.4-3.6 1.4-4.9 0-1.4-1.4-1.4-3.6 0-4.9l9.5-9.5Z"/></svg></span>`;
+    }).join('');
+    const langs = (u.tags || []).filter(x => x.startsWith('language_')).map(x => `<span class="pdo-pill">${esc(LANG_MAP[x] || x.replace('language_', '').toUpperCase())}</span>`).join('');
+    const bio = u.bio ? `<p class="pdo-bio">${esc(u.bio)}</p><button type="button" class="pdo-readmore" onclick="pdoToggleBio(this)">Read More</button>` : `<p class="pdo-bio pdo-muted">${t('profiles.my_profile.empty.no_bio', 'No bio written yet')}</p>`;
+    const th = (Array.isArray(u.themes) ? u.themes : []).find(x => x.id === u.themeId);
+    const pt = th ? { button: ptHex(th.buttonColor, ''), icon: ptHex(th.iconColor, ''), subtext: ptHex(th.subtextColor, '') } : { button: ptHex(u.themeButtonColor, ''), icon: ptHex(u.themeIconColor, ''), subtext: ptHex(u.themeSubtextColor, '') };
+    const themeVars = pt ? `${pt.button ? `--pdo-btn:${pt.button};` : ''}${pt.icon ? `--pdo-icon:${pt.icon};` : ''}${pt.subtext ? `--pdo-sub:${pt.subtext};` : ''}` : '';
+    const frame = (typeof iconFrameHtml === 'function') ? iconFrameHtml(u.iconFrameUrl, true) : '';
+    const effect = (typeof profileEffectHtml === 'function') ? profileEffectHtml(u.profileEffectUrl) : '';
+    return `<div class="pdo-card" style="${themeVars}">
+        <div class="pdo-banner">${bannerSrc ? `<img src="${esc(bannerSrc)}" alt="" onerror="this.style.display='none'">` : ''}${effect}</div>
+        <div class="pdo-head">
+            <div class="pdo-icon-wrap"><div class="pdo-icon">${icon ? `<img src="${esc(icon)}" alt="" onerror="this.style.display='none'">` : ''}</div>${frame}</div>
+            <div class="pdo-status"><span class="pdo-status-ring" style="border-color:${statusColor};"></span><span>${esc(u.statusDescription || getStatusText(u.status, ''))}</span></div>
+        </div>
+        <div class="pdo-body">
+            <div class="pdo-name-row"><h1>${esc(u.displayName || '')}</h1>${vrcPlus}</div>
+            ${meta.length ? `<div class="pdo-meta">${meta.join('<span class="pdo-dot">•</span>')}</div>` : ''}
+            <div class="pdo-actions"><span class="pdo-btn pdo-btn-main">${t('nav.friends', 'Friends')}</span><span class="pdo-btn pdo-btn-sq"><span class="msi">share</span></span><span class="pdo-btn pdo-btn-sq"><span class="msi">more_horiz</span></span></div>
+            <div class="pdo-section">
+                <h2>About Me</h2>
+                ${bio}
+                ${links ? `<div class="pdo-links">${links}</div>` : ''}
+            </div>
+            ${langs ? `<div class="pdo-section"><h2>Languages</h2><div class="pdo-pills">${langs}</div></div>` : ''}
+        </div>
     </div>`;
 }
 
 function setProfileDeco(field, value) {
-    if (currentVrcUser) currentVrcUser[field] = value;
+    if (currentVrcUser) {
+        currentVrcUser[field] = value;
+        const item = (_profileDecoData[field] || []).find(it => it.templateId === value);
+        const urlField = field === 'iconFrame' ? 'iconFrameUrl' : (field === 'nameplateEffect' ? 'nameplateUrl' : 'profileEffectUrl');
+        currentVrcUser[urlField] = item ? (item.imageUrl || '') : '';
+    }
     renderProfileDecoPicker(false);
     sendToCS({ action: 'vrcSetProfileDecoration', field, value });
 }
@@ -130,6 +283,7 @@ function onSetProfileDecorationResult(data) {
     showToast(true, t('profiles.deco.updated', 'Profile updated!'));
     const mp = document.getElementById('modalMyProfile');
     if (mp && mp.style.display !== 'none' && typeof renderMyProfileContent === 'function') renderMyProfileContent();
+    renderProfileDecoPicker(false);
 }
 
 function _mypAvatarCardInner() {
@@ -1098,7 +1252,7 @@ function _mypBackgroundSection() {
 
     const noneCell = `<div class="pd-cell${type === 'default' ? ' pd-sel' : ''}" onclick="setProfileBackground('default')"><div class="pd-none"><span class="msi">block</span></div><div class="pd-name">${t('profiles.deco.none', 'None')}</div></div>`;
 
-    const gradCell = `<div class="pd-cell${type === 'gradient' ? ' pd-sel' : ''}" onclick="setProfileBackgroundGradient()" title="${esc(t('profiles.deco.gradient', 'Gradient'))}"><div class="pd-none" style="background:linear-gradient(180deg,${esc(u.backgroundGradientTop || '#5d3f86')},${esc(u.backgroundGradientBottom || '#21385b')});"></div><div class="pd-name">${esc(t('profiles.deco.gradient', 'Gradient'))}</div></div>`;
+    const gradCell = `<div class="pd-cell${type === 'gradient' ? ' pd-sel' : ''}" onclick="setProfileBackgroundGradient()" title="${esc(t('profiles.deco.gradient', 'Gradient'))}"><div class="pd-none" style="background:linear-gradient(180deg,${esc(_pbgHex(u.backgroundGradientTop, '#5d3f86'))},${esc(_pbgHex(u.backgroundGradientBottom, '#21385b'))});"></div><div class="pd-name">${esc(t('profiles.deco.gradient', 'Gradient'))}</div></div>`;
 
     const texCells = Object.keys(PROFILE_BG_FILES).map(id => {
         const url = PROFILE_BG_ASSET_URL + PROFILE_BG_FILES[id];
@@ -1146,12 +1300,12 @@ function setProfileBackgroundGradient() {
             <div id="pbgPreview" class="pbg-preview"></div>
             <div class="pbg-row">
                 <span class="pbg-label">${esc(t('profiles.deco.gradient_top', 'Top'))}</span>
-                <input type="color" id="pbgTopColor" class="pbg-swatch" value="${esc(_pbgGradTop)}" oninput="pbgSetGrad('top', this.value)">
+                <div id="pbgTopColor" class="pbg-swatch" data-var="pbg-top" style="background:${esc(_pbgGradTop)};" onclick="pbgOpenPicker('top', this)"></div>
                 <input type="text" id="pbgTopHex" class="vrcn-edit-field pbg-hex" maxlength="7" value="${esc(_pbgGradTop)}" oninput="pbgSetGrad('top', this.value)">
             </div>
             <div class="pbg-row">
                 <span class="pbg-label">${esc(t('profiles.deco.gradient_bottom', 'Bottom'))}</span>
-                <input type="color" id="pbgBottomColor" class="pbg-swatch" value="${esc(_pbgGradBottom)}" oninput="pbgSetGrad('bottom', this.value)">
+                <div id="pbgBottomColor" class="pbg-swatch" data-var="pbg-bottom" style="background:${esc(_pbgGradBottom)};" onclick="pbgOpenPicker('bottom', this)"></div>
                 <input type="text" id="pbgBottomHex" class="vrcn-edit-field pbg-hex" maxlength="7" value="${esc(_pbgGradBottom)}" oninput="pbgSetGrad('bottom', this.value)">
             </div>
         </div>
@@ -1176,13 +1330,20 @@ function pbgSetGrad(which, value) {
 
     const colorEl = document.getElementById(which === 'top' ? 'pbgTopColor' : 'pbgBottomColor');
     const hexEl   = document.getElementById(which === 'top' ? 'pbgTopHex'   : 'pbgBottomHex');
-    if (colorEl) colorEl.value = hex;
+    if (colorEl) colorEl.style.background = hex;
     // Leave the text field alone while it is being typed in, otherwise the caret jumps.
     if (hexEl && document.activeElement !== hexEl) hexEl.value = hex;
     _pbgRenderPreview();
 }
 
+function pbgOpenPicker(which, anchorEl) {
+    if (typeof tePickerOpenGeneric !== 'function') return;
+    const cur = which === 'top' ? _pbgGradTop : _pbgGradBottom;
+    tePickerOpenGeneric(cur, anchorEl, hex => pbgSetGrad(which, hex));
+}
+
 function closeProfileGradPicker() {
+    if (typeof _tePickerState !== 'undefined' && _tePickerState.onPick && typeof _tePickerClose === 'function') _tePickerClose();
     document.getElementById('profileGradModal')?.remove();
 }
 

@@ -1476,14 +1476,7 @@ public partial class AppShell
 
     private static void ApplyCors(System.Net.HttpListenerContext ctx)
     {
-        var origin = ctx.Request.Headers["Origin"];
-        if (string.IsNullOrEmpty(origin)) return;
-        var self = $"http://localhost:{ctx.Request.Url?.Port}";
-        if (origin == "null" || string.Equals(origin, self, StringComparison.OrdinalIgnoreCase))
-        {
-            ctx.Response.Headers["Access-Control-Allow-Origin"] = origin == "null" ? "*" : origin;
-            ctx.Response.Headers["Vary"] = "Origin";
-        }
+        ctx.Response.Headers["Access-Control-Allow-Origin"] = "*";
     }
 
     private static async Task ServeThemeFileAsync(System.Net.HttpListenerContext ctx, string file)

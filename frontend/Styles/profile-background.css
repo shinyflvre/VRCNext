@@ -1,16 +1,11 @@
 /* === VRC+ Profile Backgrounds === */
 
-/* Normally the banner fades bottom-out into var(--bg-card) via an overlay, because the
-   panel behind it is that solid colour. With a profile background there is nothing back
-   there but the image, so the overlay is dropped and the banner itself is masked to
-   transparent instead - it dissolves straight into the background, no colour assumption
-   and no dark band. Selectors mirror the specificity of the rules they override. */
-
 #modalFriendDetail .modal-box.has-profile-bg .fd-banner-fade,
 #modalMyProfile .has-profile-bg .fd-banner-fade,
 #modalFriendDetail.fd-style-compact .fd-left.has-profile-bg .fd-left-banner .fd-banner-fade,
 #modalMyProfile.fd-style-compact .fd-left.has-profile-bg .fd-left-banner .fd-banner-fade,
-.fp-preview.has-profile-bg .fd-banner-fade {
+.fp-preview.has-profile-bg .fd-banner-fade,
+.pd-preview-vrcn.fd-style-compact .fd-left.has-profile-bg .fd-left-banner .fd-banner-fade {
     background: none;
 }
 
@@ -18,7 +13,8 @@
 #modalMyProfile .has-profile-bg .fd-banner,
 #modalFriendDetail.fd-style-compact .fd-left.has-profile-bg .fd-left-banner,
 #modalMyProfile.fd-style-compact .fd-left.has-profile-bg .fd-left-banner,
-.fp-preview.has-profile-bg .fd-banner {
+.fp-preview.has-profile-bg .fd-banner,
+.pd-preview-vrcn.fd-style-compact .fd-left.has-profile-bg .fd-left-banner {
     -webkit-mask-image: linear-gradient(to bottom, #000 40%, transparent 100%);
     mask-image: linear-gradient(to bottom, #000 40%, transparent 100%);
     background-color: transparent;
@@ -28,12 +24,14 @@
 #modalFriendDetail .modal-box.has-profile-bg .fd-content,
 #modalMyProfile .has-profile-bg .fd-content,
 #modalFriendDetail.fd-style-compact .fd-left.has-profile-bg .fd-left-body,
-#modalMyProfile.fd-style-compact .fd-left.has-profile-bg .fd-left-body {
+#modalMyProfile.fd-style-compact .fd-left.has-profile-bg .fd-left-body,
+.pd-preview-vrcn.fd-style-compact .fd-left.has-profile-bg .fd-left-body {
     background: transparent;
 }
 
 #modalFriendDetail.fd-style-compact .fd-left.has-profile-bg,
-#modalMyProfile.fd-style-compact .fd-left.has-profile-bg {
+#modalMyProfile.fd-style-compact .fd-left.has-profile-bg,
+.pd-preview-vrcn.fd-style-compact .fd-left.has-profile-bg {
     background-position: top center;
     background-size: cover;
 }

@@ -399,6 +399,63 @@ html.deco-dashboard-on.nameplate-deco-on .dash-flocs-card > .dash-flocs-world-th
 .pd-name { font-size: calc(10px + var(--fs-off, 0px)); color: var(--tx2); margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pd-empty { font-size: calc(11px + var(--fs-off, 0px)); color: var(--tx3); padding: 6px 0; }
 .pd-loading { padding: 30px; text-align: center; color: var(--tx3); }
+.pd-layout { display: flex; flex: 1; min-height: 0; }
+.pd-preview-col { flex: 0 1 470px; min-width: 300px; display: flex; flex-direction: column; gap: 12px; min-height: 0; padding: 14px 16px 16px; border-right: 1px solid var(--brd); }
+.pd-preview-tabs { margin-bottom: 0; flex-shrink: 0; }
+.pd-preview-scroll { flex: 1; min-height: 0; overflow-y: auto; }
+.pd-preview-vrcn { border: 1px solid var(--brd); border-radius: 14px; overflow: hidden; background: var(--bg-card); }
+.pd-preview-vrcn.fd-style-compact .fd-left { border-right: none; overflow: visible; }
+.pd-preview-vrcn .user-frame-deco, .pd-preview-vrcn .profile-effect-deco, .pdo-card .user-frame-deco, .pdo-card .profile-effect-deco { display: block !important; }
+.pd-settings-col { flex: 1; min-width: 0; }
+.pd-settings-col .pd-grid { grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); }
+.pd-settings-col .pd-section { background: var(--bg-input); border: 1px solid var(--brd); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; }
+.pd-settings-col .pd-section:last-child { margin-bottom: 0; }
+.pd-settings-col .pd-section-title { font-size: calc(10px + var(--fs-off, 0px)); font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--tx3); margin-bottom: 10px; }
+.pd-settings-col .pd-cell { background: var(--ui-input-bg); border-color: var(--brd); }
+.pd-settings-col .pd-cell:hover { background: var(--ui-input-hover-bg); }
+.pd-settings-col .pd-cell.pd-sel { border-color: var(--accent); }
+
+@font-face { font-family: 'Noto Sans'; font-style: normal; font-weight: 400; src: local('Noto Sans'), url('https://assets.vrchat.com/fonts/notosans/noto-sans-v27-latin-regular.woff2') format('woff2'); }
+@font-face { font-family: 'Noto Sans'; font-style: normal; font-weight: 700; src: local('Noto Sans Bold'), url('https://assets.vrchat.com/fonts/notosans/noto-sans-v27-latin-700.woff2') format('woff2'); }
+.pd-preview-vrc { padding: 12px; background: #0E1013; border-radius: 14px; font-family: 'Noto Sans', 'Segoe UI', Roboto, sans-serif; color: #f8f9fa; }
+.pdo-card { position: relative; background: #181B1FED; border-radius: 30px; overflow: hidden; }
+.pdo-banner { position: relative; width: 100%; aspect-ratio: 17 / 6; background: #1c2233; overflow: hidden; }
+.pdo-banner img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pdo-head { position: relative; z-index: 2; margin-top: -46px; padding-left: 24px; display: flex; gap: 10px; align-items: flex-start; }
+.pdo-icon-wrap { position: relative; width: 100px; height: 100px; flex-shrink: 0; }
+.pdo-icon { width: 100px; height: 100px; border-radius: 50%; background: #0E1013; border: 6px solid #181B1F; overflow: hidden; flex-shrink: 0; }
+.pdo-icon img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pdo-status { display: flex; align-items: center; gap: 7px; background: #2E323D; padding: 6px 13px; border-radius: 999px; height: fit-content; margin-top: 14px; font-size: 13.5px; font-weight: 500; line-height: 1; white-space: nowrap; max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+.pdo-status-ring { width: 10px; height: 10px; border-radius: 50%; border: 2px solid #2ED319; background: transparent; flex-shrink: 0; display: block; }
+.pdo-body { padding: 14px 24px 24px; display: flex; flex-direction: column; gap: 22px; }
+.pdo-name-row { display: flex; align-items: center; gap: 9px; }
+.pdo-name-row h1 { margin: 0; font-size: 25px; font-weight: 700; line-height: 1.1; letter-spacing: -0.2px; color: #f8f9fa; }
+.pdo-plus { display: inline-flex; align-items: center; justify-content: center; border: 1.5px solid #ffc010; color: #ffc010; font-size: 9.5px; font-weight: 700; letter-spacing: .5px; padding: 2px 7px; border-radius: 999px; line-height: 1; }
+.pdo-meta { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; color: var(--pdo-sub, #C5CBD3); font-size: 13.5px; margin-top: -13px; }
+.pdo-meta-item { display: inline-flex; align-items: center; gap: 6px; }
+.pdo-dot { color: #6E7681; }
+.pdo-ico { width: 15px; height: 15px; color: var(--pdo-icon, #923eff); }
+.pdo-ico-lg { width: 19px; height: 19px; }
+.pdo-group { display: inline-flex; align-items: center; gap: 7px; border: 2px solid #333944; border-radius: 8px; padding: 3px 8px; color: #E7EAEE; font-size: 13px; }
+.pdo-group img { width: 15px; height: 15px; border-radius: 50%; object-fit: cover; }
+.pdo-actions { display: flex; gap: 11px; }
+.pdo-btn { display: flex; align-items: center; justify-content: center; background: var(--pdo-btn, #7700af); color: #fff; border-radius: 8px; font-weight: 700; font-size: 15px; }
+.pdo-btn-main { flex: 1; max-width: 245px; padding: 9px 12px; }
+.pdo-btn-sq { width: 44px; height: 40px; }
+.pdo-btn .msi { font-size: 18px; color: var(--pdo-icon, #fff); }
+.pdo-section { display: flex; flex-direction: column; gap: 10px; border-bottom: 2px solid #2B3038; padding-bottom: 22px; }
+.pdo-section:last-child { border-bottom: none; padding-bottom: 0; }
+.pdo-section h2 { margin: 0; font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--pdo-icon, #dac9ff); }
+.pdo-bio { margin: 0; font-size: 14px; line-height: 1.55; color: #E7EAEE; white-space: pre-line; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.pdo-muted { color: #8b93a0; }
+.pdo-bio.open { -webkit-line-clamp: unset; }
+.pdo-readmore { align-self: flex-start; background: transparent; border: none; padding: 0; font-family: inherit; font-size: 14px; font-weight: 700; color: var(--pdo-icon, #dac9ff); cursor: pointer; }
+.pd-bio-clamp { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.pdo-links { display: flex; gap: 12px; flex-wrap: wrap; }
+.pdo-link { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; background: #23272F; color: var(--pdo-icon, #C9BCE6); flex-shrink: 0; }
+.pdo-pills { display: flex; gap: 9px; flex-wrap: wrap; }
+.pdo-pill { padding: 7px 16px; border-radius: 999px; background: #292D37; font-size: 14.5px; color: var(--pdo-sub, #f8f9fa); }
+
 
 .fd-modal-bar {
     display: flex;

@@ -159,17 +159,17 @@
 /*COMPACT MODE — two-column layout with left identity panel*/
 
 #modalFriendDetail.fd-style-compact,
-#modalMyProfile.fd-style-compact{ padding: calc(var(--tb-h) + 8px) 0 8px; }
+#modalMyProfile.fd-style-compact { padding: calc(var(--tb-h) + 8px) 0 8px; }
 
 #modalFriendDetail.fd-style-compact .modal-box.wide,
-#modalMyProfile.fd-style-compact .modal-box.wide{
+#modalMyProfile.fd-style-compact .modal-box.wide {
     width: 1144px;
     max-height: var(--fd-compact-h);
     overflow: hidden;
 }
 
 #modalFriendDetail.fd-style-compact #friendDetailContent,
-#modalMyProfile.fd-style-compact #myProfileContent{
+#modalMyProfile.fd-style-compact #myProfileContent {
     padding: 0;
     height: var(--fd-compact-h);
     display: flex;
@@ -177,14 +177,14 @@
     overflow: hidden;
 }
 #modalFriendDetail.fd-style-compact #friendDetailContent .fd-modal-bar,
-#modalMyProfile.fd-style-compact #myProfileContent .fd-modal-bar{
+#modalMyProfile.fd-style-compact #myProfileContent .fd-modal-bar {
     margin: 0;
     border-radius: 0;
     flex-shrink: 0;
 }
 
 #modalFriendDetail.fd-style-compact .fd-layout,
-#modalMyProfile.fd-style-compact .fd-layout{
+#modalMyProfile.fd-style-compact .fd-layout {
     flex: 1 1 0;
     min-height: 0;
     display: grid;
@@ -193,7 +193,8 @@
 }
 
 #modalFriendDetail.fd-style-compact .fd-left,
-#modalMyProfile.fd-style-compact .fd-left{
+#modalMyProfile.fd-style-compact .fd-left,
+.pd-preview-vrcn.fd-style-compact .fd-left {
     min-width: 0;
     min-height: 0;
     display: flex;
@@ -206,7 +207,8 @@
 }
 
 #modalFriendDetail.fd-style-compact .fd-left-banner,
-#modalMyProfile.fd-style-compact .fd-left-banner{
+#modalMyProfile.fd-style-compact .fd-left-banner,
+.pd-preview-vrcn.fd-style-compact .fd-left-banner {
     position: relative;
     z-index: 0;
     width: 100%;
@@ -217,7 +219,8 @@
 }
 
 #modalFriendDetail.fd-style-compact .fd-left-banner img,
-#modalMyProfile.fd-style-compact .fd-left-banner img{
+#modalMyProfile.fd-style-compact .fd-left-banner img,
+.pd-preview-vrcn.fd-style-compact .fd-left-banner img {
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -226,12 +229,14 @@
 }
 
 #modalFriendDetail.fd-style-compact .fd-left-banner .fd-banner-fade,
-#modalMyProfile.fd-style-compact .fd-left-banner .fd-banner-fade{
+#modalMyProfile.fd-style-compact .fd-left-banner .fd-banner-fade,
+.pd-preview-vrcn.fd-style-compact .fd-left-banner .fd-banner-fade {
     background: linear-gradient(to top, var(--bg-card) 0%, rgba(0,0,0,.08) 55%, transparent 100%);
 }
 
 #modalFriendDetail.fd-style-compact .fd-left-body,
-#modalMyProfile.fd-style-compact .fd-left-body{
+#modalMyProfile.fd-style-compact .fd-left-body,
+.pd-preview-vrcn.fd-style-compact .fd-left-body {
     position: relative;
     z-index: 1;
     margin-top: -58px;
@@ -242,21 +247,24 @@
 }
 
 #modalFriendDetail.fd-style-compact .fd-left-id,
-#modalMyProfile.fd-style-compact .fd-left-id{
+#modalMyProfile.fd-style-compact .fd-left-id,
+.pd-preview-vrcn.fd-style-compact .fd-left-id {
     display: flex;
     gap: 12px;
     align-items: flex-start;
 }
 
 #modalFriendDetail.fd-style-compact .fd-left-avatar-wrap,
-#modalMyProfile.fd-style-compact .fd-left-avatar-wrap{
+#modalMyProfile.fd-style-compact .fd-left-avatar-wrap,
+.pd-preview-vrcn.fd-style-compact .fd-left-avatar-wrap {
     position: relative;
     flex-shrink: 0;
     display: flex;
 }
 
 #modalFriendDetail.fd-style-compact .fd-left .fd-avatar,
-#modalMyProfile.fd-style-compact .fd-left .fd-avatar{
+#modalMyProfile.fd-style-compact .fd-left .fd-avatar,
+.pd-preview-vrcn.fd-style-compact .fd-left .fd-avatar {
     position: relative;
     z-index: 1;
     width: 61px;
@@ -281,40 +289,48 @@
     background: var(--bg-card);
 }
 
-#modalMyProfile.fd-style-compact .fd-left-status-dot{
+#modalMyProfile.fd-style-compact .fd-left-status-dot,
+.pd-preview-vrcn.fd-style-compact .fd-left-status-dot {
     display: none;
 }
 
 #modalFriendDetail.fd-style-compact .fd-left-name-wrap,
-#modalMyProfile.fd-style-compact .fd-left-name-wrap{
+#modalMyProfile.fd-style-compact .fd-left-name-wrap,
+.pd-preview-vrcn.fd-style-compact .fd-left-name-wrap {
     min-width: 0;
     padding-bottom: 2px;
 }
 
 #modalFriendDetail.fd-style-compact .fd-left .fd-pronouns,
-#modalMyProfile.fd-style-compact .fd-left .fd-pronouns{ margin-top: 2px; }
+#modalMyProfile.fd-style-compact .fd-left .fd-pronouns,
+.pd-preview-vrcn.fd-style-compact .fd-left .fd-pronouns { margin-top: 2px; }
 
 #modalFriendDetail.fd-style-compact .fd-left .fd-badges-row,
 #modalMyProfile.fd-style-compact .fd-left .fd-badges-row,
 #modalFriendDetail.fd-style-compact .fd-left .fd-lang-tags,
-#modalMyProfile.fd-style-compact .fd-left .fd-lang-tags{ margin-bottom: 0; }
+#modalMyProfile.fd-style-compact .fd-left .fd-lang-tags,
+.pd-preview-vrcn.fd-style-compact .fd-left .fd-badges-row,
+.pd-preview-vrcn.fd-style-compact .fd-left .fd-lang-tags { margin-bottom: 0; }
 
 #modalFriendDetail.fd-style-compact .fd-left .fd-actions,
-#modalMyProfile.fd-style-compact .fd-left .fd-actions{
+#modalMyProfile.fd-style-compact .fd-left .fd-actions,
+.pd-preview-vrcn.fd-style-compact .fd-left .fd-actions {
     margin-bottom: 0;
     gap: 6px;
     flex-wrap: nowrap;
 }
 
 #modalFriendDetail.fd-style-compact .fd-left .fd-actions > button,
-#modalMyProfile.fd-style-compact .fd-left .fd-actions > button{
+#modalMyProfile.fd-style-compact .fd-left .fd-actions > button,
+.pd-preview-vrcn.fd-style-compact .fd-left .fd-actions > button {
     flex: 1 1 0;
     min-width: 0;
     justify-content: center;
 }
 
 #modalFriendDetail.fd-style-compact .fd-right,
-#modalMyProfile.fd-style-compact .fd-right{
+#modalMyProfile.fd-style-compact .fd-right,
+.pd-preview-vrcn.fd-style-compact .fd-right {
     min-width: 0;
     min-height: 0;
     display: flex;
@@ -323,7 +339,8 @@
 }
 
 #modalFriendDetail.fd-style-compact .fd-right-scroll,
-#modalMyProfile.fd-style-compact .fd-right-scroll{
+#modalMyProfile.fd-style-compact .fd-right-scroll,
+.pd-preview-vrcn.fd-style-compact .fd-right-scroll {
     flex: 1 1 0;
     min-height: 0;
     overflow-y: auto;
@@ -332,7 +349,8 @@
 }
 
 #modalFriendDetail.fd-style-compact .fd-right-scroll > .fd-tabs,
-#modalMyProfile.fd-style-compact .fd-right-scroll > .fd-tabs{
+#modalMyProfile.fd-style-compact .fd-right-scroll > .fd-tabs,
+.pd-preview-vrcn.fd-style-compact .fd-right-scroll > .fd-tabs {
     position: sticky;
     top: 0;
     z-index: 3;
@@ -340,40 +358,48 @@
 }
 
 #modalFriendDetail.fd-style-compact #fdTabJson > .json-viewer,
-#modalMyProfile.fd-style-compact #mypTabJson > .json-viewer{
+#modalMyProfile.fd-style-compact #mypTabJson > .json-viewer,
+.pd-preview-vrcn.fd-style-compact #mypTabJson > .json-viewer {
     max-height: none !important;
     height: calc(var(--fd-compact-h) - 88px) !important;
     margin: 0 !important;
 }
 #modalFriendDetail.fd-style-compact .fd-modal-bar + .fd-layout #fdTabJson > .json-viewer,
-#modalMyProfile.fd-style-compact .fd-modal-bar + .fd-layout #mypTabJson > .json-viewer{
+#modalMyProfile.fd-style-compact .fd-modal-bar + .fd-layout #mypTabJson > .json-viewer,
+.pd-preview-vrcn.fd-style-compact .fd-modal-bar + .fd-layout #mypTabJson > .json-viewer {
     height: calc(var(--fd-compact-h) - 132px) !important;
 }
 
 #modalFriendDetail.fd-style-compact .fd-info-cols,
-#modalMyProfile.fd-style-compact .fd-info-cols{
+#modalMyProfile.fd-style-compact .fd-info-cols,
+.pd-preview-vrcn.fd-style-compact .fd-info-cols {
     grid-template-columns: minmax(0, 1fr) 244px;
 }
 
 #modalFriendDetail.fd-style-compact .fd-info-card .fd-group-card.fd-group-rep,
 #modalMyProfile.fd-style-compact .fd-info-card .fd-group-card.fd-group-rep,
 #modalFriendDetail.fd-style-compact .fd-info-card .vrcn-user-item,
-#modalMyProfile.fd-style-compact .fd-info-card .vrcn-user-item{
+#modalMyProfile.fd-style-compact .fd-info-card .vrcn-user-item,
+.pd-preview-vrcn.fd-style-compact .fd-info-card .fd-group-card.fd-group-rep,
+.pd-preview-vrcn.fd-style-compact .fd-info-card .vrcn-user-item {
     margin-bottom: 0;
 }
 
 #modalFriendDetail.fd-style-compact .fd-bio-badges-row,
-#modalMyProfile.fd-style-compact .fd-bio-badges-row{
+#modalMyProfile.fd-style-compact .fd-bio-badges-row,
+.pd-preview-vrcn.fd-style-compact .fd-bio-badges-row {
     flex-wrap: nowrap;
     overflow: hidden;
 }
 #modalFriendDetail.fd-style-compact .fd-bio-badges-row .vrcn-id-clip,
-#modalMyProfile.fd-style-compact .fd-bio-badges-row .vrcn-id-clip{
+#modalMyProfile.fd-style-compact .fd-bio-badges-row .vrcn-id-clip,
+.pd-preview-vrcn.fd-style-compact .fd-bio-badges-row .vrcn-id-clip {
     min-width: 0;
     flex: 0 1 auto;
 }
 #modalFriendDetail.fd-style-compact .fd-bio-badges-row .vrcn-id-text,
-#modalMyProfile.fd-style-compact .fd-bio-badges-row .vrcn-id-text{
+#modalMyProfile.fd-style-compact .fd-bio-badges-row .vrcn-id-text,
+.pd-preview-vrcn.fd-style-compact .fd-bio-badges-row .vrcn-id-text {
     max-width: 100%;
 }
 
