@@ -113,16 +113,19 @@ function renderProfileDecoPicker(loading) {
             return `<div class="pd-section"><div class="pd-section-title">${esc(s.label)}</div><div class="pd-grid">${noneCell}${cells}</div>${empty}</div>`;
         }).join('') + _mypThemeSection() + _mypBackgroundSection();
     const isVrc = _pdPreviewMode === 'vrc';
+    const isMini = _pdPreviewMode === 'mini';
     m.innerHTML = `<div class="gp-modal pd-modal" style="width:1040px;max-width:94vw;max-height:86vh;display:flex;flex-direction:column;">
         ${renderModalBar(t('profiles.deco.title', 'Customize Profile'), [modalCloseAction('closeProfileDecoPicker()')])}
         <div class="pd-layout">
             <div class="pd-preview-col">
                 <div class="fd-tabs pd-preview-tabs">
-                    <button class="fd-tab${isVrc ? '' : ' active'}" onclick="pdSetPreview('vrcn',this)">VRCN</button>
+                    <button class="fd-tab${!isVrc && !isMini ? ' active' : ''}" onclick="pdSetPreview('vrcn',this)">VRCN</button>
+                    <button class="fd-tab${isMini ? ' active' : ''}" onclick="pdSetPreview('mini',this)">VRCN Mini</button>
                     <button class="fd-tab${isVrc ? ' active' : ''}" onclick="pdSetPreview('vrc',this)">VRChat</button>
                 </div>
                 <div class="pd-preview-scroll">
-                    <div id="pdPreviewVrcn" class="pd-preview-vrcn fd-style-compact"${isVrc ? ' style="display:none;"' : ''}>${_pdVrcnPreviewHtml(u)}</div>
+                    <div id="pdPreviewVrcn" class="pd-preview-vrcn fd-style-compact"${isVrc || isMini ? ' style="display:none;"' : ''}>${_pdVrcnPreviewHtml(u)}</div>
+                    <div id="pdPreviewMini" class="pd-preview-mini"${isMini ? '' : ' style="display:none;"'}><div id="pdMiniCard" class="fp-preview pd-mini-static"></div></div>
                     <div id="pdPreviewVrc" class="pd-preview-vrc"${isVrc ? '' : ' style="display:none;"'}>${_pdVrcOfficialHtml(u)}</div>
                 </div>
             </div>
@@ -140,7 +143,7 @@ function pdoToggleBio(btn) {
     const p = btn.previousElementSibling;
     if (!p) return;
     const open = p.classList.toggle('open');
-    btn.textContent = open ? 'Read Less' : 'Read More';
+    btn.textContent = open ? t('profiles.deco.vrc_read_less', 'Read Less') : t('profiles.deco.vrc_read_more', 'Read More');
 }
 
 function pdSetPreview(mode, btn) {
@@ -149,8 +152,10 @@ function pdSetPreview(mode, btn) {
     if (btn) btn.classList.add('active');
     const a = document.getElementById('pdPreviewVrcn');
     const b = document.getElementById('pdPreviewVrc');
-    if (a) a.style.display = mode === 'vrc' ? 'none' : '';
+    const c = document.getElementById('pdPreviewMini');
+    if (a) a.style.display = mode === 'vrcn' ? '' : 'none';
     if (b) b.style.display = mode === 'vrc' ? '' : 'none';
+    if (c) c.style.display = mode === 'mini' ? '' : 'none';
 }
 
 function _pdAfterRender(u) {
@@ -165,6 +170,12 @@ function _pdAfterRender(u) {
     const left = root.querySelector('.fd-left');
     if (typeof applyProfileBg === 'function' && left) applyProfileBg(left, u);
     if (typeof applyProfileTheme === 'function') applyProfileTheme(root, u);
+    const mini = document.getElementById('pdMiniCard');
+    if (mini && typeof fpRenderPreviewInto === 'function') {
+        const f = Object.assign({}, u, { presence: u.state === 'offline' ? 'offline' : (u.state === 'active' ? 'web' : 'game'), platform: u.platform || u.lastPlatform || '' });
+        const extra = Object.assign({}, u, { banner: u.bannerUrl || '', bio: u.bio || '' });
+        fpRenderPreviewInto(mini, f, extra);
+    }
     const vrc = document.getElementById('pdPreviewVrc');
     if (vrc) {
         const type = String(u.backgroundType || '').trim();
@@ -236,7 +247,7 @@ function _pdVrcOfficialHtml(u) {
         return `<span class="pdo-link" title="${esc(host)}"><svg viewBox="0 0 64 64" class="pdo-ico-lg"><path fill="currentColor" d="M20.3 25.7c5.1-5.1 13.4-5.1 18.5 0 1.4 1.4 1.4 3.6 0 4.9-1.4 1.4-3.6 1.4-4.9 0-2.4-2.4-6.2-2.4-8.6 0L12.1 43.8c-2.4 2.4-2.4 6.2 0 8.6l2.7 2.7c2.4 2.4 6.2 2.4 8.6 0l9.5-9.5c1.4-1.4 3.6-1.4 4.9 0 1.4 1.4 1.4 3.6 0 4.9l-9.5 9.5c-5.1 5.1-13.4 5.1-18.5 0l-2.7-2.7c-5.1-5.1-5.1-13.4 0-18.5L20.3 25.7ZM37.4 4.4c5.1-5.1 13.4-5.1 18.5 0l2.7 2.7c5.1 5.1 5.1 13.4 0 18.5L45.5 38.7c-5.1 5.1-13.4 5.1-18.5 0-1.4-1.4-1.4-3.6 0-4.9 1.4-1.4 3.6-1.4 4.9 0 2.4 2.4 6.2 2.4 8.6 0l13.1-13.1c2.4-2.4 2.4-6.2 0-8.6l-2.7-2.7c-2.4-2.4-6.2-2.4-8.6 0l-9.5 9.5c-1.4 1.4-3.6 1.4-4.9 0-1.4-1.4-1.4-3.6 0-4.9l9.5-9.5Z"/></svg></span>`;
     }).join('');
     const langs = (u.tags || []).filter(x => x.startsWith('language_')).map(x => `<span class="pdo-pill">${esc(LANG_MAP[x] || x.replace('language_', '').toUpperCase())}</span>`).join('');
-    const bio = u.bio ? `<p class="pdo-bio">${esc(u.bio)}</p><button type="button" class="pdo-readmore" onclick="pdoToggleBio(this)">Read More</button>` : `<p class="pdo-bio pdo-muted">${t('profiles.my_profile.empty.no_bio', 'No bio written yet')}</p>`;
+    const bio = u.bio ? `<p class="pdo-bio">${esc(u.bio)}</p><button type="button" class="pdo-readmore" onclick="pdoToggleBio(this)">${t('profiles.deco.vrc_read_more', 'Read More')}</button>` : `<p class="pdo-bio pdo-muted">${t('profiles.my_profile.empty.no_bio', 'No bio written yet')}</p>`;
     const th = (Array.isArray(u.themes) ? u.themes : []).find(x => x.id === u.themeId);
     const pt = th ? { button: ptHex(th.buttonColor, ''), icon: ptHex(th.iconColor, ''), subtext: ptHex(th.subtextColor, '') } : { button: ptHex(u.themeButtonColor, ''), icon: ptHex(u.themeIconColor, ''), subtext: ptHex(u.themeSubtextColor, '') };
     const themeVars = pt ? `${pt.button ? `--pdo-btn:${pt.button};` : ''}${pt.icon ? `--pdo-icon:${pt.icon};` : ''}${pt.subtext ? `--pdo-sub:${pt.subtext};` : ''}` : '';
@@ -251,13 +262,13 @@ function _pdVrcOfficialHtml(u) {
         <div class="pdo-body">
             <div class="pdo-name-row"><h1>${esc(u.displayName || '')}</h1>${vrcPlus}</div>
             ${meta.length ? `<div class="pdo-meta">${meta.join('<span class="pdo-dot">•</span>')}</div>` : ''}
-            <div class="pdo-actions"><span class="pdo-btn pdo-btn-main">${t('nav.friends', 'Friends')}</span><span class="pdo-btn pdo-btn-sq"><span class="msi">share</span></span><span class="pdo-btn pdo-btn-sq"><span class="msi">more_horiz</span></span></div>
+            <div class="pdo-actions"><span class="pdo-btn pdo-btn-main">${t('profiles.deco.vrc_friends', 'Friends')}</span><span class="pdo-btn pdo-btn-sq"><span class="msi">share</span></span><span class="pdo-btn pdo-btn-sq"><span class="msi">more_horiz</span></span></div>
             <div class="pdo-section">
-                <h2>About Me</h2>
+                <h2>${t('profiles.deco.vrc_about', 'About Me')}</h2>
                 ${bio}
                 ${links ? `<div class="pdo-links">${links}</div>` : ''}
             </div>
-            ${langs ? `<div class="pdo-section"><h2>Languages</h2><div class="pdo-pills">${langs}</div></div>` : ''}
+            ${langs ? `<div class="pdo-section"><h2>${t('profiles.deco.vrc_languages', 'Languages')}</h2><div class="pdo-pills">${langs}</div></div>` : ''}
         </div>
     </div>`;
 }

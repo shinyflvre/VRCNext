@@ -10,3 +10,4 @@
 - **Customize Profile** no longer scrolls back to the top after applying a decoration, theme or background.
 - **Profile Background > Gradient** now opens the VRCNext color picker with eyedropper.
 - The **Gradient** tile shows its actual colors again.
+- Fixed missing i18n translations in profile customizer.

@@ -362,6 +362,8 @@
         });
     }
 
+    window.fpRenderPreviewInto = function (el, f, extra) { renderPopup(el, f, extra); };
+
     document.readyState === 'loading'
         ? document.addEventListener('DOMContentLoaded', init)
         : init();

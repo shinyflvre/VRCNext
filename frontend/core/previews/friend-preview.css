@@ -23,6 +23,7 @@
 
 /* pt-has-button themes --bg-card but not --tab-card-bg, so the surface is pulled along. */
 .fp-preview.pt-has-button { --tab-card-bg: var(--pt-bg-card); }
+.fp-preview.pd-mini-static { position: relative; opacity: 1; pointer-events: auto; transform: none; z-index: auto; box-shadow: none; margin: 0 auto; }
 
 /* Override fd-banner modal margins/size for preview */
 .fp-preview .fd-banner {
