@@ -3677,6 +3677,7 @@
   "avatars.status.private": "私有",
   "settings.taskbar.title": "任务栏",
   "settings.taskbar.show_api_health": "显示 VRC API 状态",
+  "settings.taskbar.size": "任务栏大小",
   "apihealth.title": "VRChat API 状态",
   "apihealth.loading": "正在加载详情...",
   "apihealth.online_users": "在线用户",

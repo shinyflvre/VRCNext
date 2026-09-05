@@ -1292,6 +1292,7 @@
   "settings.design.clock_enabled": "Enable Clock",
   "settings.taskbar.title": "Taskbar",
   "settings.taskbar.show_api_health": "Show VRC API Health Information",
+  "settings.taskbar.size": "Taskbar Size",
   "apihealth.title": "VRChat API Status",
   "apihealth.loading": "Loading details...",
   "apihealth.online_users": "Online Users",

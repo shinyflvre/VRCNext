@@ -1290,6 +1290,7 @@
   "settings.design.clock_enabled": "시계 활성화",
   "settings.taskbar.title": "작업 표시줄",
   "settings.taskbar.show_api_health": "VRC API 상태 표시",
+  "settings.taskbar.size": "작업 표시줄 크기",
   "apihealth.title": "VRChat API 상태",
   "apihealth.loading": "세부 정보 불러오는 중...",
   "apihealth.online_users": "온라인 유저",

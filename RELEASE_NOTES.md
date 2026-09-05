@@ -1,5 +1,8 @@
 ﻿**2026.48.4**
 
+**Settings**
+- Added a "taskbar" size slider to Settings > Sidebar > Taskbar
+
 **Theme Editor v2**
 - Updated the Theme editor modal to have a two row system to display more content.
 - Exposed to theme editor: Sidebar BG, Taskbar BG, Buttons Base, Buttons Hover, Buttons Active, Badge Base.

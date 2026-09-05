@@ -438,6 +438,17 @@
                     <!-- TASKBAR -->
                     <div class="vrcn-panel-card" data-section="sidebar" style="display:none;">
                         <div class="vrcn-panel-card-header"><span class="msi">tune</span> <span data-i18n="settings.taskbar.title">Taskbar</span></div>
+                        <div class="fs-slider-block" style="margin-top:14px;">
+                            <div class="fs-slider-head">
+                                <span data-i18n="settings.taskbar.size">Taskbar Size</span>
+                                <span class="fs-slider-val" id="taskbarHeightVal">42 px</span>
+                            </div>
+                            <div class="fs-slider-wrap">
+                                <div class="fs-ticks"></div>
+                                <input type="range" id="setTaskbarHeight" class="fs-slider" min="34" max="48" step="1" value="42"
+                                       oninput="setTaskbarHeight(this.value)">
+                            </div>
+                        </div>
                         <div class="sf-toggle-row" style="margin-top:14px;"><span data-i18n="settings.design.show_vrcplus">Show VRC+ Badge</span><label class="toggle"><input type="checkbox" id="setShowVrcPlus" checked onchange="applyClockSettings();autoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
                         <div class="sf-toggle-row" style="margin-top:8px;"><span data-i18n="settings.design.show_vrccredits">Show VRC Credits</span><label class="toggle"><input type="checkbox" id="setShowVrcCredits" checked onchange="applyClockSettings();autoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
                         <div class="sf-toggle-row" style="margin-top:8px;"><span data-i18n="settings.design.clock_enabled">Enable Clock</span><label class="toggle"><input type="checkbox" id="setClockEnabled" onchange="applyClockSettings();autoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>

@@ -3723,6 +3723,7 @@
   "avatars.status.private": "私人",
   "settings.taskbar.title": "工作列",
   "settings.taskbar.show_api_health": "顯示 VRC API 狀態",
+  "settings.taskbar.size": "工作列大小",
   "apihealth.title": "VRChat API 狀態",
   "apihealth.loading": "正在載入詳情...",
   "apihealth.online_users": "線上使用者",

@@ -1279,6 +1279,7 @@
   "settings.design.clock_enabled": "Uhr anzeigen",
   "settings.taskbar.title": "Taskleiste",
   "settings.taskbar.show_api_health": "VRC-API-Status anzeigen",
+  "settings.taskbar.size": "Taskleisten-Größe",
   "apihealth.title": "VRChat API Status",
   "apihealth.loading": "Details werden geladen...",
   "apihealth.online_users": "Online-Nutzer",

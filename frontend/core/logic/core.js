@@ -136,6 +136,7 @@ let currentCursorTheme = '';
 let currentAppFont = 'google-sans';
 let currentCustomFont = '';
 let currentFontSizeOffset = 0;
+let currentTaskbarHeight = 42;
 let _systemFonts = [];
 let _localHttpPort = 0;
 let _cursorFiles = [];
@@ -1299,6 +1300,21 @@ function applyFontSizeOffset(px) {
 
 function setFontSizeOffset(px) {
     applyFontSizeOffset(px);
+    autoSave();
+}
+
+function applyTaskbarHeight(px) {
+    const n = Math.max(34, Math.min(48, parseInt(px, 10) || 42));
+    currentTaskbarHeight = n;
+    document.documentElement.style.setProperty('--tb-h', n + 'px');
+    const slider = document.getElementById('setTaskbarHeight');
+    if (slider && String(slider.value) !== String(n)) slider.value = n;
+    const label = document.getElementById('taskbarHeightVal');
+    if (label) label.textContent = n + ' px';
+}
+
+function setTaskbarHeight(px) {
+    applyTaskbarHeight(px);
     autoSave();
 }
 

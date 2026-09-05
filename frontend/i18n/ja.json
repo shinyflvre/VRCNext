@@ -3676,6 +3676,7 @@
   "avatars.status.private": "非公開",
   "settings.taskbar.title": "タスクバー",
   "settings.taskbar.show_api_health": "VRC APIの状態を表示",
+  "settings.taskbar.size": "タスクバーのサイズ",
   "apihealth.title": "VRChat APIステータス",
   "apihealth.loading": "詳細を読み込み中...",
   "apihealth.online_users": "オンラインユーザー",

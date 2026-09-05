@@ -159,6 +159,7 @@ function saveSettings() {
             appFont: currentAppFont,
             customFont: currentCustomFont,
             fontSizeOffset: currentFontSizeOffset,
+            taskbarHeight: currentTaskbarHeight,
             activeCustomThemes: [..._activeCustomThemes],
             guiZoom: Math.round(_guiZoom * 100),
             dashBgPath: dashBgPath,
@@ -684,6 +685,7 @@ function loadSettingsToUI(s) {
     applyAppFont(s.AppFont || s.appFont || APP_FONT_DEFAULT);
     applyCustomFont(s.CustomFont || s.customFont || '');
     applyFontSizeOffset(s.FontSizeOffset ?? s.fontSizeOffset ?? 0);
+    applyTaskbarHeight(s.TaskbarHeight ?? s.taskbarHeight ?? 42);
     sendToCS({ action: 'getSystemFonts' });
     renderFontGrid();
     sendToCS({ action: 'getCursorFiles' });

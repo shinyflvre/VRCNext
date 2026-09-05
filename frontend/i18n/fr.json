@@ -3677,6 +3677,7 @@
   "avatars.status.private": "Prive",
   "settings.taskbar.title": "Barre des tâches",
   "settings.taskbar.show_api_health": "Afficher l'état de l'API VRC",
+  "settings.taskbar.size": "Taille de la barre des tâches",
   "apihealth.title": "État de l'API VRChat",
   "apihealth.loading": "Chargement des détails...",
   "apihealth.online_users": "Utilisateurs en ligne",

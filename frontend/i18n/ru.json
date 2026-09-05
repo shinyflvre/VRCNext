@@ -3699,6 +3699,7 @@
   "avatars.status.private": "Приватный",
   "settings.taskbar.title": "Панель задач",
   "settings.taskbar.show_api_health": "Показывать состояние API VRC",
+  "settings.taskbar.size": "Размер панели задач",
   "apihealth.title": "Статус API VRChat",
   "apihealth.loading": "Загрузка деталей...",
   "apihealth.online_users": "Пользователи онлайн",
