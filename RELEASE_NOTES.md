@@ -11,6 +11,7 @@ This allows more detailed user generated custom color themes.
 - Preview can be switched between **VRCN** and **VRChat** views; the VRChat view now follows your profile theme colors.
 
 **Fixed Bugs**
+- Context menus now use the font selected under Settings > Appearance > Fonts (custom and installed fonts).
 - **Media Library** uploads work again — no more "Failed to load image".
 - **Customize Profile** no longer scrolls back to the top after applying a decoration, theme or background.
 - **Profile Background > Gradient** now opens the VRCNext color picker with eyedropper.
