@@ -443,7 +443,7 @@ body:has(#tab0.active) .rsidebar.collapsed .sidebar-sep {
     padding: 0 12px;
     border: none;
     border-radius: 7px;
-    background: var(--bg-btn);
+    background: var(--ui-input-bg);
     color: var(--tx1);
     cursor: pointer;
     font-family: inherit;
@@ -505,7 +505,7 @@ body:has(#tab0.active) .rsidebar.collapsed .sidebar-sep {
 }
 
 .btn-play:hover {
-    background: var(--bg-btn-h);
+    background: var(--ui-input-hover-bg);
 }
 
 .btn-play:active {

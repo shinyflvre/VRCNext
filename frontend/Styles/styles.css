@@ -1,6 +1,6 @@
 ﻿:root {
     --bg-base: #0A0A0A;
-    --bg-side: #0A0A0A;
+    --bg-side: #101010;
     --bg-taskbar: var(--bg-side);
     --bg-card: #0F0F0F;
     --bg-hover: #1C1C1F;
@@ -19,9 +19,9 @@
     --warn: #FFBA37;
     --err: #FF4B55;
     --tx0: #FFFFFF;
-    --tx1: #A8A8B8;
-    --tx2: #9B9CAA;
-    --tx3: #60606F;
+    --tx1: #C4C4D1;
+    --tx2: #C4C4D1;
+    --tx3: #8A8A9B;
     --brd: #1C1C1F;
     --brd-lt: #1C1C1F;
     --border: var(--sep-color);
