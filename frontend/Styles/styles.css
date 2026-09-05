@@ -12,6 +12,7 @@
     --ui-input-hover-bg: var(--bg-hover);
     --ui-input-active-bg: var(--accent);
     --badge-bg: var(--bg-hover);
+    --badge-tx: var(--tx2);
     --accent: #8E8EA7;
     --accent-lt: #A5A5AC;
     --cyan: #8CA5FF;

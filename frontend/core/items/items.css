@@ -222,7 +222,7 @@
     font-size: calc(10px + var(--fs-off, 0px));
     font-weight: 600;
     background: var(--badge-bg);
-    color: var(--tx2);
+    color: var(--badge-tx);
     cursor: pointer;
     transition: background .15s, color .15s;
 }

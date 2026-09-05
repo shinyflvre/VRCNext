@@ -289,7 +289,7 @@ html.modal-refreshing .fd-refresh-spin { animation: modal-refresh-spin 0.8s line
     padding: 3px 10px; border-radius: 20px;
     background: var(--badge-bg);
     font-size: calc(11px + var(--fs-off, 0px)); font-weight: 600;
-    color: var(--tx2);
+    color: var(--badge-tx);
 }
 .cl-columns {
     display: flex; gap: 24px;

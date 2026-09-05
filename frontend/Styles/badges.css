@@ -20,7 +20,7 @@
     padding: 3px 7px;
     border-radius: 5px;
     background: var(--badge-bg);
-    color: var(--tx2);
+    color: var(--badge-tx);
     letter-spacing: .3px;
     flex-shrink: 0;
 }

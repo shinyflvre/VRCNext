@@ -256,7 +256,7 @@ body:has(#tab0.active) .rsidebar.collapsed .sidebar-sep {
     padding: 2px 7px;
     border-radius: 5px;
     background: var(--badge-bg);
-    color: var(--tx2);
+    color: var(--badge-tx);
     font-size: calc(9px + var(--fs-off, 0px));
     font-weight: 700;
     letter-spacing: .3px;
