@@ -14,6 +14,9 @@ This update is mostly theme-focused. It doesn't add many new features, but it br
 - VRC+ Decorations simplified: a single **Enable VRC+ Decorations** switch (off by default) hides everything when off and restores your saved choices when on.
 - Each decoration now has separate **Myself** and **Others** toggles.
 
+**Removed**
+- Removed VRChat.API Attribution as we do not use their API at all.
+
 **Fixes**
 - Context menus now use your selected font (**Settings > Appearance > Fonts**), including custom and installed fonts.
 - Media Library uploads work again, no more "Failed to load image".
