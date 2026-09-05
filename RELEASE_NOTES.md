@@ -1,4 +1,4 @@
-﻿**2026.48.4**
+﻿**2026.48.5**
 
 This update is mostly theme-focused. It doesn't add many new features, but it brings improvements to profile decorations: you can now preview your in-game VRChat profile and see changes live. You also have better control over VRCNext's themes, since many elements have been separated so you can recolor and design them to your liking. To build a custom color theme, go to **Settings > Appearance**, scroll down a little, and click **Theme Editor**.
 
