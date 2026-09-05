@@ -15,6 +15,9 @@ This update is mostly theme-focused. It doesn't add many new features, but it br
 - VRC+ Decorations simplified: a single **Enable VRC+ Decorations** switch (off by default) hides everything when off and restores your saved choices when on.
 - Each decoration now has separate **Myself** and **Others** toggles.
 
+**Avatars**
+- Avatar info tab now shows performance stats for your own avatars on PC, Android and iOS: rating, size, texture memory, geometry, dynamics, components and effects. Values are color-coded by VRChat's performance rank limits and cached locally.
+
 **Removed**
 - Removed VRChat.API Attribution as we do not use their API at all.
 

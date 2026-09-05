@@ -1910,6 +1910,7 @@ public partial class AppShell
                                 pcPerf = ValidPerf(avdCached.PcPerf), questPerf = ValidPerf(avdCached.QuestPerf),
                                 iosPerf = ValidPerf(avdCached.IosPerf),
                             }));
+                        SendCachedAvatarAnalysis(avdId);
                         if (ModalCacheHelper.IsCached(avdId)) break;
                         ModalCacheHelper.Mark(avdId);
                         _ = Task.Run(async () =>
@@ -1966,6 +1967,7 @@ public partial class AppShell
                                 iosPerf,
                                 rawJson = avatar,
                             }));
+                            await FetchAvatarAnalysisAsync(avatar);
                         });
                     }
                     break;
@@ -4481,6 +4483,59 @@ public partial class AppShell
         .Where(x => x.Length > 0)
         .OrderBy(PerfRank)
         .FirstOrDefault() ?? "";
+
+    private static readonly System.Text.RegularExpressions.Regex _bundleUrlRe =
+        new(@"/file/(file_[0-9a-fA-F-]+)/(\d+)/", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    private void SendCachedAvatarAnalysis(string avatarId)
+    {
+        var rows = _core.TimeEngine.GetAvatarAnalysis(avatarId);
+        if (rows.Count == 0) return;
+        var platforms = new JObject();
+        foreach (var r in rows)
+        {
+            if (string.IsNullOrEmpty(r.Json)) continue;
+            try { platforms[r.Platform] = JObject.Parse(r.Json); } catch { }
+        }
+        if (!platforms.HasValues) return;
+        Invoke(() => SendToJS("vrcAvatarAnalysis", new { avatarId, platforms, pending = false, cached = true }));
+    }
+
+    private async Task FetchAvatarAnalysisAsync(JObject avatar)
+    {
+        var avatarId = avatar["id"]?.ToString() ?? "";
+        if (string.IsNullOrEmpty(avatarId)) return;
+        var me = _core.VrcApi.CurrentUserId;
+        if (string.IsNullOrEmpty(me) || avatar["authorId"]?.ToString() != me) return;
+
+        var targets = new Dictionary<string, (string fileId, int version)>();
+        foreach (var p in avatar["unityPackages"] as JArray ?? new JArray())
+        {
+            var variant = p["variant"]?.ToString() ?? "standard";
+            if (variant != "standard" && variant != "security") continue;
+            var platform = p["platform"]?.ToString() ?? "";
+            if (string.IsNullOrEmpty(platform)) continue;
+            var m = _bundleUrlRe.Match(p["assetUrl"]?.ToString() ?? "");
+            if (!m.Success || !int.TryParse(m.Groups[2].Value, out var version)) continue;
+            if (targets.ContainsKey(platform) && variant != "security") continue;
+            targets[platform] = (m.Groups[1].Value, version);
+        }
+        if (targets.Count == 0) return;
+
+        var platforms = new JObject();
+        var pending = false;
+        foreach (var (platform, t) in targets)
+        {
+            var (status, data) = await _core.Avatars.GetFileAnalysisAsync(t.fileId, t.version, "security");
+            if (status == 202 || (data != null && data["success"]?.Value<bool>() != true)) { pending = true; continue; }
+            if (data == null) continue;
+            data.Remove("encryptionKey");
+            _core.TimeEngine.SaveAvatarAnalysis(avatarId, platform, t.fileId, t.version, data.ToString(Newtonsoft.Json.Formatting.None));
+            platforms[platform] = data;
+        }
+        if (!platforms.HasValues && !pending) return;
+        Invoke(() => SendToJS("vrcAvatarAnalysis", new { avatarId, platforms, pending, cached = false }));
+    }
 
     private static (string pc, string quest, string ios) ResolveAvatarPerf(JObject avatar)
     {

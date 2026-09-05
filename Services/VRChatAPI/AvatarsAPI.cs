@@ -27,6 +27,25 @@ public class AvatarsAPI(VRChatApiService ctx)
         return null;
     }
 
+    public async Task<(int status, JObject? data)> GetFileAnalysisAsync(string fileId, int version, string variant = "security")
+    {
+        if (!ctx.IsLoggedIn || string.IsNullOrEmpty(fileId)) return (0, null);
+        try
+        {
+            var resp = await ctx._http.GetAsync($"{VRChatApiService.BASE}/analysis/{Uri.EscapeDataString(fileId)}/{version}/{Uri.EscapeDataString(variant)}");
+            var body = await resp.Content.ReadAsStringAsync();
+            var status = (int)resp.StatusCode;
+            if (resp.IsSuccessStatusCode && body.TrimStart().StartsWith("{"))
+            {
+                try { return (status, JObject.Parse(body)); } catch { return (status, null); }
+            }
+            if (!resp.IsSuccessStatusCode) ctx.Log($"GetFileAnalysis {status}: {body[..Math.Min(200, body.Length)]}");
+            return (status, null);
+        }
+        catch (Exception ex) { ctx.Log($"GetFileAnalysis exception: {ex.Message}"); }
+        return (0, null);
+    }
+
     public async Task<(bool ok, string error)> UpdateAvatarAsync(string avatarId, string name, string description, string releaseStatus, List<string> tags)
     {
         if (!ctx.IsLoggedIn) return (false, "Not logged in");

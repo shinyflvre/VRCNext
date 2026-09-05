@@ -974,6 +974,65 @@ public class UnifiedTimeEngine : IDisposable
         }
     }
 
+    // Avatar performance analysis cache
+
+    public class AvatarAnalysisRow
+    {
+        public string Platform { get; set; } = "";
+        public string FileId   { get; set; } = "";
+        public int    Version  { get; set; }
+        public string Json     { get; set; } = "";
+        public string CachedAt { get; set; } = "";
+    }
+
+    public List<AvatarAnalysisRow> GetAvatarAnalysis(string avatarId)
+    {
+        var list = new List<AvatarAnalysisRow>();
+        if (string.IsNullOrEmpty(avatarId)) return list;
+        lock (_lock)
+        {
+            try
+            {
+                using var cmd = _db.CreateCommand();
+                cmd.CommandText = "SELECT platform,file_id,version,json,cached_at FROM avatar_analysis WHERE avatar_id=$id";
+                cmd.Parameters.AddWithValue("$id", avatarId);
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
+                {
+                    list.Add(new AvatarAnalysisRow
+                    {
+                        Platform = r.GetString(0), FileId = r.GetString(1), Version = r.GetInt32(2),
+                        Json = r.GetString(3), CachedAt = r.GetString(4),
+                    });
+                }
+            }
+            catch { }
+        }
+        return list;
+    }
+
+    public void SaveAvatarAnalysis(string avatarId, string platform, string fileId, int version, string json)
+    {
+        if (string.IsNullOrEmpty(avatarId) || string.IsNullOrEmpty(platform)) return;
+        lock (_lock)
+        {
+            try
+            {
+                using var cmd = _db.CreateCommand();
+                cmd.CommandText = @"INSERT OR REPLACE INTO avatar_analysis(avatar_id,platform,file_id,version,json,cached_at)
+                    VALUES($id,$p,$f,$v,$j,$t)";
+                cmd.Parameters.AddWithValue("$id", avatarId);
+                cmd.Parameters.AddWithValue("$p", platform);
+                cmd.Parameters.AddWithValue("$f", fileId ?? "");
+                cmd.Parameters.AddWithValue("$v", version);
+                cmd.Parameters.AddWithValue("$j", json ?? "");
+                cmd.Parameters.AddWithValue("$t", DateTime.UtcNow.ToString("o"));
+                cmd.ExecuteNonQuery();
+            }
+            catch { }
+        }
+    }
+
     // User detail cache
 
     public class UserDetailCache
@@ -2380,6 +2439,23 @@ public class UnifiedTimeEngine : IDisposable
         {
             try { using var mc = _db.CreateCommand(); mc.CommandText = $"ALTER TABLE avatar_tracking ADD COLUMN {col}"; mc.ExecuteNonQuery(); } catch { }
         }
+
+        // avatar_analysis
+        try
+        {
+            using var aac = _db.CreateCommand();
+            aac.CommandText = @"CREATE TABLE IF NOT EXISTS avatar_analysis (
+                avatar_id  TEXT NOT NULL,
+                platform   TEXT NOT NULL,
+                file_id    TEXT NOT NULL DEFAULT '',
+                version    INTEGER NOT NULL DEFAULT 0,
+                json       TEXT NOT NULL DEFAULT '',
+                cached_at  TEXT NOT NULL DEFAULT '',
+                PRIMARY KEY (avatar_id, platform)
+            )";
+            aac.ExecuteNonQuery();
+        }
+        catch { }
 
         // event_tracking
         try

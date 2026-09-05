@@ -12,6 +12,7 @@ let _avGalleryImages = [];
 
 const _avatarDetailCache = {};
 const _avRawJsonCache = {};
+const _avAnalysisCache = {};
 
 function openAvatarDetail(avatarId) {
     if (typeof navSetCurrent === 'function') navSetCurrent('avatar', avatarId);
@@ -278,6 +279,184 @@ function renderAvatarDetail(a) {
 
     const _avModal = document.getElementById('modalAvatarDetail');
     if (_avModal) _avModal.classList.add('av-style-compact');
+    _avRenderAnalysis();
+}
+
+function onAvatarAnalysis(data) {
+    if (!data || !data.avatarId) return;
+    const prev = _avAnalysisCache[data.avatarId];
+    _avAnalysisCache[data.avatarId] = {
+        platforms: Object.assign({}, prev ? prev.platforms : {}, data.platforms || {}),
+        pending: !!data.pending,
+    };
+    if (_avDetailData && _avDetailData.id === data.avatarId) _avRenderAnalysis();
+}
+
+function _avPerfMb(v) {
+    const n = Number(v);
+    return isFinite(n) && v !== null && v !== undefined ? (n / 1048576).toFixed(2) + ' MB' : '-';
+}
+function _avPerfInt(v) {
+    return (v === null || v === undefined || !isFinite(Number(v))) ? '-' : Number(v).toLocaleString();
+}
+function _avPerfBounds(b) {
+    return (Array.isArray(b) && b.length === 3) ? b.map(v => String(Math.round(Number(v) * 100) / 100)).join(' × ') + ' m' : '-';
+}
+function _avPerfBool(v) {
+    if (v === null || v === undefined) return '-';
+    return v ? t('avatars.perf.yes', 'Yes') : t('avatars.perf.no', 'No');
+}
+function _avPerfRow(label, value) {
+    return `<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:calc(11px + var(--fs-off, 0px));"><span style="color:var(--tx2);">${esc(label)}</span><span style="color:var(--tx1);text-align:right;">${value}</span></div>`;
+}
+
+const _AV_PERF_GROUPS = [
+    ['geometry', 'Geometry', [
+        ['totalPolygons', 'triangles', 'Triangles', 'int'], ['totalVertices', 'vertices', 'Vertices', 'int'],
+        ['skinnedMeshCount', 'skinned_meshes', 'Skinned meshes', 'int'], ['meshCount', 'basic_meshes', 'Basic meshes', 'int'],
+        ['materialSlotsUsed', 'material_slots', 'Material slots', 'int'], ['boneCount', 'bones', 'Bones', 'int'],
+        ['blendShapeCount', 'blend_shapes', 'Blend shapes', 'int'], ['bounds', 'bounds', 'Bounds', 'bounds'],
+    ]],
+    ['dynamics', 'Dynamics and constraints', [
+        ['physBoneComponentCount', 'physbone_components', 'PhysBone components', 'int'], ['physBoneTransformCount', 'physbone_transforms', 'PhysBone affected transforms', 'int'],
+        ['physBoneColliderCount', 'physbone_colliders', 'PhysBone colliders', 'int'], ['physBoneCollisionCheckCount', 'physbone_checks', 'PhysBone collision checks', 'int'],
+        ['contactCount', 'contacts', 'Contacts', 'int'], ['constraintCount', 'constraints', 'Constraints', 'int'], ['constraintDepth', 'constraint_depth', 'Constraint depth', 'int'],
+    ]],
+    ['components', 'Components and effects', [
+        ['animatorCount', 'animators', 'Animators', 'int'], ['particleSystemCount', 'particle_systems', 'Particle systems', 'int'],
+        ['totalMaxParticles', 'particles_active', 'Total particles active', 'int'], ['meshParticleMaxPolygons', 'mesh_particle_tris', 'Mesh particle triangles', 'int'],
+        ['lightCount', 'lights', 'Lights', 'int'], ['audioSourceCount', 'audio_sources', 'Audio sources', 'int'], ['raycastCount', 'raycasts', 'Raycasts', 'int'],
+        ['clothCount', 'cloths', 'Cloths', 'int'], ['totalClothVertices', 'cloth_vertices', 'Cloth vertices', 'int'],
+        ['trailRendererCount', 'trail_renderers', 'Trail renderers', 'int'], ['lineRendererCount', 'line_renderers', 'Line renderers', 'int'],
+        ['physicsColliders', 'physics_colliders', 'Physics colliders', 'int'], ['physicsRigidbodies', 'physics_rigidbodies', 'Physics rigidbodies', 'int'],
+        ['particleTrailsEnabled', 'particle_trails', 'Particle trails enabled', 'bool'], ['particleCollisionEnabled', 'particle_collision', 'Particle collision enabled', 'bool'],
+    ]],
+];
+const _AV_PERF_PLATFORMS = [['standalonewindows', 'PC'], ['android', 'Android'], ['ios', 'iOS']];
+
+const _AV_PERF_RANKS = ['excellent', 'good', 'medium', 'poor'];
+const _AV_PERF_LIMITS = {
+    pc: {
+        totalPolygons: [32000, 70000, 70000, 70000],
+        totalTextureUsage: [40, 75, 110, 150].map(mb => mb * 1048576),
+        skinnedMeshCount: [1, 2, 8, 16],
+        meshCount: [4, 8, 16, 24],
+        materialSlotsUsed: [4, 8, 16, 32],
+        physBoneComponentCount: [4, 8, 16, 32],
+        physBoneTransformCount: [16, 64, 128, 256],
+        physBoneColliderCount: [4, 8, 16, 32],
+        physBoneCollisionCheckCount: [32, 128, 256, 512],
+        contactCount: [8, 16, 24, 32],
+        constraintCount: [100, 250, 300, 350],
+        constraintDepth: [20, 50, 80, 100],
+        animatorCount: [1, 4, 16, 32],
+        boneCount: [75, 150, 256, 400],
+        lightCount: [0, 0, 0, 1],
+        particleSystemCount: [0, 4, 8, 16],
+        totalMaxParticles: [0, 300, 1000, 2500],
+        meshParticleMaxPolygons: [0, 1000, 2000, 5000],
+        particleTrailsEnabled: [false, false, true, true],
+        particleCollisionEnabled: [false, false, true, true],
+        trailRendererCount: [1, 2, 4, 8],
+        lineRendererCount: [1, 2, 4, 8],
+        raycastCount: [1, 4, 8, 15],
+        clothCount: [0, 1, 1, 1],
+        totalClothVertices: [0, 50, 100, 200],
+        physicsColliders: [0, 1, 8, 8],
+        physicsRigidbodies: [0, 1, 8, 8],
+        audioSourceCount: [1, 4, 8, 8],
+        bounds: [[2.5, 2.5, 2.5], [4, 4, 4], [5, 6, 5], [5, 6, 5]],
+    },
+    mobile: {
+        totalPolygons: [7500, 10000, 15000, 20000],
+        totalTextureUsage: [10, 18, 25, 40].map(mb => mb * 1048576),
+        skinnedMeshCount: [1, 1, 2, 2],
+        meshCount: [1, 1, 2, 2],
+        materialSlotsUsed: [1, 1, 2, 4],
+        animatorCount: [1, 1, 1, 2],
+        boneCount: [75, 90, 150, 150],
+        physBoneComponentCount: [0, 4, 6, 8],
+        physBoneTransformCount: [0, 16, 32, 64],
+        physBoneColliderCount: [0, 4, 8, 16],
+        physBoneCollisionCheckCount: [0, 16, 32, 64],
+        contactCount: [2, 4, 8, 16],
+        constraintCount: [30, 60, 120, 150],
+        constraintDepth: [5, 15, 35, 50],
+        particleSystemCount: [0, 0, 0, 2],
+        totalMaxParticles: [0, 0, 0, 200],
+        meshParticleMaxPolygons: [0, 0, 0, 400],
+        particleTrailsEnabled: [false, false, false, true],
+        particleCollisionEnabled: [false, false, false, true],
+        trailRendererCount: [0, 0, 0, 1],
+        lineRendererCount: [0, 0, 0, 1],
+        raycastCount: [1, 2, 4, 8],
+        bounds: [[2.5, 2.5, 2.5], [4, 4, 4], [5, 6, 5], [5, 6, 5]],
+    },
+};
+
+function _avPerfRankOf(platform, key, value) {
+    const table = _AV_PERF_LIMITS[platform === 'standalonewindows' ? 'pc' : 'mobile'];
+    const limits = table && table[key];
+    if (!limits || value === null || value === undefined) return '';
+    for (let i = 0; i < limits.length; i++) {
+        const lim = limits[i];
+        if (key === 'bounds') {
+            if (Array.isArray(value) && value.length === 3 && value.every((v, j) => Number(v) <= lim[j] + 0.001)) return _AV_PERF_RANKS[i];
+        } else if (typeof lim === 'boolean') {
+            if (!value || lim) return _AV_PERF_RANKS[i];
+        } else if (Number(value) <= lim) {
+            return _AV_PERF_RANKS[i];
+        }
+    }
+    return 'verypoor';
+}
+
+function _avPerfRowHtml(label, valueHtml) {
+    return `<div class="av-perf-row"><span class="av-perf-row-label">${esc(label)}</span><span class="av-perf-row-value">${valueHtml}</span></div>`;
+}
+
+function _avPerfCards(platformKey, platformLabel, a, withPlatform) {
+    const stats = a.avatarStats || {};
+    const rating = a.performanceRating || '';
+    const ic = rating && typeof avatarPerfIcon === 'function' ? avatarPerfIcon(rating, 16) : '';
+    const ratingHtml = rating ? `<span class="av-perf-rating av-perf-r-${rating.toLowerCase().replace(/[^a-z]/g, '')}">${ic}${esc(typeof _avPerfPretty === 'function' ? _avPerfPretty(rating) : rating)}</span>` : '-';
+    const suffix = withPlatform ? ` · ${esc(platformLabel)}` : '';
+    let html = `<div class="fd-info-card av-perf-card">
+        <div class="fd-group-rep-label">${esc(t('avatars.perf.title', 'Performance'))}${suffix}</div>
+        <div class="av-perf-grid">
+            ${_avPerfRowHtml(t('avatars.perf.rating', 'Rating'), ratingHtml)}
+            ${_avPerfRowHtml(t('avatars.perf.download_size', 'Download size'), esc(_avPerfMb(a.fileSize)))}
+            ${_avPerfRowHtml(t('avatars.perf.uncompressed_size', 'Uncompressed size'), esc(_avPerfMb(a.uncompressedSize)))}
+            ${_avPerfRowHtml(t('avatars.perf.texture_memory', 'Texture memory'), `<span class="${(r => r ? 'av-perf-r-' + r : '')(_avPerfRankOf(platformKey, 'totalTextureUsage', stats.totalTextureUsage))}">${esc(_avPerfMb(stats.totalTextureUsage))}</span>`)}
+        </div>
+    </div>`;
+    for (const [gk, gLabel, rows] of _AV_PERF_GROUPS) {
+        html += `<div class="fd-info-card av-perf-card"><div class="fd-group-rep-label">${esc(t('avatars.perf.' + gk, gLabel))}${suffix}</div><div class="av-perf-grid">`;
+        for (const [key, i18nKey, label, kind] of rows) {
+            const v = stats[key];
+            const out = kind === 'bounds' ? _avPerfBounds(v) : kind === 'bool' ? _avPerfBool(v) : _avPerfInt(v);
+            const rank = _avPerfRankOf(platformKey, key, v);
+            html += `<div class="av-perf-row"><span class="av-perf-row-label">${esc(t('avatars.perf.' + i18nKey, label))}</span><span class="av-perf-row-value${rank ? ' av-perf-r-' + rank : ''}" title="${rank ? esc(_avPerfPretty(rank)) : ''}">${esc(out)}</span></div>`;
+        }
+        html += '</div></div>';
+    }
+    return html;
+}
+
+function _avRenderAnalysis() {
+    const wrap = document.querySelector('#avTabInfo .fd-info-wrap');
+    if (!wrap) return;
+    wrap.querySelectorAll('.av-perf-card').forEach(el => el.remove());
+    const id = _avDetailData && _avDetailData.id;
+    const entry = id ? _avAnalysisCache[id] : null;
+    if (!entry) return;
+    const present = _AV_PERF_PLATFORMS.filter(([p]) => entry.platforms && entry.platforms[p]);
+    let html = '';
+    for (const [p, label] of present) html += _avPerfCards(p, label, entry.platforms[p], present.length > 1);
+    if (!html && entry.pending) {
+        html = `<div class="fd-info-card av-perf-card"><div class="fd-group-rep-label">${esc(t('avatars.perf.title', 'Performance'))}</div><div class="myp-empty">${esc(t('avatars.perf.pending', 'VRChat is still analyzing this upload. Check back in a few minutes.'))}</div></div>`;
+    }
+    if (html) wrap.insertAdjacentHTML('beforeend', html);
 }
 
 function updateAvatarModalFavBtn(avatarId) {

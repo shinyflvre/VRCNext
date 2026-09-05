@@ -886,6 +886,9 @@ window.external.receiveMessage(rawMsg => {
                 renderAvatarDetail(payload);
                 if (typeof onAvatarDetailLive === 'function') onAvatarDetailLive(payload);
                 break;
+            case 'vrcAvatarAnalysis':
+                if (typeof onAvatarAnalysis === 'function') onAvatarAnalysis(payload);
+                break;
             case 'vrcAvatarGallery':
                 if (typeof onAvatarGallery === 'function') onAvatarGallery(payload);
                 break;
