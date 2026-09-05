@@ -2009,7 +2009,7 @@ public class AuthController
             _core.Settings.VroTtsLang   = data["vroTtsLang"]?.ToString() ?? "";
             _core.Settings.VroTtsGender = data["vroTtsGender"]?.ToString() ?? "";
             _core.Settings.FontSizeOffset = Math.Clamp(data["fontSizeOffset"]?.Value<int>() ?? 0, -5, 5);
-            _core.Settings.TaskbarHeight = Math.Clamp(data["taskbarHeight"]?.Value<int>() ?? 42, 34, 48);
+            _core.Settings.TaskbarHeight = Math.Clamp(data["taskbarHeight"]?.Value<int>() ?? 42, 36, 48);
             var activeCustomThemes = data["activeCustomThemes"]?.ToObject<List<string>>();
             if (activeCustomThemes != null) _core.Settings.ActiveCustomThemes = activeCustomThemes;
             _core.Settings.GuiZoom = Math.Clamp(data["guiZoom"]?.Value<int>() ?? 100, 50, 200);

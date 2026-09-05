@@ -1304,7 +1304,7 @@ function setFontSizeOffset(px) {
 }
 
 function applyTaskbarHeight(px) {
-    const n = Math.max(34, Math.min(48, parseInt(px, 10) || 42));
+    const n = Math.max(36, Math.min(48, parseInt(px, 10) || 42));
     currentTaskbarHeight = n;
     document.documentElement.style.setProperty('--tb-h', n + 'px');
     const slider = document.getElementById('setTaskbarHeight');
