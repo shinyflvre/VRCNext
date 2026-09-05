@@ -18,4 +18,4 @@
 - Customize Profile no longer jumps back to the top after applying a decoration, theme or background.
 - Profile Background > Gradient now opens the VRCNext color picker with eyedropper.
 - The Gradient tile shows its actual colors again.
-- Added missing translations in the profile customizer.
+- Added missing translations in the - Fixed world modal outline colors not matching.

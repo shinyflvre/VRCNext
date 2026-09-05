@@ -84,7 +84,7 @@
 .myp-textarea {
     width: 100%;
     background: var(--bg-input);
-    border: 1.5px solid rgba(255,255,255,.1);
+    border: 1px solid var(--brd);
     border-radius: 8px;
     color: var(--tx1);
     font-size: calc(12px + var(--fs-off, 0px));
