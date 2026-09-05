@@ -7,6 +7,7 @@ This update is mostly theme-focused. It doesn't add many new features, but it br
 - Theme Editor redesigned with a two-row layout to show more at once.
 - New editable colors: Sidebar BG, Taskbar BG, Button Base/Hover/Active, and Badge Base, for more detailed custom themes.
 - Added a taskbar size slider under **Settings > Sidebar > Taskbar**.
+- Changed the Google Material icon weight from 400 to 300.
 
 **Profile Customization**
 - **Customize Profile** rebuilt as a two-column editor with live preview.

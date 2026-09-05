@@ -211,7 +211,7 @@
     color: var(--tx2);
     font-size: calc(20px + var(--fs-off, 0px)) !important;
     font-family: 'Material Symbols Rounded', sans-serif;
-    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
     transition: color .12s, background .12s;
 }
 

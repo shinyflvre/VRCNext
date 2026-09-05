@@ -514,7 +514,7 @@ body:has(#tab0.active) .rsidebar.collapsed .sidebar-sep {
 
 .play-icon {
     font-size: calc(19px + var(--fs-off, 0px)) !important;
-    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
     flex-shrink: 0;
     line-height: 1;
 }
