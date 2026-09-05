@@ -64,7 +64,7 @@ html.modal-refreshing .fd-refresh-spin { animation: modal-refresh-spin 0.8s line
     gap: 8px;
     padding: 12px var(--modal-pad-x, 32px);
     margin: var(--modal-card-gap, 18px) calc(-1 * var(--modal-pad-x, 32px)) calc(-1 * var(--modal-pad-b, 22px));
-    background: var(--bg-side);
+    background: var(--bg-base);
     border-top: 1px solid var(--brd);
     border-radius: 0 0 13px 13px;
 }
@@ -446,7 +446,7 @@ html.modal-refreshing .fd-refresh-spin { animation: modal-refresh-spin 0.8s line
     align-items: center;
     gap: 6px;
     padding: 12px 14px;
-    background: var(--bg-side);
+    background: var(--bg-base);
     border-top: 1px solid var(--brd);
 }
 .launch-act {

@@ -24,7 +24,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 16px 14px 14px;
-    background: var(--bg-side);
+    background: var(--bg-base);
     flex-shrink: 0;
 }
 #msgrHeaderInfo { display:flex; align-items:center; gap:12px; flex:1; min-width:0; }
@@ -39,7 +39,7 @@
     bottom: -2px; right: -2px;
     width: 13px; height: 13px;
     border-radius: 50%;
-    border: 2.5px solid var(--bg-side);
+    border: 2.5px solid var(--bg-base);
 }
 #msgrHeaderText { flex:1; min-width:0; }
 #msgrName { font-weight:600; font-size: calc(14px + var(--fs-off, 0px)); color:var(--tx1); }
@@ -227,7 +227,7 @@
     align-items: flex-end;
     gap: 8px;
     padding: 10px 12px 12px;
-    background: var(--bg-side);
+    background: var(--bg-base);
     flex-shrink: 0;
 }
 #msgrInputWrap {

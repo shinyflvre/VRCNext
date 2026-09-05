@@ -20,7 +20,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: var(--bg-side);
+    background: var(--bg-taskbar);
     opacity: var(--sidebar-glass-t, 1);
     pointer-events: none;
     z-index: -1;

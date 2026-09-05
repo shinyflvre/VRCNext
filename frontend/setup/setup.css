@@ -68,7 +68,7 @@ html, body {
 }
 .setup-titlebar::after {
     content: ''; position: absolute; inset: 0;
-    background: var(--bg-side); pointer-events: none; z-index: -1;
+    background: var(--bg-taskbar); pointer-events: none; z-index: -1;
 }
 .tb-brand {
     font-size: 12px; font-weight: 700; color: var(--accent);

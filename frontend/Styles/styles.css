@@ -1,6 +1,7 @@
 ﻿:root {
     --bg-base: #0A0A0A;
     --bg-side: #0A0A0A;
+    --bg-taskbar: var(--bg-side);
     --bg-card: #0D0D0E;
     --bg-hover: #1C1C1F;
     --bg-input: #141416;

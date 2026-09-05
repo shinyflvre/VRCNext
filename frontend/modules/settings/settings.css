@@ -283,7 +283,7 @@
 .bgsk-bar {
     height: 14px;
     flex-shrink: 0;
-    background: var(--bg-side);
+    background: var(--bg-taskbar);
     border-bottom: 1px solid var(--brd);
 }
 .bgsk-hero {
@@ -513,3 +513,18 @@
     text-align: right;
     flex-shrink: 0;
 }
+
+/* Theme Editor v2 */
+.te-body { flex: 1; min-height: 0; overflow-y: auto; padding: 12px 14px 4px; }
+.te-section { background: var(--bg-input); border: 1px solid var(--brd); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; }
+.te-section-toggle { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; }
+.te-section-toggle .te-section-title { margin: 0; }
+.te-section-title { font-size: calc(10px + var(--fs-off, 0px)); font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--tx3); margin-bottom: 8px; }
+.te-grid { display: grid; grid-template-columns: 1fr; gap: 6px; }
+.te-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.te-label { font-size: calc(11px + var(--fs-off, 0px)); color: var(--tx2); width: 96px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.te-swatch { width: 22px; height: 22px; flex-shrink: 0; border-radius: 5px; border: 1px solid var(--brd); cursor: pointer; }
+.te-hex { flex: 1; min-width: 0; font-size: calc(11px + var(--fs-off, 0px)); font-family: var(--font-mono); }
+.te-foot { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-top: 1px solid var(--brd); flex-shrink: 0; }
+.te-foot .vrcn-input, .te-foot .vrcn-button { flex: 0 0 calc(50% - 4px); width: calc(50% - 4px); min-width: 0; height: 32px; box-sizing: border-box; padding-top: 0; padding-bottom: 0; margin: 0; }
+.te-foot .vrcn-button { justify-content: center; }

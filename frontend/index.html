@@ -657,7 +657,7 @@
     <!-- Favorite group picker popup (global, outside tabs so it's always visible) -->
     <div id="avFavPickerPanel" style="display:none;position:fixed;z-index:10005;background:var(--bg-card);border:1px solid var(--brd-lt);border-radius:10px;padding:10px;min-width:220px;max-width:280px;box-shadow:0 8px 32px #0008;"></div>
 <!-- Theme Editor Panel -->
-<div id="themeEditorPanel" style="display:none;position:fixed;bottom:16px;right:16px;width:380px;max-height:600px;z-index:9999;flex-direction:column;background:var(--bg-card);border:1px solid var(--brd);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.5);"></div>
+<div id="themeEditorPanel" style="display:none;position:fixed;bottom:16px;right:16px;width:380px;max-width:calc(100vw - 32px);max-height:600px;z-index:9999;flex-direction:column;background:var(--bg-card);border:1px solid var(--brd);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.5);"></div>
 <!-- Custom Color Picker -->
 <div id="teColorPicker" style="display:none;position:fixed;z-index:10010;background:var(--bg-card);border:1px solid var(--brd);border-radius:10px;padding:10px;box-shadow:0 4px 24px rgba(0,0,0,.6);width:220px;">
     <canvas id="tePickerSV"  width="200" height="150" style="border-radius:6px;cursor:crosshair;display:block;"></canvas>
