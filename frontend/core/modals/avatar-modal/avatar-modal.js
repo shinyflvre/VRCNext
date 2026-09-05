@@ -134,7 +134,7 @@ function renderAvatarDetail(a) {
     }
 
     const authorHtml = a.authorId
-        ? `<span onclick="navOpenModal('friend','${jsq(a.authorId)}','${jsq(a.authorName || '')}')" style="display:inline-flex;align-items:center;padding:1px 8px;border-radius:20px;background:var(--badge-bg);font-size:calc(11px + var(--fs-off, 0px));font-weight:600;color:var(--tx0);cursor:pointer;line-height:1.8;">${esc(a.authorName || a.authorId)}</span>`
+        ? `<span onclick="navOpenModal('friend','${jsq(a.authorId)}','${jsq(a.authorName || '')}')" style="display:inline-flex;align-items:center;padding:1px 8px;border-radius:20px;background:var(--badge-bg);font-size:calc(11px + var(--fs-off, 0px));font-weight:600;color:var(--badge-tx);cursor:pointer;line-height:1.8;">${esc(a.authorName || a.authorId)}</span>`
         : esc(a.authorName || '');
 
     const metaRows = [
