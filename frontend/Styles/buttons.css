@@ -70,7 +70,7 @@
 .vrcn-mini-pill-group {
     position: relative;
     display: inline-flex;
-    background: var(--bg-input, rgba(255,255,255,.06));
+    background: var(--ui-input-bg);
     border-radius: 99px;
     padding: 2px;
     gap: 0;
@@ -81,7 +81,7 @@
     left: 2px;
     height: calc(100% - 4px);
     border-radius: 99px;
-    background: color-mix(in srgb, var(--accent) 85%, transparent);
+    background: var(--ui-input-active-bg);
     transition: transform .22s cubic-bezier(.4,0,.2,1), width .22s cubic-bezier(.4,0,.2,1);
     pointer-events: none;
     z-index: 0;
@@ -102,7 +102,7 @@
     white-space: nowrap;
     line-height: 1.5;
 }
-.vrcn-mini-pill:hover { color: var(--tx1); }
+.vrcn-mini-pill:hover:not(.active) { color: var(--tx1); background: var(--ui-input-hover-bg); }
 .vrcn-mini-pill.active { color: #fff; }
 
 .vrcn-btn-danger { background: rgba(255,75,85,.15) !important; color: var(--err) !important; }
