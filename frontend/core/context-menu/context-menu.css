@@ -19,7 +19,7 @@
 }
 .vn-ctx-item {
     display: flex; align-items: center; gap: 9px;
-    width: 100%; padding: 5.5px 10px;
+    width: 100%; padding: 6px 10px;
     border: none; background: transparent;
     font-family: inherit;
     color: var(--tx1); font-size: calc(12.5px + var(--fs-off, 0px)); font-weight: 500;
