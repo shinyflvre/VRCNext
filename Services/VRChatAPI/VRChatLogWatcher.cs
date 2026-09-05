@@ -58,6 +58,9 @@ public class VRChatLogWatcher : IDisposable
 
     public event Action<string>? AvatarSeen;
     public event Action<string>? PrintSeen;
+    public event Action<string, string, string>? StickerSeen;
+    private static readonly System.Text.RegularExpressions.Regex RxStickerSpawn =
+        new(@"\[StickersManager\] User (usr_[0-9a-fA-F-]+) \((.*?)\) spawned sticker (inv_[0-9a-fA-F-]+)", System.Text.RegularExpressions.RegexOptions.Compiled);
 
     public event Action<GameLogLine>? GameLogEntry;
 
@@ -609,6 +612,12 @@ public class VRChatLogWatcher : IDisposable
         {
             var pid = ExtractPrintId(line);
             if (pid.Length > 0) { PrintSeen.Invoke(pid); return; }
+        }
+
+        if (!catchUp && StickerSeen != null && line.Contains("[StickersManager] User "))
+        {
+            var sm = RxStickerSpawn.Match(line);
+            if (sm.Success) { StickerSeen.Invoke(sm.Groups[1].Value, sm.Groups[2].Value, sm.Groups[3].Value); return; }
         }
 
         if (line.Contains("[VRC Camera] Took screenshot to:"))

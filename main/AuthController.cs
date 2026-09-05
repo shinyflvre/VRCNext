@@ -37,6 +37,7 @@ public class AuthController
     public void ClearFavGroupsCache() => _cachedFavGroups = null;
 
     private readonly VRCNext.Services.Tools.InstancePrintSaver _printSaver;
+    private readonly VRCNext.Services.Tools.InstanceStickerSaver _stickerSaver;
 
     // Constructor
 
@@ -57,6 +58,7 @@ public class AuthController
         _groups = groups;
         _discordCtrl = discordCtrl;
         _printSaver = new VRCNext.Services.Tools.InstancePrintSaver(core);
+        _stickerSaver = new VRCNext.Services.Tools.InstanceStickerSaver(core);
 
         // Allow RelayController to trigger a session resume....
         _relayCtrl.OnWakeResumeRequested = VrcTryResumeAsync;
@@ -827,6 +829,10 @@ public class AuthController
         _core.LogWatcher.PrintSeen += printId =>
         {
             try { _printSaver.OnPrintSeen(printId); } catch (Exception ex) { CrashHandler.WriteEntry("LogWatcher.PrintSeen", ex); }
+        };
+        _core.LogWatcher.StickerSeen += (userId, displayName, inventoryId) =>
+        {
+            try { _stickerSaver.OnStickerSeen(userId, displayName, inventoryId); } catch (Exception ex) { CrashHandler.WriteEntry("LogWatcher.StickerSeen", ex); }
         };
         _core.LogWatcher.VideoUrl += url =>
         {

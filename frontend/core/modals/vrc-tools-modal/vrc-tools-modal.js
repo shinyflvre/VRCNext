@@ -56,6 +56,14 @@ function vrcCfgSavePrintsToggle() {
     if (inp) inp.disabled = !on;
 }
 
+function vrcCfgSaveStickersToggle() {
+    var on = document.getElementById('vrcCfgSaveStickers')?.checked;
+    var field = document.getElementById('vrcCfgStickersDir')?.closest('.vrc-cfg-field');
+    if (field) field.style.opacity = on ? '1' : '.5';
+    var inp = document.getElementById('vrcCfgStickersDir');
+    if (inp) inp.disabled = !on;
+}
+
 function vrcCfgPickFolder(targetId) {
     sendToCS({ action: 'pickFolder', target: targetId });
 }
@@ -69,6 +77,7 @@ function openVrcConfigModal() {
     document.getElementById('vrcCfgCacheDir').value = '';
     document.getElementById('vrcCfgPictureDir').value = '';
     document.getElementById('vrcCfgPrintsDir').value = '';
+    document.getElementById('vrcCfgStickersDir').value = '';
     _vrcCfgFillResSelect('vrcCfgCameraRes', VRC_CFG_RES_CAMERA);
     _vrcCfgFillResSelect('vrcCfgSpoutRes', VRC_CFG_RES_SCREENSHOT);
     _vrcCfgFillResSelect('vrcCfgScreenshotRes', VRC_CFG_RES_SCREENSHOT);
@@ -116,6 +125,12 @@ function _vrcCfgApplyData(payload) {
         document.getElementById('vrcCfgPrintsDir').placeholder = payload.prints.defaultPath || '';
         _vrcCfgPrintsStatus(payload.prints);
         vrcCfgSavePrintsToggle();
+    }
+    if (payload.stickers) {
+        document.getElementById('vrcCfgSaveStickers').checked = !!payload.stickers.enabled;
+        document.getElementById('vrcCfgStickersDir').value = payload.stickers.path || '';
+        document.getElementById('vrcCfgStickersDir').placeholder = payload.stickers.defaultPath || '';
+        vrcCfgSaveStickersToggle();
     }
     if (payload.cacheBytes != null) {
         document.getElementById('vrcCfgCacheSize').textContent = _vrcCfgFormatBytes(payload.cacheBytes);
@@ -200,6 +215,10 @@ function vrcCfgSave() {
         prints: {
             enabled: document.getElementById('vrcCfgSavePrints').checked,
             path: (document.getElementById('vrcCfgPrintsDir').value || '').trim(),
+        },
+        stickers: {
+            enabled: document.getElementById('vrcCfgSaveStickers').checked,
+            path: (document.getElementById('vrcCfgStickersDir').value || '').trim(),
         },
     });
     document.getElementById('modalVrcConfig').style.display = 'none';

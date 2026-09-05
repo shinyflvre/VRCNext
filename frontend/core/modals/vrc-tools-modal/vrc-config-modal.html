@@ -90,6 +90,20 @@
                     </div>
                 </div>
             </div>
+            <div class="sf-section-label" style="margin-top:18px;margin-bottom:6px;" data-i18n="vrc_config.stickers_section">Instance Stickers</div>
+            <div class="set-desc" style="margin-bottom:8px;" data-i18n="vrc_config.stickers_desc">Automatically save stickers that players spawn in your instance. Each sticker is downloaded once and named player_date_stickerId so moderators can trace it.</div>
+            <div class="vrc-cfg-grid">
+                <div class="vrc-cfg-field">
+                    <div class="sf-toggle-row" style="margin:0;"><span data-i18n="vrc_config.save_instance_stickers">Save Stickers in instance</span><label class="toggle"><input type="checkbox" id="vrcCfgSaveStickers" onchange="vrcCfgSaveStickersToggle()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                </div>
+                <div class="vrc-cfg-field">
+                    <div class="sf-section-label" data-i18n="vrc_config.stickers_folder">Stickers Folder</div>
+                    <div class="vrc-cfg-path">
+                        <input type="text" id="vrcCfgStickersDir" class="vrcn-edit-field" placeholder="%UserProfile%\Pictures\VRChat\Stickers">
+                        <button class="vrcn-button" onclick="vrcCfgPickFolder('vrcCfgStickersDir')" title="Browse" data-i18n-title="common.browse"><span class="msi" style="font-size:16px;">folder_open</span></button>
+                    </div>
+                </div>
+            </div>
             </div>
             <div class="modal-foot">
                 <button class="vrcn-button" onclick="sendToCS({action:'openUrl',url:'https://docs.vrchat.com/docs/configuration-file'})"><span class="msi">open_in_new</span> <span data-i18n="vrc_config.docs">VRChat Docs</span></button>

@@ -696,6 +696,10 @@ public class AppSettings
     public bool   SaveInstancePrints { get; set; } = false;
     public string InstancePrintsPath { get; set; } = "";
 
+    // Instance stickers — download stickers other players spawn in the instance
+    public bool   SaveInstanceStickers { get; set; } = false;
+    public string InstanceStickersPath { get; set; } = "";
+
     // Windows Fixes
     public bool MediaFixEnabled { get; set; } = true;
 

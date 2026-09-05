@@ -3931,8 +3931,14 @@ public partial class AppShell
                             flagSet = (_core.Settings.VrcLaunchArgs ?? "").Contains("--enable-sdk-log-levels", StringComparison.OrdinalIgnoreCase),
                             logOk = VrcConfigHelper.LogHasApiRequests(),
                         };
+                        var stickers = new
+                        {
+                            enabled = _core.Settings.SaveInstanceStickers,
+                            path = _core.Settings.InstanceStickersPath ?? "",
+                            defaultPath = Path.Combine(VrcPathsHelper.PhotoDir(), "Stickers"),
+                        };
                         var inGame = new { cameraRes = VrcConfigHelper.ReadInGameCameraResolution() };
-                        Invoke(() => SendToJS("vrcConfigData", new { config = cfgJson, cacheBytes, prints, inGame }));
+                        Invoke(() => SendToJS("vrcConfigData", new { config = cfgJson, cacheBytes, prints, stickers, inGame }));
                     });
                     break;
                 }
@@ -3979,6 +3985,12 @@ public partial class AppShell
                     {
                         _core.Settings.SaveInstancePrints = pr["enabled"]?.Value<bool>() ?? false;
                         _core.Settings.InstancePrintsPath = (pr["path"]?.ToString() ?? "").Trim();
+                        _core.Settings.Save();
+                    }
+                    if (msg["stickers"] is JObject stk)
+                    {
+                        _core.Settings.SaveInstanceStickers = stk["enabled"]?.Value<bool>() ?? false;
+                        _core.Settings.InstanceStickersPath = (stk["path"]?.ToString() ?? "").Trim();
                         _core.Settings.Save();
                     }
                     var cfg = msg["config"] as JObject;
