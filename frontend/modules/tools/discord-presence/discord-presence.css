@@ -46,7 +46,7 @@
 }
 .dp-preview-time {
     font-size: calc(11px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     margin-top: 4px;
 }
 .dp-pg { display: flex; flex-direction: column; gap: 6px; }

@@ -16,7 +16,7 @@
 }
 .lib-is-thumb-round { border-radius: 50%; }
 .lib-is-thumb-icon { background: var(--bg-input); }
-.lib-is-thumb .msi { font-size: 12px; color: var(--tx3); }
+.lib-is-thumb .msi { font-size: 12px; color: var(--tx2); }
 
 #tab7.active {
     display: flex;
@@ -171,7 +171,7 @@
     top: 8px;
     right: 8px;
     background: rgba(0,0,0,.6);
-    color: var(--tx1);
+    color: var(--tx2);
     font-size: calc(9px + var(--fs-off, 0px));
     font-weight: 700;
     padding: 2px 6px;
@@ -191,7 +191,7 @@
     border-radius: 8px;
     background: var(--bg-card);
     border: none;
-    color: var(--tx1);
+    color: var(--tx2);
     font-size: calc(10px + var(--fs-off, 0px));
     font-weight: 600;
     cursor: pointer;
@@ -246,14 +246,14 @@
 .lib-player-av-letter {
     font-size: calc(9px + var(--fs-off, 0px));
     font-weight: 700;
-    color: var(--tx2);
+    color: var(--tx0);
     background: var(--bg-hover);
 }
 
 .lib-player-av-more {
     font-size: calc(8px + var(--fs-off, 0px));
     font-weight: 700;
-    color: var(--tx1);
+    color: var(--tx2);
     background: var(--bg-hover);
 }
 
@@ -291,9 +291,9 @@
     transition: all .15s;
     backdrop-filter: blur(6px);
     background: rgba(0,0,0,.45);
-    color: var(--tx3);
+    color: var(--tx1);
 }
-.vrcn-lib-button:hover { background: rgba(0,0,0,.65); color: var(--tx1); }
+.vrcn-lib-button:hover { background: rgba(0,0,0,.65); color: var(--tx0); }
 .vrcn-lib-button.clip:hover { color: var(--accent-lt); }
 .vrcn-lib-button.fav:hover { color: var(--warn); }
 .vrcn-lib-button.fav.active { color: var(--warn); opacity: 1; }
@@ -325,12 +325,12 @@
 
 .lib-name {
     font-size: calc(11px + var(--fs-off, 0px));
-    color: var(--tx1);
+    color: var(--tx0);
 }
 
 .lib-meta {
     font-size: calc(10px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     margin-top: 3px;
     display: flex;
     justify-content: space-between;
@@ -652,7 +652,7 @@
 
 .pd-rating-heart {
     font-size: 20px;
-    color: var(--tx3);
+    color: var(--tx1);
     cursor: pointer;
     transition: transform .1s ease, color .1s ease;
 }
@@ -683,7 +683,7 @@
 
 .lib-rating-count {
     font-size: calc(10px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     flex-shrink: 0;
     margin-left: auto;
     padding-left: 10px;
@@ -786,7 +786,7 @@
     justify-content: center;
     font-size: calc(10px + var(--fs-off, 0px));
     font-weight: 700;
-    color: var(--tx2);
+    color: var(--tx0);
 }
 .pd-ut-name {
     font-size: calc(11px + var(--fs-off, 0px));
@@ -803,7 +803,7 @@
 .pd-ut-card-remove {
     margin-left: auto;
     font-size: calc(15px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     cursor: pointer;
     flex-shrink: 0;
 }

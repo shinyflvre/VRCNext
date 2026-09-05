@@ -77,7 +77,7 @@
     justify-content: center;
     font-size: calc(16px + var(--fs-off, 0px));
     font-weight: 700;
-    color: var(--tx2);
+    color: var(--tx0);
 }
 .fp-av-dot {
     position: absolute;
@@ -113,7 +113,7 @@
     white-space: nowrap;
     margin-top: 1px;
 }
-.fp-stats-row .msi { font-size: 12px; color: var(--tx3); }
+.fp-stats-row .msi { font-size: 12px; color: var(--tx2); }
 .fp-stats-dot { color: var(--tx3); margin: 0 1px; }
 
 .fp-section {
@@ -197,12 +197,12 @@
     justify-content: center;
     font-size: calc(8px + var(--fs-off, 0px));
     font-weight: 700;
-    color: var(--tx3);
+    color: var(--tx0);
 }
 
 .fp-inst-more {
     margin-left: 5px;
     font-size: calc(10px + var(--fs-off, 0px));
     font-weight: 700;
-    color: var(--tx3);
+    color: var(--tx2);
 }

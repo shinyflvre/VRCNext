@@ -1072,7 +1072,7 @@ function avEditShowMoveMenu(btn) {
             <span class="msi" style="font-size:14px;flex-shrink:0;">folder</span>
             <span style="flex:1;">${esc(g.displayName || g.name)}</span>
             ${favGroupBadge(g)}
-            <span style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx3);flex-shrink:0;">${count}</span>
+            <span style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx2);flex-shrink:0;">${count}</span>
         </div>`;
     }).join('');
     picker.style.display = 'block';
@@ -1184,10 +1184,10 @@ function renderAvFavPickerList(avatarId) {
             onclick="addAvatarToFavGroup('${aid}','${gn}','${gt}','${oldFvrt}',this)" style="cursor:pointer;">
             <div style="flex:1;min-width:0;">
                 <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
-                    <span style="font-size:calc(12px + var(--fs-off, 0px));font-weight:600;color:var(--tx1);">${esc(g.displayName || g.name)}</span>
+                    <span style="font-size:calc(12px + var(--fs-off, 0px));font-weight:600;color:var(--tx0);">${esc(g.displayName || g.name)}</span>
                     ${vrcBadge}
                 </div>
-                <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx3);margin-top:1px;">${tf('avatars.favorites.group_count', { count, capacity: g.capacity || 25 }, '{count}/{capacity} slots')}</div>
+                <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx2);margin-top:1px;">${tf('avatars.favorites.group_count', { count, capacity: g.capacity || 25 }, '{count}/{capacity} slots')}</div>
             </div>
             ${check}
         </div>`;
@@ -1601,7 +1601,7 @@ function avEditShowAddFavMenu(btn) {
             <span class="msi" style="font-size:14px;flex-shrink:0;">favorite</span>
             <span style="flex:1;">${esc(g.displayName || g.name)}</span>
             ${favGroupBadge(g)}
-            <span style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx3);flex-shrink:0;">${count}</span>
+            <span style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx2);flex-shrink:0;">${count}</span>
         </div>`;
     }).join('') || `<div class="vn-select-option" style="pointer-events:none;color:var(--tx3);">${esc(t('avatars.favorites.no_groups', 'No favorite groups'))}</div>`;
     picker.style.display = 'block';

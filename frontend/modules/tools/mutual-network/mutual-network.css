@@ -12,13 +12,13 @@
 #netCanvas.dragging { cursor: grabbing; }
 .net-progress {
     position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
-    display: flex; align-items: center; gap: 6px; font-size: calc(11px + var(--fs-off, 0px)); color: var(--tx3);
+    display: flex; align-items: center; gap: 6px; font-size: calc(11px + var(--fs-off, 0px)); color: var(--tx2);
     background: var(--bg-card); border: 1px solid var(--brd); border-radius: 20px;
     padding: 4px 12px; white-space: nowrap; z-index: 10;
 }
 .net-progress-cancel {
     pointer-events: all; background: none; border: none;
-    color: var(--tx3); cursor: pointer; padding: 0 2px; font-size: calc(12px + var(--fs-off, 0px));
+    color: var(--tx1); cursor: pointer; padding: 0 2px; font-size: calc(12px + var(--fs-off, 0px));
     line-height: 1; margin-left: 2px;
 }
 .net-progress-cancel:hover { color: var(--err); }
@@ -38,9 +38,9 @@
 }
 .net-comm-head {
     display: flex; align-items: center; justify-content: space-between; gap: 10px;
-    padding: 0 8px 8px; font-size: calc(12px + var(--fs-off, 0px)); font-weight: 700; color: var(--tx1);
+    padding: 0 8px 8px; font-size: calc(12px + var(--fs-off, 0px)); font-weight: 700; color: var(--tx0);
 }
-.net-comm-head span:last-child { color: var(--tx3); font-weight: 600; }
+.net-comm-head span:last-child { color: var(--tx0); font-weight: 600; }
 .net-comm-list { display: flex; flex-direction: column; overflow-y: auto; }
 .net-comm-row {
     display: flex; align-items: center; gap: 8px; width: 100%;
@@ -51,16 +51,16 @@
 .net-comm-row.active { background: var(--bg-hover); }
 .net-comm-dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
 .net-comm-name {
-    flex: 1; min-width: 0; color: var(--tx1); font-weight: 600;
+    flex: 1; min-width: 0; color: var(--tx0); font-weight: 600;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.net-comm-count { flex: 0 0 auto; color: var(--tx3); }
+.net-comm-count { flex: 0 0 auto; color: var(--tx2); }
 .net-comm-score {
     margin-top: 8px; padding: 8px 8px 0;
-    border-top: 1px solid var(--brd); color: var(--tx3);
+    border-top: 1px solid var(--brd); color: var(--tx1);
 }
 .net-comm-score-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.net-comm-score-row span:last-child { color: var(--tx1); font-weight: 600; }
+.net-comm-score-row span:last-child { color: var(--tx0); font-weight: 600; }
 .net-comm-score input[type="range"] { width: 100%; margin: 6px 0 0; accent-color: var(--accent); cursor: pointer; }
 
 .net-score-card {
@@ -68,19 +68,19 @@
     display: flex; flex-direction: column; gap: 3px;
     width: 210px; padding: 10px 12px;
     background: var(--bg-card); border: 1px solid var(--brd); border-radius: 10px;
-    font-size: calc(11px + var(--fs-off, 0px)); color: var(--tx3); pointer-events: none;
+    font-size: calc(11px + var(--fs-off, 0px)); color: var(--tx2); pointer-events: none;
 }
 .net-score-pair {
-    color: var(--tx1); font-weight: 700; margin-bottom: 4px;
+    color: var(--tx0); font-weight: 700; margin-bottom: 4px;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .net-score-total {
     display: flex; align-items: center; justify-content: space-between; gap: 10px;
     padding-bottom: 5px; margin-bottom: 3px; border-bottom: 1px solid var(--brd);
-    color: var(--tx1); font-weight: 700;
+    color: var(--tx2); font-weight: 700;
 }
 .net-score-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.net-score-row span:last-child { color: var(--tx2); font-weight: 600; }
+.net-score-row span:last-child { color: var(--tx0); font-weight: 600; }
 
 .net-comm-hint {
     display: flex; align-items: center; gap: 8px;

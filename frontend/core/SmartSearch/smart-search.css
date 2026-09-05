@@ -53,7 +53,7 @@
     background: none;
     border: none;
     cursor: pointer;
-    color: var(--tx3);
+    color: var(--tx2);
     padding: 0;
     line-height: normal;
     flex-shrink: 0;
@@ -62,7 +62,7 @@
 }
 
 .ss-close-btn:hover {
-    color: var(--tx1);
+    color: var(--tx0);
 }
 
 /* === Dropdown === */
@@ -107,7 +107,7 @@
     font-weight: 700;
     letter-spacing: .6px;
     text-transform: uppercase;
-    color: var(--tx3);
+    color: var(--tx0);
     padding: 8px 14px 4px;
     margin-top: 2px;
 }
@@ -126,7 +126,7 @@
 }
 
 .ss-search-in-label {
-    color: var(--tx3);
+    color: var(--tx2);
     font-size: calc(11px + var(--fs-off, 0px));
     font-weight: 600;
     white-space: nowrap;
@@ -270,7 +270,7 @@
 
 .ss-item-sub {
     font-size: calc(10px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -297,7 +297,7 @@
 
 .ss-hint .msi {
     font-size: 22px;
-    color: var(--tx2);
+    color: var(--tx3);
 }
 
 /* === SmartSearch Modal === */
@@ -350,7 +350,7 @@
     background: transparent;
     font-size: calc(14px + var(--fs-off, 0px));
     font-weight: 500;
-    color: var(--tx0);
+    color: var(--tx1);
     font-family: inherit;
     min-width: 0;
 }

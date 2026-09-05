@@ -57,8 +57,8 @@ function renderEventDetail(ev) {
 
     const groupTopHtml = groupName
         ? `<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
-               ${groupIconUrl ? `<img src="${groupIconUrl}" style="width:16px;height:16px;border-radius:3px;object-fit:cover;flex-shrink:0;">` : `<span class="msi" style="font-size:14px;color:var(--tx3);">group</span>`}
-               <span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(groupName)}</span>
+               ${groupIconUrl ? `<img src="${groupIconUrl}" style="width:16px;height:16px;border-radius:3px;object-fit:cover;flex-shrink:0;">` : `<span class="msi" style="font-size:14px;color:var(--tx2);">group</span>`}
+               <span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx0);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(groupName)}</span>
            </div>`
         : '';
 
@@ -66,8 +66,8 @@ function renderEventDetail(ev) {
         ? `<div class="fd-section-label" style="margin-top:12px;">${t('calendar.detail.organizer', 'Organizer')}</div>
            <div style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 0;" onclick="navOpenModal('group','${groupOpenId}','${jsq(groupName || '')}')">
                ${groupIconUrl ? `<img src="${groupIconUrl}" style="width:28px;height:28px;border-radius:6px;object-fit:cover;">` : ''}
-               <span style="font-size:calc(13px + var(--fs-off, 0px));color:var(--tx1);">${esc(groupName)}</span>
-               <span class="msi" style="font-size:14px;color:var(--tx3);">chevron_right</span>
+               <span style="font-size:calc(13px + var(--fs-off, 0px));color:var(--tx0);">${esc(groupName)}</span>
+               <span class="msi" style="font-size:14px;color:var(--tx2);">chevron_right</span>
            </div>`
         : '';
 

@@ -5,7 +5,7 @@
             </div>
             <div class="modal-icon" style="background:rgba(56,132,255,.1);color:var(--accent);margin-top:20px;"><span class="msi" style="font-size:22px;">shield</span></div>
             <div class="modal-msg" id="modal2FAMsg" data-i18n="profiles.2fa.default_message">Enter the 6-digit code from your email or authenticator app.</div>
-            <div style="margin:16px 0;"><input type="text" id="modal2FACode" maxlength="6" placeholder="000000" autocomplete="one-time-code" style="width:100%;text-align:center;font-size:calc(24px + var(--fs-off, 0px));letter-spacing:8px;font-weight:700;padding:12px;background:var(--bg-input);border:none;border-radius:8px;color:var(--tx0);outline:none;font-family:inherit;" onkeydown="if(event.key==='Enter')modal2FASubmit()"></div>
+            <div style="margin:16px 0;"><input type="text" id="modal2FACode" maxlength="6" placeholder="000000" autocomplete="one-time-code" style="width:100%;text-align:center;font-size:calc(24px + var(--fs-off, 0px));letter-spacing:8px;font-weight:700;padding:12px;background:var(--bg-input);border:none;border-radius:8px;color:var(--tx2);outline:none;font-family:inherit;" onkeydown="if(event.key==='Enter')modal2FASubmit()"></div>
             <div id="modal2FAError" style="font-size:calc(11px + var(--fs-off, 0px));color:var(--err);margin-bottom:8px;min-height:16px;"></div>
             <div class="modal-btns"><button class="vrcn-button-round vrcn-btn-join" onclick="modal2FASubmit()" data-i18n="profiles.2fa.verify">Verify</button></div>
         </div>

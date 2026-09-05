@@ -57,7 +57,7 @@
     top: 50%;
     transform: translateY(-50%);
     font-size: calc(11px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     pointer-events: none;
     transition: color .2s;
 }
@@ -100,14 +100,14 @@
 
 .cb-char-count {
     font-size: calc(10px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     margin-top: 6px;
     text-align: right;
 }
 
 .cb-media-idle {
     font-size: calc(12px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx1);
     text-align: center;
     padding: 4px 0;
 }
@@ -135,14 +135,14 @@
 
 .cb-media-time {
     font-size: calc(10px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     margin-top: 3px;
     text-align: right;
 }
 
 .cb-toggle-icon {
     font-size: calc(15px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     width: 20px;
     text-align: center;
 }
@@ -156,7 +156,7 @@
 
 .cb-form-row label {
     font-size: calc(11px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     min-width: 70px;
     flex-shrink: 0;
 }
@@ -211,7 +211,7 @@
     min-width: 0;
 }
 
-.cb-line-del { color: var(--tx3); padding: 2px; flex-shrink: 0; }
+.cb-line-del { color: var(--tx2); padding: 2px; flex-shrink: 0; }
 
 .cb-line-del:hover {
     color: var(--err);
@@ -235,7 +235,7 @@
     border: 1px solid var(--bg-line, rgba(255,255,255,.08));
     border-radius: 50%;
     background: var(--bg-card, #1e1e22);
-    color: var(--tx2);
+    color: var(--tx1);
     cursor: pointer;
     opacity: 0;
     pointer-events: none;
@@ -283,7 +283,7 @@
 
 .cb-ord-handle {
     font-size: calc(18px + var(--fs-off, 0px)) !important;
-    color: var(--tx3);
+    color: var(--tx2);
     cursor: grab;
     user-select: none;
     flex-shrink: 0;
@@ -324,7 +324,7 @@
 }
 
 .cb-line-btn {
-    color: var(--tx3);
+    color: var(--tx1);
     padding: 2px;
     flex-shrink: 0;
     background: none;
@@ -372,19 +372,19 @@
 
 .cb-ord-caret {
     font-size: calc(18px + var(--fs-off, 0px)) !important;
-    color: var(--tx3);
+    color: var(--tx2);
     cursor: pointer;
     user-select: none;
     flex-shrink: 0;
     margin-left: 2px;
     transition: transform .15s, color .15s;
 }
-.cb-ord-caret:hover { color: var(--tx1); }
+.cb-ord-caret:hover { color: var(--tx0); }
 .cb-ord-block.cb-open > .cb-ord-row .cb-ord-caret { transform: rotate(180deg); }
 
 .cb-ord-byline {
     font-size: calc(10px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     margin-left: -3px;
     cursor: pointer;
     text-decoration: underline;

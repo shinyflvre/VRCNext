@@ -26,12 +26,12 @@
 .lv-icon-letter {
     font-size: calc(12px + var(--fs-off, 0px));
     font-weight: 700;
-    color: var(--tx3);
+    color: var(--tx0);
 }
 
 .lv-name {
     font-weight: 700;
-    color: var(--tx1);
+    color: var(--tx0);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -51,7 +51,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.lv-tags-more { font-size: calc(11px + var(--fs-off, 0px)); color: var(--tx3); flex-shrink: 0; }
+.lv-tags-more { font-size: calc(11px + var(--fs-off, 0px)); color: var(--tx2); flex-shrink: 0; }
 .lv-more {
     text-align: center;
     padding: 12px 0 4px;

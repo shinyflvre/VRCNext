@@ -109,12 +109,12 @@ function renderGroupDetail(g) {
     const iconEditBtn = canEdit ? `<button class="myp-edit-btn" style="position:absolute;bottom:-4px;right:-4px;padding:2px;min-width:0;width:18px;height:18px;display:flex;align-items:center;justify-content:center;" onclick="openImagePicker('group-icon','${gidJs}')" title="${esc(t('groups.images.change_icon', 'Change icon'))}"><span class="msi" style="font-size:11px;">edit</span></button>` : '';
     const iconHtml = g.iconUrl
         ? `<div style="position:relative;display:inline-block;flex-shrink:0;"><img class="fd-avatar" src="${g.iconUrl}" onerror="this.style.display='none'">${iconEditBtn}</div>`
-        : (canEdit ? `<div style="position:relative;display:inline-block;flex-shrink:0;"><div class="fd-avatar" style="display:flex;align-items:center;justify-content:center;font-size:calc(20px + var(--fs-off, 0px));font-weight:700;color:var(--tx3);">${esc((g.name||'?')[0])}</div>${iconEditBtn}</div>` : '');
+        : (canEdit ? `<div style="position:relative;display:inline-block;flex-shrink:0;"><div class="fd-avatar" style="display:flex;align-items:center;justify-content:center;font-size:calc(20px + var(--fs-off, 0px));font-weight:700;color:var(--tx0);">${esc((g.name||'?')[0])}</div>${iconEditBtn}</div>` : '');
     const membersPart = esc(getGroupMembersText(g.memberCount || 0)) + (g.onlineMemberCount > 0 ? ` &middot; ${g.onlineMemberCount} ${esc(t('status.online', 'Online'))}` : '');
     const headerMeta = [g.shortCode ? esc(g.shortCode) : '', membersPart].filter(Boolean).join(' &middot; ');
     const ownerLabel = g.ownerDisplayName || '';
     const ownerHtml = (g.ownerId && ownerLabel)
-        ? `<div style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx3);margin-top:2px;margin-bottom:4px;">${t('worlds.meta.by', 'by')} <span onclick="navOpenModal('friend','${jsq(g.ownerId)}','${jsq(ownerLabel)}')" style="display:inline-flex;align-items:center;padding:1px 8px;border-radius:20px;background:var(--badge-bg);font-size:calc(11px + var(--fs-off, 0px));font-weight:600;color:var(--tx1);cursor:pointer;line-height:1.8;">${esc(ownerLabel)}</span></div>`
+        ? `<div style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);margin-top:2px;margin-bottom:4px;">${t('worlds.meta.by', 'by')} <span onclick="navOpenModal('friend','${jsq(g.ownerId)}','${jsq(ownerLabel)}')" style="display:inline-flex;align-items:center;padding:1px 8px;border-radius:20px;background:var(--badge-bg);font-size:calc(11px + var(--fs-off, 0px));font-weight:600;color:var(--tx2);cursor:pointer;line-height:1.8;">${esc(ownerLabel)}</span></div>`
         : '';
 
     // Header action cluster (top-right) — replaces the old bottom button bar.
@@ -179,7 +179,7 @@ function renderGroupDetail(g) {
                         <div style="display:flex;gap:10px;align-items:flex-start;">
                             <div style="flex:1;min-width:0;">
                                 <div style="font-size:calc(12px + var(--fs-off, 0px));font-weight:600;color:var(--tx0);margin-bottom:2px;">${esc(lp.title || 'Untitled')}</div>
-                                ${lpDate ? `<div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx3);margin-bottom:4px;">${lpDate}</div>` : ''}
+                                ${lpDate ? `<div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx2);margin-bottom:4px;">${lpDate}</div>` : ''}
                                 ${lpPreview ? `<div style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);line-height:1.4;">${esc(lpPreview)}</div>` : ''}
                             </div>
                             ${lpImg}
@@ -200,7 +200,7 @@ function renderGroupDetail(g) {
                         <div style="display:flex;gap:10px;align-items:flex-start;">
                             <div style="flex:1;min-width:0;">
                                 <div style="font-size:calc(12px + var(--fs-off, 0px));font-weight:600;color:var(--tx0);margin-bottom:2px;">${esc(le.title || 'Untitled Event')}</div>
-                                <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx3);margin-bottom:4px;">${leDateStr}${leTimeStr ? ' · ' + leTimeStr : ''}</div>
+                                <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx2);margin-bottom:4px;">${leDateStr}${leTimeStr ? ' · ' + leTimeStr : ''}</div>
                                 ${lePrev ? `<div style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);line-height:1.4;">${esc(lePrev)}</div>` : ''}
                             </div>
                             ${leImg}
@@ -238,7 +238,7 @@ function renderGroupDetail(g) {
                             ${thumb}
                             <div style="flex:1;min-width:0;">
                                 <div style="font-size:calc(11px + var(--fs-off, 0px));font-weight:600;color:var(--tx0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(inst.worldName || t('dashboard.instances.unknown_world', 'Unknown World'))}</div>
-                                ${users ? `<div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx3);">${users}</div>` : ''}
+                                ${users ? `<div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx2);">${users}</div>` : ''}
                             </div>
                         </div>`;
                     }).join('');
@@ -250,11 +250,11 @@ function renderGroupDetail(g) {
                 <div class="fd-info-card">
                     <div class="fd-group-rep-label">${t('groups.sections.group_info', 'Group Info')}</div>
                     <div style="display:grid;gap:6px;">
-                        ${g.joinedAt ? `<div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-size:calc(11px + var(--fs-off, 0px));"><span style="color:var(--tx3);">${t('groups.info.joined_at','Joined Group')}</span><span style="color:var(--tx1);text-align:right;">${fmtShortDate(new Date(g.joinedAt))}</span></div>` : ''}
-                        <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-size:calc(11px + var(--fs-off, 0px));"><span style="color:var(--tx3);">${t('groups.info.created_at','Created')}</span><span style="color:var(--tx1);text-align:right;">${g.createdAt ? fmtShortDate(new Date(g.createdAt)) : '—'}</span></div>
-                        ${g.isJoined ? `<div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-size:calc(11px + var(--fs-off, 0px));"><span style="color:var(--tx3);">${t('groups.info.representing','Representing')}</span><span style="color:var(--tx1);text-align:right;">${g.isRepresenting ? t('common.yes','Yes') : t('common.no','No')}</span></div>` : ''}
-                        <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-size:calc(11px + var(--fs-off, 0px));"><span style="color:var(--tx3);">${t('groups.info.member_count','Members')}</span><span style="color:var(--tx1);text-align:right;">${g.memberCount ?? '—'}</span></div>
-                        <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-size:calc(11px + var(--fs-off, 0px));"><span style="color:var(--tx3);">${t('groups.info.verified','Verified')}</span><span style="color:var(--tx1);text-align:right;">${g.isVerified ? t('common.yes','Yes') : t('common.no','No')}</span></div>
+                        ${g.joinedAt ? `<div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-size:calc(11px + var(--fs-off, 0px));"><span style="color:var(--tx2);">${t('groups.info.joined_at','Joined Group')}</span><span style="color:var(--tx2);text-align:right;">${fmtShortDate(new Date(g.joinedAt))}</span></div>` : ''}
+                        <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-size:calc(11px + var(--fs-off, 0px));"><span style="color:var(--tx2);">${t('groups.info.created_at','Created')}</span><span style="color:var(--tx2);text-align:right;">${g.createdAt ? fmtShortDate(new Date(g.createdAt)) : '—'}</span></div>
+                        ${g.isJoined ? `<div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-size:calc(11px + var(--fs-off, 0px));"><span style="color:var(--tx2);">${t('groups.info.representing','Representing')}</span><span style="color:var(--tx1);text-align:right;">${g.isRepresenting ? t('common.yes','Yes') : t('common.no','No')}</span></div>` : ''}
+                        <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-size:calc(11px + var(--fs-off, 0px));"><span style="color:var(--tx2);">${t('groups.info.member_count','Members')}</span><span style="color:var(--tx2);text-align:right;">${g.memberCount ?? '—'}</span></div>
+                        <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-size:calc(11px + var(--fs-off, 0px));"><span style="color:var(--tx2);">${t('groups.info.verified','Verified')}</span><span style="color:var(--tx1);text-align:right;">${g.isVerified ? t('common.yes','Yes') : t('common.no','No')}</span></div>
                     </div>
                 </div>
                 <div class="fd-info-card">
@@ -356,7 +356,7 @@ function renderGroupDetail(g) {
                         <div style="font-size:calc(13px + var(--fs-off, 0px));font-weight:600;color:var(--tx0);flex:1;">${esc(p.title || 'Untitled')}</div>
                         ${editBtn}${delBtn}
                     </div>
-                    <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx3);margin-bottom:6px;">${date}${p.visibility ? ' · ' + esc(p.visibility) : ''}</div>
+                    <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx2);margin-bottom:6px;">${date}${p.visibility ? ' · ' + esc(p.visibility) : ''}</div>
                     <div class="gd-post-text" id="gpost${i}" data-full="${esc(fullText).replace(/"/g,'&quot;')}" data-preview="${esc(preview).replace(/"/g,'&quot;')}" style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);line-height:1.4;">${esc(preview)}</div>
                     ${isLong ? `<div style="margin-top:4px;"><span class="gd-expand" data-expanded="0" onclick="toggleGPost(${i})">${t('groups.posts.show_more', 'Show more')}</span></div>` : ''}
                 </div>
@@ -393,7 +393,7 @@ function renderGroupDetail(g) {
                     <div style="font-size:calc(13px + var(--fs-off, 0px));font-weight:600;color:var(--tx0);">${esc(e.title || 'Untitled Event')}${badge}</div>
                     ${delEvtBtn}
                 </div>
-                <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx3);margin:2px 0 4px;">${dateStr}${timeStr ? ' · ' + timeStr : ''}</div>
+                <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx2);margin:2px 0 4px;">${dateStr}${timeStr ? ' · ' + timeStr : ''}</div>
                 ${e.description ? `<div style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);line-height:1.4;">${esc(e.description)}</div>` : ''}
             </div>`;
         });
@@ -893,7 +893,7 @@ let _groupPostSelectedFileId = null; // file_xxx from library picker
 let _groupPostEditPostId = null;
 
 function renderGroupImageUploadTile(onclickHandler) {
-    return `<div style="width:100%;aspect-ratio:1;border-radius:6px;cursor:pointer;background:var(--bg-input);border:1.5px dashed var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'" onclick="${onclickHandler}()" title="${esc(t('groups.common.upload_new_photo', 'Upload new photo'))}"><span class="msi" style="font-size:22px;color:var(--tx3);pointer-events:none;">add_photo_alternate</span></div>`;
+    return `<div style="width:100%;aspect-ratio:1;border-radius:6px;cursor:pointer;background:var(--bg-input);border:1.5px dashed var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'" onclick="${onclickHandler}()" title="${esc(t('groups.common.upload_new_photo', 'Upload new photo'))}"><span class="msi" style="font-size:22px;color:var(--tx2);pointer-events:none;">add_photo_alternate</span></div>`;
 }
 
 function openGroupPostEditModal(groupId, postId) {
@@ -946,7 +946,7 @@ function openGroupPostModal(groupId, editPost = null) {
                     </select>
                 </div>
             </div>
-            <label class="gp-label" style="margin-top:12px;">${t('groups.posts.fields.image', 'Image')} <span style="color:var(--tx3);font-weight:400;">(${t('groups.common.optional', 'optional')})</span></label>
+            <label class="gp-label" style="margin-top:12px;">${t('groups.posts.fields.image', 'Image')} <span style="color:var(--tx2);font-weight:400;">(${t('groups.common.optional', 'optional')})</span></label>
             <div id="gpImgGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px;max-height:180px;overflow-y:auto;padding:4px 0;"></div>
             <div id="gpError" style="display:none;margin-top:8px;padding:8px 10px;background:rgba(255,80,80,.12);border-radius:8px;color:var(--err);font-size:calc(12px + var(--fs-off, 0px));"></div>
         </div>
@@ -1107,9 +1107,9 @@ function _ensureGevDp() {
         <div class="tl-dp-weekdays">${_gevDpWeekdaysHtml()}</div>
         <div id="gevDpDaysGrid" class="tl-dp-days"></div>
         <div style="display:flex;align-items:center;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--brd);">
-            <span class="msi" style="font-size:15px;color:var(--tx3);">schedule</span>
+            <span class="msi" style="font-size:15px;color:var(--tx2);">schedule</span>
             <input id="gevDpHourInput" class="gev-dp-time-input" type="number" min="1" max="12" oninput="gevDpTimeChanged()">
-            <span style="color:var(--tx2);font-weight:700;font-size:calc(15px + var(--fs-off, 0px));">:</span>
+            <span style="color:var(--tx3);font-weight:700;font-size:calc(15px + var(--fs-off, 0px));">:</span>
             <input id="gevDpMinInput" class="gev-dp-time-input" type="number" min="0" max="59" oninput="gevDpTimeChanged()">
             <button id="gevDpAmPmBtn" class="gev-dp-ampm-btn" onclick="gevDpToggleAmPm()">${t('groups.date_picker.am', 'AM')}</button>
             <button id="gevDp24hBtn" class="gev-dp-24h-btn" onclick="gevDpToggle24h()">24h</button>
@@ -1402,7 +1402,7 @@ function openGroupEventModal(groupId) {
                 </select>
             </div>
 
-            <label class="gp-label" style="margin-top:12px;">${t('groups.events.fields.image', 'Image')} <span style="color:var(--tx3);font-weight:400;">(${t('groups.common.optional', 'optional')})</span></label>
+            <label class="gp-label" style="margin-top:12px;">${t('groups.events.fields.image', 'Image')} <span style="color:var(--tx2);font-weight:400;">(${t('groups.common.optional', 'optional')})</span></label>
             <div id="gevImgGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px;max-height:180px;overflow-y:auto;padding:4px 0;"></div>
 
             <div id="gevError" style="display:none;margin-top:8px;padding:8px 10px;background:rgba(255,80,80,.12);border-radius:8px;color:var(--err);font-size:calc(12px + var(--fs-off, 0px));"></div>
@@ -1600,10 +1600,10 @@ function _buildRoleViewCard(role, idx, isMine, groupId) {
                 <div class="gd-role-name">${badge}${esc(role.name || '')}</div>
                 <div class="gd-role-meta">${esc(getRoleMetaText(role))}</div>
             </div>
-            <span class="msi gd-role-chevron" style="font-size:18px;color:var(--tx3);transition:transform .2s;">expand_more</span>
+            <span class="msi gd-role-chevron" style="font-size:18px;color:var(--tx2);transition:transform .2s;">expand_more</span>
         </div>
         <div class="gd-role-body" id="gdrole-body-${rid}" style="display:none;">
-            ${role.description ? `<div class="gd-role-section"><div class="gd-role-section-title">${t('groups.sections.description', 'Description')}</div><div style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);white-space:pre-wrap;">${esc(role.description)}</div></div>` : ''}
+            ${role.description ? `<div class="gd-role-section"><div class="gd-role-section-title">${t('groups.sections.description', 'Description')}</div><div style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx1);white-space:pre-wrap;">${esc(role.description)}</div></div>` : ''}
             <div class="gd-role-section">
                 <div class="gd-role-section-title">${t('groups.roles.permissions', 'Permissions')}</div>
                 ${permsHtml}
@@ -1689,7 +1689,7 @@ function _buildRoleCard(role, groupId, canManage) {
     return `<div class="gd-role-card" id="gdrole-${rid}">
         <div class="gd-role-header" onclick="toggleGdRoleExpand('${rid}')">
             <div style="flex:1;"><div class="gd-role-name">${badge}${esc(role.name)}</div><div class="gd-role-meta">${getRoleMetaText(role)}</div></div>
-            <span class="msi gd-role-chevron" style="font-size:18px;color:var(--tx3);transition:transform .2s;">expand_more</span>
+            <span class="msi gd-role-chevron" style="font-size:18px;color:var(--tx2);transition:transform .2s;">expand_more</span>
         </div>
         <div class="gd-role-body" id="gdrole-body-${rid}" style="display:none;">
             <div class="fd-tabs gd-tabs" style="margin:10px 14px 0;">

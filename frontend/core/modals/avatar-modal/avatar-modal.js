@@ -134,7 +134,7 @@ function renderAvatarDetail(a) {
     }
 
     const authorHtml = a.authorId
-        ? `<span onclick="navOpenModal('friend','${jsq(a.authorId)}','${jsq(a.authorName || '')}')" style="display:inline-flex;align-items:center;padding:1px 8px;border-radius:20px;background:var(--badge-bg);font-size:calc(11px + var(--fs-off, 0px));font-weight:600;color:var(--tx1);cursor:pointer;line-height:1.8;">${esc(a.authorName || a.authorId)}</span>`
+        ? `<span onclick="navOpenModal('friend','${jsq(a.authorId)}','${jsq(a.authorName || '')}')" style="display:inline-flex;align-items:center;padding:1px 8px;border-radius:20px;background:var(--badge-bg);font-size:calc(11px + var(--fs-off, 0px));font-weight:600;color:var(--tx0);cursor:pointer;line-height:1.8;">${esc(a.authorName || a.authorId)}</span>`
         : esc(a.authorName || '');
 
     const metaRows = [
@@ -185,10 +185,10 @@ function renderAvatarDetail(a) {
     </div>`;
 
     const _mr = (label, valueHtml) =>
-        `<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:calc(11px + var(--fs-off, 0px));"><span style="color:var(--tx3);">${label}</span><span style="color:var(--tx1);text-align:right;display:inline-flex;align-items:center;gap:6px;">${valueHtml}</span></div>`;
+        `<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:calc(11px + var(--fs-off, 0px));"><span style="color:var(--tx2);">${label}</span><span style="color:var(--tx1);text-align:right;display:inline-flex;align-items:center;gap:6px;">${valueHtml}</span></div>`;
     const _perfVal = perf => {
         const ic = avatarPerfIcon(perf, 18);
-        return ic ? `${ic}${esc(_avPerfPretty(perf))}` : '<span style="color:var(--tx3);">-</span>';
+        return ic ? `${ic}${esc(_avPerfPretty(perf))}` : '<span style="color:var(--tx1);">-</span>';
     };
     const platPerfRows = [
         a.hasPC    ? _mr('PC', _perfVal(a.pcPerf))         : '',
@@ -245,7 +245,7 @@ function renderAvatarDetail(a) {
                             <button class="vrcn-button vrcn-btn-primary" onclick="saveAvField('name','${aid}')">${t('common.save', 'Save')}</button>
                         </div>
                     </div>` : ''}
-                    <div style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx3);margin-top:4px;">${t('avatars.detail.by', 'by')} ${authorHtml}</div>`;
+                    <div style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);margin-top:4px;">${t('avatars.detail.by', 'by')} ${authorHtml}</div>`;
 
     const _avTabsHtml = `<div class="fd-tabs" style="margin-bottom:14px;">
                 <button class="fd-tab active" onclick="switchAvTab('info',this)">${t('profiles.tabs.info', 'Info')}</button>

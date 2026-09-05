@@ -271,7 +271,7 @@ function tlClearedHtml() {
 }
 
 function tlDetailClearedHtml() {
-    return `<em style="color:var(--tx3)">${esc(t('timeline.value.cleared', '(cleared)'))}</em>`;
+    return `<em style="color:var(--tx1)">${esc(t('timeline.value.cleared', '(cleared)'))}</em>`;
 }
 
 // Public API
@@ -679,7 +679,7 @@ function _renderTlSearchResults(search) {
 
     const total      = _tlSearchTotal;
     const totalPages = total > 0 ? Math.ceil(total / tlPageSize) : 1;
-    const banner = `<div style="padding:6px 12px;font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);border-bottom:1px solid var(--brd);">`
+    const banner = `<div style="padding:6px 12px;font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);border-bottom:1px solid var(--brd);">`
         + `${esc(tlSearchSummary(total, search))}</div>`;
     let html = banner + (tlViewMode === 'list' ? buildPersonalListHtml(events) : buildTimelineHtml(events));
     c.innerHTML = html;
@@ -712,7 +712,7 @@ function tlGoSearchPage(page) {
 }
 
 function buildSearchPagination(page, totalPages, onPageFn, total = 0) {
-    const countHtml = total > 0 ? `<span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);padding:0 8px;">${esc(tlTotalSummary(total))}</span>` : '';
+    const countHtml = total > 0 ? `<span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);padding:0 8px;">${esc(tlTotalSummary(total))}</span>` : '';
     const bar = buildPaginator(page, totalPages, onPageFn, countHtml) || countHtml;
     return tlPageSizeSelectHtml('setTlPageSize') + bar;
 }
@@ -720,7 +720,7 @@ function buildSearchPagination(page, totalPages, onPageFn, total = 0) {
 // Personal Timeline pagination helpers
 
 function buildTlPagination(page, totalPages, hasMore) {
-    const countHtml = tlTotal > 0 ? `<span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);padding:0 8px;">${esc(tlTotalSummary(tlTotal))}</span>` : '';
+    const countHtml = tlTotal > 0 ? `<span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);padding:0 8px;">${esc(tlTotalSummary(tlTotal))}</span>` : '';
     const bar = buildPaginator(page, totalPages, 'tlGoPage', countHtml, hasMore) || countHtml;
     return tlPageSizeSelectHtml('setTlPageSize') + bar;
 }
@@ -1079,7 +1079,7 @@ function renderTlCard(ev) {
 function renderTlJoinBody(ev) {
     const thumb = ev.worldThumb
         ? `<div class="tl-thumb" style="background-image:url('${cssUrl(imgThumb(ev.worldThumb, 128))}')"></div>`
-        : `<div class="tl-thumb tl-thumb-empty"><span class="msi" style="font-size:18px;color:var(--tx3);">travel_explore</span></div>`;
+        : `<div class="tl-thumb tl-thumb-empty"><span class="msi" style="font-size:18px;color:var(--tx2);">travel_explore</span></div>`;
     const name  = ev.worldName || ev.worldId || t('timeline.unknown_world', 'Unknown World');
     const cnt   = (ev.players || []).length;
     const avs   = tlPlayerAvatars(ev.players, 3);
@@ -1123,7 +1123,7 @@ function tlInstanceListDetail(ev, name) {
 function renderTlPhotoBody(ev) {
     const thumb = ev.photoUrl
         ? `<div class="tl-thumb tl-thumb-photo" style="background-image:url('${cssUrl(ev.photoUrl)}')"></div>`
-        : `<div class="tl-thumb tl-thumb-empty"><span class="msi" style="font-size:18px;color:var(--tx3);">camera</span></div>`;
+        : `<div class="tl-thumb tl-thumb-empty"><span class="msi" style="font-size:18px;color:var(--tx2);">camera</span></div>`;
     const name   = ev.photoPath ? ev.photoPath.split(/[\\/]/).pop() : t('timeline.photo', 'Photo');
     const sub    = ev.worldName ? `<div class="tl-sub-label">${esc(ev.worldName)}</div>` : '';
     const cnt    = (ev.players || []).length;
@@ -1156,7 +1156,7 @@ function renderTlNotifBody(ev) {
     const av  = ev.senderImage
         ? `<div class="tl-av" style="background-image:url('${cssUrl(imgThumb(ev.senderImage, 96))}')"></div>`
         : `<div class="tl-av tl-av-letter">${esc((ev.senderName || '?')[0].toUpperCase())}</div>`;
-    const titleCtx = ev.notifTitle ? `<div class="tl-sub-label" style="color:var(--tx2);">${esc(ev.notifTitle.slice(0, 60))}${ev.notifTitle.length > 60 ? '…' : ''}</div>` : '';
+    const titleCtx = ev.notifTitle ? `<div class="tl-sub-label" style="color:var(--tx0);">${esc(ev.notifTitle.slice(0, 60))}${ev.notifTitle.length > 60 ? '…' : ''}</div>` : '';
     const sub = ev.message ? `<div class="tl-sub-label">${esc(ev.message.slice(0, 60))}${ev.message.length > 60 ? '…' : ''}</div>` : '';
     return `<div class="tl-card-body">${av}<div class="tl-card-info"><div class="tl-main-label">${esc(ev.senderName || typeLabel)}</div><div class="tl-type-chip">${esc(typeLabel)}</div>${titleCtx}${sub}</div></div>`;
 }
@@ -1235,7 +1235,7 @@ function renderTlProfileBody(ev) {
     if (ev.notifType === 'status') {
         const oldCls = statusCssClass(ev.notifTitle);
         const newCls = statusCssClass(ev.message);
-        sub = `<div style="display:flex;align-items:center;gap:6px;margin-top:3px;"><span class="ft-status-chip ${oldCls}" title="${esc(statusLabel(ev.notifTitle) || '?')}">${esc(statusLabel(ev.notifTitle) || '?')}</span><span class="msi" style="font-size:12px;color:var(--tx3);">arrow_forward</span><span class="ft-status-chip ${newCls}" title="${esc(statusLabel(ev.message) || '?')}">${esc(statusLabel(ev.message) || '?')}</span></div>`;
+        sub = `<div style="display:flex;align-items:center;gap:6px;margin-top:3px;"><span class="ft-status-chip ${oldCls}" title="${esc(statusLabel(ev.notifTitle) || '?')}">${esc(statusLabel(ev.notifTitle) || '?')}</span><span class="msi" style="font-size:12px;color:var(--tx2);">arrow_forward</span><span class="ft-status-chip ${newCls}" title="${esc(statusLabel(ev.message) || '?')}">${esc(statusLabel(ev.message) || '?')}</span></div>`;
     } else if (ev.notifType === 'statusdesc') {
         sub = ev.message
             ? `<div class="tl-sub-label">${esc(ev.message.slice(0, 60))}${ev.message.length > 60 ? '…' : ''}</div>`
@@ -1477,7 +1477,7 @@ function filterFriendTimeline() {
 }
 
 function buildFtlPagination(page, totalPages, hasMore) {
-    const countHtml = ftlTotal > 0 ? `<span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);padding:0 8px;">${esc(tlTotalSummary(ftlTotal))}</span>` : '';
+    const countHtml = ftlTotal > 0 ? `<span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);padding:0 8px;">${esc(tlTotalSummary(ftlTotal))}</span>` : '';
     const bar = buildPaginator(page, totalPages, 'ftlGoPage', countHtml, hasMore) || countHtml;
     return tlPageSizeSelectHtml('setTlPageSize') + bar;
 }
@@ -1496,7 +1496,7 @@ function _renderFtlSearchResults(search) {
 
     const total      = _ftlSearchTotal;
     const totalPages = total > 0 ? Math.ceil(total / tlPageSize) : 1;
-    const banner = `<div style="padding:6px 12px;font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);border-bottom:1px solid var(--brd);">`
+    const banner = `<div style="padding:6px 12px;font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);border-bottom:1px solid var(--brd);">`
         + `${esc(tlSearchSummary(total, search))}</div>`;
     let html = banner + (tlViewMode === 'list' ? buildFriendListHtml(events) : buildFriendTimelineHtml(events));
     c.innerHTML = html;
@@ -1645,7 +1645,7 @@ function ftFriendAv(ev, cssClass) {
 function renderFtGpsBody(ev) {
     const thumb = ev.worldThumb
         ? `<div class="tl-thumb" style="background-image:url('${cssUrl(imgThumb(ev.worldThumb, 128))}')"></div>`
-        : `<div class="tl-thumb tl-thumb-empty"><span class="msi" style="font-size:18px;color:var(--tx3);">travel_explore</span></div>`;
+        : `<div class="tl-thumb tl-thumb-empty"><span class="msi" style="font-size:18px;color:var(--tx2);">travel_explore</span></div>`;
     const wname = ev.worldName || ev.worldId || t('timeline.unknown_world', 'Unknown World');
     const av    = ftFriendAv(ev, 'tl-player-av');
     return `<div class="tl-card-body">${thumb}<div class="tl-card-info">
@@ -1661,7 +1661,7 @@ function renderFtStatusBody(ev) {
     const newCls  = statusCssClass(ev.newValue);
     const chips   = `<div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
         <span class="ft-status-chip ${oldCls}" title="${esc(statusLabel(ev.oldValue) || '?')}">${esc(statusLabel(ev.oldValue) || '?')}</span>
-        <span class="msi" style="font-size:12px;color:var(--tx3);">arrow_forward</span>
+        <span class="msi" style="font-size:12px;color:var(--tx2);">arrow_forward</span>
         <span class="ft-status-chip ${newCls}" title="${esc(statusLabel(ev.newValue) || '?')}">${esc(statusLabel(ev.newValue) || '?')}</span>
     </div>`;
     return `<div class="tl-card-body">${av}<div class="tl-card-info">
@@ -1723,7 +1723,7 @@ function renderFtBioBody(ev) {
 
 function renderFtAvatarBody(ev) {
     const av      = ftFriendAv(ev, 'tl-av');
-    const avLock  = `<div class="tl-av tl-av-letter" style="border-radius:8px;flex-shrink:0;" title="${esc(t('profiles.badges.avatar_not_in_db', 'Avatar not found in any database'))}"><span class="msi" style="font-size:16px;color:var(--tx3);">lock</span></div>`;
+    const avLock  = `<div class="tl-av tl-av-letter" style="border-radius:8px;flex-shrink:0;" title="${esc(t('profiles.badges.avatar_not_in_db', 'Avatar not found in any database'))}"><span class="msi" style="font-size:16px;color:var(--tx2);">lock</span></div>`;
     const avThumb = ev.worldId
         ? (ev.worldThumb
             ? `<div class="tl-av" style="background-image:url('${cssUrl(imgThumb(ev.worldThumb, 96))}');border-radius:8px;flex-shrink:0;"></div>`

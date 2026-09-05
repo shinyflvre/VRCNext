@@ -68,7 +68,7 @@
 .cal-day.cal-today { border-color: color-mix(in srgb,var(--accent) 65%,transparent); background: color-mix(in srgb,var(--accent) 7%,transparent); }
 .cal-day.cal-sel { border: 2px solid var(--accent); background: color-mix(in srgb,var(--accent) 14%,transparent); }
 
-.cal-day-num { font-size: calc(12px + var(--fs-off, 0px)); font-weight: 600; color: var(--tx2); padding: 6px 8px 0; line-height: 1; }
+.cal-day-num { font-size: calc(12px + var(--fs-off, 0px)); font-weight: 600; color: var(--tx0); padding: 6px 8px 0; line-height: 1; }
 .cal-day.cal-today .cal-day-num,
 .cal-day.cal-sel .cal-day-num { color: var(--accent-lt); }
 
@@ -137,8 +137,8 @@
 .cal-wk-hdr-cell.cal-wk-today { background: color-mix(in srgb,var(--accent) 10%,transparent); border-color: color-mix(in srgb,var(--accent) 45%,transparent); }
 .cal-wk-hdr-cell.cal-wk-sel { border-color: var(--accent); background: color-mix(in srgb,var(--accent) 16%,transparent); }
 
-.cal-wk-dow { font-size: calc(10px + var(--fs-off, 0px)); font-weight: 700; color: var(--tx3); letter-spacing: .6px; }
-.cal-wk-dnum { font-size: calc(17px + var(--fs-off, 0px)); font-weight: 700; color: var(--tx2); line-height: 1.1; }
+.cal-wk-dow { font-size: calc(10px + var(--fs-off, 0px)); font-weight: 700; color: var(--tx0); letter-spacing: .6px; }
+.cal-wk-dnum { font-size: calc(17px + var(--fs-off, 0px)); font-weight: 700; color: var(--tx0); line-height: 1.1; }
 .cal-wk-hdr-cell.cal-wk-today .cal-wk-dnum,
 .cal-wk-hdr-cell.cal-wk-today .cal-wk-dow,
 .cal-wk-hdr-cell.cal-wk-sel .cal-wk-dnum { color: var(--accent-lt); }
@@ -154,7 +154,7 @@
 .cal-wk-gutter-lbl {
     font-size: calc(9.5px + var(--fs-off, 0px));
     font-weight: 600;
-    color: var(--tx3);
+    color: var(--tx0);
     text-align: right;
     padding-right: 6px;
     padding-top: 3px;
@@ -179,7 +179,7 @@
 .cal-wk-hour {
     height: var(--cal-hour-h, 44px);
     font-size: calc(9.5px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     text-align: right;
     padding-right: 6px;
     transform: translateY(-5px);
@@ -263,7 +263,7 @@
     background: var(--err);
 }
 
-.cal-day-hdr { text-align: center; font-size: calc(10px + var(--fs-off, 0px)); font-weight: 700; color: var(--tx3); padding: 4px 2px 6px; letter-spacing: .6px; text-transform: uppercase; }
+.cal-day-hdr { text-align: center; font-size: calc(10px + var(--fs-off, 0px)); font-weight: 700; color: var(--tx0); padding: 4px 2px 6px; letter-spacing: .6px; text-transform: uppercase; }
 
 .cal-evlist-card {
     display: flex;
@@ -300,7 +300,7 @@
 .cal-day-panel-hdr {
     font-size: calc(13px + var(--fs-off, 0px));
     font-weight: 700;
-    color: var(--tx1);
+    color: var(--tx0);
     margin-bottom: 10px;
     display: flex;
     align-items: center;

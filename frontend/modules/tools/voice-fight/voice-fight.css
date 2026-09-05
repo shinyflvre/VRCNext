@@ -40,7 +40,7 @@
 }
 .vf-length {
     font-size: calc(10px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx0);
     font-weight: 600;
     letter-spacing: .3px;
 }
@@ -55,7 +55,7 @@
     border-radius: 6px;
     border: none;
     background: var(--bg-hover);
-    color: var(--tx1);
+    color: var(--tx2);
     cursor: pointer;
     transition: background .15s, color .15s;
 }
@@ -70,7 +70,7 @@
 .vf-vol-label {
     font-size: calc(10px + var(--fs-off, 0px));
     font-weight: 700;
-    color: var(--tx3);
+    color: var(--tx2);
     letter-spacing: .4px;
     min-width: 24px;
 }
@@ -94,7 +94,7 @@
 .vf-recognized-text {
     font-size: calc(14px + var(--fs-off, 0px));
     font-weight: 600;
-    color: var(--tx3);
+    color: var(--tx0);
     transition: color .15s;
     word-break: break-word;
 }
@@ -166,7 +166,7 @@
 }
 .vf-no-sounds {
     font-size: calc(11px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     text-align: center;
     padding: 4px 0;
 }
@@ -176,7 +176,7 @@
     background: transparent;
     border: 1.5px dashed var(--brd);
     border-radius: 6px;
-    color: var(--tx2);
+    color: var(--tx1);
     font-size: calc(12px + var(--fs-off, 0px));
     font-family: inherit;
     padding: 5px 10px;

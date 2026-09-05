@@ -30,9 +30,9 @@
     background: var(--bg-hover); color: var(--tx0);
 }
 .vn-ctx-item .msi {
-    font-size: 16px; color: var(--tx3); width: 18px; flex-shrink: 0;
+    font-size: 16px; color: var(--tx2); width: 18px; flex-shrink: 0;
 }
-.vn-ctx-item:hover:not([disabled]) .msi { color: var(--tx2); }
+.vn-ctx-item:hover:not([disabled]) .msi { color: var(--tx0); }
 .vn-ctx-item.danger { color: var(--err); }
 .vn-ctx-item.danger .msi { color: var(--err); opacity: .75; }
 .vn-ctx-item.danger:hover:not([disabled]) { background: rgba(255,75,85,.08); color: var(--err); }
@@ -43,10 +43,10 @@
 .vn-ctx-sep {
     height: 1px; background: var(--brd); margin: 4px 6px;
 }
-.gd-post-del { flex-shrink: 0; color: var(--tx3); padding: 2px; transition: color .15s; }
+.gd-post-del { flex-shrink: 0; color: var(--tx2); padding: 2px; transition: color .15s; }
 .gd-post-del:hover { color: var(--err); }
 .gd-post-del .msi { font-size: 15px; }
-.gd-post-edit { flex-shrink: 0; color: var(--tx3); padding: 2px; transition: color .15s; }
+.gd-post-edit { flex-shrink: 0; color: var(--tx2); padding: 2px; transition: color .15s; }
 .gd-post-edit:hover { color: var(--accent); }
 .gd-post-edit .msi { font-size: 15px; }
 
@@ -64,7 +64,7 @@
     animation: ctxFadeIn .08s ease;
 }
 .vn-ctx-arrow {
-    margin-left: auto; font-size: calc(14px + var(--fs-off, 0px)) !important; color: var(--tx3); width: auto !important;
+    margin-left: auto; font-size: calc(14px + var(--fs-off, 0px)) !important; color: var(--tx2); width: auto !important;
 }
 .vn-ctx-dot {
     width: 8px; height: 8px; border-radius: 50%;
@@ -75,7 +75,7 @@
 }
 .vn-ctx-count {
     margin-left: auto; font-size: calc(10px + var(--fs-off, 0px)); font-weight: 600;
-    color: var(--tx3); background: var(--bg-input);
+    color: var(--tx2); background: var(--bg-input);
     padding: 1px 6px; border-radius: 8px; flex-shrink: 0;
 }
 .vn-ctx-loading {

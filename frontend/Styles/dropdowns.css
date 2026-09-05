@@ -31,7 +31,7 @@ div.vn-select {
 .vn-select-trigger:hover,
 .vn-select.vn-open .vn-select-trigger {
     background: var(--ui-input-hover-bg);
-    color: var(--tx0);
+    color: var(--tx1);
 }
 
 .vn-select-label { flex: 1; overflow: hidden; text-overflow: ellipsis; }

@@ -718,7 +718,7 @@ namespace VRCNext.Services
 
             private static readonly Dictionary<string, OverlayTheme> _palettes = new()
             {
-                ["vrcn"]      = new() { BgCard=H("#0F0F0F"),BgHover=H("#1C1C1F"),Accent=H("#5C76FF"),Ok=H("#2DD48C"),Warn=H("#FFBA37"),Err=H("#FF4B55"),Cyan=H("#8CA5FF"),Tx1=H("#EBEBFF"),Tx2=H("#B7B7C3"),Tx3=H("#FFFFFF"),Brd=H("#1C1C1F") },
+                ["vrcn"]          = new() { BgCard=H("#0F0F0F"),BgHover=H("#1C1C1F"),Accent=H("#8E8EA7"),Ok=H("#2DD48C"),Warn=H("#FFBA37"),Err=H("#FF4B55"),Cyan=H("#8CA5FF"),Tx1=H("#A8A8B8"),Tx2=H("#9B9CAA"),Tx3=H("#60606F"),Brd=H("#1C1C1F") },
                 ["blood"]     = new() { BgCard=H("#190F26"),BgHover=H("#251936"),Accent=H("#DF2A4E"),Ok=H("#2DD48C"),Warn=H("#FFBA37"),Err=H("#FF4B55"),Cyan=H("#DC7A56"),Tx1=H("#D2CCDB"),Tx2=H("#D2CCDB"),Tx3=H("#D2CCDB"),Brd=H("#291B3C") },
                 ["halloween"] = new() { BgCard=H("#110F26"),BgHover=H("#1B1936"),Accent=H("#DF462A"),Ok=H("#2DD48C"),Warn=H("#FFBA37"),Err=H("#FF4B55"),Cyan=H("#DCA956"),Tx1=H("#F0EFF5"),Tx2=H("#F0EFF5"),Tx3=H("#F0EFF5"),Brd=H("#1E1B3C") },
                 ["miku"]      = new() { BgCard=H("#080D14"),BgHover=H("#66B4D2"),Accent=H("#66B4D2"),Ok=H("#2DD48C"),Warn=H("#FFBA37"),Err=H("#FF4B55"),Cyan=H("#66B4D2"),Tx1=H("#FFFFFF"),Tx2=H("#FFFFFF"),Tx3=H("#FFFFFF"),Brd=H("#13223F") },
@@ -729,6 +729,8 @@ namespace VRCNext.Services
                 ["spaceout"]    = new() { BgCard=H("#0A0714"),BgHover=H("#191327"),Accent=H("#FF9F60"),Ok=H("#2DD48C"),Warn=H("#FFBA37"),Err=H("#FF4B55"),Cyan=H("#8CA5FF"),Tx1=H("#EBEBFF"),Tx2=H("#B7B7C3"),Tx3=H("#FFFFFF"),Brd=H("#1C162C") },
                 ["fluffy"]      = new() { BgCard=H("#FAE8FF"),BgHover=H("#FFCCE9"),Accent=H("#DFBFFF"),Ok=H("#2BFF00"),Warn=H("#FF7455"),Err=H("#FF2E00"),Cyan=H("#DCAFFF"),Tx1=H("#49414E"),Tx2=H("#3D3547"),Tx3=H("#3B3441"),Brd=H("#E5D3E6") },
                 ["ender"]       = new() { BgCard=H("#0A0714"),BgHover=H("#191327"),Accent=H("#CC60FF"),Ok=H("#2DD48C"),Warn=H("#FFBA37"),Err=H("#FF4B55"),Cyan=H("#8CA5FF"),Tx1=H("#EBEBFF"),Tx2=H("#B7B7C3"),Tx3=H("#FFFFFF"),Brd=H("#1C162C") },
+                ["redruby"]       = new() { BgCard=H("#151517"),BgHover=H("#232326"),Accent=H("#D04F4F"),Ok=H("#46C88C"),Warn=H("#E0A43C"),Err=H("#E05555"),Cyan=H("#D9A58F"),Tx1=H("#E4DADA"),Tx2=H("#AB9D9D"),Tx3=H("#7C7070"),Brd=H("#232326") },
+                ["mates"]         = new() { BgCard=H("#151517"),BgHover=H("#232326"),Accent=H("#4F50D0"),Ok=H("#46C88C"),Warn=H("#E0A43C"),Err=H("#E05555"),Cyan=H("#9E8FD9"),Tx1=H("#DADCE4"),Tx2=H("#9D9EAB"),Tx3=H("#70727C"),Brd=H("#232326") },
             };
         }
 

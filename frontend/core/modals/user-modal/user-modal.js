@@ -220,7 +220,7 @@ function avatarNotInDbLockHtml(unresolved) {
     const title = unresolved
         ? t('profiles.badges.avatar_unresolved', 'Unresolved, IDs are rechecked every 10 minutes. If it takes too long, open the profile or use Check for Avatar.')
         : avatarNotInDbLabel();
-    return `<span class="msi" title="${esc(title)}" style="font-size:15px;color:var(--tx3);flex-shrink:0;margin-left:auto;">${icon}</span>`;
+    return `<span class="msi" title="${esc(title)}" style="font-size:15px;color:var(--tx2);flex-shrink:0;margin-left:auto;">${icon}</span>`;
 }
 function _applyAvatarSection(payload) {
     const section = document.getElementById('fdAvatarSection');
@@ -673,7 +673,7 @@ function renderFriendDetail(d) {
     const img = d.image || '';
     const _fdAvatarInner = img
         ? `<img class="fd-avatar" src="${img}" onerror="this.style.display='none'">`
-        : `<div class="fd-avatar" style="display:flex;align-items:center;justify-content:center;font-size:calc(20px + var(--fs-off, 0px));font-weight:700;color:var(--tx3)">${esc((d.displayName || '?')[0])}</div>`;
+        : `<div class="fd-avatar" style="display:flex;align-items:center;justify-content:center;font-size:calc(20px + var(--fs-off, 0px));font-weight:700;color:var(--tx0)">${esc((d.displayName || '?')[0])}</div>`;
     const _fdFrame = (typeof iconFrameHtml === 'function') ? iconFrameHtml(d.iconFrameUrl, true) : '';
     const imgTag = _fdFrame ? `<div class="icon-frame-wrap">${_fdAvatarInner}${_fdFrame}</div>` : _fdAvatarInner;
 
@@ -710,9 +710,9 @@ function renderFriendDetail(d) {
             }
         }
     } else if (d.location === 'private') {
-        _worldPartHtml = `<div style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx3);text-align:center;padding:8px 0;">${t('profiles.meta.private_instance', 'Private Instance')}</div>`;
+        _worldPartHtml = `<div style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);text-align:center;padding:8px 0;">${t('profiles.meta.private_instance', 'Private Instance')}</div>`;
     } else if (d.location === 'traveling') {
-        _worldPartHtml = `<div style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx3);text-align:center;padding:8px 0;">${t('profiles.meta.traveling', 'Traveling...')}</div>`;
+        _worldPartHtml = `<div style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);text-align:center;padding:8px 0;">${t('profiles.meta.traveling', 'Traveling...')}</div>`;
     }
 
     const bioHtml = d.bio ? `<div class="fd-bio">${esc(d.bio)}</div>` : '';
@@ -739,7 +739,7 @@ function renderFriendDetail(d) {
 
     const _mr = (label, valueHtml) =>
         `<div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-size:calc(11px + var(--fs-off, 0px));">
-            <span style="color:var(--tx3);">${label}</span>
+            <span style="color:var(--tx2);">${label}</span>
             <span style="color:var(--tx1);text-align:right;">${valueHtml}</span>
         </div>`;
 
@@ -760,7 +760,7 @@ function renderFriendDetail(d) {
                 ? `<span id="fdTimeTogether">${formatDuration(d.totalTimeSeconds)}</span>`
                 : `<span style="color:var(--tx3);">${t('profiles.meta.not_tracked', 'Not tracked yet')}</span>`));
         _aboutRows.push(_mr(t('profiles.meta.status_mostly', 'Status Mostly'),
-            `<span id="fdInfoStatusMostly" style="color:var(--tx3);">—</span>`));
+            `<span id="fdInfoStatusMostly" style="color:var(--tx2);">—</span>`));
     }
 
     const _aboutRowsHtml = `<div class="fd-group-rep-label">${t('profiles.meta.infos_title', 'Infos')}</div>
@@ -771,7 +771,7 @@ function renderFriendDetail(d) {
             <button class="myp-edit-btn" onclick="fdEditNote()"><span class="msi" style="font-size:14px;">edit</span></button>
         </div>
         <div id="fdVrcNoteView">
-            ${d.note ? `<div style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);line-height:1.5;">${esc(d.note)}</div>`
+            ${d.note ? `<div style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx1);line-height:1.5;">${esc(d.note)}</div>`
                      : `<div class="myp-empty">${t('profiles.notes.no_note', 'No notes added yet')}</div>`}
         </div>
         <div id="fdVrcNoteEdit" style="display:none;">
@@ -1441,7 +1441,7 @@ function drawMiniTimeline(events, el) {
         const ei     = ev.id.replace(/'/g, "\\'");
         const detail = typeof _tlListData === 'function' ? (_tlListData(ev).detail || '') : '';
         return `<div style="display:flex;align-items:center;gap:8px;padding:5px 2px;border-bottom:1px solid var(--brd);cursor:pointer;" onclick="openTlDetail('${ei}', true)">
-            <span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);white-space:nowrap;">${esc(dt)}</span>
+            <span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);white-space:nowrap;">${esc(dt)}</span>
             <span class="msi" style="font-size:14px;color:${color};flex-shrink:0;">${meta.icon}</span>
             <span style="font-size:calc(12px + var(--fs-off, 0px));">${esc(meta.label)}</span>
             ${detail ? `<span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">${detail}</span>` : ''}
@@ -1471,7 +1471,7 @@ function renderFdUserActivity(userId, events) {
         const ei     = jsq(ev.id);
         const detail = typeof _ftListDetail === 'function' ? (_ftListDetail(ev) || '') : '';
         return `<div style="display:flex;align-items:center;gap:8px;padding:5px 2px;border-bottom:1px solid var(--brd);cursor:pointer;" onclick="openFdActivityDetail('${ei}')">
-            <span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);white-space:nowrap;">${esc(dt)}</span>
+            <span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);white-space:nowrap;">${esc(dt)}</span>
             <span class="msi" style="font-size:14px;color:${color};flex-shrink:0;">${meta.icon}</span>
             <span style="font-size:calc(12px + var(--fs-off, 0px));">${esc(meta.label)}</span>
             ${detail ? `<span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">${detail}</span>` : ''}
@@ -1515,7 +1515,7 @@ function renderFdInsightsWorlds(worlds, elId = 'fdInsightsWorlds') {
         const pct = Math.round((w.visits / maxVisits) * 100);
         const thumb = w.worldThumb
             ? `<img class="ts-item-thumb" src="${esc(imgThumb(w.worldThumb, 96))}" onerror="this.style.display='none'">`
-            : `<div class="ts-item-thumb ts-thumb-placeholder"><span class="msi" style="font-size:18px;color:var(--tx3);">travel_explore</span></div>`;
+            : `<div class="ts-item-thumb ts-thumb-placeholder"><span class="msi" style="font-size:18px;color:var(--tx2);">travel_explore</span></div>`;
         const click = w.worldId ? `onclick="navOpenModal('worldSearch','${jsq(w.worldId)}','${jsq(w.worldName || '')}')" style="cursor:pointer"` : '';
         const visits = tf(`timespent.visit.${w.visits === 1 ? 'one' : 'other'}`, { count: w.visits }, `${w.visits} visit${w.visits === 1 ? '' : 's'}`);
         return `<div class="ts-item" ${click}>
@@ -1523,7 +1523,7 @@ function renderFdInsightsWorlds(worlds, elId = 'fdInsightsWorlds') {
             ${thumb}
             <div class="ts-item-body">
                 <div class="ts-item-name">${esc(w.worldName || t('timespent.unknown_world_full', 'Unknown World'))}</div>
-                <div class="ts-item-meta"><span class="msi" style="font-size:12px;color:var(--tx3);">login</span><span>${visits}</span></div>
+                <div class="ts-item-meta"><span class="msi" style="font-size:12px;color:var(--tx2);">login</span><span>${visits}</span></div>
                 <div class="ts-bar-wrap"><div class="ts-bar" style="width:${pct}%"></div></div>
             </div>
         </div>`;
@@ -1544,14 +1544,14 @@ function renderFdInsightsPersons(persons, elId = 'fdInsightsPersons') {
         const isFriend = friendIds.has(p.userId);
         const avatar = p.image
             ? `<img class="ts-item-avatar" src="${esc(imgThumb(p.image, 96))}" onerror="this.style.display='none'">`
-            : `<div class="ts-item-avatar ts-avatar-placeholder"><span class="msi" style="font-size:16px;color:var(--tx3);">person</span></div>`;
+            : `<div class="ts-item-avatar ts-avatar-placeholder"><span class="msi" style="font-size:16px;color:var(--tx2);">person</span></div>`;
         const encounters = tf(`timespent.encounter.${p.meets === 1 ? 'one' : 'other'}`, { count: p.meets }, `${p.meets} encounter${p.meets === 1 ? '' : 's'}`);
         return `<div class="ts-item" onclick="navOpenModal('friend','${jsq(p.userId)}','${jsq(p.displayName || '')}')" style="cursor:pointer">
             <div class="ts-item-rank">#${i + 1}</div>
             <div class="ts-avatar-wrap">${avatar}</div>
             <div class="ts-item-body">
                 <div class="ts-item-name">${esc(p.displayName || p.userId)}</div>
-                <div class="ts-item-meta"><span class="msi" style="font-size:12px;color:var(--tx3);">handshake</span><span>${encounters}</span></div>
+                <div class="ts-item-meta"><span class="msi" style="font-size:12px;color:var(--tx2);">handshake</span><span>${encounters}</span></div>
                 <div class="ts-bar-wrap"><div class="ts-bar ${isFriend ? 'ts-bar-friend' : 'ts-bar-stranger'}" style="width:${pct}%"></div></div>
             </div>
         </div>`;
@@ -1883,10 +1883,10 @@ function renderFriendFavPicker(userId) {
             onclick="addFriendToFavGroup('${uid}','${gn}','${oldFvrt}',this)" style="cursor:pointer;">
             <div style="flex:1;min-width:0;">
                 <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
-                    <span style="font-size:calc(12px + var(--fs-off, 0px));font-weight:600;color:var(--tx1);">${esc(g.displayName || g.name)}</span>
+                    <span style="font-size:calc(12px + var(--fs-off, 0px));font-weight:600;color:var(--tx0);">${esc(g.displayName || g.name)}</span>
                     ${favGroupBadge(g)}
                 </div>
-                <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx3);margin-top:1px;">${count}/${cap} friends</div>
+                <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx2);margin-top:1px;">${count}/${cap} friends</div>
             </div>
             ${check}
         </div>`;
@@ -1973,7 +1973,7 @@ function _buildModCardInner(userId) {
     const isInteractOff = Array.isArray(interactOffData)  && interactOffData.some(x => x.targetUserId === userId);
     const _row = (label, active, activeKey, activeFb, inactiveKey, inactiveFb) =>
         `<div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-size:calc(11px + var(--fs-off, 0px));">
-            <span style="color:var(--tx3);">${label}</span>
+            <span style="color:var(--tx2);">${label}</span>
             <span style="color:${active ? 'var(--err)' : 'var(--tx1)'};text-align:right;">${active ? t(activeKey, activeFb) : t(inactiveKey, inactiveFb)}</span>
         </div>`;
     return `<div class="fd-group-rep-label">${t('profiles.moderation.title', 'Moderation')}</div>

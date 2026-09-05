@@ -54,7 +54,7 @@ function renderAccountsList(payload) {
             <div class="vrcn-user-item" style="cursor:default;">
                 ${avatar ? `<img class="vrcn-user-item-avatar" src="${imgThumb(avatar, 96)}" alt="">` : `<div class="vrcn-user-item-avatar vrcn-user-item-avatar-letter"></div>`}
                 <div class="vrcn-user-item-info">
-                    <div style="display:flex;align-items:center;gap:6px;font-size:calc(13px + var(--fs-off, 0px));color:var(--tx1);">${name}${badges.join('')}</div>
+                    <div style="display:flex;align-items:center;gap:6px;font-size:calc(13px + var(--fs-off, 0px));color:var(--tx0);">${name}${badges.join('')}</div>
                     <div class="vrcn-user-item-status">${userTag}</div>
                 </div>
                 <div style="display:flex;gap:6px;flex-shrink:0;">${buttons.join('')}</div>

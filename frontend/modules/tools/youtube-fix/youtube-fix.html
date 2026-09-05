@@ -11,8 +11,8 @@
                 </div>
                 <div class="vrcn-panel-card" id="vcInstallCard">
                     <div class="vrcn-panel-card-header"><span class="msi" style="font-size:16px;">smart_display</span> <span data-i18n="youtube_fix.title">VRCVideoCacher</span></div>
-                    <p style="font-size:calc(13px + var(--fs-off, 0px));color:var(--tx2);margin:0 0 4px;"><span data-i18n="youtube_fix.info.fixes_prefix">Fixes</span> <b style="color:var(--tx1)" data-i18n="youtube_fix.info.youtube_errors">YouTube video errors</b> <span data-i18n="youtube_fix.info.fixes_suffix">in VRChat by routing requests through a local proxy. Created by</span> <b style="color:var(--tx1)">Elly</b>.</p>
-                    <p style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx3);margin:0 0 8px;" data-i18n="youtube_fix.info.background">The service runs in the background. When you close VRCNext, the process will be terminated.</p>
+                    <p style="font-size:calc(13px + var(--fs-off, 0px));color:var(--tx2);margin:0 0 4px;"><span data-i18n="youtube_fix.info.fixes_prefix">Fixes</span> <b style="color:var(--tx2)" data-i18n="youtube_fix.info.youtube_errors">YouTube video errors</b> <span data-i18n="youtube_fix.info.fixes_suffix">in VRChat by routing requests through a local proxy. Created by</span> <b style="color:var(--tx1)">Elly</b>.</p>
+                    <p style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);margin:0 0 8px;" data-i18n="youtube_fix.info.background">The service runs in the background. When you close VRCNext, the process will be terminated.</p>
                     <p style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);margin:0 0 12px;padding:8px 10px;background:var(--bg2);border-radius:6px;border-left:3px solid var(--accent);"><span data-i18n="youtube_fix.info.setup_prefix">If you are running this service for the first time, please follow the setup instructions that appear when starting it.</span> <span data-i18n="youtube_fix.info.setup_suffix">Also make sure to read the usage guide on the GitHub page:</span> <a href="#" onclick="sendToCS({action:'openUrl',url:'https://github.com/EllyVR/VRCVideoCacher'});return false;" style="color:var(--accent);">github.com/EllyVR/VRCVideoCacher</a></p>
                     <div id="vcProgressWrap" style="display:none;margin-bottom:12px;">
                         <div style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);margin-bottom:6px;" id="vcProgressLabel" data-i18n="youtube_fix.progress.downloading">Downloading...</div>
@@ -24,10 +24,10 @@
                         <button class="vrcn-button" id="btnVcInstall" onclick="vcInstall()"><span class="msi" style="font-size:16px;">download</span> <span data-i18n="youtube_fix.install_update">Install / Update</span></button>
                         <button class="vrcn-button" onclick="sendToCS({action:'openUrl',url:'https://chromewebstore.google.com/detail/vrcvideocacher-cookies-ex/kfgelknbegappcajiflgfbjbdpbpokge'})"><span class="msi" style="font-size:16px;">extension</span> <span data-i18n="youtube_fix.install_chrome">Install Chrome Extension</span></button>
                         <button class="vrcn-button" onclick="sendToCS({action:'openUrl',url:'https://addons.mozilla.org/en-US/firefox/addon/vrcvideocachercookiesexporter/'})"><span class="msi" style="font-size:16px;">extension</span> <span data-i18n="youtube_fix.install_firefox">Install Firefox Extension</span></button>
-                        <span id="vcVersionLabel" style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx3);"></span>
+                        <span id="vcVersionLabel" style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);"></span>
                     </div>
                     <div style="background:var(--bg2);border-radius:8px;padding:12px 14px;">
-                        <div style="font-size:calc(13px + var(--fs-off, 0px));font-weight:600;color:var(--tx1);margin-bottom:10px;" data-i18n="youtube_fix.how_to_title">How to use YouTube Fix?</div>
+                        <div style="font-size:calc(13px + var(--fs-off, 0px));font-weight:600;color:var(--tx0);margin-bottom:10px;" data-i18n="youtube_fix.how_to_title">How to use YouTube Fix?</div>
                         <div style="display:flex;flex-direction:column;gap:8px;">
                             <div style="display:flex;gap:10px;align-items:flex-start;font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);">
                                 <span style="min-width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:calc(11px + var(--fs-off, 0px));font-weight:700;flex-shrink:0;">1</span>

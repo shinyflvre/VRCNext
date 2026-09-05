@@ -379,7 +379,7 @@ function _renderLibPage() {
 }
 
 function buildLibPagination(page, totalPages) {
-    const countHtml = `<span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);padding:0 8px;">${tf('library.pagination.files', { count: _libFiltered.length.toLocaleString() }, '{count} files')}</span>`;
+    const countHtml = `<span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);padding:0 8px;">${tf('library.pagination.files', { count: _libFiltered.length.toLocaleString() }, '{count} files')}</span>`;
     return buildPaginator(page, totalPages, 'libGoPage', countHtml);
 }
 
@@ -659,7 +659,7 @@ function _renderLibIconSelect(wrapperId, items, currentVal, allLabel, allIcon, r
 
     const optHtml = [
         `<div class="vn-select-option${currentVal === '__all__' ? ' vn-active' : ''}" data-isval="__all__">${thumbHtml('', allIcon, false)}<span class="vn-select-label">${esc(allLabel)}</span></div>`,
-        ...items.map(it => `<div class="vn-select-option${currentVal === it.value ? ' vn-active' : ''}" data-isval="${esc(it.value)}">${thumbHtml(it.thumb, allIcon, it.round ?? round)}<span class="vn-select-label">${esc(it.label)}</span><span style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx3);flex-shrink:0;margin-left:auto;">${it.count}</span></div>`)
+        ...items.map(it => `<div class="vn-select-option${currentVal === it.value ? ' vn-active' : ''}" data-isval="${esc(it.value)}">${thumbHtml(it.thumb, allIcon, it.round ?? round)}<span class="vn-select-label">${esc(it.label)}</span><span style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx2);flex-shrink:0;margin-left:auto;">${it.count}</span></div>`)
     ].join('');
 
     container.innerHTML = `<div class="vn-select lib-is-select">
@@ -1495,7 +1495,7 @@ function _photoBuildInfoPaneContent(x) {
     if (authorName) {
         const authorLabel = esc(t('library.detail.author', 'Author'));
         if (authorId) {
-            authorRow = `<div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-size:calc(11px + var(--fs-off, 0px));cursor:pointer;" onclick="navOpenModal('friend','${jsq(authorId)}','${jsq(authorName)}')"><span style="color:var(--tx3);">${authorLabel}</span><span style="color:var(--accent-lt);font-weight:700;text-align:right;">${esc(authorName)}</span></div>`;
+            authorRow = `<div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-size:calc(11px + var(--fs-off, 0px));cursor:pointer;" onclick="navOpenModal('friend','${jsq(authorId)}','${jsq(authorName)}')"><span style="color:var(--tx2);">${authorLabel}</span><span style="color:var(--accent-lt);font-weight:700;text-align:right;">${esc(authorName)}</span></div>`;
         } else {
             authorRow = _tlMr(authorLabel, `<span style="font-weight:700;">${esc(authorName)}</span>`);
         }
@@ -1510,7 +1510,7 @@ function _photoBuildInfoPaneContent(x) {
         _tlMr(esc(t('library.detail.date', 'Date')), esc(dateStr)),
         _tlMr(esc(t('library.detail.time', 'Time')), esc(timeStr)),
         x.size ? _tlMr(esc(t('library.detail.size', 'Size')), esc(x.size)) : '',
-        worldName ? `<div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-size:calc(11px + var(--fs-off, 0px));${worldCursor}"${worldRowClick}><span style="color:var(--tx3);">${esc(t('library.detail.world', 'World'))}</span><span style="color:var(--accent-lt);font-weight:700;text-align:right;">${esc(worldName)}</span></div>` : '',
+        worldName ? `<div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-size:calc(11px + var(--fs-off, 0px));${worldCursor}"${worldRowClick}><span style="color:var(--tx2);">${esc(t('library.detail.world', 'World'))}</span><span style="color:var(--accent-lt);font-weight:700;text-align:right;">${esc(worldName)}</span></div>` : '',
         resStr ? _tlMr(esc(t('library.detail.resolution', 'Resolution')), esc(resStr)) : '',
         authorRow,
         isFav ? _tlMr(esc(t('library.detail.favorited', 'Favorited')), favBadge) : '',

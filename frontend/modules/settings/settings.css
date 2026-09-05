@@ -19,12 +19,12 @@
     flex: 1;
     font-size: calc(13px + var(--fs-off, 0px));
     font-weight: 600;
-    color: var(--tx1);
+    color: var(--tx0);
 }
 .attrib-ver {
     font-size: calc(11px + var(--fs-off, 0px));
     font-weight: 400;
-    color: var(--tx3);
+    color: var(--tx2);
 }
 .attrib-badge {
     font-size: calc(11px + var(--fs-off, 0px));
@@ -37,7 +37,7 @@
 .attrib-gfonts { color: var(--tx2); background: rgba(255,255,255,.08); }
 .attrib-chevron {
     font-size: calc(20px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     transition: transform .2s;
     flex-shrink: 0;
 }
@@ -50,7 +50,7 @@
 .attrib-item.open .attrib-body { display: block; }
 .attrib-copy {
     font-size: calc(11px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     margin: 8px 0 6px;
 }
 .attrib-license-text {
@@ -112,7 +112,7 @@
     background: transparent;
     border: none;
     border-radius: 5px;
-    color: var(--tx3);
+    color: var(--tx2);
     cursor: pointer;
 }
 .settings-search-clear .msi { font-size: 14px; }
@@ -134,7 +134,7 @@
     border-radius: 7px;
     background: transparent;
     border: none;
-    color: var(--tx2);
+    color: var(--tx1);
     font-family: inherit;
     font-size: calc(12px + var(--fs-off, 0px));
     font-weight: 500;
@@ -147,7 +147,7 @@
 
 .settings-nav-item:hover {
     background: var(--bg-hover);
-    color: var(--tx1);
+    color: var(--tx0);
 }
 
 .settings-nav-item.active {
@@ -167,7 +167,7 @@
 
 .set-desc {
     font-size: calc(11px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     line-height: 1.6;
     margin-bottom: 14px;
 }
@@ -188,7 +188,7 @@
     align-items: center;
     padding: 4px 8px;
     font-size: calc(12px + var(--fs-off, 0px));
-    color: var(--tx2);
+    color: var(--tx1);
     border-radius: 4px;
 }
 
@@ -196,7 +196,7 @@
     background: var(--bg-hover);
 }
 
-.folder-remove { color: var(--tx3); padding: 0 4px; }
+.folder-remove { color: var(--tx2); padding: 0 4px; }
 
 .folder-remove:hover {
     color: var(--err);
@@ -238,7 +238,7 @@
     background: var(--bg-hover);
 }
 
-.exe-remove { color: var(--tx3); padding: 0 4px; }
+.exe-remove { color: var(--tx2); padding: 0 4px; }
 
 .exe-remove:hover {
     color: var(--err);
@@ -362,11 +362,11 @@
     align-items: baseline;
     justify-content: space-between;
     font-size: calc(11px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
 }
 .fs-slider-val {
     font-variant-numeric: tabular-nums;
-    color: var(--tx1);
+    color: var(--tx0);
     font-weight: 600;
 }
 .fs-slider-wrap {
@@ -457,7 +457,7 @@
     font-size: calc(30px + var(--fs-off, 0px));
     line-height: 1;
     font-weight: 500;
-    color: var(--tx0);
+    color: var(--tx2);
     height: 32px;
     display: flex;
     align-items: center;
@@ -465,7 +465,7 @@
 .font-option-name {
     font-size: calc(11px + var(--fs-off, 0px));
     font-weight: 600;
-    color: var(--tx2);
+    color: var(--tx0);
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -508,7 +508,7 @@
 
 .snd-val {
     font-size: calc(12px + var(--fs-off, 0px));
-    color: var(--tx2);
+    color: var(--tx1);
     min-width: 42px;
     text-align: right;
     flex-shrink: 0;
@@ -519,7 +519,7 @@
 .te-section { background: var(--bg-input); border: 1px solid var(--brd); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; }
 .te-section-toggle { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; }
 .te-section-toggle .te-section-title { margin: 0; }
-.te-section-title { font-size: calc(10px + var(--fs-off, 0px)); font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--tx3); margin-bottom: 8px; }
+.te-section-title { font-size: calc(10px + var(--fs-off, 0px)); font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--tx0); margin-bottom: 8px; }
 .te-grid { display: grid; grid-template-columns: 1fr; gap: 6px; }
 .te-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .te-label { font-size: calc(11px + var(--fs-off, 0px)); color: var(--tx2); width: 96px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

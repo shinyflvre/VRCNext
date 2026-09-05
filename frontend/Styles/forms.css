@@ -9,7 +9,7 @@
 .input-row label {
     width: 120px;
     font-size: calc(13px + var(--fs-off, 0px));
-    color: var(--tx2);
+    color: var(--tx1);
     flex-shrink: 0;
 }
 
@@ -67,7 +67,7 @@
     position: absolute;
     left: 12px;
     font-size: calc(18px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     pointer-events: none;
 }
 
@@ -104,7 +104,7 @@
     background: var(--bg-input);
     border: none;
     border-radius: 7px;
-    color: var(--tx0);
+    color: var(--tx1);
     font-size: calc(12px + var(--fs-off, 0px));
     font-family: inherit;
     outline: none;

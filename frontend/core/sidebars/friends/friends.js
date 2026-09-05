@@ -19,7 +19,7 @@ function buildFriendCardHtml(f, presenceType) {
     const img = f.image || '';
     const imgTag = img
         ? `<img class="vrc-friend-avatar" src="${imgThumb(img, 96)}" loading="lazy" decoding="async" onerror="this.style.display='none'">`
-        : `<div class="vrc-friend-avatar" style="display:flex;align-items:center;justify-content:center;font-size:calc(12px + var(--fs-off, 0px));font-weight:700;color:var(--tx3)">${esc((f.displayName || '?')[0])}</div>`;
+        : `<div class="vrc-friend-avatar" style="display:flex;align-items:center;justify-content:center;font-size:calc(12px + var(--fs-off, 0px));font-weight:700;color:var(--tx0)">${esc((f.displayName || '?')[0])}</div>`;
     const statusCls = (f.pendingOffline || presenceType === 'offline') ? 's-offline' : statusDotClass(f.status);
     const rank = getTrustRank(f.tags || []);
     const rankBadge = '';
@@ -129,11 +129,11 @@ function renderVrcProfile(u) {
     const img = u.image || '';
     const imgTag = img
         ? `<img class="vrc-avatar" src="${img}" onerror="this.style.display='none'">`
-        : `<div class="vrc-avatar" style="display:flex;align-items:center;justify-content:center;font-size:calc(13px + var(--fs-off, 0px));font-weight:700;color:var(--tx3)">${esc((u.displayName || '?')[0])}</div>`;
+        : `<div class="vrc-avatar" style="display:flex;align-items:center;justify-content:center;font-size:calc(13px + var(--fs-off, 0px));font-weight:700;color:var(--tx0)">${esc((u.displayName || '?')[0])}</div>`;
     const ownStatusCls = statusDotClass(u.status);
     const ownDotShape = u.vrcRunning ? 'vrc-status-dot' : 'vrc-status-ring';
     const ownAvatarWrap = `<div class="vrc-profile-avatar-wrap">${imgTag}${(typeof iconFrameHtml === 'function') ? iconFrameHtml(u.iconFrameUrl, true) : ''}<span class="vrc-friend-status-badge ${ownDotShape} ${ownStatusCls}"></span></div>`;
-    a.innerHTML = `<div class="vrc-profile deco-self" data-status="${ownStatusCls}" onclick="openMyProfileModal()">${(typeof nameplateDecoHtml === 'function') ? nameplateDecoHtml(u.nameplateUrl, true) : ''}${ownAvatarWrap}<div class="vrc-profile-info"><div class="vrc-profile-name">${esc(u.displayName)}</div><div class="vrc-profile-status">${getStatusText(u.status, u.statusDescription)}</div></div><span class="msi" style="font-size:16px;color:var(--tx3);flex-shrink:0;">manage_accounts</span></div>`;
+    a.innerHTML = `<div class="vrc-profile deco-self" data-status="${ownStatusCls}" onclick="openMyProfileModal()">${(typeof nameplateDecoHtml === 'function') ? nameplateDecoHtml(u.nameplateUrl, true) : ''}${ownAvatarWrap}<div class="vrc-profile-info"><div class="vrc-profile-name">${esc(u.displayName)}</div><div class="vrc-profile-status">${getStatusText(u.status, u.statusDescription)}</div></div><span class="msi" style="font-size:16px;color:var(--tx2);flex-shrink:0;">manage_accounts</span></div>`;
 }
 
 function onVrcRunningChanged(payload) {
@@ -418,7 +418,7 @@ function filterFriendsList() {
     }
 
     const countLabel = all.length > 100
-        ? `<div style="padding:6px 12px 2px;font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);">${tf('profiles.friends.search.showing', { total: all.length }, 'Showing 100 of {total} results')}</div>`
+        ? `<div style="padding:6px 12px 2px;font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);">${tf('profiles.friends.search.showing', { total: all.length }, 'Showing 100 of {total} results')}</div>`
         : '';
 
     let h = countLabel + `<div class="friend-section-items">`;

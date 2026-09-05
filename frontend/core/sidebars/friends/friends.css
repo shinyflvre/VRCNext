@@ -201,7 +201,7 @@
 .vrc-friend-name {
     font-size: calc(12px + var(--fs-off, 0px));
     font-weight: 600;
-    color: var(--tx1);
+    color: var(--tx0);
     display: flex;
     align-items: center;
     gap: 5px;
@@ -209,7 +209,7 @@
 
 .vrc-friend-loc {
     font-size: calc(10px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
 }
 
 .vrc-loc-world {
@@ -255,7 +255,7 @@
 }
 .rsidebar:not(.collapsed) .vrc-fs-icon {
     font-size: calc(13px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     /* nudge the glyph up ~1px to optically center it in the input */
     position: relative;
     top: -1px;
@@ -282,7 +282,7 @@
     padding: 0;
     margin-left: 6px;
     justify-content: center;
-    color: var(--tx3);
+    color: var(--tx1);
 }
 .vrc-fs-refresh-btn:hover { background: var(--ui-input-hover-bg); }
 .vrc-fs-refresh-btn .msi { font-size: 14px; }
@@ -317,8 +317,8 @@
     transition: color .15s;
 }
 .rsidebar:not(.collapsed) .vrc-section-label:first-child { margin-top: 0; }
-.rsidebar:not(.collapsed) .vrc-offline-toggle:hover { color: var(--tx2); }
-.rsidebar:not(.collapsed) .vrc-section-label.active { color: var(--tx2); }
+.rsidebar:not(.collapsed) .vrc-offline-toggle:hover { color: var(--tx3); }
+.rsidebar:not(.collapsed) .vrc-section-label.active { color: var(--tx0); }
 .vrc-fs-card .vrc-friend-search {
     padding: 0;
     margin-bottom: 5px;
@@ -354,7 +354,7 @@
 .rsidebar.collapsed #vrcFriendTabs { display: none !important; }
 
 .rsidebar.collapsed .vrc-fs-icon:hover {
-    color: var(--tx1);
+    color: var(--tx0);
     background: var(--bg-hover);
 }
 
@@ -372,7 +372,7 @@
     align-items: center;
     font-size: calc(10px + var(--fs-off, 0px));
     font-weight: 700;
-    color: var(--tx3);
+    color: var(--tx2);
     letter-spacing: 1px;
     padding: 8px 8px 4px;
     margin-top: 4px;
@@ -407,12 +407,12 @@
 .status-option-label {
     font-size: calc(13px + var(--fs-off, 0px));
     font-weight: 600;
-    color: var(--tx1);
+    color: var(--tx2);
 }
 
 .status-option-desc {
     font-size: calc(10px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
 }
 
 .vrc-gi-group-header {
@@ -457,7 +457,7 @@
 .vrc-gi-instance-name {
     font-size: calc(11px + var(--fs-off, 0px));
     font-weight: 600;
-    color: var(--tx1);
+    color: var(--tx0);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -465,7 +465,7 @@
 
 .vrc-gi-instance-count {
     font-size: calc(10px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
 }
 
 .status-desc-input {
@@ -509,7 +509,7 @@
     top: 50%;
     transform: translateY(-50%);
     font-size: calc(11px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     font-variant-numeric: tabular-nums;
     min-width: 20px;
     text-align: right;
@@ -521,7 +521,7 @@
 .status-desc-count.warn { color: var(--status-busy); }
 .status-desc-row #statusDescEditBtn:not(.active) {
     background: var(--ui-input-bg);
-    color: var(--tx1);
+    color: var(--tx2);
 }
 .status-desc-row #statusDescEditBtn:not(.active):hover { background: var(--ui-input-hover-bg); color: var(--tx0); }
 

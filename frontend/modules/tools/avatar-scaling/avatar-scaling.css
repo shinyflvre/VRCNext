@@ -42,7 +42,7 @@
 .as-slider-val {
     min-width: 60px;
     font-size: calc(12px + var(--fs-off, 0px));
-    color: var(--tx2);
+    color: var(--tx1);
     text-align: right;
 }
 

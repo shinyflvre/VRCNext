@@ -133,9 +133,9 @@ function renderInstanceItem(opts) {
     // Title row: "23/80 · World Name · Instance Type · #ID (GroupShortCode)"
     const titleParts = [];
     if (userCount > 0) titleParts.push(`<span class="vrcn-badge"><span class="msi" style="font-size:10px;">person</span>${userCount}${capacity > 0 ? '/' + capacity : ''}</span>`);
-    if (worldTitle) titleParts.push(`<span style="color:var(--tx1);font-weight:700;">${esc(worldTitle)}</span>`);
+    if (worldTitle) titleParts.push(`<span style="color:var(--tx0);font-weight:700;">${esc(worldTitle)}</span>`);
     titleParts.push(`<span style="color:var(--tx3);">·</span><span>${esc(label)}</span>`);
-    if (ownerGroup) titleParts.push(`<span style="color:var(--tx3);">(${esc(ownerGroup)})</span>`);
+    if (ownerGroup) titleParts.push(`<span style="color:var(--tx2);">(${esc(ownerGroup)})</span>`);
     const titleHtml = `<div class="inst-item-card-title">${titleParts.join(' ')}</div>`;
 
     return `<div class="inst-item-card" data-iid="${esc(instanceId || '')}"${clickAttr}>

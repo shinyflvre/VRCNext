@@ -202,7 +202,7 @@ function _pdVrcnPreviewHtml(u) {
     const banner = `<div class="fd-left-banner" id="pd-banner-slot">${bannerSrc ? '<div class="fd-banner-fade"></div>' : ''}${effect}</div>`;
     const avatarImg = u.image
         ? `<img class="fd-avatar" src="${esc(u.image)}" onerror="this.style.display='none'">`
-        : `<div class="fd-avatar" style="display:flex;align-items:center;justify-content:center;font-size:calc(20px + var(--fs-off, 0px));font-weight:700;color:var(--tx3)">${esc((u.displayName || '?')[0])}</div>`;
+        : `<div class="fd-avatar" style="display:flex;align-items:center;justify-content:center;font-size:calc(20px + var(--fs-off, 0px));font-weight:700;color:var(--tx0)">${esc((u.displayName || '?')[0])}</div>`;
     const frame = (typeof iconFrameHtml === 'function') ? iconFrameHtml(u.iconFrameUrl, true) : '';
     const dotCls = `${u.vrcRunning ? 'vrc-status-dot' : 'vrc-status-ring'} ${statusDotClass(u.status)}`;
     const vrcPlus = (u.tags || []).includes('system_supporter') ? '<span class="vrcn-supporter-badge">VRC+</span>' : '';
@@ -210,7 +210,7 @@ function _pdVrcnPreviewHtml(u) {
     const status = `<div class="fd-status-row"><div class="myp-status-row" style="cursor:default;"><span class="${dotCls}" style="width:7px;height:7px;flex-shrink:0;"></span><span>${getStatusText(u.status, u.statusDescription)}</span></div></div>`;
     const showcased = (u.badges || []).filter(b => b.showcased);
     const badgesCard = showcased.length ? `<div class="fd-info-card"><div class="fd-group-rep-label">${t('profiles.my_profile.sections.badges', 'Badges')}</div><div class="myp-badges-row">${showcased.map(b => `<div class="myp-badge-item fd-vrc-badge-wrap" data-badge-img="${esc(b.imageUrl)}" data-badge-name="${encodeURIComponent(b.name)}" data-badge-desc="${encodeURIComponent(b.description || '')}"><img class="fd-vrc-badge-icon" src="${esc(imgThumb(b.imageUrl, 64))}" alt="${esc(b.name)}" onerror="this.closest('.myp-badge-item').style.display='none'"></div>`).join('')}</div></div>` : '';
-    const row = (label, valueHtml) => `<div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-size:calc(11px + var(--fs-off, 0px));"><span style="color:var(--tx3);">${label}</span><span style="color:var(--tx1);text-align:right;">${valueHtml}</span></div>`;
+    const row = (label, valueHtml) => `<div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-size:calc(11px + var(--fs-off, 0px));"><span style="color:var(--tx2);">${label}</span><span style="color:var(--tx1);text-align:right;">${valueHtml}</span></div>`;
     const infos = [
         row(t('profiles.meta.joined', 'Joined'), u.dateJoined ? fmtShortDate(new Date(u.dateJoined + 'T00:00:00')) : '—'),
         row(t('profiles.meta.last_login', 'Last Login'), u.lastLogin ? fmtShortDate(new Date(u.lastLogin)) : '—'),
@@ -371,7 +371,7 @@ function renderMyProfileContent() {
     // Avatar with edit overlay
     const avatarImg = u.image
         ? `<img class="fd-avatar" src="${esc(u.image)}" onerror="this.style.display='none'">`
-        : `<div class="fd-avatar" style="display:flex;align-items:center;justify-content:center;font-size:calc(20px + var(--fs-off, 0px));font-weight:700;color:var(--tx3)">${esc((u.displayName||'?')[0])}</div>`;
+        : `<div class="fd-avatar" style="display:flex;align-items:center;justify-content:center;font-size:calc(20px + var(--fs-off, 0px));font-weight:700;color:var(--tx0)">${esc((u.displayName||'?')[0])}</div>`;
     const _mypFrame = (typeof iconFrameHtml === 'function') ? iconFrameHtml(u.iconFrameUrl, true) : '';
     const _editBtnPos = 'bottom:-4px;right:-4px;';
     const imgTag = `<div style="position:relative;display:inline-block;flex-shrink:0;line-height:0;">${avatarImg}${_mypFrame}<button class="myp-edit-btn" style="position:absolute;${_editBtnPos}z-index:5;padding:2px;min-width:0;width:18px;height:18px;display:flex;align-items:center;justify-content:center;" onclick="openImagePicker('profile-icon')" title="${esc(changeIconTitle)}"><span class="msi" style="font-size:11px;">edit</span></button></div>`;
@@ -478,7 +478,7 @@ function renderMyProfileContent() {
 
     // Infos card (right) — platform, joined date, pronouns
     const _mr = (label, valueHtml) =>
-        `<div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-size:calc(11px + var(--fs-off, 0px));"><span style="color:var(--tx3);">${label}</span><span style="color:var(--tx1);text-align:right;">${valueHtml}</span></div>`;
+        `<div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-size:calc(11px + var(--fs-off, 0px));"><span style="color:var(--tx2);">${label}</span><span style="color:var(--tx1);text-align:right;">${valueHtml}</span></div>`;
     const _infosRows = [
         _mr(t('profiles.meta.joined',        'Joined'),         u.dateJoined  ? fmtShortDate(new Date(u.dateJoined + 'T00:00:00')) : '—'),
         _mr(t('profiles.meta.last_login',    'Last Login'),     u.lastLogin   ? fmtShortDate(new Date(u.lastLogin)) : '—'),

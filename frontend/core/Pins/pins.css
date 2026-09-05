@@ -12,7 +12,7 @@
 
 .pins-item-type {
     font-size: calc(15px + var(--fs-off, 0px)) !important;
-    color: var(--tx3);
+    color: var(--tx1);
     flex-shrink: 0;
     margin-left: 6px;
 }

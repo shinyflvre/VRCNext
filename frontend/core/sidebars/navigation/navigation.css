@@ -136,7 +136,7 @@ body:has(#tab0.active) .rsidebar.collapsed .sidebar-sep {
 
 .logo-sub {
     font-size: calc(10px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     margin-top: 1px;
     letter-spacing: .5px;
 }
@@ -188,7 +188,7 @@ body:has(#tab0.active) .rsidebar.collapsed .sidebar-sep {
     width: calc(100% - 16px);
     text-align: left;
     font-size: calc(13px + var(--fs-off, 0px));
-    color: var(--tx2);
+    color: var(--tx1);
     font-family: inherit;
     white-space: nowrap;
     overflow: hidden;
@@ -225,7 +225,7 @@ body:has(#tab0.active) .rsidebar.collapsed .sidebar-sep {
 .nav-sep:first-child { margin-top: 2px; }
 
 .nav-sep-label {
-    color: var(--tx3);
+    color: var(--tx0);
     font-size: calc(9px + var(--fs-off, 0px));
     font-weight: 700;
     letter-spacing: 1.15px;
@@ -291,7 +291,7 @@ body:has(#tab0.active) .rsidebar.collapsed .sidebar-sep {
 .nav-group-arrow {
     margin-left: auto;
     font-size: calc(18px + var(--fs-off, 0px)) !important;
-    color: var(--tx3);
+    color: var(--tx2);
     transition: transform .2s;
     flex-shrink: 0;
 }
@@ -315,12 +315,12 @@ body:has(#tab0.active) .rsidebar.collapsed .sidebar-sep {
 .nav-sub {
     padding-left: 28px !important;
     font-size: calc(12px + var(--fs-off, 0px)) !important;
-    color: var(--tx3) !important;
+    color: var(--tx2) !important;
     margin: 1px 8px !important;
 }
 
 .nav-sub:hover {
-    color: var(--tx1) !important;
+    color: var(--tx0) !important;
 }
 
 .nav-sub.active {
@@ -382,7 +382,7 @@ body:has(#tab0.active) .rsidebar.collapsed .sidebar-sep {
 .nav-folder-popout-title {
     font-size: calc(12px + var(--fs-off, 0px));
     font-weight: 700;
-    color: var(--tx3);
+    color: var(--tx0);
     text-transform: uppercase;
     letter-spacing: .5px;
     padding: 2px 4px 8px;
@@ -407,7 +407,7 @@ body:has(#tab0.active) .rsidebar.collapsed .sidebar-sep {
     border: none;
     border-radius: 9px;
     background: rgba(255,255,255,.03);
-    color: var(--tx2);
+    color: var(--tx1);
     cursor: pointer;
     font-family: inherit;
     transition: background .15s, color .15s;
@@ -483,14 +483,14 @@ body:has(#tab0.active) .rsidebar.collapsed .sidebar-sep {
 }
 
 .play-title {
-    color: var(--tx1);
+    color: var(--tx0);
     font-size: calc(12px + var(--fs-off, 0px));
     font-weight: 700;
 }
 
 .play-sub {
     margin-top: 2px;
-    color: var(--tx3);
+    color: var(--tx2);
     font-size: calc(9px + var(--fs-off, 0px));
     font-weight: 600;
 }
@@ -499,7 +499,7 @@ body:has(#tab0.active) .rsidebar.collapsed .sidebar-sep {
 
 .play-arrow {
     margin-left: auto;
-    color: var(--tx3);
+    color: var(--tx2);
     font-size: calc(17px + var(--fs-off, 0px)) !important;
     flex-shrink: 0;
 }

@@ -83,7 +83,7 @@ html, body {
     display: flex; align-items: center; justify-content: center;
     width: 42px; height: 100%;
     background: none; border: none; cursor: pointer;
-    color: var(--tx2); transition: background 0.1s, color 0.1s;
+    color: var(--tx1); transition: background 0.1s, color 0.1s;
     padding: 0; flex-shrink: 0;
 }
 .tb-win-btn:hover { background: var(--bg-hover); color: var(--tx0); }
@@ -165,7 +165,7 @@ body.maximized .tb-icon-restore { display: block; }
     font-size: 11px; font-weight: 800;
     background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent);
 }
-.step-text { font-size: 12px; color: var(--tx2); line-height: 1.4; }
+.step-text { font-size: 12px; color: var(--tx1); line-height: 1.4; }
 .step-text strong { color: var(--tx0); font-weight: 700; }
 
 /* ── Language grid ── */
@@ -193,7 +193,7 @@ body.maximized .tb-icon-restore { display: block; }
 .login-input {
     width: 100%; padding: 10px 14px;
     background: var(--bg-card); border: 1px solid var(--brd);
-    border-radius: 8px; color: var(--tx0); font-size: 13px; font-family: inherit;
+    border-radius: 8px; color: var(--tx1); font-size: 13px; font-family: inherit;
     outline: none; margin-bottom: 8px; transition: border-color .15s;
 }
 .login-input:focus { border-color: var(--accent); }
@@ -227,7 +227,7 @@ body.maximized .tb-icon-restore { display: block; }
 .path-input {
     flex: 1; min-width: 0; padding: 10px 14px;
     background: var(--bg-input); border: 1px solid var(--brd);
-    border-radius: 8px; color: var(--tx2); font-size: 12px;
+    border-radius: 8px; color: var(--tx1); font-size: 12px;
     font-family: inherit; outline: none; cursor: default;
 }
 .browse-btn {
@@ -242,7 +242,7 @@ body.maximized .tb-icon-restore { display: block; }
     font-size: 11px; color: color-mix(in srgb, var(--tx2) 60%, transparent);
     margin-top: 10px; line-height: 1.5;
 }
-.path-hint code { color: var(--tx2); font-size: 10px; }
+.path-hint code { color: var(--tx3); font-size: 10px; }
 
 /* ── Camera steps ── */
 .cam-steps { display: flex; flex-direction: column; gap: 6px; }
@@ -256,7 +256,7 @@ body.maximized .tb-icon-restore { display: block; }
     background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent);
 }
 .cam-step-icon .msi { font-size: 15px; }
-.cam-step-text { font-size: 12px; color: var(--tx2); line-height: 1.5; }
+.cam-step-text { font-size: 12px; color: var(--tx1); line-height: 1.5; }
 .cam-step-text strong { color: var(--tx0); }
 
 /* ── Toggle cards ── */
@@ -314,7 +314,7 @@ body.maximized .tb-icon-restore { display: block; }
 .deco-pill .msi { font-size: 13px; }
 .deco-pill.on {
     background: color-mix(in srgb, var(--accent) 12%, var(--bg-input));
-    border-color: var(--accent); color: var(--tx0);
+    border-color: var(--accent); color: var(--tx2);
 }
 
 /* ── 2FA Modal ── */
@@ -330,12 +330,12 @@ body.maximized .tb-icon-restore { display: block; }
     box-shadow: 0 24px 64px rgba(0,0,0,.5); text-align: center;
 }
 .modal-title { font-size: 16px; font-weight: 700; color: var(--tx0); margin-bottom: 8px; }
-.modal-msg { font-size: 12px; color: var(--tx2); margin-bottom: 16px; line-height: 1.5; }
+.modal-msg { font-size: 12px; color: var(--tx1); margin-bottom: 16px; line-height: 1.5; }
 .tfa-input {
     width: 100%; text-align: center; font-size: 26px; letter-spacing: 10px;
     font-weight: 700; padding: 14px;
     background: var(--bg-input); border: 1px solid var(--brd);
-    border-radius: 10px; color: var(--tx0); font-family: inherit; outline: none; margin-bottom: 8px;
+    border-radius: 10px; color: var(--tx1); font-family: inherit; outline: none; margin-bottom: 8px;
 }
 .tfa-input:focus { border-color: var(--accent); }
 .tfa-error { font-size: 11px; color: var(--err); min-height: 16px; margin-bottom: 8px; }
@@ -344,7 +344,7 @@ body.maximized .tb-icon-restore { display: block; }
     flex: 1; padding: 10px; border: none; border-radius: 8px;
     font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer;
 }
-.modal-btn-cancel { background: var(--bg-input); color: var(--tx2); }
+.modal-btn-cancel { background: var(--bg-input); color: var(--tx1); }
 .modal-btn-cancel:hover { background: var(--bg-hover); }
 .modal-btn-accent { background: var(--accent); color: #fff; }
 .modal-btn-accent:hover { opacity: .9; }

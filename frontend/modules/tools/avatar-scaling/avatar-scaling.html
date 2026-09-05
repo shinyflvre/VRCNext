@@ -29,9 +29,9 @@
                         <div class="vrcn-panel-card-header"><span class="msi">height</span> <span data-i18n="as.scale.title">Scale</span></div>
                         <div class="sf-section-label" data-i18n="as.scale.section">Avatar Scale</div>
                         <div class="as-slider-row">
-                            <span id="asScaleMinLabel" style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);min-width:36px;">0.01 m</span>
+                            <span id="asScaleMinLabel" style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);min-width:36px;">0.01 m</span>
                             <input type="range" class="as-slider" id="asScaleSlider" min="0.01" max="10000" step="0.01" value="1.00" oninput="asScaleSliderInput()">
-                            <span id="asScaleMaxLabel" style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);min-width:42px;text-align:right;">10000 m</span>
+                            <span id="asScaleMaxLabel" style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);min-width:42px;text-align:right;">10000 m</span>
                             <span class="as-slider-val" id="asScaleVal">1.00 m</span>
                         </div>
                         <div class="sf-toggle-row" style="margin-top:10px;">
@@ -48,7 +48,7 @@
                             <label class="toggle"><input type="checkbox" id="asUseSafety" onchange="asToggleSafety()"><div class="toggle-track"><div class="toggle-knob"></div></div></label>
                         </div>
                         <div id="asSafetyRangeCard" style="display:none;margin-top:8px;">
-                            <div style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);line-height:1.6;" data-i18n-html="as.safety.range_desc">Limits avatar scale to a safe range:<br>Minimum <span style="color:var(--tx2);">0.1 m</span> — Maximum <span style="color:var(--tx2);">100 m</span></div>
+                            <div style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);line-height:1.6;" data-i18n-html="as.safety.range_desc">Limits avatar scale to a safe range:<br>Minimum <span style="color:var(--tx2);">0.1 m</span> — Maximum <span style="color:var(--tx2);">100 m</span></div>
                         </div>
                     </div>
 
@@ -68,11 +68,11 @@
                             <button class="vrcn-button" onclick="asClearKey('down')" style="padding:4px 8px;flex-shrink:0;"><span class="msi" style="font-size:14px;">close</span></button>
                         </div>
                         <div class="sf-section-label" style="margin-top:14px;" data-i18n="as.speed.title">Scaling Speed</div>
-                        <div style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);margin-bottom:6px;" data-i18n="as.speed.desc">Low value = fast, high value = smooth (slow)</div>
+                        <div style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);margin-bottom:6px;" data-i18n="as.speed.desc">Low value = fast, high value = smooth (slow)</div>
                         <div class="as-slider-row">
-                            <span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);min-width:28px;" data-i18n="as.speed.fast">Fast</span>
+                            <span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);min-width:28px;" data-i18n="as.speed.fast">Fast</span>
                             <input type="range" class="as-slider" id="asSmoothSlider" min="0" max="100" step="1" value="30" oninput="asSmoothnessInput()">
-                            <span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);min-width:28px;text-align:right;" data-i18n="as.speed.slow">Slow</span>
+                            <span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);min-width:28px;text-align:right;" data-i18n="as.speed.slow">Slow</span>
                             <span class="as-slider-val" id="asSmoothVal">30</span>
                         </div>
                     </div>

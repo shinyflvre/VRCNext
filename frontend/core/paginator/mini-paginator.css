@@ -79,6 +79,6 @@
 
 .mini-paginator .mini-pg-ell {
     padding: 0 2px;
-    color: var(--tx3);
+    color: var(--tx2);
     font-size: calc(11px + var(--fs-off, 0px));
 }

@@ -84,7 +84,7 @@
         const loc = f.location;
 
         if (loc === 'private') {
-            return `<div class="fd-group-card"><div class="fd-group-card-info"><div class="fd-group-card-name" style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);">${typeof t === 'function' ? t('profiles.meta.private_instance','Private Instance') : 'Private Instance'}</div></div></div>`;
+            return `<div class="fd-group-card"><div class="fd-group-card-info"><div class="fd-group-card-name" style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx0);">${typeof t === 'function' ? t('profiles.meta.private_instance','Private Instance') : 'Private Instance'}</div></div></div>`;
         }
 
         if (!loc.startsWith('wrld_')) return '';
@@ -130,7 +130,7 @@
             <div class="fd-group-icon fd-group-icon-empty"><span class="msi" style="font-size:16px;">travel_explore</span></div>
             <div class="fd-group-card-info">
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0;">
-                    <div class="fd-group-card-name" style="color:var(--tx3);font-size:calc(11px + var(--fs-off, 0px));min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${typeof t === 'function' ? t('profiles.meta.in_game','In Game') : 'In Game'}</div>
+                    <div class="fd-group-card-name" style="color:var(--tx0);font-size:calc(11px + var(--fs-off, 0px));min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${typeof t === 'function' ? t('profiles.meta.in_game','In Game') : 'In Game'}</div>
                     ${friendsHtml}
                 </div>
                 ${metaHtml}

@@ -39,7 +39,7 @@
     font-size: calc(18px + var(--fs-off, 0px));
     line-height: 1;
     margin-left: auto;
-    color: var(--tx3);
+    color: var(--tx1);
     transition: transform 0.2s ease;
 }
 .vrcn-panel-card.collapsed .vrcn-card-collapse-trigger {

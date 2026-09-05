@@ -254,7 +254,7 @@ function renderWorldSearchDetail(w) {
         <button class="fd-tab" onclick="switchWdTab('json',this)">Json</button>
     </div>`;
 
-    const _wmr = (label, val) => `<div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-size:calc(11px + var(--fs-off, 0px));"><span style="color:var(--tx3);">${label}</span><span style="color:var(--tx1);text-align:right;">${val}</span></div>`;
+    const _wmr = (label, val) => `<div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-size:calc(11px + var(--fs-off, 0px));"><span style="color:var(--tx2);">${label}</span><span style="color:var(--tx1);text-align:right;">${val}</span></div>`;
     const _wdInstCount = (w.instances || []).length;
     const wdInfosRows = [
         w.recommendedCapacity ? _wmr(t('worlds.meta.recommended', 'Recommended'), esc(getWorldPlayersLabel(w.recommendedCapacity))) : '',
@@ -314,7 +314,7 @@ function renderWorldSearchDetail(w) {
                 </div>
             </div>` : ''}
         </div>` : '';
-    const wdTimeCard = (w.worldTimeSeconds > 0 || currentInstanceData?.worldId === wid) ? `<div class="fd-info-card"><div class="wd-your-time"><span class="msi" style="font-size:15px;">schedule</span><div><div style="font-size:calc(12px + var(--fs-off, 0px));font-weight:600;color:var(--tx1);">${t('worlds.time_spent.label', 'Your Time Spent')}</div><div style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);"><span id="wdTimeSpent">${formatDuration(w.worldTimeSeconds || 0)}</span>${w.worldVisitCount > 0 ? ' &middot; ' + getWorldVisitCountLabel(w.worldVisitCount) : ''}</div></div></div></div>` : '';
+    const wdTimeCard = (w.worldTimeSeconds > 0 || currentInstanceData?.worldId === wid) ? `<div class="fd-info-card"><div class="wd-your-time"><span class="msi" style="font-size:15px;">schedule</span><div><div style="font-size:calc(12px + var(--fs-off, 0px));font-weight:600;color:var(--tx2);">${t('worlds.time_spent.label', 'Your Time Spent')}</div><div style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);"><span id="wdTimeSpent">${formatDuration(w.worldTimeSeconds || 0)}</span>${w.worldVisitCount > 0 ? ' &middot; ' + getWorldVisitCountLabel(w.worldVisitCount) : ''}</div></div></div></div>` : '';
     const wdInfosCard = `<div class="fd-info-card"><div class="fd-group-rep-label">${t('worlds.meta.infos_title', 'Infos')}</div><div style="display:grid;gap:6px;">${wdInfosRows}</div></div>`;
     const wdCommunityCard = wdCommunityRows ? `<div class="fd-info-card"><div class="fd-group-rep-label">${t('worlds.meta.community_title', 'Community')}</div><div style="display:grid;gap:6px;">${wdCommunityRows}</div></div>` : '';
     const wdPopularityCard = wdPopularityRows ? `<div class="fd-info-card"><div class="fd-group-rep-label">${t('worlds.meta.popularity_title', 'Popularity')}</div><div style="display:grid;gap:6px;">${wdPopularityRows}</div></div>` : '';
@@ -331,7 +331,7 @@ function renderWorldSearchDetail(w) {
                 <button class="vrcn-button vrcn-btn-primary" onclick="saveWdField('name','${jsq(wid)}')">${t('common.save', 'Save')}</button>
             </div>
         </div>` : ''}
-        <div style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx3);margin-bottom:12px;">${t('worlds.meta.by', 'by')} ${w.authorId ? `<span onclick="navOpenModal('friend','${jsq(w.authorId)}','${jsq(w.authorName || '')}')" style="display:inline-flex;align-items:center;padding:1px 8px;border-radius:20px;background:var(--badge-bg);font-size:calc(11px + var(--fs-off, 0px));font-weight:600;color:var(--tx1);cursor:pointer;line-height:1.8;">${esc(w.authorName)}</span>` : esc(w.authorName)}</div>`;
+        <div style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);margin-bottom:12px;">${t('worlds.meta.by', 'by')} ${w.authorId ? `<span onclick="navOpenModal('friend','${jsq(w.authorId)}','${jsq(w.authorName || '')}')" style="display:inline-flex;align-items:center;padding:1px 8px;border-radius:20px;background:var(--badge-bg);font-size:calc(11px + var(--fs-off, 0px));font-weight:600;color:var(--tx0);cursor:pointer;line-height:1.8;">${esc(w.authorName)}</span>` : esc(w.authorName)}</div>`;
     const wdActionsCompact = `<div class="fd-actions">
             <button class="vrcn-button-round" onclick="openCreateInstanceModal()" title="${esc(t('worlds.instances.create_title', 'Create Instance'))}"><span class="msi" style="font-size:16px;">add_circle_outline</span></button>
             <button class="vrcn-button-round${isFavWorld ? ' active' : ''}" id="wdFavBtn" onclick="toggleWorldFavPicker('${wid}')" title="${isFavWorld ? esc(t('worlds.favorites.unfavorite', 'Unfavorite')) : esc(t('worlds.favorites.favorite', 'Favorite'))}"><span class="msi" style="font-size:16px;">${isFavWorld ? 'favorite' : 'favorite_border'}</span></button>
@@ -341,7 +341,7 @@ function renderWorldSearchDetail(w) {
     const wdDescCardCompact = `<div class="fd-info-card">
             <div class="fd-group-rep-label">${t('worlds.meta.description_title', 'Description')}${wdDescTransBtn}${isOwnWorld ? `<button class="myp-edit-btn" onclick="editWdField('desc')"><span class="msi" style="font-size:14px;">edit</span></button>` : ''}</div>
             <div class="fd-badges-row fd-bio-badges-row" style="margin-bottom:10px;">${idBadge(wid)}</div>
-            <div id="wdfDescView">${desc ? `<div class="fd-bio" style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);max-height:150px;overflow-y:auto;line-height:1.5;white-space:pre-wrap;margin-bottom:0;">${esc(desc)}</div>` : (isOwnWorld ? `<div class="myp-empty">${t('worlds.detail.empty_description', 'No description')}</div>` : '')}</div>
+            <div id="wdfDescView">${desc ? `<div class="fd-bio" style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx1);max-height:150px;overflow-y:auto;line-height:1.5;white-space:pre-wrap;margin-bottom:0;">${esc(desc)}</div>` : (isOwnWorld ? `<div class="myp-empty">${t('worlds.detail.empty_description', 'No description')}</div>` : '')}</div>
             ${isOwnWorld ? `<div id="wdfDescEdit" style="display:none;">
                 <textarea id="wdDescInput" class="myp-textarea" rows="4" maxlength="2000" placeholder="${esc(t('worlds.detail.description_placeholder', 'World description...'))}">${esc(w.description || '')}</textarea>
                 <div class="myp-edit-actions">
@@ -453,7 +453,7 @@ function renderWdInstanceHistory(worldId, events) {
         const ei     = ev.id.replace(/'/g, "\\'");
         const detail = typeof _tlListData === 'function' ? (_tlListData(ev).detail || '') : '';
         return `<div style="display:flex;align-items:center;gap:8px;padding:5px 2px;border-bottom:1px solid var(--brd);cursor:pointer;" onclick="openTlDetail('${ei}', true)">
-            <span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);white-space:nowrap;">${esc(dt)}</span>
+            <span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);white-space:nowrap;">${esc(dt)}</span>
             <span class="msi" style="font-size:14px;color:${color};flex-shrink:0;">${meta.icon}</span>
             <span style="font-size:calc(12px + var(--fs-off, 0px));">${esc(meta.label)}</span>
             ${detail ? `<span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">${detail}</span>` : ''}
@@ -680,10 +680,10 @@ function renderWorldFavPicker(worldId) {
             onclick="addWorldToFavGroup('${wid}','${gn}','${gt}','${oldFvrt}',this)" style="cursor:pointer;">
             <div style="flex:1;min-width:0;">
                 <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
-                    <span style="font-size:calc(12px + var(--fs-off, 0px));font-weight:600;color:var(--tx1);">${esc(g.displayName || g.name)}</span>
+                    <span style="font-size:calc(12px + var(--fs-off, 0px));font-weight:600;color:var(--tx0);">${esc(g.displayName || g.name)}</span>
                     ${vrcBadge}
                 </div>
-                <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx3);margin-top:1px;">${isLocalFavGroup(g) ? `${count}/${g.capacity || 200}` : tf('worlds.favorites.group_count', { count }, '{count}/100 worlds')}</div>
+                <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx2);margin-top:1px;">${isLocalFavGroup(g) ? `${count}/${g.capacity || 200}` : tf('worlds.favorites.group_count', { count }, '{count}/100 worlds')}</div>
             </div>
             ${check}
         </div>`;
@@ -864,7 +864,7 @@ function openWorldDetail(worldId) {
             });
         } else {
             friendsHtml += `<div class="vrcn-user-item" style="pointer-events:none;opacity:0.55;">
-                <div class="vrcn-user-item-avatar vrcn-user-item-avatar-letter"><span class="msi" style="font-size:20px;color:var(--tx3);">person</span></div>
+                <div class="vrcn-user-item-avatar vrcn-user-item-avatar-letter"><span class="msi" style="font-size:20px;color:var(--tx2);">person</span></div>
                 <div class="vrcn-user-item-info">
                     <div class="vrcn-user-item-name">${t('dashboard.instances.no_friends_title', 'No friends here yet!')}</div>
                     <div class="vrcn-user-item-status">${t('dashboard.instances.no_friends_desc', 'Invite friends to this instance!')}</div>

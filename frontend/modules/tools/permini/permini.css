@@ -18,7 +18,7 @@
 }
 .pm-desc {
     font-size: calc(11px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     margin-bottom: 16px;
     line-height: 1.5;
 }
@@ -47,7 +47,7 @@
     justify-content: center;
     font-size: calc(15px + var(--fs-off, 0px));
     font-weight: 700;
-    color: var(--tx3);
+    color: var(--tx0);
 }
 .pm-info {
     flex: 1;
@@ -90,7 +90,7 @@
     background: none;
     border: none;
     cursor: pointer;
-    color: var(--tx3);
+    color: var(--tx2);
     padding: 4px;
     border-radius: 6px;
     display: flex;
@@ -109,7 +109,7 @@
     background: none;
     border: none;
     cursor: pointer;
-    color: var(--tx3);
+    color: var(--tx1);
     padding: 4px;
     border-radius: 6px;
     display: flex;
@@ -118,7 +118,7 @@
     flex-shrink: 0;
     transition: color .15s, background .15s;
 }
-.pm-expand:hover { color: var(--tx1); background: var(--bg-hover); }
+.pm-expand:hover { color: var(--tx0); background: var(--bg-hover); }
 .pm-expand .msi { transition: transform .2s ease; }
 .pm-item.collapsed .pm-expand .msi { transform: rotate(-90deg); }
 
@@ -137,7 +137,7 @@
     gap: 10px;
     cursor: pointer;
     font-size: calc(12px + var(--fs-off, 0px));
-    color: var(--tx2);
+    color: var(--tx1);
 }
 
 .pm-adv-body {
@@ -151,7 +151,7 @@
 .pm-adv-label {
     font-size: calc(11px + var(--fs-off, 0px));
     font-weight: 600;
-    color: var(--tx3);
+    color: var(--tx2);
 }
 
 .pm-days {
@@ -164,7 +164,7 @@
     padding: 6px 0;
     border: 1px solid var(--brd);
     background: transparent;
-    color: var(--tx3);
+    color: var(--tx0);
     border-radius: 7px;
     font-family: inherit;
     font-size: calc(11px + var(--fs-off, 0px));
@@ -172,7 +172,7 @@
     cursor: pointer;
     transition: background .15s, color .15s, border-color .15s;
 }
-.pm-day:hover { color: var(--tx1); }
+.pm-day:hover { color: var(--tx0); }
 .pm-day.active {
     background: var(--accent);
     border-color: var(--accent);
@@ -185,4 +185,4 @@
     gap: 8px;
     flex-wrap: wrap;
 }
-.pm-time-dash { color: var(--tx3); font-weight: 700; }
+.pm-time-dash { color: var(--tx2); font-weight: 700; }

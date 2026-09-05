@@ -26,7 +26,7 @@
 }
 
 .log-input-prompt {
-    color: var(--tx3);
+    color: var(--tx1);
     font-family: 'Google Sans Mono', monospace;
     font-size: calc(11px + var(--fs-off, 0px));
     user-select: none;
@@ -40,7 +40,7 @@
     background: transparent;
     border: none;
     outline: none;
-    color: var(--tx2);
+    color: var(--tx1);
     font-family: 'Google Sans Mono', monospace;
     font-size: calc(11px + var(--fs-off, 0px));
     caret-color: var(--tx2);
@@ -63,7 +63,7 @@
 #logArea.log-tail .li-f:nth-last-child(-n+100) { display: flex; }
 
 .li-f .li-ts {
-    color: var(--tx3);
+    color: var(--tx1);
     flex-shrink: 0;
     min-width: 65px;
     font-variant-numeric: tabular-nums;
@@ -83,7 +83,7 @@
 .li-f .li-level.err  { color: #E06C75; }
 .li-f .li-level.vrc  { color: #9876AA; }
 
-.li-f .li-msg { color: var(--tx2); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.li-f .li-msg { color: var(--tx1); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .li-f .li-status { flex-shrink: 0; font-variant-numeric: tabular-nums; font-weight: 700; padding-left: 10px; }
 .li-f .li-status.ok   { color: #6DBF82; }
@@ -120,20 +120,20 @@
     font-size: calc(11px + var(--fs-off, 0px));
     font-weight: 600;
     letter-spacing: .3px;
-    color: var(--tx3);
+    color: var(--tx2);
 }
 .log-stat-v {
     font-size: calc(11px + var(--fs-off, 0px));
     font-weight: 600;
     font-variant-numeric: tabular-nums;
-    color: var(--tx1);
+    color: var(--tx2);
 }
 .log-stat-v.ok     { color: var(--ok); }
 .log-stat-v.warn   { color: var(--warn); }
 .log-stat-v.err    { color: var(--err); }
 .log-stat-v.cdn    { color: var(--cyan); }
 .log-stat-v.accent { color: var(--accent-lt); }
-.log-stat-v.zero   { color: var(--tx3); }
+.log-stat-v.zero   { color: var(--tx2); }
 
 .log-stat-sep {
     width: 1px;
@@ -151,9 +151,9 @@
     font-size: calc(11px + var(--fs-off, 0px));
     font-weight: 600;
     background: var(--bg-input);
-    color: var(--tx2);
+    color: var(--tx0);
     flex-shrink: 0;
 }
 .log-ws-icon { font-size: calc(14px + var(--fs-off, 0px)) !important; }
 .log-ws.online  { background: rgba(45,212,140,.12); color: var(--ok); }
-.log-ws.offline { color: var(--tx2); }
+.log-ws.offline { color: var(--tx3); }

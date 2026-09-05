@@ -9,7 +9,7 @@
 .ss-toggle-label {
     font-size: calc(11px + var(--fs-off, 0px));
     font-weight: 600;
-    color: var(--tx3);
+    color: var(--tx2);
 }
 .ss-inline-toggle { margin-left: 0; }
 
@@ -67,14 +67,14 @@
 .ss-rule-name {
     font-size: calc(12px + var(--fs-off, 0px));
     font-weight: 600;
-    color: var(--tx1);
+    color: var(--tx0);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 .ss-rule-sub {
     font-size: calc(10px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -151,7 +151,7 @@
 .ss-label {
     font-size: calc(10px + var(--fs-off, 0px));
     font-weight: 700;
-    color: var(--tx3);
+    color: var(--tx2);
     text-transform: uppercase;
     letter-spacing: .04em;
 }
@@ -172,7 +172,7 @@
     padding: 6px 0;
     border: 1px solid var(--brd);
     background: transparent;
-    color: var(--tx3);
+    color: var(--tx0);
     border-radius: 7px;
     font-family: inherit;
     font-size: calc(11px + var(--fs-off, 0px));
@@ -180,7 +180,7 @@
     cursor: pointer;
     transition: background .12s, color .12s, border-color .12s;
 }
-.ss-day:hover { color: var(--tx1); }
+.ss-day:hover { color: var(--tx0); }
 .ss-day.active {
     background: var(--accent);
     border-color: var(--accent);
@@ -229,7 +229,7 @@
 }
 .ss-switch-label {
     font-size: calc(12px + var(--fs-off, 0px));
-    color: var(--tx1);
+    color: var(--tx2);
     font-weight: 600;
 }
 
@@ -260,7 +260,7 @@
 }
 .ss-empty-title {
     font-size: calc(14px + var(--fs-off, 0px));
-    color: var(--tx2);
+    color: var(--tx0);
     margin-top: 8px;
     font-weight: 600;
 }
@@ -290,13 +290,13 @@
     border-radius: 7px;
     padding: 4px 6px 4px 10px;
     font-size: calc(11px + var(--fs-off, 0px));
-    color: var(--tx1);
+    color: var(--tx2);
 }
 .ss-friend-chip button {
     background: none;
     border: none;
     cursor: pointer;
-    color: var(--tx3);
+    color: var(--tx2);
     display: flex;
     padding: 0;
 }

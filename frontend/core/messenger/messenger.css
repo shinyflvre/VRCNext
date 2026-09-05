@@ -42,16 +42,16 @@
     border: 2.5px solid var(--bg-base);
 }
 #msgrHeaderText { flex:1; min-width:0; }
-#msgrName { font-weight:600; font-size: calc(14px + var(--fs-off, 0px)); color:var(--tx1); }
-#msgrSub  { font-size: calc(11px + var(--fs-off, 0px)); color:var(--tx3); margin-top:2px; }
+#msgrName { font-weight:600; font-size: calc(14px + var(--fs-off, 0px)); color:var(--tx0); }
+#msgrSub  { font-size: calc(11px + var(--fs-off, 0px)); color:var(--tx2); margin-top:2px; }
 #msgrHeaderRight { display:flex; align-items:center; gap:6px; flex-shrink:0; }
 #msgrClose {
     background:none; border:none; cursor:pointer;
-    color:var(--tx3); padding:6px; border-radius:8px;
+    color:var(--tx2); padding:6px; border-radius:8px;
     display:flex; align-items:center;
     transition: color .15s, background .15s;
 }
-#msgrClose:hover { color:var(--tx1); background:var(--bg-hover); }
+#msgrClose:hover { color:var(--tx0); background:var(--bg-hover); }
 #msgrMessages {
     flex: 1;
     overflow-y: auto;
@@ -78,7 +78,7 @@
 }
 .msgr-mine   .msgr-bubble { background:var(--accent); color:#fff; border-bottom-right-radius:6px; }
 .msgr-theirs .msgr-bubble { background:var(--bg-hover); color:var(--tx1); border-bottom-left-radius:6px; }
-.msgr-time { font-size: calc(10px + var(--fs-off, 0px)); color:var(--tx3); margin-top:3px; padding:0 5px; }
+.msgr-time { font-size: calc(10px + var(--fs-off, 0px)); color:var(--tx2); margin-top:3px; padding:0 5px; }
 
 .msgr-boop-event {
     display: flex;
@@ -115,12 +115,12 @@
 .msgr-boop-text {
     font-size: calc(13px + var(--fs-off, 0px));
     font-weight: 600;
-    color: var(--tx1);
+    color: var(--tx0);
     letter-spacing: .2px;
 }
 .msgr-boop-time {
     font-size: calc(10px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
 }
 
 /* Shared Content Message Card */
@@ -157,7 +157,7 @@
 .scm-thumb img.scm-img-loaded { display: block; }
 .scm-thumb-icon {
     font-size: calc(32px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     opacity: .45;
 }
 .scm-thumb.scm-has-image .scm-thumb-icon { display: none; }
@@ -186,7 +186,7 @@
 .scm-name {
     font-size: calc(13px + var(--fs-off, 0px));
     font-weight: 600;
-    color: var(--tx1);
+    color: var(--tx0);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -261,7 +261,7 @@
     top: 50%;
     transform: translateY(-50%);
     font-size: calc(11px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     transition: color .2s;
     min-width: 24px;
     text-align: right;
@@ -326,9 +326,9 @@
     flex-shrink: 0;
 }
 .chat-inbox-row  { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
-.chat-inbox-name { font-size: calc(13px + var(--fs-off, 0px)); font-weight: 600; color: var(--tx1); min-width: 0; }
-.chat-inbox-time { font-size: calc(10px + var(--fs-off, 0px)); color: var(--tx3); flex-shrink: 0; }
-.chat-inbox-text { font-size: calc(12px + var(--fs-off, 0px)); color: var(--tx3); margin-top: 2px; }
+.chat-inbox-name { font-size: calc(13px + var(--fs-off, 0px)); font-weight: 600; color: var(--tx0); min-width: 0; }
+.chat-inbox-time { font-size: calc(10px + var(--fs-off, 0px)); color: var(--tx2); flex-shrink: 0; }
+.chat-inbox-text { font-size: calc(12px + var(--fs-off, 0px)); color: var(--tx1); margin-top: 2px; }
 .chat-inbox-count {
     background: var(--accent);
     color: #fff;

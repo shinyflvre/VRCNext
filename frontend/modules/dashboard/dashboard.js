@@ -941,7 +941,7 @@ function _dashTlDetail(ev, isFriend) {
 
 function _dashTlStatusChips(oldV, newV) {
     return `<span class="ft-status-chip ${statusCssClass(oldV)}">${esc(statusLabel(oldV) || '?')}</span>`
-        + `<span class="msi" style="font-size:11px;color:var(--tx3);">arrow_forward</span>`
+        + `<span class="msi" style="font-size:11px;color:var(--tx2);">arrow_forward</span>`
         + `<span class="ft-status-chip ${statusCssClass(newV)}">${esc(statusLabel(newV) || '?')}</span>`;
 }
 
@@ -2003,7 +2003,7 @@ function renderDashUpcomingEvents() {
     if (!grid) return;
 
     const emptyState = (icon, msg, btn = '') =>
-        `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:28px 0;color:var(--tx3);font-size:calc(12px + var(--fs-off, 0px));">
+        `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:28px 0;color:var(--tx1);font-size:calc(12px + var(--fs-off, 0px));">
             <span class="msi" style="font-size:26px;">${icon}</span>${esc(msg)}${btn}
         </div>`;
 

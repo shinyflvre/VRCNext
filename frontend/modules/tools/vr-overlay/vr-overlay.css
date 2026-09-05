@@ -6,9 +6,9 @@
     justify-content: space-between;
     padding: 5px 0;
     font-size: calc(12px + var(--fs-off, 0px));
-    color: var(--tx2);
+    color: var(--tx1);
 }
-.vro-setting-row label { color: var(--tx1); min-width: 60px; }
+.vro-setting-row label { color: var(--tx2); min-width: 60px; }
 .vrcn-select {
     background: var(--ui-input-bg);
     border: 1px solid var(--bdr);
@@ -185,7 +185,7 @@
 .vn-select.vro-input-mode.vn-open .vn-select-trigger {
     background: var(--ui-input-hover-bg);
     border-color: var(--accent);
-    color: var(--tx0);
+    color: var(--tx1);
 }
 .vn-select.vro-input-mode .vn-select-arrow { color: var(--accent); }
 .vn-select.vro-input-mode .vn-select-panel,
@@ -222,11 +222,11 @@
     cursor: pointer;
     font-size: calc(12px + var(--fs-off, 0px));
     font-weight: 500;
-    color: var(--tx2);
+    color: var(--tx1);
     white-space: nowrap;
 }
-.vro-zone-item:hover { background: var(--bg-hover); color: var(--tx1); }
-.vro-zone-item.sel   { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--tx1); }
+.vro-zone-item:hover { background: var(--bg-hover); color: var(--tx0); }
+.vro-zone-item.sel   { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--tx0); }
 .vro-zone-dot {
     width: 9px;
     height: 9px;
@@ -281,7 +281,7 @@
 }
 .vro-keybind-plus {
     font-size: calc(12px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx0);
     font-weight: 700;
 }
 
@@ -312,5 +312,5 @@
     font-weight: 700;
     letter-spacing: .05em;
     text-transform: uppercase;
-    color: var(--tx3);
+    color: var(--tx0);
 }

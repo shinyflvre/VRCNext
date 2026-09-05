@@ -123,7 +123,7 @@
     font-size: calc(42px + var(--fs-off, 0px));
     font-weight: 800;
     background: var(--bg-input);
-    color: var(--tx1);
+    color: var(--tx0);
 }
 
 .rw-stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
@@ -135,7 +135,7 @@
     padding: 14px 10px;
 }
 .rw-stat-num { font-size: calc(24px + var(--fs-off, 0px)); font-weight: 800; color: var(--accent); }
-.rw-stat-lbl { font-size: calc(12px + var(--fs-off, 0px)); color: var(--tx3); margin-top: 4px; }
+.rw-stat-lbl { font-size: calc(12px + var(--fs-off, 0px)); color: var(--tx2); margin-top: 4px; }
 
 .rw-inline-card {
     display: flex;
@@ -160,7 +160,7 @@
     background-position: center;
     flex-shrink: 0;
 }
-.rw-inline-label { font-size: calc(11px + var(--fs-off, 0px)); color: var(--tx3); text-transform: uppercase; letter-spacing: .05em; }
+.rw-inline-label { font-size: calc(11px + var(--fs-off, 0px)); color: var(--tx2); text-transform: uppercase; letter-spacing: .05em; }
 .rw-inline-name { font-size: calc(16px + var(--fs-off, 0px)); font-weight: 700; color: var(--tx0); }
 
 .rw-img {
@@ -177,7 +177,7 @@
 .rw-fig-grid .rw-img { aspect-ratio: 4 / 3; }
 .rw-figcap {
     font-size: calc(11px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     margin-top: 5px;
     white-space: nowrap;
     overflow: hidden;
@@ -192,7 +192,7 @@
     border-radius: 999px;
     padding: 6px 12px;
     font-size: calc(12px + var(--fs-off, 0px));
-    color: var(--tx1);
+    color: var(--tx2);
 }
 
 .rw-fact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -217,7 +217,7 @@
     z-index: 1;
     flex-shrink: 0;
 }
-.rw-count { flex: 1; text-align: center; font-size: calc(12px + var(--fs-off, 0px)); color: var(--tx3); }
+.rw-count { flex: 1; text-align: center; font-size: calc(12px + var(--fs-off, 0px)); color: var(--tx2); }
 
 /* Experiment: 50% transparent cards on the content pages */
 .rw-stat,

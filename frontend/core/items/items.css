@@ -33,7 +33,7 @@
     justify-content: center;
     font-size: calc(14px + var(--fs-off, 0px));
     font-weight: 700;
-    color: var(--tx2);
+    color: var(--tx0);
 }
 .vrcn-user-item-dot {
     position: absolute;
@@ -63,7 +63,7 @@
 .vrcn-user-item-name {
     font-size: calc(12px + var(--fs-off, 0px));
     font-weight: 700;
-    color: var(--tx1);
+    color: var(--tx0);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -88,7 +88,7 @@
     gap: 3px;
     min-height: 14px;
     font-size: calc(10px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -116,7 +116,7 @@
     color: var(--tx2);
     white-space: nowrap;
 }
-.vrcn-user-item-stats-meta .msi { font-size: 12px; color: var(--tx3); }
+.vrcn-user-item-stats-meta .msi { font-size: 12px; color: var(--tx2); }
 .vrcn-user-item-stats-dot { color: var(--tx3); margin: 0 1px; }
 .vrcn-user-item-stats-bar-wrap {
     width: 84px;
@@ -159,13 +159,13 @@
 .fd-pi-sm-av-letter {
     font-size: calc(11px + var(--fs-off, 0px));
     font-weight: 700;
-    color: var(--tx3);
+    color: var(--tx0);
     background: var(--bg-card);
 }
 
 .fd-pi-sm-name {
     font-size: calc(12px + var(--fs-off, 0px));
-    color: var(--tx1);
+    color: var(--tx0);
     display: flex;
     align-items: center;
     gap: 6px;
@@ -227,7 +227,7 @@
     transition: background .15s, color .15s;
 }
 .inst-owner-group-badge:hover {
-    color: var(--tx1);
+    color: var(--tx0);
 }
 .inst-owner-group-sep {
     opacity: .5;
@@ -269,7 +269,7 @@
     align-items: center;
     gap: 5px;
     font-size: calc(12px + var(--fs-off, 0px));
-    color: var(--tx2);
+    color: var(--tx0);
     flex-wrap: wrap;
 }
 .inst-item-card-body {
@@ -329,7 +329,7 @@
 }
 .vrcn-mini-content-meta {
     font-size: calc(10px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     margin-top: 2px;
     white-space: nowrap;
     overflow: hidden;

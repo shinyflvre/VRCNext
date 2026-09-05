@@ -150,7 +150,7 @@ const SmartSearch = (() => {
                     img.onerror = function() {
                         const ph = document.createElement('div');
                         ph.className = 'vrc-friend-avatar';
-                        ph.style.cssText = 'display:flex;align-items:center;justify-content:center;font-size:calc(12px + var(--fs-off, 0px));font-weight:700;color:var(--tx3)';
+                        ph.style.cssText = 'display:flex;align-items:center;justify-content:center;font-size:calc(12px + var(--fs-off, 0px));font-weight:700;color:var(--tx0)';
                         ph.textContent = (item.displayName || '?')[0].toUpperCase();
                         this.parentNode.replaceChild(ph, this);
                     };
@@ -158,7 +158,7 @@ const SmartSearch = (() => {
                 } else {
                     const ph = document.createElement('div');
                     ph.className = 'vrc-friend-avatar';
-                    ph.style.cssText = 'display:flex;align-items:center;justify-content:center;font-size:calc(12px + var(--fs-off, 0px));font-weight:700;color:var(--tx3)';
+                    ph.style.cssText = 'display:flex;align-items:center;justify-content:center;font-size:calc(12px + var(--fs-off, 0px));font-weight:700;color:var(--tx0)';
                     ph.textContent = (item.displayName || '?')[0].toUpperCase();
                     wrap.appendChild(ph);
                 }

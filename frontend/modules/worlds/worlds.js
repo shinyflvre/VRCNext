@@ -533,7 +533,7 @@ function worldEditShowMoveMenu(btn) {
             <span class="msi" style="font-size:14px;flex-shrink:0;">folder</span>
             <span style="flex:1;">${esc(g.displayName || g.name)}</span>
             ${favGroupBadge(g)}
-            <span style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx3);flex-shrink:0;">${count}</span>
+            <span style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx2);flex-shrink:0;">${count}</span>
         </div>`;
     }).join('');
     picker.style.display = 'block';
@@ -689,7 +689,7 @@ function worldEditShowAddFavMenu(btn) {
             <span class="msi" style="font-size:14px;flex-shrink:0;">favorite</span>
             <span style="flex:1;">${esc(g.displayName || g.name)}</span>
             ${favGroupBadge(g)}
-            <span style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx3);flex-shrink:0;">${count}</span>
+            <span style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx2);flex-shrink:0;">${count}</span>
         </div>`;
     }).join('') || `<div class="vn-select-option" style="pointer-events:none;color:var(--tx3);">${esc(t('worlds.favorites.no_groups', 'No favorite groups'))}</div>`;
     picker.style.display = 'block';

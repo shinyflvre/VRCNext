@@ -12,15 +12,15 @@
     cursor: pointer;
     transition: background .15s, color .15s;
     background: var(--bg-hover);
-    color: var(--tx2);
+    color: var(--tx0);
     white-space: nowrap;
 }
 .vrcn-notify-button .msi { font-size: 13px; line-height: 1; }
-.vrcn-notify-button:hover { background: var(--brd); color: var(--tx1); }
+.vrcn-notify-button:hover { background: var(--brd); color: var(--tx0); }
 .vrcn-notify-button:disabled { opacity: .45; cursor: not-allowed; }
 .vrcn-notify-button.primary { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); }
 .vrcn-notify-button.primary:hover { background: var(--accent); color: #fff; }
-.vrcn-notify-button.danger { background: none; border: 1px solid var(--brd); color: var(--tx3); }
+.vrcn-notify-button.danger { background: none; border: 1px solid var(--brd); color: var(--tx1); }
 .vrcn-notify-button.danger:hover { background: rgba(255,75,85,.15); color: var(--err); border-color: var(--err); }
 
 
@@ -29,7 +29,7 @@
     position: relative;
     background: none;
     border: none;
-    color: var(--tx2);
+    color: var(--tx1);
     cursor: pointer;
     padding: 4px;
     border-radius: 8px;
@@ -159,7 +159,7 @@
     cursor: pointer;
     transition: background .1s, color .1s;
 }
-.notif-view-more:hover { background: var(--bg-hover); color: var(--tx1); }
+.notif-view-more:hover { background: var(--bg-hover); color: var(--tx0); }
 .notif-view-more .msi { font-size: calc(15px + var(--fs-off, 0px)); }
 
 .notif-item {
@@ -228,7 +228,7 @@
 .notif-msg-main {
     font-size: calc(13px + var(--fs-off, 0px));
     line-height: 1.35;
-    color: var(--tx2);
+    color: var(--tx1);
     min-width: 0;
     overflow: hidden;
     display: -webkit-box;
@@ -236,7 +236,7 @@
     -webkit-box-orient: vertical;
 }
 .notif-msg-main strong { color: var(--tx0); font-weight: 700; }
-.notif-msg-sub strong { color: var(--tx1); font-weight: 600; }
+.notif-msg-sub strong { color: var(--tx0); font-weight: 600; }
 
 .notif-act {
     width: 24px;
@@ -248,13 +248,13 @@
     border-radius: 6px;
     cursor: pointer;
     font-family: inherit;
-    color: var(--tx3);
+    color: var(--tx1);
     transition: background .12s, color .12s;
 }
 .notif-act .msi { font-size: calc(14px + var(--fs-off, 0px)); }
 .notif-act:disabled { opacity: .45; cursor: not-allowed; }
 .notif-act-accept:hover  { background: var(--accent); color: #fff; }
-.notif-act-answer:hover  { background: var(--bg-hover); color: var(--tx1); }
+.notif-act-answer:hover  { background: var(--bg-hover); color: var(--tx0); }
 .notif-act-dismiss:hover { background: color-mix(in srgb, var(--err) 14%, transparent); color: var(--err); }
 
 .notif-seen {
@@ -275,7 +275,7 @@
     align-items: center;
     justify-content: center;
     background: var(--bg-hover);
-    color: var(--tx3);
+    color: var(--tx0);
     font-size: calc(15px + var(--fs-off, 0px));
     font-weight: 700;
 }
@@ -283,7 +283,7 @@
 
 .notif-msg {
     font-size: calc(11px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     min-width: 0;
     overflow: hidden;
     display: -webkit-box;
@@ -294,7 +294,7 @@
 
 .notif-time {
     font-size: calc(11px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     flex-shrink: 0;
     font-variant-numeric: tabular-nums;
 }
@@ -410,24 +410,24 @@
 }
 .nc-title {
     font-size: calc(12px + var(--fs-off, 0px));
-    color: var(--tx1);
+    color: var(--tx0);
     line-height: 1.5;
 }
 .nc-title span {
-    color: var(--tx2);
+    color: var(--tx0);
     font-weight: 400;
 }
 .nc-close-btn {
     background: none;
     border: none;
-    color: var(--tx3);
+    color: var(--tx2);
     cursor: pointer;
     padding: 2px;
     flex-shrink: 0;
     border-radius: 6px;
     transition: background .15s, color .15s;
 }
-.nc-close-btn:hover { background: var(--bg-hover); color: var(--tx1); }
+.nc-close-btn:hover { background: var(--bg-hover); color: var(--tx0); }
 .nc-timer {
     height: 3px;
     background: var(--brd);
@@ -499,7 +499,7 @@
 .inst-user-av-letter {
     font-size: calc(11px + var(--fs-off, 0px));
     font-weight: 700;
-    color: var(--tx3);
+    color: var(--tx0);
     background: var(--bg-card);
 }
 
@@ -531,7 +531,7 @@
 
 .inst-user-status {
     font-size: calc(10px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
 }
 
 .inst-user-row:hover {
@@ -585,7 +585,7 @@
 }
 .fot-ctx-name {
     font-size: calc(11px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx0);
     padding: 2px 8px 6px;
     border-bottom: 1px solid var(--brd);
     margin-bottom: 4px;
@@ -600,7 +600,7 @@
     padding: 6px 10px;
     border-radius: 6px;
     font-size: calc(12px + var(--fs-off, 0px));
-    color: var(--tx2);
+    color: var(--tx1);
     cursor: pointer;
     transition: background 0.1s;
 }

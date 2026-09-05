@@ -20,7 +20,7 @@
     padding: 8px 16px;
     font-size: calc(10px + var(--fs-off, 0px));
     font-weight: 700;
-    color: var(--tx3);
+    color: var(--tx0);
     letter-spacing: 1px;
 }
 
@@ -37,7 +37,7 @@
 }
 
 .file-name {
-    color: var(--tx1);
+    color: var(--tx0);
 }
 
 .file-channel {
@@ -49,10 +49,10 @@
 }
 
 .file-time {
-    color: var(--tx3);
+    color: var(--tx2);
 }
 
-.file-del { color: var(--tx3); padding: 2px 4px; transition: all .15s; }
+.file-del { color: var(--tx2); padding: 2px 4px; transition: all .15s; }
 
 .file-del:hover {
     color: var(--err);
@@ -104,7 +104,7 @@
 
 .ts-stat-label {
     font-size: calc(10px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: .04em;
@@ -144,7 +144,7 @@
 
 .relay-folder-path {
     font-size: calc(10px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

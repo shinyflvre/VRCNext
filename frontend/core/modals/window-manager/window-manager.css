@@ -152,7 +152,7 @@
     background: var(--bg-input);
     border: 1px solid var(--brd);
     border-radius: 8px;
-    color: var(--tx1);
+    color: var(--tx0);
     font-family: inherit;
     font-size: calc(12px + var(--fs-off, 0px));
     font-weight: 600;
@@ -178,7 +178,7 @@
     border: none;
     border-radius: 5px;
     background: transparent;
-    color: var(--tx3);
+    color: var(--tx2);
     flex-shrink: 0;
 }
 .wm-dock-close:hover { background: var(--err); color: #fff; }

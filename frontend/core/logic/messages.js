@@ -540,7 +540,7 @@ window.external.receiveMessage(rawMsg => {
                         ? `<div class="fd-bio">${esc(payload.description)}</div>`
                         : `<div class="myp-empty">${t('groups.empty.no_description', 'No description')}</div>`;
                     if (rv && payload.rules != null) rv.innerHTML = payload.rules
-                        ? `<div style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);padding:8px;background:var(--bg-input);border-radius:8px;max-height:120px;overflow-y:auto;white-space:pre-wrap;">${esc(payload.rules)}</div>`
+                        ? `<div style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);padding:8px;background:var(--bg-input);border-radius:8px;max-height:120px;overflow-y:auto;white-space:pre-wrap;">${esc(payload.rules)}</div>`
                         : `<div class="myp-empty">${t('groups.empty.no_rules', 'No rules set')}</div>`;
                     if (lnv && payload.links != null) {
                         const links = (payload.links || []).filter(Boolean);
@@ -591,7 +591,7 @@ window.external.receiveMessage(rawMsg => {
                     const view = document.getElementById('fdVrcNoteView');
                     if (view) {
                         view.innerHTML = payload.note
-                            ? `<div style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);line-height:1.5;">${esc(payload.note)}</div>`
+                            ? `<div style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx1);line-height:1.5;">${esc(payload.note)}</div>`
                             : `<div class="myp-empty">${t('profiles.notes.no_note', 'No notes added yet')}</div>`;
                     }
                     fdCancelNote();

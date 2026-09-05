@@ -145,7 +145,7 @@
 .fd-vrc-badge-tip-name {
     font-size: calc(11px + var(--fs-off, 0px));
     font-weight: 700;
-    color: var(--tx1);
+    color: var(--tx0);
     line-height: 1.3;
 }
 
@@ -418,7 +418,7 @@
 .fd-hm-count {
     font-size: calc(12px + var(--fs-off, 0px));
     font-weight: 600;
-    color: var(--tx1);
+    color: var(--tx2);
 }
 .fd-hm-head-right {
     display: flex;
@@ -431,11 +431,11 @@
     display: flex;
     gap: 18px;
     font-size: calc(11px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     margin-bottom: 10px;
     min-height: 14px;
 }
-.fd-hm-stats strong { color: var(--tx1); font-weight: 700; }
+.fd-hm-stats strong { color: var(--tx0); font-weight: 700; }
 
 .fd-hm-grid {
     display: flex;
@@ -451,7 +451,7 @@
     width: 28px;
     flex-shrink: 0;
     font-size: calc(10px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     text-align: right;
 }
 .fd-hm-cells {
@@ -483,7 +483,7 @@
 }
 .fd-hm-axis-h {
     font-size: calc(9px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     white-space: nowrap;
     overflow: visible;
 }

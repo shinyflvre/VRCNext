@@ -96,17 +96,17 @@
     padding: 8px;
 }
 .af-log-entry {
-    color: var(--tx2);
+    color: var(--tx1);
     padding: 2px 0;
     border-bottom: 1px dashed var(--brd-lt);
     display: flex;
     gap: 8px;
 }
 .af-log-entry:last-child { border-bottom: none; }
-.af-log-entry .af-log-time { color: var(--tx3); flex-shrink: 0; }
+.af-log-entry .af-log-time { color: var(--tx2); flex-shrink: 0; }
 .af-log-entry.ok  .af-log-msg { color: var(--ok); }
 .af-log-entry.err .af-log-msg { color: var(--err); }
-.af-log-entry.info .af-log-msg { color: var(--tx1); }
+.af-log-entry.info .af-log-msg { color: var(--tx2); }
 
 .af-blockly-host .blocklyMainBackground {
     stroke: none;
@@ -152,7 +152,7 @@
 }
 .af-blockly-host .blocklyTreeRow:hover    { background: var(--bg-input) !important; }
 .af-blockly-host .blocklyTreeSelected     { background: var(--bg-input) !important; }
-.af-blockly-host .blocklyTreeLabel        { color: var(--tx1) !important; font-family: var(--font-app) !important; font-weight: 600 !important; font-size: calc(12px + var(--fs-off, 0px)) !important; }
+.af-blockly-host .blocklyTreeLabel        { color: var(--tx2) !important; font-family: var(--font-app) !important; font-weight: 600 !important; font-size: calc(12px + var(--fs-off, 0px)) !important; }
 .af-blockly-host .blocklyFlyoutBackground { fill: var(--bg-card); fill-opacity: 0.96; }
 .af-blockly-host .blocklyText             { font-family: var(--font-app) !important; font-weight: 500 !important; }
 
@@ -179,7 +179,7 @@
     background: var(--bg-card);
     border: 1px solid var(--brd-lt);
     border-radius: 6px;
-    color: var(--tx2);
+    color: var(--tx1);
     cursor: pointer;
     padding: 0;
     transition: background .12s, color .12s, border-color .12s;
@@ -250,7 +250,7 @@
     font-size: calc(11px + var(--fs-off, 0px));
     font-weight: 700;
     text-transform: uppercase;
-    color: var(--tx2);
+    color: var(--tx0);
     letter-spacing: 0.4px;
 }
 .af-cond-list {

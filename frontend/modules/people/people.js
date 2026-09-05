@@ -497,8 +497,8 @@ function setPeopleListPageSize(value) {
 
 function plPaginator(page, totalPages, onPageFn, total) {
     const bar = buildPaginator(page, totalPages, onPageFn,
-        `<span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);padding:0 8px;">${total.toLocaleString()} total</span>`);
-    return plPageSizeSelectHtml() + (bar || `<span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);padding:0 8px;">${total.toLocaleString()} total</span>`);
+        `<span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);padding:0 8px;">${total.toLocaleString()} total</span>`);
+    return plPageSizeSelectHtml() + (bar || `<span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);padding:0 8px;">${total.toLocaleString()} total</span>`);
 }
 
 document.getElementById('peopleViewGrid')?.classList.toggle('active', peopleViewMode === 'grid');
@@ -734,7 +734,7 @@ function filterAllFriends() {
     plSetPaginator('peopleAllPaginatorBar', listMode
         ? plPaginator(page, totalPages, 'peopleAllGoPage', all.length)
         : buildPaginator(page, totalPages, 'peopleAllGoPage',
-            `<span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);padding:0 8px;">${all.length.toLocaleString()} total</span>`));
+            `<span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);padding:0 8px;">${all.length.toLocaleString()} total</span>`));
 }
 
 function peopleAllGoPage(page) {
@@ -840,7 +840,7 @@ function renderModList(containerId, list, actionType) {
         return renderUserItem(user, `openFriendDetail('${uid}')`, { trailing });
     }).join('');
     plSetPaginator(paginatorBarId, buildPaginator(page, totalPages, goPageFn,
-        `<span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);padding:0 8px;">${all.length.toLocaleString()} total</span>`));
+        `<span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);padding:0 8px;">${all.length.toLocaleString()} total</span>`));
 }
 
 function peopleBlockedGoPage(page) {
@@ -1296,7 +1296,7 @@ function friendEditShowAddFavMenu(btn) {
             <span class="msi" style="font-size:14px;flex-shrink:0;">favorite</span>
             <span style="flex:1;">${esc(g.displayName || g.name)}</span>
             ${favGroupBadge(g)}
-            <span style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx3);flex-shrink:0;">${count}</span>
+            <span style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx2);flex-shrink:0;">${count}</span>
         </div>`;
     }).join('') || `<div class="vn-select-option" style="pointer-events:none;color:var(--tx3);">${esc(t('friends.favorites.no_groups', 'No favorite groups'))}</div>`;
     picker.style.display = 'block';
@@ -1341,7 +1341,7 @@ function friendEditShowMoveMenu(btn) {
             <span class="msi" style="font-size:14px;flex-shrink:0;">folder</span>
             <span style="flex:1;">${esc(g.displayName || g.name)}</span>
             ${favGroupBadge(g)}
-            <span style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx3);flex-shrink:0;">${count}</span>
+            <span style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx2);flex-shrink:0;">${count}</span>
         </div>`;
     }).join('');
     picker.style.display = 'block';

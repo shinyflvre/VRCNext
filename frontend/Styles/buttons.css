@@ -1,7 +1,7 @@
 .win-btn {
     background: rgba(65,80,110,.1);
     border: none;
-    color: var(--tx3);
+    color: var(--tx1);
     width: 28px;
     height: 28px;
     border-radius: 50%;
@@ -27,12 +27,12 @@
     padding: 0 14px;
     border-radius: 7px;
     background: var(--ui-input-bg);
-    color: var(--tx2);
+    color: var(--tx1);
     font-size: calc(12px + var(--fs-off, 0px));
     box-sizing: border-box;
     gap: 4px;
 }
-.vrcn-button:hover { background: var(--ui-input-hover-bg); color: var(--tx1); }
+.vrcn-button:hover { background: var(--ui-input-hover-bg); color: var(--tx0); }
 .vrcn-button:disabled { opacity: .4; cursor: not-allowed; }
 .vrcn-button.active { background: var(--ui-input-active-bg); color: #fff; }
 
@@ -58,7 +58,7 @@
     padding: 6px 14px;
     border-radius: 7px; 
     background: var(--ui-input-bg);
-    color: var(--tx1);
+    color: var(--tx2);
     font-size: calc(11px + var(--fs-off, 0px));
     gap: 5px;
 }
@@ -91,7 +91,7 @@
     z-index: 1;
     border: none;
     background: transparent;
-    color: var(--tx3);
+    color: var(--tx2);
     font-family: inherit;
     font-size: calc(11px + var(--fs-off, 0px));
     font-weight: 600;
@@ -102,7 +102,7 @@
     white-space: nowrap;
     line-height: 1.5;
 }
-.vrcn-mini-pill:hover:not(.active) { color: var(--tx1); background: var(--ui-input-hover-bg); }
+.vrcn-mini-pill:hover:not(.active) { color: var(--tx0); background: var(--ui-input-hover-bg); }
 .vrcn-mini-pill.active { color: #fff; }
 
 .vrcn-btn-danger { background: rgba(255,75,85,.15) !important; color: var(--err) !important; }

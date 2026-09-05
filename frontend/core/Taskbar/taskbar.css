@@ -48,7 +48,7 @@
 .tbah-dot.warn { background: var(--warn); }
 .tbah-dot.err  { background: var(--err); }
 
-.tbah-icon      { font-size: 16px; color: var(--tx3); }
+.tbah-icon      { font-size: 16px; color: var(--tx2); }
 .tbah-icon.ok   { color: var(--ok); }
 .tbah-icon.warn { color: var(--warn); }
 .tbah-icon.err  { color: var(--err); }
@@ -64,7 +64,7 @@
     border-radius: 10px;
     padding: 12px;
     font-size: calc(11px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     box-shadow: 0 14px 40px rgba(0,0,0,.4);
     display: flex;
     flex-direction: column;
@@ -88,7 +88,7 @@
     gap: 8px;
     font-size: calc(12px + var(--fs-off, 0px));
     font-weight: 700;
-    color: var(--tx1);
+    color: var(--tx0);
     padding-bottom: 6px;
     border-bottom: 1px solid var(--brd);
 }
@@ -104,7 +104,7 @@
     display: flex;
     justify-content: space-between;
     font-size: calc(9px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
 }
 .tbah-stat {
     display: flex;
@@ -112,7 +112,7 @@
     justify-content: space-between;
     gap: 10px;
 }
-.tbah-stat span:last-child { color: var(--tx1); font-weight: 600; font-variant-numeric: tabular-nums; }
+.tbah-stat span:last-child { color: var(--tx2); font-weight: 600; font-variant-numeric: tabular-nums; }
 .tbah-section {
     margin-top: 4px;
     font-size: calc(10px + var(--fs-off, 0px));
@@ -128,7 +128,7 @@
 }
 .tbah-row .tbah-dot { width: 7px; height: 7px; }
 .tbah-row-name {
-    color: var(--tx2);
+    color: var(--tx0);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -183,7 +183,7 @@ body:has(#rsidebar:not(.collapsed)) #taskbar::before {
     align-items: center;
     padding: 0 11px;
     font-size: calc(13px + var(--fs-off, 0px));
-    color: var(--tx2);
+    color: var(--tx1);
     cursor: default;
     transition: background 0.1s, color 0.1s;
     white-space: nowrap;
@@ -235,7 +235,7 @@ body:has(#rsidebar:not(.collapsed)) #taskbar::before {
 
 .tb-dd-scale-row .msi {
     font-size: 16px;
-    color: var(--tx3);
+    color: var(--tx2);
     width: 18px;
     flex-shrink: 0;
 }
@@ -292,10 +292,10 @@ body:has(#rsidebar:not(.collapsed)) #taskbar::before {
 }
 
 .tb-dd-item .msi {
-    font-size: 16px; color: var(--tx3); width: 18px; flex-shrink: 0;
+    font-size: 16px; color: var(--tx2); width: 18px; flex-shrink: 0;
 }
 
-.tb-dd-item:hover .msi { color: var(--tx2); }
+.tb-dd-item:hover .msi { color: var(--tx0); }
 
 .tb-dd-check {
     margin-left: auto;
@@ -344,7 +344,7 @@ body:has(#rsidebar:not(.collapsed)) #taskbar::before {
     margin-left: auto;
     font-size: calc(14px + var(--fs-off, 0px)) !important;
     width: auto !important;
-    color: var(--tx3);
+    color: var(--tx2);
 }
 
 .tb-dd-sub-drop {
@@ -446,7 +446,7 @@ body:has(#rsidebar:not(.collapsed)) #taskbar::before {
     background: none;
     border: none;
     cursor: pointer;
-    color: var(--tx2);
+    color: var(--tx1);
     transition: background 0.1s, color 0.1s;
     padding: 0;
     flex-shrink: 0;
@@ -515,14 +515,14 @@ html.no-animations .tb-title-anim { animation: none !important; }
     background: none;
     border: none;
     cursor: pointer;
-    color: var(--tx1);
+    color: var(--tx2);
     font-family: inherit;
     padding: 2px 4px;
     border-radius: 5px;
     transition: color 0.1s, background 0.1s;
 }
 .tb-crumb:hover { color: var(--tx0); background: color-mix(in srgb, var(--bg-hover) 50%, transparent); }
-.tb-crumb-current { color: var(--tx0); font-weight: 700; padding: 2px 2px; }
+.tb-crumb-current { color: var(--tx2); font-weight: 700; padding: 2px 2px; }
 .tb-crumb-sep { color: rgba(255, 255, 255, 0.3); font-size: calc(13px + var(--fs-off, 0px)); flex-shrink: 0; }
 
 .tb-modal-action {
@@ -588,7 +588,7 @@ html.no-animations .tb-modal-dropdown { animation: none !important; }
 .tb-modal-dd-item:disabled:hover { background: none; }
 
 .tb-modal-dd-sub-wrap { position: relative; }
-.tb-modal-dd-arrow { margin-left: auto; font-size: calc(14px + var(--fs-off, 0px)) !important; width: auto !important; color: var(--tx3); }
+.tb-modal-dd-arrow { margin-left: auto; font-size: calc(14px + var(--fs-off, 0px)) !important; width: auto !important; color: var(--tx2); }
 .tb-modal-dd-sub {
     top: -5px;
     right: 100%;
@@ -605,7 +605,7 @@ html.no-animations .tb-modal-dropdown { animation: none !important; }
     background: none;
     border: none;
     cursor: pointer;
-    color: var(--tx2);
+    color: var(--tx1);
     transition: background 0.1s, color 0.1s;
     padding: 0;
     flex-shrink: 0;
@@ -667,7 +667,7 @@ body.maximized .tb-icon-restore {
 .tb-dd-acc-av-letter {
     font-size: calc(10px + var(--fs-off, 0px));
     font-weight: 700;
-    color: var(--tx3);
+    color: var(--tx0);
 }
 .tb-dd-acc-name {
     flex: 1;

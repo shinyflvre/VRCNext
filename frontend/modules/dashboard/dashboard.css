@@ -157,7 +157,7 @@ body:has(.rsidebar.collapsed) .dash-hero-content { padding-right: calc(var(--rsi
 .news-article-body {
     font-size: calc(13px + var(--fs-off, 0px));
     line-height: 1.6;
-    color: var(--tx2);
+    color: var(--tx1);
     word-break: break-word;
 }
 .news-article-body img {
@@ -197,7 +197,7 @@ body:has(.rsidebar.collapsed) .dash-hero-content { padding-right: calc(var(--rsi
     border-left: 3px solid var(--brd-lt);
     margin: 8px 0;
     padding: 4px 12px;
-    color: var(--tx3);
+    color: var(--tx1);
 }
 .news-article-body hr { border: none; border-top: 1px solid var(--brd-lt); margin: 14px 0; }
 .news-article-body .meta { display: none; }
@@ -371,7 +371,7 @@ body:has(.rsidebar.collapsed) .dash-hero-content { padding-right: calc(var(--rsi
     justify-content: center;
     font-size: calc(14px + var(--fs-off, 0px));
     font-weight: 700;
-    color: var(--tx2);
+    color: var(--tx0);
 }
 
 .dash-flocs-dot {
@@ -397,7 +397,7 @@ body:has(.rsidebar.collapsed) .dash-hero-content { padding-right: calc(var(--rsi
 .dash-flocs-name {
     font-size: calc(12px + var(--fs-off, 0px));
     font-weight: 700;
-    color: var(--tx1);
+    color: var(--tx0);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -416,7 +416,7 @@ body:has(.rsidebar.collapsed) .dash-hero-content { padding-right: calc(var(--rsi
     align-items: center;
     gap: 3px;
     font-size: calc(10px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -591,7 +591,7 @@ body:has(.rsidebar.collapsed) .dash-hero-content { padding-right: calc(var(--rsi
 
 /* === Layout Editor === */
 
-.ne-row.dli-hidden .ne-label { color: var(--tx3); opacity: .6; }
+.ne-row.dli-hidden .ne-label { color: var(--tx2); opacity: .6; }
 
 
 
@@ -756,7 +756,7 @@ body:has(.rsidebar.collapsed) .dash-hero-content { padding-right: calc(var(--rsi
 .dash-evt-date .ded-day {
     font-size: calc(17px + var(--fs-off, 0px));
     font-weight: 800;
-    color: var(--tx0);
+    color: var(--tx2);
 }
 .dash-evt-date .ded-mon {
     font-size: calc(8px + var(--fs-off, 0px));
@@ -765,7 +765,7 @@ body:has(.rsidebar.collapsed) .dash-hero-content { padding-right: calc(var(--rsi
     letter-spacing: .6px;
     color: var(--accent);
 }
-.dash-evt-date .ded-icon { font-size: 20px; color: var(--tx3); }
+.dash-evt-date .ded-icon { font-size: 20px; color: var(--tx2); }
 
 .dash-evt-date.ded-overlay {
     position: absolute;
@@ -824,7 +824,7 @@ body:has(.rsidebar.collapsed) .dash-hero-content { padding-right: calc(var(--rsi
 .dash-evt-mini-title {
     font-size: calc(13px + var(--fs-off, 0px));
     font-weight: 700;
-    color: var(--tx1);
+    color: var(--tx0);
     line-height: 1.3;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -836,7 +836,7 @@ body:has(.rsidebar.collapsed) .dash-hero-content { padding-right: calc(var(--rsi
     align-items: center;
     gap: 4px;
     font-size: calc(10px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     font-weight: 500;
 }
 .dash-evt-mini-when .msi { font-size: 12px; }
@@ -844,7 +844,7 @@ body:has(.rsidebar.collapsed) .dash-hero-content { padding-right: calc(var(--rsi
 .dash-evt-title {
     font-size: calc(13px + var(--fs-off, 0px));
     font-weight: 700;
-    color: var(--tx1);
+    color: var(--tx0);
     line-height: 1.3;
     display: flex;
     align-items: center;
@@ -887,7 +887,7 @@ body:has(.rsidebar.collapsed) .dash-hero-content { padding-right: calc(var(--rsi
 .dash-evt-mini-when .dash-evt-mini-grp::before {
     content: '·';
     margin-right: 2px;
-    color: var(--tx3);
+    color: var(--tx1);
 }
 .dash-evt-mini-gicon {
     width: 14px;
@@ -897,7 +897,7 @@ body:has(.rsidebar.collapsed) .dash-hero-content { padding-right: calc(var(--rsi
     flex-shrink: 0;
 }
 .dash-evt-mini-group {
-    color: var(--tx3);
+    color: var(--tx1);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -948,7 +948,7 @@ body:has(.rsidebar.collapsed) .dash-hero-content { padding-right: calc(var(--rsi
     margin-top: 6px;
     font-size: calc(11px + var(--fs-off, 0px));
     font-weight: 600;
-    color: var(--tx2);
+    color: var(--tx0);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -980,7 +980,7 @@ body:has(.rsidebar.collapsed) .dash-hero-content { padding-right: calc(var(--rsi
     text-align: center;
     font-size: calc(14px + var(--fs-off, 0px));
     font-weight: 800;
-    color: var(--tx3);
+    color: var(--tx0);
     flex-shrink: 0;
     font-variant-numeric: tabular-nums;
 }
@@ -998,7 +998,7 @@ body:has(.rsidebar.collapsed) .dash-hero-content { padding-right: calc(var(--rsi
 .drr-name {
     font-size: calc(12px + var(--fs-off, 0px));
     font-weight: 700;
-    color: var(--tx1);
+    color: var(--tx0);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1008,7 +1008,7 @@ body:has(.rsidebar.collapsed) .dash-hero-content { padding-right: calc(var(--rsi
     align-items: center;
     gap: 3px;
     font-size: calc(10px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     margin-top: 2px;
 }
 .drr-meta .msi { font-size: 12px; }
@@ -1051,7 +1051,7 @@ body:has(.rsidebar.collapsed) .dash-hero-content { padding-right: calc(var(--rsi
     gap: 8px;
     font-size: calc(12px + var(--fs-off, 0px));
     font-weight: 700;
-    color: var(--tx1);
+    color: var(--tx0);
     margin-right: auto;
 }
 .dash-edit-bar-title .msi { font-size: 18px; color: var(--accent); }
@@ -1077,7 +1077,7 @@ body:has(.rsidebar.collapsed) .dash-hero-content { padding-right: calc(var(--rsi
     border-radius: 50%;
     border: none;
     background: var(--bg-hover);
-    color: var(--tx2);
+    color: var(--tx1);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -1113,7 +1113,7 @@ body:has(.rsidebar.collapsed) .dash-hero-content { padding-right: calc(var(--rsi
     border: 1px dashed var(--brd-lt);
     border-radius: 12px;
     background: color-mix(in srgb, var(--bg-card) 55%, transparent);
-    color: var(--tx3);
+    color: var(--tx0);
     font-size: calc(12px + var(--fs-off, 0px));
     font-weight: 700;
     font-family: inherit;
@@ -1159,7 +1159,7 @@ body:has(.rsidebar.collapsed) .dash-hero-content { padding-right: calc(var(--rsi
     transition: background .1s, color .1s;
 }
 .dash-pick-item:hover { background: var(--bg-hover); color: var(--tx0); }
-.dash-pick-item .msi { font-size: 16px; color: var(--tx3); width: 18px; flex-shrink: 0; }
+.dash-pick-item .msi { font-size: 16px; color: var(--tx2); width: 18px; flex-shrink: 0; }
 .dash-pick-empty {
     padding: 10px 12px;
     font-size: calc(12px + var(--fs-off, 0px));
@@ -1190,7 +1190,7 @@ body:has(.rsidebar.collapsed) .dash-hero-content { padding-right: calc(var(--rsi
     width: 130px;
     flex-shrink: 0;
     font-size: calc(10px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
 }
@@ -1211,7 +1211,7 @@ body:has(.rsidebar.collapsed) .dash-hero-content { padding-right: calc(var(--rsi
     justify-content: center;
     font-size: calc(11px + var(--fs-off, 0px));
     font-weight: 700;
-    color: var(--tx3);
+    color: var(--tx0);
 }
 .dash-act-icon {
     font-size: 16px;
@@ -1224,7 +1224,7 @@ body:has(.rsidebar.collapsed) .dash-hero-content { padding-right: calc(var(--rsi
     flex-shrink: 0;
     font-size: calc(12px + var(--fs-off, 0px));
     font-weight: 600;
-    color: var(--tx1);
+    color: var(--tx0);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

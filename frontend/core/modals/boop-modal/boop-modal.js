@@ -128,7 +128,7 @@ function openBoopModal(userId, displayName) {
             <div id="boopGrid" style="max-height:44vh;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:6px;padding:6px;background:var(--bg-input);border-radius:8px;"></div>
             <div style="display:flex;align-items:center;gap:8px;margin-top:10px;min-height:32px;">
                 <span id="boopHint" style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);flex:1;">${esc(t('boop.no_selection_hint', 'No emoji selected. The default boop will be sent.'))}</span>
-                <span id="boopSelectedName" style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx1);font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:none;"></span>
+                <span id="boopSelectedName" style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:none;"></span>
                 <button class="vrcn-button" id="boopClearBtn" onclick="selectBoopEmoji('')" style="display:none;">${esc(t('boop.clear', 'Clear'))}</button>
                 <button class="vrcn-button" id="boopRefreshBtn" onclick="refreshBoopCustomEmojis()" title="${esc(t('common.refresh', 'Refresh'))}" style="display:none;"><span class="msi">refresh</span></button>
             </div>
@@ -178,7 +178,7 @@ function _renderBoopGrid() {
     const grid = document.getElementById('boopGrid');
     if (!grid) return;
 
-    const msg = html => `<div style="grid-column:1/-1;text-align:center;padding:24px;font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);">${html}</div>`;
+    const msg = html => `<div style="grid-column:1/-1;text-align:center;padding:24px;font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);">${html}</div>`;
 
     if (_boopTab === 'custom') {
         if (_boopCustomState === 'loading') { grid.innerHTML = msg(esc(t('boop.loading_emojis', 'Loading emojis...'))); return; }

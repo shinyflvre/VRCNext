@@ -45,7 +45,7 @@
     justify-content: center;
     font-size: calc(13px + var(--fs-off, 0px));
     font-weight: 700;
-    color: var(--tx3);
+    color: var(--tx0);
 }
 
 .tl-player-card-info {
@@ -72,7 +72,7 @@
 
 .tl-player-card-times {
     font-size: calc(11px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     margin-top: 2px;
 }
 

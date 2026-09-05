@@ -21,7 +21,7 @@
 
 .imp-row-title {
     font-size: calc(13px + var(--fs-off, 0px));
-    color: var(--tx1);
+    color: var(--tx0);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -29,13 +29,13 @@
 
 .imp-row-count {
     font-size: calc(11px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     margin-top: 2px;
 }
 
 .imp-row-arrow {
     font-size: calc(16px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     flex-shrink: 0;
 }
 

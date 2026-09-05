@@ -21,7 +21,7 @@ function lvPageSizeSelectHtml(key, onChangeFn) {
 }
 
 function lvPaginator(key, page, totalPages, onPageFn, total, onSizeFn) {
-    const countHtml = `<span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);padding:0 8px;">${total.toLocaleString()} total</span>`;
+    const countHtml = `<span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);padding:0 8px;">${total.toLocaleString()} total</span>`;
     const bar = buildPaginator(page, totalPages, onPageFn, countHtml);
     return lvPageSizeSelectHtml(key, onSizeFn) + (bar || countHtml);
 }

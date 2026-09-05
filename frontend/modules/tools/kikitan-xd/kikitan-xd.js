@@ -496,9 +496,9 @@ function kxdLocalRow(item, selectable, selectedId, group) {
          style="display:flex;align-items:center;gap:8px;padding:5px 9px;margin-bottom:4px;border:1px solid ${border};border-radius:7px;${clickable ? 'cursor:pointer;' : ''}${item.installed ? '' : 'opacity:.72;'}">
         <div style="flex:1;min-width:0;">
             <div style="font-size:calc(12px + var(--fs-off, 0px));color:${nameColor};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                ${esc(item.name)} <span style="color:var(--tx3);">${esc(size)}</span>
+                ${esc(item.name)} <span style="color:var(--tx1);">${esc(size)}</span>
             </div>
-            <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${esc(item.detail)}">${warn || esc(item.detail)}</div>
+            <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${esc(item.detail)}">${warn || esc(item.detail)}</div>
         </div>
         ${btn}
         <div class="inv-progress-wrap" id="kxdProgWrap-${esc(item.id)}" style="display:${item.busy ? '' : 'none'};padding:0;width:78px;flex-shrink:0;">

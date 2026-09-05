@@ -226,7 +226,7 @@
 
 .s-card-sub {
     font-size: calc(11px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     margin-top: 2px;
     display: flex;
     align-items: center;
@@ -250,7 +250,7 @@
     margin-left: auto;
     font-size: calc(11px + var(--fs-off, 0px));
     font-weight: 500;
-    color: var(--tx3);
+    color: var(--tx2);
 }
 
 .fav-group-name-edit { display: inline-flex; align-items: center; gap: 6px; }
@@ -309,7 +309,7 @@
     flex-wrap: wrap;
     gap: 4px;
     font-size: calc(10px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     margin-top: 1px;
 }
 
@@ -327,7 +327,7 @@
 .vrcn-panel-card-header {
     font-size: calc(10px + var(--fs-off, 0px));
     font-weight: 700;
-    color: var(--tx3);
+    color: var(--tx0);
     text-transform: uppercase;
     letter-spacing: .5px;
     margin-bottom: 10px;

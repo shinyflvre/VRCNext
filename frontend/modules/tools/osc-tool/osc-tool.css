@@ -58,7 +58,7 @@
     background: var(--bg-input);
     border: 1px solid var(--brd);
     border-radius: 4px;
-    color: var(--tx1);
+    color: var(--tx2);
     font-size: calc(11px + var(--fs-off, 0px));
     padding: 2px 4px;
     text-align: right;
@@ -80,7 +80,7 @@
     border-color: var(--accent);
 }.osc-badge-count {
     font-size: calc(10px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     font-weight: 400;
 }
 .osc-output-banner {

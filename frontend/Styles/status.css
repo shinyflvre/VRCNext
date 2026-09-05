@@ -16,7 +16,7 @@
 
 .fd-status {
     font-size: calc(11px + var(--fs-off, 0px));
-    color: var(--tx1);
+    color: var(--tx2);
     display: flex;
     align-items: center;
     gap: 5px;
@@ -32,7 +32,7 @@
     align-items: center;
     gap: 8px;
     font-size: calc(12px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
 }
 .sf-dot {
     width: 8px; height: 8px;

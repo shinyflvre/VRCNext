@@ -238,7 +238,7 @@ function _showFriendOnlineCard(data) {
         <div class="nc-inner" style="cursor:pointer;" onclick="_dismissNotifCard(this.closest('.nc-card'));navOpenModal('friend','${jsq(uid)}','${jsq(data.displayName || '')}')">
             ${avatarHtml}
             <div class="nc-body">
-                <div class="nc-title"><strong>${name}</strong> <span style="color:var(--tx3);font-weight:400;">${esc(t('notifications.friend_toast.came_online', 'came online'))}</span></div>
+                <div class="nc-title"><strong>${name}</strong> <span style="color:var(--tx1);font-weight:400;">${esc(t('notifications.friend_toast.came_online', 'came online'))}</span></div>
             </div>
             <button class="nc-close-btn" onclick="event.stopPropagation();_dismissNotifCard(this.closest('.nc-card'))" title="${esc(t('common.close', 'Close'))}"><span class="msi" style="font-size:15px;">close</span></button>
         </div>

@@ -28,7 +28,7 @@
                         <div class="vrcn-panel-card-header"><span class="msi">system_update_alt</span> <span data-i18n="settings.update.title">Update VRCNext</span></div>
                         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
                             <button class="vrcn-button-round" id="setUpdCheckBtn" onclick="settingsCheckUpdate()"><span class="msi" style="font-size:15px;">refresh</span> <span data-i18n="settings.update.check_btn">Check for Update</span></button>
-                            <span id="setUpdStatus" style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx3);"></span>
+                            <span id="setUpdStatus" style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);"></span>
                         </div>
                         <div class="sf-toggle-row" style="margin-top:10px;">
                             <div>
@@ -47,7 +47,7 @@
                             <button class="vrcn-button-round vrcn-btn-join" id="setUpdInstallBtn" onclick="settingsInstallUpdate()"><span class="msi" style="font-size:15px;">download</span> <span data-i18n="settings.update.install_btn">Download &amp; Install</span></button>
                             <div id="setUpdProgressWrap" style="display:none;margin-top:10px;">
                                 <div class="upd-progress-bar"><div class="upd-progress-fill" id="setUpdProgressFill"></div></div>
-                                <div id="setUpdProgressStatus" style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);margin-top:4px;" data-i18n="update.downloading">Downloading...</div>
+                                <div id="setUpdProgressStatus" style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);margin-top:4px;" data-i18n="update.downloading">Downloading...</div>
                             </div>
                         </div>
                     </div>
@@ -194,7 +194,7 @@
                         </div>
                         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
                             <button class="vrcn-button" onclick="browseDashBg()"><span class="msi" style="font-size:16px;">perm_media</span> <span data-i18n="settings.design.choose_background">Choose Image / Video</span></button>
-                            <span id="dashBgName" style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;"></span>
+                            <span id="dashBgName" style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx0);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;"></span>
                         </div>
                         <div class="sf-toggle-row"><span data-i18n="settings.design.random_background">Random background from watch folders on launch</span><label class="toggle"><input type="checkbox" id="setRandomBg" onchange="autoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
                     </div>
@@ -221,7 +221,7 @@
                         <div class="sf-row" id="autoAccuracyRow" style="margin-top:8px;display:none;">
                             <label style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);" data-i18n="settings.design.color_accuracy">Color Accuracy</label>
                             <input type="range" id="setAutoAccuracy" min="0" max="100" value="50" style="flex:1;accent-color:var(--accent);" oninput="document.getElementById('autoAccuracyVal').textContent=this.value+'%';setAutoColorAccuracy(this.value);autoSave()">
-                            <span id="autoAccuracyVal" style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);margin-left:8px;min-width:35px;text-align:right;">50%</span>
+                            <span id="autoAccuracyVal" style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx1);margin-left:8px;min-width:35px;text-align:right;">50%</span>
                         </div>
                     </div>
 
@@ -674,14 +674,14 @@
                         <div class="sf-toggle-row" style="margin-top:10px;">
                             <div>
                                 <span data-i18n="settings.image_cache.optimize.label">Optimize Caching</span>
-                                <div style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);margin-top:2px;" data-i18n="settings.image_cache.optimize.desc">PNG images &gt; 1.5 MB are compressed to JPEG automatically</div>
+                                <div style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);margin-top:2px;" data-i18n="settings.image_cache.optimize.desc">PNG images &gt; 1.5 MB are compressed to JPEG automatically</div>
                             </div>
                             <label class="toggle"><input type="checkbox" id="setImgCacheOptimizeEnabled" checked onchange="autoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label>
                         </div>
                         <div class="sf-toggle-row" style="margin-top:10px;">
                             <div>
                                 <span data-i18n="settings.image_cache.mem_optimize.label">Optimize Memory Usage</span>
-                                <div style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);margin-top:2px;" data-i18n="settings.image_cache.mem_optimize.desc">Use lower resolution thumb images to save up memory usage</div>
+                                <div style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);margin-top:2px;" data-i18n="settings.image_cache.mem_optimize.desc">Use lower resolution thumb images to save up memory usage</div>
                             </div>
                             <label class="toggle"><input type="checkbox" id="setImgMemoryOptimizeEnabled" checked onchange="onImgMemoryOptimizeToggle()"><div class="toggle-track"><div class="toggle-knob"></div></div></label>
                         </div>
@@ -689,10 +689,10 @@
                             <div class="sf-row">
                                 <label style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);flex-shrink:0;margin-right:10px;" data-i18n="settings.image_cache.max_size">Max Cache Size</label>
                                 <input type="range" id="setImgCacheLimit" min="5" max="30" step="1" value="5" style="flex:1;accent-color:var(--accent);" oninput="document.getElementById('imgCacheLimitVal').textContent=this.value+' GB';sendToCS({action:'getImgCacheSize'});autoSave()">
-                                <span id="imgCacheLimitVal" style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);margin-left:10px;min-width:44px;text-align:right;">5 GB</span>
+                                <span id="imgCacheLimitVal" style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx1);margin-left:10px;min-width:44px;text-align:right;">5 GB</span>
                             </div>
                             <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
-                                <span id="imgCacheSizeLabel" style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);">— MB used</span>
+                                <span id="imgCacheSizeLabel" style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);">— MB used</span>
                             </div>
                             <div class="ts-bar-wrap" style="margin-top:4px;">
                                 <div id="imgCacheSizeBar" class="ts-bar" style="width:0%;"></div>
@@ -706,7 +706,7 @@
                             <div class="ts-bar-wrap">
                                 <div id="imgOptimizeBar" class="ts-bar" style="width:0%;background:var(--accent);"></div>
                             </div>
-                            <span id="imgOptimizeLabel" style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);margin-top:4px;display:block;">Optimizing…</span>
+                            <span id="imgOptimizeLabel" style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);margin-top:4px;display:block;">Optimizing…</span>
                         </div>
                     </div>
 
@@ -735,7 +735,7 @@
                                 <label style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);flex-shrink:0;margin-right:10px;" data-i18n="settings.db.entries_label">Optimized Database Entries</label>
                                 <div style="display:flex;align-items:center;gap:10px;flex:1;">
                                     <input type="range" id="setDbOptimizeMaxEntries" min="500" max="250000" step="500" value="500" style="flex:1;" oninput="document.getElementById('dbOptimizeEntriesVal').textContent=this.value;autoSave()">
-                                    <span id="dbOptimizeEntriesVal" style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);min-width:44px;text-align:right;">500</span>
+                                    <span id="dbOptimizeEntriesVal" style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx1);min-width:44px;text-align:right;">500</span>
                                 </div>
                             </div>
                             <div class="set-desc" style="margin-top:6px;" data-i18n="settings.db.entries_desc">Min: 500, Max: 250,000. Loads the N most recent entries for Personal and Friends separately.</div>
@@ -750,7 +750,7 @@
                         <div class="set-desc" style="margin-bottom:8px;" data-i18n="settings.db.cleanup.user_cache">It will delete all cached non-friended users from the whole database. This is mostly safe as it does not contain any important information. Time Spent and Meet Counts are still present on those profiles and will not be wiped.</div>
                         <div class="set-desc" style="margin-bottom:8px;" data-i18n="settings.db.cleanup.events">It will also delete certain events in your Personal and Friends Timeline. In the Personal Timeline, all notifications and URL entries will be wiped. In the Friends Timeline, all "Online", "Offline", and "Status Change" entries, for example "Ask Me" > "Join Me", will be wiped.</div>
                         <div class="set-desc" style="margin-bottom:4px;" data-i18n="settings.db.cleanup.instructions">Run the analysis first. After that, you will see what will be wiped. It is recommended to create a backup of your database in case you still need those entries. Your database is usually stored at:</div>
-                        <div class="set-desc" id="dbPathHint" style="font-family:monospace;color:var(--tx2);">C:\Users\USERNAME\AppData\Roaming\VRCNext</div>
+                        <div class="set-desc" id="dbPathHint" style="font-family:monospace;color:var(--tx3);">C:\Users\USERNAME\AppData\Roaming\VRCNext</div>
                         <div style="margin-top:12px;padding:10px 12px;border:1px solid var(--warn);border-radius:8px;background:color-mix(in srgb, var(--warn) 12%, transparent);">
                             <div style="font-weight:700;color:var(--warn);margin-bottom:6px;display:flex;align-items:center;gap:6px;"><span class="msi" style="font-size:16px;">warning</span> <span data-i18n="settings.db.warn.title">What gets deleted, and what stays</span></div>
                             <div style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx1);line-height:1.5;">
@@ -760,7 +760,7 @@
                                 <div data-i18n="settings.db.warn.personal_body">Notifications, video URLs and avatar switches get trimmed to the last 100 each. The player lists of past instances are also trimmed, the players are kept only for your most recent 100 instances.</div>
                                 <div style="font-weight:600;margin-top:8px;" data-i18n="settings.db.warn.users_head">Cached Users and Bio Links</div>
                                 <div data-i18n="settings.db.warn.users_body">Cached data of non friended users is cleared (Time Spent and Meet Counts stay). Bio links of all profiles are cleared. All of this is re-fetched from VRChat when needed.</div>
-                                <div style="margin-top:8px;color:var(--tx2);" data-i18n="settings.db.warn.note">So not everything is gone, only the bloated data that is not really needed. The database is then compacted to free up disk space. If you still want to keep the old entries, create a backup before running optimization.</div>
+                                <div style="margin-top:8px;color:var(--tx1);" data-i18n="settings.db.warn.note">So not everything is gone, only the bloated data that is not really needed. The database is then compacted to free up disk space. If you still want to keep the old entries, create a backup before running optimization.</div>
                             </div>
                         </div>
                         <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
@@ -773,7 +773,7 @@
                             <div class="ts-bar-wrap">
                                 <div id="dbOptProgressBar" class="ts-bar" style="width:0%;background:var(--accent);"></div>
                             </div>
-                            <span id="dbOptProgressLabel" style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);margin-top:4px;display:block;">Analyzing…</span>
+                            <span id="dbOptProgressLabel" style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);margin-top:4px;display:block;">Analyzing…</span>
                         </div>
                         <div id="dbAnalysisResults" style="display:none;margin-top:14px;"></div>
                     </div>
@@ -854,14 +854,14 @@
                             </div>
                             <p style="margin:0 0 8px;font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);" data-i18n="settings.vrcx.warning.line1">Importing the VRCX database will only add necessary information. This feature is highly experimental and some data may be missing. Instance information works differently in VRCN, so some images or other details might not appear.</p>
                             <p style="margin:0 0 8px;font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);" data-i18n="settings.vrcx.warning.line2">If your VRCX database is very important to you, it is recommended to continue using VRCX, as the data will not be fully merged with the VRCN database.</p>
-                            <p style="margin:0;font-size:calc(12px + var(--fs-off, 0px));color:var(--tx3);" data-i18n="settings.vrcx.warning.line3">Full instance data will not be available and some elements may not display correctly.</p>
+                            <p style="margin:0;font-size:calc(12px + var(--fs-off, 0px));color:var(--tx1);" data-i18n="settings.vrcx.warning.line3">Full instance data will not be available and some elements may not display correctly.</p>
                         </div>
                         <button class="vrcn-button" style="margin-top:12px;" id="vrcxSelectBtn" onclick="vrcxSelectFile()"><span class="msi" style="font-size:16px;">storage</span> <span data-i18n="settings.vrcx.select_db">Select VRCX Database</span></button>
                         <div id="vrcxPreviewBox" style="display:none;margin-top:14px;">
                             <div class="set-desc" style="margin-bottom:8px;opacity:.7;" id="vrcxFileName"></div>
                             <div id="vrcxPreviewRows" style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;margin-bottom:14px;"></div>
                             <div id="vrcxProgressWrap" style="display:none;margin-bottom:14px;">
-                                <div style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx3);margin-bottom:6px;" id="vrcxProgressLabel" data-i18n="settings.vrcx.progress.reading_database">Reading database...</div>
+                                <div style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);margin-bottom:6px;" id="vrcxProgressLabel" data-i18n="settings.vrcx.progress.reading_database">Reading database...</div>
                                 <div style="background:var(--bg-input);border-radius:6px;height:6px;overflow:hidden;">
                                     <div id="vrcxProgressBar" style="height:100%;width:0%;background:var(--accent);border-radius:6px;transition:width .4s ease;"></div>
                                 </div>
@@ -869,7 +869,7 @@
                             <div id="vrcxSuccessCard" style="display:none;background:var(--bg-input);border-radius:10px;padding:20px 16px;margin-bottom:12px;text-align:center;">
                                 <span class="msi" style="font-size:40px;color:var(--ok);display:block;margin-bottom:10px;">check_circle</span>
                                 <div style="font-size:calc(14px + var(--fs-off, 0px));font-weight:600;color:var(--tx0);margin-bottom:6px;" data-i18n="settings.vrcx.import_complete">Import Complete</div>
-                                <div id="vrcxSuccessDetail" style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx3);line-height:1.6;"></div>
+                                <div id="vrcxSuccessDetail" style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);line-height:1.6;"></div>
                             </div>
                             <div id="vrcxImportError" style="display:none;margin-bottom:10px;font-size:calc(13px + var(--fs-off, 0px));color:var(--err);"></div>
                             <div id="vrcxActionBtns" style="display:flex;gap:8px;">
@@ -911,7 +911,7 @@
                             <div style="display:flex;align-items:center;gap:8px;">
                                 <button class="vrcn-button" onclick="submitAddAccount()"><span class="msi" style="font-size:16px;">login</span> <span data-i18n="settings.accounts.add_submit">Add</span></button>
                                 <button class="vrcn-button" onclick="cancelAddAccount()"><span class="msi" style="font-size:16px;">close</span> <span data-i18n="common.cancel">Cancel</span></button>
-                                <span id="addAccountStatus" style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);"></span>
+                                <span id="addAccountStatus" style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);"></span>
                             </div>
                         </div>
 
@@ -1278,7 +1278,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
                             <!-- FONTS -->
                             <div style="margin-top:8px;padding-top:12px;border-top:1px solid var(--brd);">
-                                <div style="font-size:calc(11px + var(--fs-off, 0px));font-weight:600;color:var(--tx3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;" data-i18n="settings.attribution.fonts">Fonts (bundled)</div>
+                                <div style="font-size:calc(11px + var(--fs-off, 0px));font-weight:600;color:var(--tx0);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;" data-i18n="settings.attribution.fonts">Fonts (bundled)</div>
                                 <div style="display:flex;flex-direction:column;gap:4px;">
 
                                     <!-- Material Symbols Rounded -->

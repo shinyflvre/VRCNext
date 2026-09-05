@@ -29,14 +29,14 @@
     border-radius: 8px;
     border: none;
     background: var(--bg-btn);
-    color: var(--tx2);
+    color: var(--tx0);
     cursor: pointer;
     font-size: calc(12px + var(--fs-off, 0px));
     font-weight: 600;
     font-family: inherit;
     transition: background .12s, color .12s;
 }
-.ts-tab-btn:hover { background: var(--bg-btn-h); color: var(--tx1); }
+.ts-tab-btn:hover { background: var(--bg-btn-h); color: var(--tx0); }
 .ts-tab-btn.active {
     background: var(--accent);
     color: #fff;
@@ -133,7 +133,7 @@
 .ts-loading {
     gap: 10px;
     padding: 60px 0;
-    color: var(--tx2);
+    color: var(--tx3);
 }
 
 .ts-empty {
@@ -141,7 +141,7 @@
     gap: 10px;
     padding: 60px 0;
     text-align: center;
-    color: var(--tx2);
+    color: var(--tx3);
     font-size: calc(13px + var(--fs-off, 0px));
     line-height: 1.5;
 }
@@ -175,7 +175,7 @@
 .ts-item-rank {
     font-size: calc(11px + var(--fs-off, 0px));
     font-weight: 700;
-    color: var(--tx3);
+    color: var(--tx0);
     width: 22px;
     flex-shrink: 0;
     text-align: center;
@@ -252,7 +252,7 @@
 .ts-item-time {
     font-size: calc(12px + var(--fs-off, 0px));
     font-weight: 700;
-    color: var(--tx0);
+    color: var(--tx2);
     flex-shrink: 0;
     white-space: nowrap;
     min-width: 52px;

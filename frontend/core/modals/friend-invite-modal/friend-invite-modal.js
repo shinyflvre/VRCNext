@@ -45,7 +45,7 @@ function openFriendInviteModal(userId, displayName, initialTab) {
             </div>
             <div class="inv-single-body">
                 <div id="invContent_direct">
-                    <div class="fd-info-card" style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx3);" id="invDirectDesc">${t('profiles.invite.direct_description', 'Send a direct invite with no message.')}</div>
+                    <div class="fd-info-card" style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);" id="invDirectDesc">${t('profiles.invite.direct_description', 'Send a direct invite with no message.')}</div>
                 </div>
                 <div id="invMsgSection" style="display:none;">
                     <div class="fd-info-card">
@@ -199,7 +199,7 @@ function _invModalSaveMsg(idx, input) {
 }
 
 function getInviteUploadTileHtml() {
-    return `<div style="width:100%;aspect-ratio:1;border-radius:6px;cursor:pointer;background:var(--bg-input);border:1.5px dashed var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'" onclick="_invModalOpenUpload()" title="${esc(t('profiles.invite.upload_new_photo', 'Upload new photo'))}"><span class="msi" style="font-size:22px;color:var(--tx3);pointer-events:none;">add_photo_alternate</span></div>`;
+    return `<div style="width:100%;aspect-ratio:1;border-radius:6px;cursor:pointer;background:var(--bg-input);border:1.5px dashed var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'" onclick="_invModalOpenUpload()" title="${esc(t('profiles.invite.upload_new_photo', 'Upload new photo'))}"><span class="msi" style="font-size:22px;color:var(--tx2);pointer-events:none;">add_photo_alternate</span></div>`;
 }
 
 function _invModalOpenUpload() {

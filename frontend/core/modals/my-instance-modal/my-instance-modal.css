@@ -88,13 +88,13 @@
 
 .mi-world-author {
     font-size: calc(12px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     margin-bottom: 2px;
 }
 
 .mi-world-description {
     font-size: calc(11px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     line-height: 1.5;
     overflow: hidden;
     display: -webkit-box;
@@ -210,7 +210,7 @@
     align-items: center;
     gap: 3px;
     font-size: calc(11px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
 }
 
 .mi-stat-item .msi {

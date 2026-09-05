@@ -35,7 +35,7 @@
     background: var(--bg-input);
     border: none;
     border-radius: 8px;
-    color: var(--tx0);
+    color: var(--tx1);
     font-size: calc(13px + var(--fs-off, 0px));
     font-family: inherit;
     padding: 9px 12px;
@@ -48,7 +48,7 @@
     background: var(--bg-input);
     border: none;
     border-radius: 8px;
-    color: var(--tx0);
+    color: var(--tx1);
     font-size: calc(13px + var(--fs-off, 0px));
     font-family: inherit;
     padding: 9px 12px;
@@ -141,7 +141,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--tx3);
+    color: var(--tx2);
     cursor: pointer;
     overflow: hidden;
 }
@@ -151,7 +151,7 @@
 .cg-prev-icon .cg-prev-clear { top: 2px; right: 2px; width: 20px; height: 20px; }
 .cg-prev-name-wrap { min-width: 0; padding-bottom: 6px; }
 .cg-prev-name { font-size: calc(17px + var(--fs-off, 0px)); font-weight: 700; word-break: break-word; }
-.cg-prev-code { font-size: calc(12px + var(--fs-off, 0px)); color: var(--tx2); font-family: var(--mono, monospace); }
+.cg-prev-code { font-size: calc(12px + var(--fs-off, 0px)); color: var(--tx1); font-family: var(--mono, monospace); }
 .cg-placeholder { color: var(--tx3) !important; font-style: italic; }
 .cg-prev-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
 .cg-chip {
@@ -170,7 +170,7 @@
     margin-top: 12px;
     font-size: calc(12.5px + var(--fs-off, 0px));
     line-height: 1.45;
-    color: var(--tx1);
+    color: var(--tx2);
     white-space: pre-wrap;
     word-break: break-word;
     max-height: 160px;

@@ -406,7 +406,7 @@ function _groupInstCardHtml(inst) {
         ? `<span class="vrcn-badge" style="background:rgba(255,75,85,.15);color:var(--err);">${esc(t('worlds.instances.age_gated', 'Age Gated'))}</span>` : '';
     const groupAvatar = inst.groupIcon
         ? `<img class="cc-friend-av" src="${imgThumb(inst.groupIcon, 64)}" title="${esc(inst.groupName || '')}" onerror="this.style.display='none'">`
-        : `<div class="cc-friend-av" style="display:flex;align-items:center;justify-content:center;"><span class="msi" style="font-size:10px;color:var(--tx3)">group</span></div>`;
+        : `<div class="cc-friend-av" style="display:flex;align-items:center;justify-content:center;"><span class="msi" style="font-size:10px;color:var(--tx2)">group</span></div>`;
     const users = inst.capacity > 0 ? `${inst.userCount}/${inst.capacity}` : String(inst.userCount || 0);
     return `<div class="vrcn-content-card" onclick="openGroupInstanceDetail('${loc}')">
         <div class="cc-bg" style="${thumbStyle}"></div>

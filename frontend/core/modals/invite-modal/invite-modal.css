@@ -61,7 +61,7 @@
     top: 50%;
     transform: translateY(-50%);
     font-size: calc(15px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     pointer-events: none;
 }
 .inv-search-input {
@@ -70,7 +70,7 @@
     border: none;
     outline: none;
     border-radius: 8px;
-    color: var(--tx0);
+    color: var(--tx1);
     font-size: calc(12px + var(--fs-off, 0px));
     font-family: inherit;
     padding: 8px 12px 8px 26px;
@@ -85,7 +85,7 @@
     font-size: calc(9px + var(--fs-off, 0px));
     font-weight: 700;
     letter-spacing: .08em;
-    color: var(--tx3);
+    color: var(--tx0);
     padding: 6px 32px 4px;
     text-transform: uppercase;
 }
@@ -105,8 +105,8 @@
 .inv-msg-item.selected .inv-msg-edit:hover { color: #fff; }
 .inv-msg-item.selected .inv-msg-cooldown { color: rgba(255,255,255,.5); }
 .inv-msg-text { flex: 1; }
-.inv-msg-edit { color: var(--tx3); padding: 2px; transition: color .12s; flex-shrink: 0; }
-.inv-msg-edit:hover { color: var(--tx1); }
+.inv-msg-edit { color: var(--tx2); padding: 2px; transition: color .12s; flex-shrink: 0; }
+.inv-msg-edit:hover { color: var(--tx0); }
 .inv-msg-input {
     flex: 1; background: transparent; border: none;
     border-bottom: 1px solid rgba(255,255,255,.35);
@@ -118,5 +118,5 @@
     padding: 10px; font-size: calc(12px + var(--fs-off, 0px)); color: var(--tx3);
 }
 .inv-msg-cooldown {
-    display: flex; align-items: center; color: var(--tx3); flex-shrink: 0;
+    display: flex; align-items: center; color: var(--tx1); flex-shrink: 0;
 }

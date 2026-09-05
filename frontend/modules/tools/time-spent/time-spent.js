@@ -123,7 +123,7 @@ function _tsLoad() {
 
     const list = document.getElementById('tsList');
     if (list) {
-        list.innerHTML = `<div class="ts-loading"><span class="msi ts-spin" style="font-size:22px;color:var(--accent);">sync</span><span style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);">${t('timespent.loading', 'Calculating stats...')}</span></div>`;
+        list.innerHTML = `<div class="ts-loading"><span class="msi ts-spin" style="font-size:22px;color:var(--accent);">sync</span><span style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx3);">${t('timespent.loading', 'Calculating stats...')}</span></div>`;
     }
 
     const summary = document.getElementById('tsSummary');
@@ -243,7 +243,7 @@ function tsRenderWorldItems() {
     if (!tsList) return;
 
     if (_tsAllUniqueWorlds === 0) {
-        tsList.innerHTML = `<div class="ts-empty"><span class="msi" style="font-size:28px;color:var(--tx3);">travel_explore</span><div>${t('timespent.empty.no_world_data', 'No world data yet.')}</div></div>`;
+        tsList.innerHTML = `<div class="ts-empty"><span class="msi" style="font-size:28px;color:var(--tx2);">travel_explore</span><div>${t('timespent.empty.no_world_data', 'No world data yet.')}</div></div>`;
         _tsSetPaginator('');
         return;
     }
@@ -261,7 +261,7 @@ function tsRenderWorldItems() {
         const rank = world.rank ?? (_tsWorldPage * TS_PAGE_SIZE + i + 1);
         const thumb = world.worldThumb
             ? `<img class="ts-item-thumb" src="${esc(imgThumb(world.worldThumb, 96))}" onerror="this.style.display='none'">`
-            : `<div class="ts-item-thumb ts-thumb-placeholder"><span class="msi" style="font-size:18px;color:var(--tx3);">travel_explore</span></div>`;
+            : `<div class="ts-item-thumb ts-thumb-placeholder"><span class="msi" style="font-size:18px;color:var(--tx2);">travel_explore</span></div>`;
         const click = world.worldId ? `onclick="openWorldSearchDetail('${esc(world.worldId)}')" style="cursor:pointer"` : '';
         const visits = tf(`timespent.visit.${world.visits === 1 ? 'one' : 'other'}`, { count: world.visits }, `${world.visits} visit${world.visits === 1 ? '' : 's'}`);
 
@@ -272,7 +272,7 @@ function tsRenderWorldItems() {
             <div class="ts-item-body">
                 <div class="ts-item-name">${esc(world.worldName || t('timespent.unknown_world_full', 'Unknown World'))}</div>
                 <div class="ts-item-meta">
-                    <span class="msi" style="font-size:12px;color:var(--tx3);">login</span>
+                    <span class="msi" style="font-size:12px;color:var(--tx2);">login</span>
                     <span>${visits}</span>
                 </div>
                 <div class="ts-bar-wrap">
@@ -344,7 +344,7 @@ function tsRenderPersonItems() {
     if (!tsList) return;
 
     if (_tsAllUniquePersons === 0) {
-        tsList.innerHTML = `<div class="ts-empty"><span class="msi" style="font-size:28px;color:var(--tx3);">group</span><div>${t('timespent.empty.no_person_data', 'No person data yet.')}</div></div>`;
+        tsList.innerHTML = `<div class="ts-empty"><span class="msi" style="font-size:28px;color:var(--tx2);">group</span><div>${t('timespent.empty.no_person_data', 'No person data yet.')}</div></div>`;
         _tsSetPaginator('');
         return;
     }
@@ -363,7 +363,7 @@ function tsRenderPersonItems() {
         const isFriend = person.isFriend;
         const avatar = person.image
             ? `<img class="ts-item-avatar" src="${esc(imgThumb(person.image, 96))}" onerror="this.style.display='none'">`
-            : `<div class="ts-item-avatar ts-avatar-placeholder"><span class="msi" style="font-size:16px;color:var(--tx3);">person</span></div>`;
+            : `<div class="ts-item-avatar ts-avatar-placeholder"><span class="msi" style="font-size:16px;color:var(--tx2);">person</span></div>`;
         const badge = isFriend
             ? `<span class="vrcn-badge bdg-friend">${esc(t('timespent.badge.friend', 'Friend'))}</span>`
             : `<span class="vrcn-badge cyan">${esc(t('timespent.badge.new', 'New'))}</span>`;
@@ -376,7 +376,7 @@ function tsRenderPersonItems() {
             <div class="ts-item-body">
                 <div class="ts-item-name">${esc(person.displayName || person.userId)} ${badge}</div>
                 <div class="ts-item-meta">
-                    <span class="msi" style="font-size:12px;color:var(--tx3);">handshake</span>
+                    <span class="msi" style="font-size:12px;color:var(--tx2);">handshake</span>
                     <span>${encounters}</span>
                 </div>
                 <div class="ts-bar-wrap">
@@ -405,7 +405,7 @@ function _tsSetPaginator(html) {
 }
 
 function _tsBuildPaginator(page, totalPages, total, onPageFn) {
-    const countHtml = `<span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);padding:0 8px;">${total.toLocaleString()}</span>`;
+    const countHtml = `<span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);padding:0 8px;">${total.toLocaleString()}</span>`;
     return buildPaginator(page, totalPages, onPageFn, countHtml);
 }
 
@@ -419,11 +419,11 @@ function rerenderTimeSpentTranslations() {
     if (!list) return;
 
     if (_tsLoading) {
-        list.innerHTML = `<div class="ts-loading"><span class="msi ts-spin" style="font-size:22px;color:var(--accent);">sync</span><span style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);">${t('timespent.loading', 'Calculating stats...')}</span></div>`;
+        list.innerHTML = `<div class="ts-loading"><span class="msi ts-spin" style="font-size:22px;color:var(--accent);">sync</span><span style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx3);">${t('timespent.loading', 'Calculating stats...')}</span></div>`;
         return;
     }
 
-    list.innerHTML = `<div class="ts-empty"><span class="msi" style="font-size:28px;color:var(--tx3);">schedule</span><div>${t('timespent.empty.no_session', 'No session data yet.')}<br><span style="font-size:calc(11px + var(--fs-off, 0px));">${t('timespent.empty.no_session_hint', 'Join some worlds in VRChat to see stats.')}</span></div></div>`;
+    list.innerHTML = `<div class="ts-empty"><span class="msi" style="font-size:28px;color:var(--tx2);">schedule</span><div>${t('timespent.empty.no_session', 'No session data yet.')}<br><span style="font-size:calc(11px + var(--fs-off, 0px));">${t('timespent.empty.no_session_hint', 'Join some worlds in VRChat to see stats.')}</span></div></div>`;
 }
 
 document.documentElement.addEventListener('languagechange', rerenderTimeSpentTranslations);
@@ -466,7 +466,7 @@ function tsRenderGroupItems() {
     if (!tsList) return;
 
     if (_tsAllUniqueGroups === 0) {
-        tsList.innerHTML = `<div class="ts-empty"><span class="msi" style="font-size:28px;color:var(--tx3);">groups</span><div>${t('timespent.empty.no_group_data', 'No group data yet.')}<br><span style="font-size:calc(11px + var(--fs-off, 0px));">${t('timespent.empty.no_group_data_hint', 'Join a group instance to start collecting stats.')}</span></div></div>`;
+        tsList.innerHTML = `<div class="ts-empty"><span class="msi" style="font-size:28px;color:var(--tx2);">groups</span><div>${t('timespent.empty.no_group_data', 'No group data yet.')}<br><span style="font-size:calc(11px + var(--fs-off, 0px));">${t('timespent.empty.no_group_data_hint', 'Join a group instance to start collecting stats.')}</span></div></div>`;
         _tsSetPaginator('');
         return;
     }
@@ -484,7 +484,7 @@ function tsRenderGroupItems() {
         const rank = group.rank ?? (_tsGroupPage * TS_PAGE_SIZE + i + 1);
         const icon = group.iconUrl
             ? `<img class="ts-item-thumb" src="${esc(imgThumb(group.iconUrl, 96))}" onerror="this.style.display='none'">`
-            : `<div class="ts-item-thumb ts-thumb-placeholder"><span class="msi" style="font-size:18px;color:var(--tx3);">groups</span></div>`;
+            : `<div class="ts-item-thumb ts-thumb-placeholder"><span class="msi" style="font-size:18px;color:var(--tx2);">groups</span></div>`;
         const click = group.groupId ? `onclick="navOpenModal('group','${esc(group.groupId)}','${esc(group.groupName || '')}')" style="cursor:pointer"` : '';
         const joins = tf(`timespent.join.${group.joins === 1 ? 'one' : 'other'}`, { count: group.joins }, `${group.joins} join${group.joins === 1 ? '' : 's'}`);
         const label = group.groupName || group.shortCode || t('timespent.unknown_group', 'Unknown Group');
@@ -496,7 +496,7 @@ function tsRenderGroupItems() {
             <div class="ts-item-body">
                 <div class="ts-item-name">${esc(label)}</div>
                 <div class="ts-item-meta">
-                    <span class="msi" style="font-size:12px;color:var(--tx3);">login</span>
+                    <span class="msi" style="font-size:12px;color:var(--tx2);">login</span>
                     <span>${joins}</span>
                 </div>
                 <div class="ts-bar-wrap">

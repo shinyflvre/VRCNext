@@ -246,7 +246,7 @@ function _iuBuildHTML(tab) {
     const dropPrompt = tf('inventory.upload.drop_prompt', { browse: browseHtml }, `Drop image here or ${browseHtml}`);
     const emojiHtml = req?.hasAnimStyle ? `
         <div id="iuEmojiOptions" style="display:none;margin-top:14px;">
-            <div style="font-size:calc(12px + var(--fs-off, 0px));font-weight:600;color:var(--tx2);margin-bottom:8px;">${esc(t('inventory.upload.particle_style', 'Particle style'))}</div>
+            <div style="font-size:calc(12px + var(--fs-off, 0px));font-weight:600;color:var(--tx0);margin-bottom:8px;">${esc(t('inventory.upload.particle_style', 'Particle style'))}</div>
             <select id="iuAnimSelect" class="vrcn-dropdown" style="width:100%;" onchange="iuSetAnimStyle(this.value)">
                 ${IU_ANIM_STYLES.map(style => `<option value="${esc(style.value)}"${style.value === 'aura' ? ' selected' : ''}>${esc(iuAnimLabel(style))}</option>`).join('')}
             </select>
@@ -257,15 +257,15 @@ function _iuBuildHTML(tab) {
 
     return `<div class="modal-box wide" id="invUploadContent" style="max-width:560px;">
         ${renderModalBar(tf('inventory.upload.title', { tab: tabLabel }, `Upload to ${tabLabel}`), [modalCloseAction('closeInvUploadModal()')])}
-        <div style="background:var(--bg-input);border-radius:8px;padding:10px 14px;margin:20px 0 14px;font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);">${esc(req?.hint || '')}</div>
+        <div style="background:var(--bg-input);border-radius:8px;padding:10px 14px;margin:20px 0 14px;font-size:calc(12px + var(--fs-off, 0px));color:var(--tx3);">${esc(req?.hint || '')}</div>
         <div id="iuDropZone" class="iu-dropzone"
             onclick="iuBrowse()"
             ondragover="event.preventDefault();this.classList.add('dragover')"
             ondragleave="this.classList.remove('dragover')"
             ondrop="iuDrop(event)">
-            <span class="msi" style="font-size:40px;color:var(--tx3);display:block;margin-bottom:10px;pointer-events:none;">upload_file</span>
-            <div style="font-size:calc(14px + var(--fs-off, 0px));font-weight:600;color:var(--tx1);pointer-events:none;">${dropPrompt}</div>
-            <div style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);margin-top:6px;pointer-events:none;">${esc(t('inventory.upload.file_types', 'PNG, JPG, JPEG'))}</div>
+            <span class="msi" style="font-size:40px;color:var(--tx2);display:block;margin-bottom:10px;pointer-events:none;">upload_file</span>
+            <div style="font-size:calc(14px + var(--fs-off, 0px));font-weight:600;color:var(--tx0);pointer-events:none;">${dropPrompt}</div>
+            <div style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);margin-top:6px;pointer-events:none;">${esc(t('inventory.upload.file_types', 'PNG, JPG, JPEG'))}</div>
             <input type="file" id="iuFileInput" accept="image/png,image/jpeg" style="display:none;" onchange="iuHandleFileInput(this)">
         </div>
         <div id="iuEditorArea" style="display:none;"></div>
@@ -400,7 +400,7 @@ function _iuShowPreview(img, file, wasCropped, wasCompressed, wasResized) {
                 <img src="${esc(img.src)}" style="max-width:100%;max-height:100%;object-fit:contain;">
             </div>
             <div style="flex:1;min-width:0;">
-                <div style="font-weight:600;color:var(--tx1);margin-bottom:4px;word-break:break-all;">${esc(file.name)}</div>
+                <div style="font-weight:600;color:var(--tx0);margin-bottom:4px;word-break:break-all;">${esc(file.name)}</div>
                 <div style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx3);margin-bottom:4px;">${dimStr} - ${sizeStr}</div>
                 ${wasCropped ? `<div style="font-size:calc(12px + var(--fs-off, 0px));color:var(--accent);margin-bottom:4px;"><span class="msi" style="font-size:13px;vertical-align:-3px;">crop</span> ${esc(t('inventory.upload.status.cropped', 'Cropped to fit'))}</div>` : ''}
                 ${wasResized ? `<div style="font-size:calc(12px + var(--fs-off, 0px));color:var(--accent);margin-bottom:4px;"><span class="msi" style="font-size:13px;vertical-align:-3px;">photo_size_select_large</span> ${esc(t('inventory.upload.status.resized', 'Resized to fit'))}</div>` : ''}
@@ -442,9 +442,9 @@ function _iuShowEditor(img, req) {
         </div>
         <canvas id="iuCropCanvas" style="border-radius:8px;cursor:grab;user-select:none;display:block;width:100%;touch-action:none;"></canvas>
         <div style="display:flex;align-items:center;gap:10px;margin-top:10px;">
-            <span class="msi" style="color:var(--tx3);font-size:16px;">zoom_out</span>
+            <span class="msi" style="color:var(--tx2);font-size:16px;">zoom_out</span>
             <input type="range" id="iuZoomSlider" min="10" max="400" value="100" style="flex:1;" oninput="iuSetZoom(this.value/100)">
-            <span class="msi" style="color:var(--tx3);font-size:16px;">zoom_in</span>
+            <span class="msi" style="color:var(--tx2);font-size:16px;">zoom_in</span>
         </div>
         <div style="display:flex;gap:8px;margin-top:10px;justify-content:flex-end;">
             <button class="vrcn-button-round" style="font-size:calc(12px + var(--fs-off, 0px));" onclick="iuReset()">${esc(t('inventory.upload.button.choose_different', 'Choose different'))}</button>

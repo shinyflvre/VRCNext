@@ -1541,10 +1541,10 @@ function renderVrcndbReports() {
             ? tf('settings.vrcndb.reports.submit_summary', { enqueued: r.enqueued, dupes: r.duplicates }, `${r.enqueued} new, ${r.duplicates} known`)
             : tf('settings.vrcndb.reports.recheck_summary', { count: r.count }, `${r.count} avatar(s)`);
         return `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg-input);border-radius:8px;margin-bottom:6px;">
-        <span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);white-space:nowrap;">${esc(time)}</span>
+        <span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);white-space:nowrap;">${esc(time)}</span>
         <span class="vrcn-badge db-vrcndb" style="font-size:calc(10px + var(--fs-off, 0px));flex-shrink:0;">VRCNDb</span>
         <span class="vrcn-badge" style="font-size:calc(10px + var(--fs-off, 0px));color:${typeColor};flex-shrink:0;"><span class="msi" style="font-size:10px;">${typeIcon}</span> ${esc(typeLabel)}</span>
-        <span style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx1);flex:1;">${esc(summary)}</span>
+        <span style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);flex:1;">${esc(summary)}</span>
     </div>`;
     }).join('');
 }
@@ -1639,7 +1639,7 @@ function renderAvtrdbReports() {
         html += `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(var(--accent-rgb,100,140,255),.12);border:1px solid rgba(var(--accent-rgb,100,140,255),.25);border-radius:8px;margin-bottom:10px;">
             <span class="msi" style="font-size:18px;color:var(--accent);">hourglass_top</span>
             <div style="flex:1;">
-                <div style="font-size:calc(12px + var(--fs-off, 0px));font-weight:600;color:var(--tx1);">${t('settings.avtrdb.reports.collecting_title', 'Collecting Data')}</div>
+                <div style="font-size:calc(12px + var(--fs-off, 0px));font-weight:600;color:var(--tx0);">${t('settings.avtrdb.reports.collecting_title', 'Collecting Data')}</div>
                 <div style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);margin-top:2px;">${tf('settings.avtrdb.reports.collecting_desc', { count: _avtrdbCollecting, seconds: secsLeft }, `${_avtrdbCollecting} deleted avatar(s) queued, sending in ${secsLeft}s`)}</div>
             </div>
         </div>`;
@@ -1672,10 +1672,10 @@ function renderAvtrdbReports() {
         </button>`
             : '';
         return `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg-input);border-radius:8px;margin-bottom:6px;">
-        <span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);white-space:nowrap;">${esc(time)}</span>
+        <span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);white-space:nowrap;">${esc(time)}</span>
         ${dbBadge}
         <span class="vrcn-badge" style="font-size:calc(10px + var(--fs-off, 0px));color:${typeColor};flex-shrink:0;"><span class="msi" style="font-size:10px;">${typeIcon}</span> ${esc(typeLabel)}</span>
-        <span style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx1);flex:1;">${esc(summaryParts.join(', '))}</span>
+        <span style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);flex:1;">${esc(summaryParts.join(', '))}</span>
         ${ticketBtn}
     </div>`;
     }).join('');
@@ -1783,12 +1783,12 @@ function handleDbMemoryResult(data) {
             const pct = Math.max(2, Math.round((tb.bytes || 0) / maxBytes * 100));
             return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--brd);">
                 <div style="flex:1;min-width:0;">
-                    <div style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(tb.label)}</div>
+                    <div style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(tb.label)}</div>
                     <div style="height:4px;border-radius:2px;background:var(--bg-input);margin-top:4px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:var(--accent);"></div></div>
                 </div>
                 <div style="text-align:right;flex-shrink:0;">
                     <div style="font-size:calc(13px + var(--fs-off, 0px));font-weight:700;color:var(--tx0);">${esc(_dbFmtBytes(tb.bytes))}</div>
-                    <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx3);">${(tb.rows || 0).toLocaleString(settingsUiLocale())} ${esc(t('settings.db.memory_rows', 'rows'))}</div>
+                    <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx2);">${(tb.rows || 0).toLocaleString(settingsUiLocale())} ${esc(t('settings.db.memory_rows', 'rows'))}</div>
                 </div>
             </div>`;
         }).join('');
@@ -1810,7 +1810,7 @@ function handleDbMemoryResult(data) {
 
         res.innerHTML =
             `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-                <div style="font-size:calc(12px + var(--fs-off, 0px));font-weight:700;color:var(--tx0);">${esc(t('settings.db.memory_total', 'Total database size'))}</div>
+                <div style="font-size:calc(12px + var(--fs-off, 0px));font-weight:700;color:var(--tx2);">${esc(t('settings.db.memory_total', 'Total database size'))}</div>
                 <div style="font-size:calc(15px + var(--fs-off, 0px));font-weight:700;color:var(--accent);">${esc(_dbFmtBytes(fileBytes))}</div>
             </div>${rowsHtml}${extras}`;
         res.style.display = '';
@@ -1866,7 +1866,7 @@ function handleDbAnalyzeResult(data) {
         const counts = data.counts || [];
         const gridItems = counts.map(c =>
             `<div style="background:var(--bg-input);border-radius:8px;padding:8px 10px;min-width:0;">
-                <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx3);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(c.label)}</div>
+                <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx2);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(c.label)}</div>
                 <div style="font-size:calc(14px + var(--fs-off, 0px));font-weight:700;color:var(--tx0);">${(c.count||0).toLocaleString(settingsUiLocale())}</div>
             </div>`
         ).join('');
@@ -1886,75 +1886,75 @@ function handleDbAnalyzeResult(data) {
         res.innerHTML =
             `<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
                 <div style="background:var(--bg-input);border-radius:8px;padding:8px 12px;flex:1;min-width:120px;">
-                    <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx3);margin-bottom:2px;">Total Users</div>
-                    <div style="font-size:calc(15px + var(--fs-off, 0px));font-weight:700;color:var(--tx0);">${total}</div>
+                    <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx2);margin-bottom:2px;">Total Users</div>
+                    <div style="font-size:calc(15px + var(--fs-off, 0px));font-weight:700;color:var(--tx2);">${total}</div>
                 </div>
                 <div style="background:var(--bg-input);border-radius:8px;padding:8px 12px;flex:1;min-width:120px;">
-                    <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx3);margin-bottom:2px;">Friends (skipped)</div>
+                    <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx2);margin-bottom:2px;">Friends (skipped)</div>
                     <div style="font-size:calc(15px + var(--fs-off, 0px));font-weight:700;color:var(--tx0);">${friends}</div>
                 </div>
                 <div style="background:var(--bg-input);border-radius:8px;padding:8px 12px;flex:1;min-width:120px;">
-                    <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx3);margin-bottom:2px;">Cleanable Rows</div>
+                    <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx2);margin-bottom:2px;">Cleanable Rows</div>
                     <div style="font-size:calc(15px + var(--fs-off, 0px));font-weight:700;color:var(--accent);">${clean}</div>
                 </div>
             </div>
             <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:12px;">
                 ${gridItems}
             </div>
-            <div style="font-size:calc(11px + var(--fs-off, 0px));font-weight:600;color:var(--tx3);margin-bottom:6px;margin-top:4px;text-transform:uppercase;letter-spacing:.05em;">events</div>
+            <div style="font-size:calc(11px + var(--fs-off, 0px));font-weight:600;color:var(--tx0);margin-bottom:6px;margin-top:4px;text-transform:uppercase;letter-spacing:.05em;">events</div>
             <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:12px;">
                 <div style="background:var(--bg-input);border-radius:8px;padding:8px 10px;min-width:0;">
-                    <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx3);margin-bottom:2px;">Notifications</div>
+                    <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx2);margin-bottom:2px;">Notifications</div>
                     <div style="font-size:calc(14px + var(--fs-off, 0px));font-weight:700;color:var(--tx0);">${eNotif}</div>
                 </div>
                 <div style="background:var(--bg-input);border-radius:8px;padding:8px 10px;min-width:0;">
-                    <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx3);margin-bottom:2px;">Video URL</div>
+                    <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx2);margin-bottom:2px;">Video URL</div>
                     <div style="font-size:calc(14px + var(--fs-off, 0px));font-weight:700;color:var(--tx0);">${eVideo}</div>
                 </div>
                 <div style="background:var(--bg-input);border-radius:8px;padding:8px 10px;min-width:0;">
-                    <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx3);margin-bottom:2px;">Avatars</div>
+                    <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx2);margin-bottom:2px;">Avatars</div>
                     <div style="font-size:calc(14px + var(--fs-off, 0px));font-weight:700;color:var(--tx0);">${eAvatar}</div>
                 </div>
             </div>
-            <div style="font-size:calc(11px + var(--fs-off, 0px));font-weight:600;color:var(--tx3);margin-bottom:6px;margin-top:4px;text-transform:uppercase;letter-spacing:.05em;">friend_events</div>
+            <div style="font-size:calc(11px + var(--fs-off, 0px));font-weight:600;color:var(--tx0);margin-bottom:6px;margin-top:4px;text-transform:uppercase;letter-spacing:.05em;">friend_events</div>
             <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:12px;">
                 <div style="background:var(--bg-input);border-radius:8px;padding:8px 10px;min-width:0;">
-                    <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx3);margin-bottom:2px;">Friend Online</div>
+                    <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx2);margin-bottom:2px;">Friend Online</div>
                     <div style="font-size:calc(14px + var(--fs-off, 0px));font-weight:700;color:var(--tx0);">${fOnline}</div>
                 </div>
                 <div style="background:var(--bg-input);border-radius:8px;padding:8px 10px;min-width:0;">
                     <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx3);margin-bottom:2px;">Friend Offline</div>
-                    <div style="font-size:calc(14px + var(--fs-off, 0px));font-weight:700;color:var(--tx0);">${fOffline}</div>
+                    <div style="font-size:calc(14px + var(--fs-off, 0px));font-weight:700;color:var(--tx3);">${fOffline}</div>
                 </div>
                 <div style="background:var(--bg-input);border-radius:8px;padding:8px 10px;min-width:0;">
-                    <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx3);margin-bottom:2px;">Friend Status</div>
-                    <div style="font-size:calc(14px + var(--fs-off, 0px));font-weight:700;color:var(--tx0);">${fStatus}</div>
+                    <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx2);margin-bottom:2px;">Friend Status</div>
+                    <div style="font-size:calc(14px + var(--fs-off, 0px));font-weight:700;color:var(--tx2);">${fStatus}</div>
                 </div>
                 <div style="background:var(--bg-input);border-radius:8px;padding:8px 10px;min-width:0;">
-                    <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx3);margin-bottom:2px;">Friend Status Text</div>
-                    <div style="font-size:calc(14px + var(--fs-off, 0px));font-weight:700;color:var(--tx0);">${fStatusDesc}</div>
+                    <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx2);margin-bottom:2px;">Friend Status Text</div>
+                    <div style="font-size:calc(14px + var(--fs-off, 0px));font-weight:700;color:var(--tx2);">${fStatusDesc}</div>
                 </div>
                 <div style="background:var(--bg-input);border-radius:8px;padding:8px 10px;min-width:0;">
-                    <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx3);margin-bottom:2px;">Friend Bio</div>
+                    <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx2);margin-bottom:2px;">Friend Bio</div>
                     <div style="font-size:calc(14px + var(--fs-off, 0px));font-weight:700;color:var(--tx0);">${fBio}</div>
                 </div>
                 <div style="background:var(--bg-input);border-radius:8px;padding:8px 10px;min-width:0;">
-                    <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx3);margin-bottom:2px;">Friend Avatar</div>
+                    <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx2);margin-bottom:2px;">Friend Avatar</div>
                     <div style="font-size:calc(14px + var(--fs-off, 0px));font-weight:700;color:var(--tx0);">${fAvatar}</div>
                 </div>
                 <div style="background:var(--bg-input);border-radius:8px;padding:8px 10px;min-width:0;grid-column:span 6;">
-                    <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx3);margin-bottom:2px;">Total Deletable Rows</div>
+                    <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx2);margin-bottom:2px;">Total Deletable Rows</div>
                     <div style="font-size:calc(14px + var(--fs-off, 0px));font-weight:700;color:var(--accent);">${fTotal}</div>
                 </div>
             </div>
-            <div style="font-size:calc(11px + var(--fs-off, 0px));font-weight:600;color:var(--tx3);margin-bottom:6px;margin-top:4px;text-transform:uppercase;letter-spacing:.05em;">event_players</div>
+            <div style="font-size:calc(11px + var(--fs-off, 0px));font-weight:600;color:var(--tx0);margin-bottom:6px;margin-top:4px;text-transform:uppercase;letter-spacing:.05em;">event_players</div>
             <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:12px;">
                 <div style="background:var(--bg-input);border-radius:8px;padding:8px 10px;min-width:0;">
-                    <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx3);margin-bottom:2px;">Instance Players</div>
+                    <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx2);margin-bottom:2px;">Instance Players</div>
                     <div style="font-size:calc(14px + var(--fs-off, 0px));font-weight:700;color:var(--tx0);">${epPlayers}</div>
                 </div>
                 <div style="background:var(--bg-input);border-radius:8px;padding:8px 10px;min-width:0;grid-column:span 5;">
-                    <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx3);margin-bottom:2px;">Total Deletable Rows</div>
+                    <div style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx2);margin-bottom:2px;">Total Deletable Rows</div>
                     <div style="font-size:calc(14px + var(--fs-off, 0px));font-weight:700;color:var(--accent);">${epPlayers}</div>
                 </div>
             </div>`;
@@ -2008,7 +2008,7 @@ function handleDbOptimizeDone(data) {
                 `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(var(--ok-rgb,80,200,120),.12);border:1px solid rgba(var(--ok-rgb,80,200,120),.30);border-radius:8px;">
                     <span class="msi" style="font-size:20px;color:var(--ok);">check_circle</span>
                     <div>
-                        <div style="font-size:calc(13px + var(--fs-off, 0px));font-weight:600;color:var(--tx1);">Optimization complete</div>
+                        <div style="font-size:calc(13px + var(--fs-off, 0px));font-weight:600;color:var(--tx0);">Optimization complete</div>
                         <div style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);margin-top:2px;">${userCleaned} user cache rows cleared &nbsp;·&nbsp; ${feCleaned} friend events deleted &nbsp;·&nbsp; ${notifCleaned} notifications deleted &nbsp;·&nbsp; ${epCleaned} instance player rows deleted &nbsp;·&nbsp; VACUUM done</div>
                     </div>
                 </div>`;
@@ -2045,8 +2045,8 @@ function _showBackupResult(containerId, label, data) {
             `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(var(--ok-rgb,80,200,120),.12);border:1px solid rgba(var(--ok-rgb,80,200,120),.30);border-radius:8px;">
                 <span class="msi" style="font-size:20px;color:var(--ok);">check_circle</span>
                 <div>
-                    <div style="font-size:calc(13px + var(--fs-off, 0px));font-weight:600;color:var(--tx1);">${esc(label)}</div>
-                    <div style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);margin-top:2px;font-family:monospace;">${esc(data.path ?? '')}</div>
+                    <div style="font-size:calc(13px + var(--fs-off, 0px));font-weight:600;color:var(--tx2);">${esc(label)}</div>
+                    <div style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);margin-top:2px;font-family:monospace;">${esc(data.path ?? '')}</div>
                 </div>
             </div>`;
     }
@@ -2082,8 +2082,8 @@ function handleDbBackupDone(data) {
             el.innerHTML =
                 `<span class="msi" style="font-size:20px;color:var(--ok);">check_circle</span>
                 <div>
-                    <div style="font-size:calc(13px + var(--fs-off, 0px));font-weight:600;color:var(--tx1);">Backup created</div>
-                    <div style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);margin-top:2px;font-family:monospace;">${esc(data.path)}</div>
+                    <div style="font-size:calc(13px + var(--fs-off, 0px));font-weight:600;color:var(--tx0);">Backup created</div>
+                    <div style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);margin-top:2px;font-family:monospace;">${esc(data.path)}</div>
                 </div>`;
         }
         res.prepend(el);

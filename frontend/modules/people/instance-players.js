@@ -59,7 +59,7 @@ function avatarStateIconHtml(unresolved, size = 12) {
     const title = unresolved
         ? t('profiles.badges.avatar_unresolved', 'Unresolved, IDs are rechecked every 10 minutes. If it takes too long, open the profile or use Check for Avatar.')
         : t('profiles.badges.avatar_not_in_db', 'Avatar not found in any database');
-    return `<span class="msi" title="${esc(title)}" style="font-size:${size}px;color:var(--tx3);margin-left:4px;vertical-align:-2px;">${icon}</span>`;
+    return `<span class="msi" title="${esc(title)}" style="font-size:${size}px;color:var(--tx2);margin-left:4px;vertical-align:-2px;">${icon}</span>`;
 }
 
 function instanceAvatarCellHtml(u) {

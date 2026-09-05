@@ -61,7 +61,7 @@
 
 .vrc-profile-status {
     font-size: calc(10px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     display: flex;
     align-items: center;
     gap: 4px;
@@ -101,7 +101,7 @@
     flex-shrink: 0;
 }
 .sloc-inst-count {
-    color: var(--tx3);
+    color: var(--tx2);
     font-weight: 400;
 }
 .sloc-inst-card .vrc-friend-card:hover {
@@ -160,11 +160,11 @@
 .pl-av-letter {
     font-size: calc(12px + var(--fs-off, 0px));
     font-weight: 700;
-    color: var(--tx3);
+    color: var(--tx0);
 }
 .pl-name {
     font-weight: 700;
-    color: var(--tx1);
+    color: var(--tx0);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -226,6 +226,6 @@
 #blockedList:has(.tl-list-wrap),
 #mutedList:has(.tl-list-wrap) { margin-bottom: 8px; }
 
-.ip-avatar-name { font-size: calc(11px + var(--fs-off, 0px)); color: var(--tx2); }
+.ip-avatar-name { font-size: calc(11px + var(--fs-off, 0px)); color: var(--tx0); }
 .ip-avatar-link { color: var(--accent-lt); cursor: pointer; }
 .ip-avatar-link:hover { text-decoration: underline; }

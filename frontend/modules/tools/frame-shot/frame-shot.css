@@ -13,7 +13,7 @@
 }
 .fs-keybind-grid label {
     font-size: calc(11px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
 }
 .fs-keybind-head {
     margin-bottom: 4px;
@@ -21,7 +21,7 @@
 
 .fs-help {
     font-size: calc(11px + var(--fs-off, 0px));
-    color: var(--tx3);
+    color: var(--tx2);
     line-height: 1.45;
     margin-top: 8px;
     padding: 8px 10px;
@@ -32,7 +32,7 @@
     font-size: calc(10px + var(--fs-off, 0px));
     font-weight: 700;
     text-transform: uppercase;
-    color: var(--tx3);
+    color: var(--tx0);
     letter-spacing: 0.5px;
     text-align: left;
 }
@@ -57,7 +57,7 @@
     font-size: calc(10px + var(--fs-off, 0px));
     font-weight: 700;
     text-transform: uppercase;
-    color: var(--tx3);
+    color: var(--tx0);
     letter-spacing: 0.5px;
     text-align: left;
     line-height: 1.25;
@@ -81,5 +81,5 @@
 .fs-ctrl-cap {
     font-size: calc(11px + var(--fs-off, 0px));
     font-weight: 600;
-    color: var(--tx2);
+    color: var(--tx0);
 }

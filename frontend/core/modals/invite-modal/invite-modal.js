@@ -137,7 +137,7 @@ function renderInviteList(filter) {
     if (filter) {
         const capped = allFriends.slice(0, 100);
         if (allFriends.length > 100) {
-            h += `<div class="inv-section-lbl" style="color:var(--tx3);font-size:calc(11px + var(--fs-off, 0px));font-weight:400;">${esc(tf('invite.multi.search.showing', { total: allFriends.length }, 'Showing 100 of {total} — refine search to see more'))}</div>`;
+            h += `<div class="inv-section-lbl" style="color:var(--tx2);font-size:calc(11px + var(--fs-off, 0px));font-weight:400;">${esc(tf('invite.multi.search.showing', { total: allFriends.length }, 'Showing 100 of {total} — refine search to see more'))}</div>`;
         }
         capped.forEach(f => h += card(f));
         el.innerHTML = h;

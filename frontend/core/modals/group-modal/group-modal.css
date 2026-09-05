@@ -17,13 +17,13 @@
     user-select: none;
 }
 .gd-role-header:hover { background: var(--bg-hover); }
-.gd-role-meta { font-size: calc(11px + var(--fs-off, 0px)); color: var(--tx3); margin-top: 1px; }
+.gd-role-meta { font-size: calc(11px + var(--fs-off, 0px)); color: var(--tx2); margin-top: 1px; }
 .gd-role-body { padding: 0 14px 14px; }
 .gd-role-section { margin-top: 14px; }
 .gd-role-section-title {
     font-size: calc(10px + var(--fs-off, 0px));
     font-weight: 700;
-    color: var(--tx3);
+    color: var(--tx0);
     letter-spacing: .08em;
     text-transform: uppercase;
     margin-bottom: 8px;
@@ -36,8 +36,8 @@
     border-bottom: 1px solid color-mix(in srgb, var(--brd) 50%, transparent);
 }
 .gd-perm-row:last-child { border-bottom: none; }
-.gd-perm-label { font-size: calc(12px + var(--fs-off, 0px)); color: var(--tx1); font-weight: 500; }
-.gd-perm-desc { font-size: calc(10px + var(--fs-off, 0px)); color: var(--tx3); margin-top: 2px; line-height: 1.4; }
+.gd-perm-label { font-size: calc(12px + var(--fs-off, 0px)); color: var(--tx2); font-weight: 500; }
+.gd-perm-desc { font-size: calc(10px + var(--fs-off, 0px)); color: var(--tx2); margin-top: 2px; line-height: 1.4; }
 
 /* Group detail tabs */
 .gd-tabs {
@@ -120,7 +120,7 @@
     background: var(--bg-btn);
     border: none;
     border-radius: 6px;
-    color: var(--tx2);
+    color: var(--tx0);
     font-size: calc(11px + var(--fs-off, 0px));
     font-weight: 700;
     font-family: inherit;
@@ -129,13 +129,13 @@
     transition: all .15s;
     min-width: 34px;
 }
-.gev-dp-ampm-btn:hover { background: var(--bg-btn-h); color: var(--tx1); }
+.gev-dp-ampm-btn:hover { background: var(--bg-btn-h); color: var(--tx0); }
 
 .gev-dp-24h-btn {
     background: transparent;
     border: 1px solid var(--brd-lt);
     border-radius: 6px;
-    color: var(--tx3);
+    color: var(--tx0);
     font-size: calc(10px + var(--fs-off, 0px));
     font-weight: 700;
     font-family: inherit;
@@ -144,5 +144,5 @@
     transition: all .15s;
     margin-left: auto;
 }
-.gev-dp-24h-btn:hover { color: var(--tx2); }
+.gev-dp-24h-btn:hover { color: var(--tx0); }
 .gev-dp-24h-btn.active { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent-lt); border-color: transparent; }

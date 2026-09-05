@@ -28,7 +28,7 @@
                         <input id="kxdApiKey" type="password" class="vrcn-edit-field" style="width:100%;box-sizing:border-box;" placeholder="gsk_..." onblur="kxdSaveSettings()">
                         <div style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);margin-top:8px;line-height:1.5;" data-i18n="kikitan.api_key.hint">Kikitan XD requires a free Groq API key for Speech-To-Text and live translation. Sign up with Google, GitHub, SSO or email at console.groq.com/keys, create a new API key, and paste it above.</div>
                         <a onclick="sendToCS({action:'openUrl',url:'https://console.groq.com/keys'})" style="display:inline-flex;align-items:center;gap:4px;font-size:calc(11px + var(--fs-off, 0px));color:var(--accent);cursor:pointer;margin-top:6px;text-decoration:none;" data-i18n="kikitan.api_key.open_dashboard">Open Groq Key Dashboard</a>
-                        <div style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);margin-top:10px;padding-top:10px;border-top:1px solid var(--bg-line, rgba(255,255,255,.06));line-height:1.5;">Kikitan XD is based on <a onclick="sendToCS({action:'openUrl',url:'https://github.com/YusufOzmen01/kikitan-translator'})" style="color:var(--accent);cursor:pointer;">Kikitan by YusufOzmen01</a> (MIT License) <a onclick="sendToCS({action:'openUrl',url:'https://github.com/YusufOzmen01/kikitan-translator'})" style="color:var(--accent);cursor:pointer;">github.com/YusufOzmen01/kikitan-translator</a></div>
+                        <div style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);margin-top:10px;padding-top:10px;border-top:1px solid var(--bg-line, rgba(255,255,255,.06));line-height:1.5;">Kikitan XD is based on <a onclick="sendToCS({action:'openUrl',url:'https://github.com/YusufOzmen01/kikitan-translator'})" style="color:var(--accent);cursor:pointer;">Kikitan by YusufOzmen01</a> (MIT License) <a onclick="sendToCS({action:'openUrl',url:'https://github.com/YusufOzmen01/kikitan-translator'})" style="color:var(--accent);cursor:pointer;">github.com/YusufOzmen01/kikitan-translator</a></div>
                     </div>
                     <!-- Google API Key -->
                     <div class="vrcn-panel-card" id="kxdGoogleKeyCard" style="flex:1;min-width:280px;margin:0;">
@@ -49,9 +49,9 @@
                             <div id="kxdGateMark" style="position:absolute;top:0;bottom:0;width:2px;background:var(--tx2);opacity:0.8;left:10%;pointer-events:none;border-radius:1px;"></div>
                         </div>
                         <div class="vf-vol-row" style="margin-top:8px;">
-                            <span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);min-width:72px;" data-i18n="kikitan.noise_gate">Noise Gate</span>
+                            <span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);min-width:72px;" data-i18n="kikitan.noise_gate">Noise Gate</span>
                             <input type="range" class="vf-vol-slider" min="0" max="50" value="10" id="kxdGateSlider" oninput="kxdSetNoiseGate(this.value)">
-                            <span id="kxdGateVal" style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);min-width:32px;text-align:right;">10%</span>
+                            <span id="kxdGateVal" style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);min-width:32px;text-align:right;">10%</span>
                         </div>
                         <div id="kxdSileroRow" style="display:none;">
                             <div class="sf-toggle-row" style="margin-top:12px;">
@@ -133,7 +133,7 @@
                                 </div>
                             </div>
 
-                            <div id="kxdLocalRoot" style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx3);margin-top:10px;word-break:break-all;"></div>
+                            <div id="kxdLocalRoot" style="font-size:calc(10px + var(--fs-off, 0px));color:var(--tx2);margin-top:10px;word-break:break-all;"></div>
                         </div>
                         <div style="display:flex;gap:12px;">
                             <div style="flex:1;">
@@ -204,7 +204,7 @@
                         <div class="sf-row" style="margin-top:8px;">
                             <label style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);min-width:110px;" data-i18n="kikitan.tts.speed">Speed</label>
                             <input type="range" id="kxdTtsRate" min="-10" max="10" step="1" value="0" style="flex:1;accent-color:var(--accent);" oninput="document.getElementById('kxdTtsRateVal').textContent=this.value;kxdSaveSettings()">
-                            <span id="kxdTtsRateVal" style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);min-width:26px;text-align:right;">0</span>
+                            <span id="kxdTtsRateVal" style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx1);min-width:26px;text-align:right;">0</span>
                         </div>
                         <div style="margin-top:12px;">
                             <button class="vrcn-button" onclick="kxdTtsTest()"><span class="msi" style="font-size:16px;">volume_up</span> <span data-i18n="kikitan.tts.test">Test Voice</span></button>
