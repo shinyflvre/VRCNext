@@ -8,6 +8,7 @@ const CB_PAUSE_SECONDS = 10;
 const CB_LINE_IDS = ['time', 'media', 'stats', 'pulse', 'weather', 'window', 'custom'];
 let _cbEditLineIndex = -1;
 let _cbDragCleanup = null;
+let _cbLineDragCleanup = null;
 
 function chatboxButtonHtml() {
     return chatboxEnabled
@@ -207,20 +208,22 @@ function saveEditChatboxLine(i) {
 function renderChatboxLines() {
     const el = document.getElementById('cbCustomLines');
     if (!el) return;
+    _cbInitCustomLineDrag();
     if (chatboxCustomLines.length === 0) {
         el.innerHTML = `<div style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);padding:6px 0;">${t('chatbox.custom_lines.empty', 'No custom lines added')}</div>`;
         return;
     }
     el.innerHTML = chatboxCustomLines.map((line, i) => {
         if (i === _cbEditLineIndex) {
-            return `<div class="cb-line-item cb-line-editing">
+            return `<div class="cb-line-item cb-line-editing" data-idx="${i}">
                 <input type="text" id="cbEditLine" class="vrcn-edit-field cb-line-input" value="${esc(line.text)}"
                     onkeydown="if(event.key==='Enter'){saveEditChatboxLine(${i});}else if(event.key==='Escape'){cancelEditChatboxLine();}">
                 <button class="cb-line-btn cb-line-save" onclick="saveEditChatboxLine(${i})" title="${esc(t('common.save', 'Save'))}"><span class="msi" style="font-size:14px;">check</span></button>
                 <button class="cb-line-btn" onclick="cancelEditChatboxLine()" title="${esc(t('common.cancel', 'Cancel'))}"><span class="msi" style="font-size:14px;">close</span></button>
             </div>`;
         }
-        return `<div class="cb-line-item${line.enabled ? '' : ' cb-line-off'}">
+        return `<div class="cb-line-item${line.enabled ? '' : ' cb-line-off'}" data-idx="${i}">
+            <span class="msi cb-ord-handle cb-line-handle">drag_indicator</span>
             <label class="toggle cb-line-toggle"><input type="checkbox" ${line.enabled ? 'checked' : ''} onchange="toggleChatboxLine(${i}, this.checked)"><div class="toggle-track"><div class="toggle-knob"></div></div></label>
             <span class="cb-line-text">${esc(line.text)}</span>
             <button class="cb-line-btn" onclick="startEditChatboxLine(${i})" title="${esc(t('common.edit', 'Edit'))}"><span class="msi" style="font-size:14px;">edit</span></button>
@@ -232,6 +235,131 @@ function renderChatboxLines() {
 function cbToggleModule(el) {
     const block = el.closest('.cb-ord-block');
     if (block) block.classList.toggle('cb-open');
+}
+
+function _cbInitCustomLineDrag() {
+    const list = document.getElementById('cbCustomLines');
+    if (!list) return;
+    if (_cbLineDragCleanup) { _cbLineDragCleanup(); _cbLineDragCleanup = null; }
+
+    const ANIM_MS = 200;
+    const EASE = 'cubic-bezier(.2,.7,.3,1)';
+    let drag = null;
+
+    function items() { return [...list.querySelectorAll('.cb-line-item')]; }
+
+    function snap() {
+        const map = new Map();
+        items().forEach(el => map.set(el, el.getBoundingClientRect().top));
+        return map;
+    }
+
+    function flip(prev) {
+        items().forEach(el => {
+            if (!prev.has(el)) return;
+            const dy = prev.get(el) - el.getBoundingClientRect().top;
+            if (!dy) return;
+            el.animate([{ transform: `translateY(${dy}px)` }, { transform: 'translateY(0)' }], { duration: ANIM_MS, easing: EASE });
+        });
+    }
+
+    function resolveTarget(clientY, dragged) {
+        let best = null;
+        for (const item of items()) {
+            if (item === dragged) continue;
+            const rect = item.getBoundingClientRect();
+            if (clientY < rect.top + rect.height / 2) return { mode: 'before', target: item };
+            best = { mode: 'after', target: item };
+        }
+        return best;
+    }
+
+    function onDown(e) {
+        if (e.button !== 0) return;
+        const handle = e.target.closest('.cb-line-handle');
+        if (!handle) return;
+        const item = handle.closest('.cb-line-item');
+        if (!item || list.querySelector('.cb-line-editing')) return;
+        e.preventDefault();
+
+        const rect = item.getBoundingClientRect();
+        const ghost = item.cloneNode(true);
+        Object.assign(ghost.style, {
+            position: 'fixed',
+            top: rect.top + 'px',
+            left: rect.left + 'px',
+            width: rect.width + 'px',
+            pointerEvents: 'none',
+            zIndex: '10020',
+            opacity: '0.92',
+            boxShadow: '0 14px 40px rgba(0,0,0,.55)',
+            margin: '0',
+            transform: 'scale(1.01)',
+        });
+        document.body.appendChild(ghost);
+        item.classList.add('cb-ord-dragging');
+
+        drag = { item, ghost, offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top, lastKey: null };
+
+        handle.setPointerCapture?.(e.pointerId);
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerup', onUp);
+        window.addEventListener('pointercancel', onUp);
+        document.body.style.cursor = 'grabbing';
+    }
+
+    function onMove(e) {
+        if (!drag) return;
+        drag.ghost.style.top = (e.clientY - drag.offsetY) + 'px';
+        drag.ghost.style.left = (e.clientX - drag.offsetX) + 'px';
+
+        const drop = resolveTarget(e.clientY, drag.item);
+        const key = drop ? `${drop.mode}:${drop.target.dataset.idx}` : 'none';
+        if (key === drag.lastKey) return;
+        drag.lastKey = key;
+
+        const prev = snap();
+        if (drop) {
+            if (drop.mode === 'before') list.insertBefore(drag.item, drop.target);
+            else list.insertBefore(drag.item, drop.target.nextSibling);
+        }
+        flip(prev);
+    }
+
+    function onUp() {
+        if (!drag) return;
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+        window.removeEventListener('pointercancel', onUp);
+        document.body.style.cursor = '';
+
+        const { item, ghost } = drag;
+        drag = null;
+
+        const finalRect = item.getBoundingClientRect();
+        const ghostRect = ghost.getBoundingClientRect();
+        const dx = finalRect.left - ghostRect.left;
+        const dy = finalRect.top - ghostRect.top;
+
+        ghost.animate(
+            [
+                { transform: 'translate(0,0) scale(1.01)', opacity: 0.92 },
+                { transform: `translate(${dx}px,${dy}px) scale(1)`, opacity: 1 },
+            ],
+            { duration: ANIM_MS, easing: EASE, fill: 'forwards' }
+        ).onfinish = () => {
+            ghost.remove();
+            item.classList.remove('cb-ord-dragging');
+            const order = items().map(el => parseInt(el.dataset.idx, 10));
+            const next = order.map(i => chatboxCustomLines[i]).filter(Boolean);
+            if (next.length === chatboxCustomLines.length) chatboxCustomLines = next;
+            renderChatboxLines();
+            updateChatboxConfig();
+        };
+    }
+
+    list.addEventListener('pointerdown', onDown);
+    _cbLineDragCleanup = () => list.removeEventListener('pointerdown', onDown);
 }
 
 function _cbInitLineOrderDrag() {

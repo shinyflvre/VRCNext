@@ -293,6 +293,8 @@
 
 .cb-ord-row:hover .cb-ord-handle { opacity: 1; }
 .cb-ord-handle:active { cursor: grabbing; }
+.cb-line-item .cb-line-handle { font-size: calc(16px + var(--fs-off, 0px)) !important; margin-left: -4px; }
+.cb-line-item:hover .cb-line-handle { opacity: 1; }
 
 .cb-ord-sub {
     padding-left: 26px;

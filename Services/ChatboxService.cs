@@ -95,6 +95,7 @@ namespace VRCNext
         private float _ramTotalGB;
         private float _gpuPercent;
         private float _vramUsedGB;
+        private float _vramTotalGB;
         private bool  _gpuAvailable;
 #if WINDOWS
         private readonly List<PerformanceCounter> _gpuCounters  = new();
@@ -170,7 +171,7 @@ namespace VRCNext
                         durationMs = (long)CurrentDuration.TotalMilliseconds,
                         isPlaying = IsPlaying, chatboxText = text, enabled = Enabled,
                         cpuPercent = _cpuPercent, ramUsedGB = _ramUsedGB, ramTotalGB = _ramTotalGB,
-                        gpuPercent = _gpuPercent, vramUsedGB = _vramUsedGB, gpuAvailable = _gpuAvailable,
+                        gpuPercent = _gpuPercent, vramUsedGB = _vramUsedGB, vramTotalGB = _vramTotalGB, gpuAvailable = _gpuAvailable,
                         isAfk = _isAfk,
                     });
                     await Task.Delay(Math.Max(IntervalMs, MIN_INTERVAL_MS), ct);
@@ -359,7 +360,7 @@ namespace VRCNext
             if (StatCpu)  bits.Add($"CPU {_cpuPercent:0}%");
             if (StatRam && _ramTotalGB > 0) bits.Add($"RAM {_ramUsedGB:0.0}/{_ramTotalGB:0.0}GB");
             if (StatGpu && _gpuAvailable)   bits.Add($"GPU {_gpuPercent:0}%");
-            if (StatVram && _vramUsedGB > 0) bits.Add($"VRAM {_vramUsedGB:0.0}GB");
+            if (StatVram && _vramUsedGB > 0) bits.Add(_vramTotalGB > 0 ? $"VRAM {_vramUsedGB:0.0}/{_vramTotalGB:0}GB" : $"VRAM {_vramUsedGB:0.0}GB");
             return bits.Count == 0 ? null : string.Join(" ", bits);
         }
 
@@ -497,6 +498,37 @@ namespace VRCNext
             catch { }
 
             _gpuAvailable = _gpuCounters.Count > 0 || _vramCounters.Count > 0;
+            if (_vramTotalGB <= 0) _vramTotalGB = ReadTotalVramGB();
+        }
+
+        private float ReadTotalVramGB()
+        {
+            try
+            {
+                using var cls = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}");
+                if (cls == null) return 0f;
+                long best = 0;
+                foreach (var name in cls.GetSubKeyNames())
+                {
+                    if (name.Length != 4 || !name.All(char.IsDigit)) continue;
+                    using var k = cls.OpenSubKey(name);
+                    if (k == null) continue;
+                    long bytes = 0;
+                    var qw = k.GetValue("HardwareInformation.qwMemorySize");
+                    if (qw is long l) bytes = l;
+                    else if (qw is int i) bytes = (uint)i;
+                    else if (qw is byte[] b && b.Length >= 8) bytes = BitConverter.ToInt64(b, 0);
+                    if (bytes <= 0)
+                    {
+                        var ms = k.GetValue("HardwareInformation.MemorySize");
+                        if (ms is int mi) bytes = (uint)mi;
+                        else if (ms is byte[] mb && mb.Length >= 4) bytes = BitConverter.ToUInt32(mb, 0);
+                    }
+                    if (bytes > best) best = bytes;
+                }
+                return best > 0 ? (float)(best / (1024.0 * 1024.0 * 1024.0)) : 0f;
+            }
+            catch (Exception ex) { _log($"[Chatbox] VRAM total unavailable: {ex.Message}"); return 0f; }
         }
 
         private void DisposeGpuCounters()
