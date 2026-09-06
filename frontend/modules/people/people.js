@@ -323,6 +323,7 @@ function setPeopleFilter(filter) {
     });
     const editBtn = document.getElementById('favFriendEditModeBtn');
     if (editBtn) editBtn.style.display = (filter === 'favorites' || filter === 'all') ? '' : 'none';
+    _pplUpdateCounts();
     refreshPeopleTab();
 }
 
@@ -402,9 +403,31 @@ function refreshPeopleTab(force) {
 
 let _recentSeenData = [];
 let _peopleRecentPage = 0;
+let _pplFavLoaded = false;
+let _pplRecentLoaded = false;
+
+function _pplUpdateCounts() {
+    const inst = (typeof currentInstanceData !== 'undefined') ? currentInstanceData : null;
+    let instUsers = null;
+    if (inst && !inst.error) instUsers = (inst.empty || typeof _ipUsers !== 'function') ? [] : _ipUsers().users;
+    const counts = {
+        peopleFilterFavCount: _pplFavLoaded ? favFriendsData : null,
+        peopleFilterAllCount: (typeof vrcFriendsLoaded !== 'undefined' && vrcFriendsLoaded) ? vrcFriendsData : null,
+        peopleFilterInstanceCount: instUsers,
+        peopleFilterRecentCount: _pplRecentLoaded ? _recentSeenData : null,
+        peopleFilterBlockedCount: (typeof blockedData !== 'undefined') ? blockedData : null,
+        peopleFilterMutedCount: (typeof mutedData !== 'undefined') ? mutedData : null
+    };
+    Object.keys(counts).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = Array.isArray(counts[id]) ? String(counts[id].length) : 'X';
+    });
+}
 
 function renderRecentSeen(players) {
     _recentSeenData = Array.isArray(players) ? players : [];
+    _pplRecentLoaded = true;
+    _pplUpdateCounts();
     filterRecentSeen();
 }
 
@@ -686,6 +709,7 @@ const ALL_FRIENDS_LIVE_MS = 400;
 let _allFriendsLiveTimer = null;
 
 function filterAllFriendsIfLive() {
+    _pplUpdateCounts();
     const tab = document.getElementById('tab3');
     if (!tab || !tab.classList.contains('active')) return;
     if (peopleFilter !== 'all') return;
@@ -712,6 +736,7 @@ function _updateAllFriendsFilterCounts(list) {
 }
 
 function filterAllFriends() {
+    _pplUpdateCounts();
     const el = document.getElementById('allFriendsGrid');
     if (!el) return;
     const q = (document.getElementById('allFriendSearchInput')?.value || '').toLowerCase();
@@ -799,6 +824,7 @@ function buildModListHtml(entries, actionType) {
 }
 
 function renderModList(containerId, list, actionType) {
+    _pplUpdateCounts();
     const el = document.getElementById(containerId);
     if (!el) return;
     const isBlock = actionType === 'block';
@@ -898,6 +924,8 @@ function renderFavFriends(payload) {
     const groups  = payload?.groups  || [];
     favFriendsData  = friends;
     favFriendGroups = groups;
+    _pplFavLoaded = true;
+    _pplUpdateCounts();
     const sel = document.getElementById('favFriendGroupFilter');
     if (sel) {
         const prev = favFriendGroupFilter;
@@ -1077,6 +1105,7 @@ function filterFavFriendsIfVisible() {
 }
 
 function filterFavFriends() {
+    _pplUpdateCounts();
     _favFriendsDirty = false;
     const el = document.getElementById('favFriendsGrid');
     if (!el) return;

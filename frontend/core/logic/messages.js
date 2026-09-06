@@ -360,6 +360,7 @@ window.external.receiveMessage(rawMsg => {
                     _rvfPendingCounts = null;
                 }
                 scheduleRenderVrcFriends();
+                if (typeof _pplUpdateCounts === 'function') _pplUpdateCounts();
                 requestWorldResolution(); renderDashboardFriendSections(); requestInstanceInfo();
                 if (currentInstanceData) renderCurrentInstance(currentInstanceData);
                 if (favFriendsData.length > 0) filterFavFriendsIfVisible();
@@ -696,6 +697,7 @@ window.external.receiveMessage(rawMsg => {
                     avatarsData = payload.avatars || [];
                     if (payload.currentAvatarId) currentAvatarId = payload.currentAvatarId;
                     avatarsLoaded = true;
+                    if (typeof _avOnOwnLoaded === 'function') _avOnOwnLoaded();
                     (payload.avatars || []).forEach(a => {
                         if (a.id) avatarInfoCache[a.id] = { id: a.id, name: a.name || '' };
                     });

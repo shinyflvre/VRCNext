@@ -1911,6 +1911,7 @@ function handleFavFriendToggled(payload) {
     const { userId, fvrtId, isFavorited, groupName } = payload;
     favFriendsData = favFriendsData.filter(f => f.favoriteId !== userId);
     if (isFavorited) favFriendsData.push({ fvrtId, favoriteId: userId, groupName: groupName || 'group_0' });
+    if (typeof _pplUpdateCounts === 'function') _pplUpdateCounts();
     const btn = document.getElementById('fdFavBtn');
     if (btn) {
         btn.disabled = false;

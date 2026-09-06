@@ -71,7 +71,8 @@ let _visitedWorldsData = [];
 let _worldRecentPage = 0;
 
 function renderVisitedWorlds(worlds) {
-    if (Array.isArray(worlds)) _visitedWorldsData = worlds;
+    if (Array.isArray(worlds)) { _visitedWorldsData = worlds; _visitedWorldsLoaded = true; }
+    _wdUpdateCounts();
     const el = document.getElementById('worldRecentGrid');
     if (!el) return;
     const list = _visitedWorldsData;
@@ -92,6 +93,20 @@ function renderVisitedWorlds(worlds) {
 let _myWorldsData = [];
 let _worldMinePage = 0;
 let _favWorldsPage = 0;
+let _visitedWorldsLoaded = false;
+let _myWorldsDataLoaded = false;
+
+function _wdUpdateCounts() {
+    const counts = {
+        worldFilterFavCount: _favWorldsLoaded ? favWorldsData : null,
+        worldFilterRecentCount: _visitedWorldsLoaded ? _visitedWorldsData : null,
+        worldFilterMineCount: _myWorldsDataLoaded ? _myWorldsData : null
+    };
+    Object.keys(counts).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = Array.isArray(counts[id]) ? String(counts[id].length) : 'X';
+    });
+}
 
 function setWorldsViewMode(mode) {
     lvSetViewMode('worlds', mode);
@@ -199,7 +214,8 @@ function _worldsListPage(el, all, page, barId, pageFn, setPage) {
 function renderMyWorlds(worlds) {
     const el = document.getElementById('worldMineGrid');
     if (!el) return;
-    if (Array.isArray(worlds)) _myWorldsData = worlds;
+    if (Array.isArray(worlds)) { _myWorldsData = worlds; _myWorldsDataLoaded = true; }
+    _wdUpdateCounts();
     const list = _myWorldsData;
     if (!Array.isArray(list) || list.length === 0) {
         el.innerHTML = `<div class="empty-msg"><div class="empty-msg-icon"><span class="msi">upload</span></div><div class="empty-msg-title">${t('worlds.mine.upload_title', 'Upload a world')}</div><div class="empty-msg-desc">${t('worlds.mine.empty', 'No worlds uploaded yet')}</div></div>`;
@@ -232,6 +248,7 @@ function renderFavWorlds(payload) {
     _favWorldsLoaded = true;
     favWorldsData = worlds;
     favWorldGroups = groups;
+    _wdUpdateCounts();
     // Populate world info cache for library badges
     favWorldsData.forEach(w => {
         if (w.id) worldInfoCache[w.id] = { id: w.id, name: w.name, thumbnailImageUrl: w.thumbnailImageUrl || w.imageUrl };
@@ -409,6 +426,7 @@ function renderWorldCard(w) {
 }
 
 function filterFavWorlds() {
+    _wdUpdateCounts();
     const q = (document.getElementById('favWorldSearchInput')?.value || '').toLowerCase();
     let filtered = favWorldsData;
     if (favWorldGroupFilter) filtered = filtered.filter(w => w.favoriteGroup === favWorldGroupFilter);
@@ -743,6 +761,7 @@ function worldEditDeleteSelected() {
             ids.forEach(worldId => sendToCS({ action: 'vrcDeleteWorld', worldId }));
             const gone = new Set(ids);
             _myWorldsData = _myWorldsData.filter(w => !gone.has(w.id));
+            _wdUpdateCounts();
             exitWorldEditMode();
         },
     });

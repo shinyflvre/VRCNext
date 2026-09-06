@@ -21,6 +21,25 @@ function avatarCountText(count) {
     return tf(count === 1 ? 'avatars.count.one' : 'avatars.count.other', { count }, count === 1 ? '{count} avatar' : '{count} avatars');
 }
 
+const _avCountsLoaded = { own: false, favorites: false, recent: false };
+
+function _avUpdateCounts() {
+    const counts = {
+        avatarFilterOwnCount: _avCountsLoaded.own ? avatarsData : null,
+        avatarFilterFavCount: _avCountsLoaded.favorites ? favAvatarsData : null,
+        avatarFilterRecentCount: _avCountsLoaded.recent ? _recentAvatarsData : null
+    };
+    Object.keys(counts).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = Array.isArray(counts[id]) ? String(counts[id].length) : 'X';
+    });
+}
+
+function _avOnOwnLoaded() {
+    _avCountsLoaded.own = true;
+    _avUpdateCounts();
+}
+
 function avatarResultCountText(count) {
     return tf(count === 1 ? 'avatars.results.one' : 'avatars.results.other', { count }, count === 1 ? '{count} result' : '{count} results');
 }
@@ -298,7 +317,7 @@ function filterOwnAvatars() {
     const filtered = (q
         ? avatarsData.filter(a => (a.name || '').toLowerCase().includes(q) || (a.authorName || '').toLowerCase().includes(q))
         : avatarsData).filter(_avPassesFilters);
-    document.getElementById('avatarCount').textContent = filtered.length ? avatarCountText(filtered.length) : '';
+    _avUpdateCounts();
     if (!filtered.length) {
         el.classList.add('avatar-grid');
         el.innerHTML = avatarEmptyMessage(q ? 'avatars.empty.no_match' : 'avatars.empty.none', q ? 'No avatars match your filter' : 'No avatars found');
@@ -579,6 +598,8 @@ function renderAvatarCard(a, context) {
 let _recentAvatarsData = [];
 function renderRecentAvatars(avatars) {
     _recentAvatarsData = Array.isArray(avatars) ? avatars : [];
+    _avCountsLoaded.recent = true;
+    _avUpdateCounts();
     filterRecentAvatars();
 }
 
@@ -747,6 +768,8 @@ function renderFavAvatars(payload) {
     const groups  = payload?.groups  || [];
     favAvatarsData  = avatars;
     favAvatarGroups = groups;
+    _avCountsLoaded.favorites = true;
+    _avUpdateCounts();
 
     if (_pendingFavDeepLink && favAvatarGroups.length > 0) {
         const pending = _pendingFavDeepLink;
@@ -892,6 +915,7 @@ function _renderFavAvCard(a) {
 }
 
 function filterFavAvatars() {
+    _avUpdateCounts();
     const q = (document.getElementById('favAvatarSearchInput')?.value || '').toLowerCase();
     let filtered = favAvatarsData;
     if (favAvatarGroupFilter) filtered = filtered.filter(a => a.favoriteGroup === favAvatarGroupFilter);
@@ -1288,6 +1312,7 @@ function onAvatarUnfavoriteResult(data) {
             ? tf('avatars.favorites.toast.removed.named', { avatar: avatarName }, '"{avatar}" removed from favorites')
             : t('avatars.favorites.toast.removed', 'Removed from favorites'));
         favAvatarsData = favAvatarsData.filter(f => f.id !== data.avatarId);
+        _avUpdateCounts();
         if (avatarFilter === 'favorites') filterFavAvatars();
         else if (avatarFilter === 'own') renderAvatarGrid();
         else if (avatarFilter === 'search') renderSearchGrid();
@@ -1655,6 +1680,7 @@ function avEditDeleteSelected() {
             ids.forEach(avatarId => sendToCS({ action: 'vrcDeleteAvatar', avatarId }));
             const gone = new Set(ids);
             avatarsData = avatarsData.filter(a => !gone.has(a.id));
+            _avUpdateCounts();
             exitAvEditMode();
         },
     });

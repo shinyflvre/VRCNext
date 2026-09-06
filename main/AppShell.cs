@@ -299,6 +299,10 @@ public partial class AppShell
             _core.Timeline,
             pct => _core.SendToJS("dbMigrationProgress", new { percent = pct }),
             id  => _core.SendToJS("timelineEventDeleted", new { id }));
+        _ = SQLiteMigrator.RepairEventPlayerSessionsAsync(
+            _settings,
+            _core.Timeline,
+            pct => _core.SendToJS("dbMigrationProgress", new { percent = pct }));
 
         // Permini — load persisted list into memory
         LoadPerminiList();

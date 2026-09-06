@@ -35,12 +35,14 @@ internal static class Database
         _currentDbPath = Path.Combine(BaseDir, $"{account.UserId}_VRCNData.db");
     }
 
-    internal static SqliteConnection OpenConnection()
+    internal static SqliteConnection OpenConnection() => OpenConnectionAt(_currentDbPath);
+
+    internal static SqliteConnection OpenConnectionAt(string dbPath)
     {
-        var dir = Path.GetDirectoryName(_currentDbPath)!;
+        var dir = Path.GetDirectoryName(dbPath)!;
         if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
 
-        var conn = new SqliteConnection($"Data Source={_currentDbPath}");
+        var conn = new SqliteConnection($"Data Source={dbPath}");
         conn.Open();
 
         using var cmd = conn.CreateCommand();
@@ -48,6 +50,25 @@ internal static class Database
         cmd.ExecuteNonQuery();
 
         return conn;
+    }
+
+    private static readonly Regex AccountDbFileRegex =
+        new(@"^usr_[a-zA-Z0-9-]+_VRCNData\.db$", RegexOptions.Compiled);
+
+    internal static List<string> EnumerateAccountDbPaths()
+    {
+        var result = new List<string>();
+        try
+        {
+            if (!Directory.Exists(BaseDir)) return result;
+            foreach (var file in Directory.GetFiles(BaseDir, "*VRCNData.db"))
+            {
+                var name = Path.GetFileName(file);
+                if (name == "VRCNData.db" || AccountDbFileRegex.IsMatch(name)) result.Add(file);
+            }
+        }
+        catch { }
+        return result;
     }
 
     private static readonly string MediaDbPath = Path.Combine(BaseDir, "MediaLibrary.db");

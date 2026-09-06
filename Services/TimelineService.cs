@@ -50,6 +50,64 @@ public class TimelineService : IDisposable
             if (sessions == null || sessions.Count == 0) return "";
             return JsonConvert.SerializeObject(sessions);
         }
+
+        private const long DuplicateLeftWindowMs = 5000;
+
+        private static bool TryToMs(string iso, out long ms)
+        {
+            if (DateTimeOffset.TryParse(iso, null, System.Globalization.DateTimeStyles.RoundtripKind, out var o))
+            {
+                ms = o.ToUnixTimeMilliseconds();
+                return true;
+            }
+            ms = 0;
+            return false;
+        }
+
+        public static List<string> DedupeLefts(List<string>? joins, List<string>? lefts)
+        {
+            var result = new List<string>(lefts ?? new());
+            if (result.Count < 2) return result;
+
+            var seq = new List<(long ms, bool isJoin, string iso)>();
+            foreach (var j in joins ?? new())
+            {
+                if (!TryToMs(j, out var ms)) return result;
+                seq.Add((ms, true, j));
+            }
+            foreach (var l in result)
+            {
+                if (!TryToMs(l, out var ms)) return result;
+                seq.Add((ms, false, l));
+            }
+            seq.Sort((a, b) => a.ms != b.ms ? a.ms.CompareTo(b.ms) : a.isJoin.CompareTo(b.isJoin));
+
+            var kept      = new List<string>();
+            var present   = false;
+            long? lastLeft = null;
+            foreach (var (ms, isJoin, iso) in seq)
+            {
+                if (isJoin) { present = true; continue; }
+                if (!present && lastLeft.HasValue && ms - lastLeft.Value <= DuplicateLeftWindowMs) continue;
+                kept.Add(iso);
+                present  = false;
+                lastLeft = ms;
+            }
+            return kept;
+        }
+
+        public static List<string> RepairLefts(List<string>? joins, List<string>? lefts, string eventEnd)
+        {
+            var result   = DedupeLefts(joins, lefts);
+            var joinList = joins ?? new();
+            if (joinList.Count == 0 || string.IsNullOrEmpty(eventEnd) || !TryToMs(eventEnd, out var endMs)) return result;
+            foreach (var j in joinList)
+            {
+                if (!TryToMs(j, out var jms) || jms > endMs) return result;
+            }
+            while (result.Count < joinList.Count) result.Add(eventEnd);
+            return result;
+        }
     }
 
     public class TimelineEvent
@@ -636,6 +694,29 @@ public class TimelineService : IDisposable
         {
             update(ev);
             DbUpdateEvent(ev);
+        }
+    }
+
+    public void ApplyPlayerSessionRepairs(List<(string EventId, string UserId, List<string> LeftAts)> fixes)
+    {
+        if (fixes == null || fixes.Count == 0) return;
+        var byEvent = new Dictionary<string, List<(string UserId, List<string> LeftAts)>>();
+        foreach (var f in fixes)
+        {
+            if (!byEvent.TryGetValue(f.EventId, out var list)) byEvent[f.EventId] = list = new();
+            list.Add((f.UserId, f.LeftAts));
+        }
+        lock (_lock)
+        {
+            foreach (var ev in _events)
+            {
+                if (!byEvent.TryGetValue(ev.Id, out var list)) continue;
+                foreach (var (uid, lefts) in list)
+                {
+                    var p = ev.Players.FirstOrDefault(x => x.UserId == uid);
+                    if (p != null) p.LeftAts = new List<string>(lefts);
+                }
+            }
         }
     }
 

@@ -1612,7 +1612,12 @@ public class InstanceController
             leftList = new List<string>();
             _playerLeftTimes[userId] = leftList;
         }
-        leftList.Add(DateTime.UtcNow.ToString("o"));
+        var joinCount = _playerJoinTimes.TryGetValue(userId, out var joinList) ? joinList.Count : 0;
+        if (leftList.Count < joinCount)
+        {
+            var leftAtUtc = _core.LogWatcher.GetLastLeftTime(userId)?.ToUniversalTime() ?? DateTime.UtcNow;
+            leftList.Add(leftAtUtc.ToString("o"));
+        }
 
         NotifyFriendLeftInstance(userId, displayName);
 

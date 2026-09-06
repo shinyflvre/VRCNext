@@ -134,6 +134,7 @@ function buildInstancePlayersHtml(users, iStart, iTotal, now) {
 }
 
 function renderInstancePlayers() {
+    if (typeof _pplUpdateCounts === 'function') _pplUpdateCounts();
     const el = document.getElementById('instancePlayersGrid');
     if (!el) return;
 
