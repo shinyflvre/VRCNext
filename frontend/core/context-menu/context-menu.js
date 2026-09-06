@@ -162,7 +162,8 @@
         if (base) showMenu(e.clientX, e.clientY, base);
         else hideMenu();
 
-        navigator.clipboard.readText().catch(() => '').then(clipText => {
+        const clipRead = (navigator.clipboard && typeof navigator.clipboard.readText === 'function') ? navigator.clipboard.readText().catch(() => '') : Promise.resolve('');
+        clipRead.then(clipText => {
             if (seq !== _ctxSeq) return;
             const extra = buildClipboardItems(clipText, tgt);
             if (!extra.length) return;
@@ -205,6 +206,33 @@
         menu.innerHTML = buildHTML(items);
         positionMenu(_menuAnchor.x, _menuAnchor.y);
         if (keepOpen) hideSubmenu();
+        menu.classList.toggle('has-tools', !!menu.querySelector('.vn-ctx-tools'));
+
+        menu.querySelectorAll('.vn-ctx-tool[data-idx]').forEach(btn => {
+            const item = callbacks[+btn.dataset.idx];
+            const openSub = () => {
+                clearTimeout(submenuTimer);
+                if (submenuOwner === btn && submenu.style.display !== 'none') return;
+                hideSubmenu();
+                submenuOwner = btn;
+                btn.classList.add('on');
+                item?.submenuFn?.(btn);
+                if (st()) st().register(submenu, menu);
+            };
+            btn.addEventListener('mouseenter', () => {
+                if (btn.disabled) return;
+                if (item?.submenuFn) { if (guarded()) return; openSub(); return; }
+                clearTimeout(submenuTimer);
+                submenuTimer = setTimeout(hideSubmenu, st() ? st().cfg.closeDelay : 200);
+            });
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                if (btn.disabled || !item) return;
+                if (item.submenuFn) { openSub(); return; }
+                if (item.confirm) handleConfirm(btn, item, +btn.dataset.idx);
+                else { item.action(); hideMenu(); }
+            });
+        });
 
         menu.querySelectorAll('.vn-ctx-item[data-idx]:not(.has-sub)').forEach(btn => {
             btn.addEventListener('mouseenter', () => {
@@ -261,6 +289,7 @@
     function hideSubmenu() {
         clearTimeout(submenuTimer);
         submenuOwner = null;
+        menu.querySelectorAll('.vn-ctx-tool.on').forEach(t => t.classList.remove('on'));
         if (window.safeTriangle) window.safeTriangle.reset();
         submenu.style.display = 'none';
         submenu.innerHTML = '';
@@ -303,7 +332,8 @@
             btn.addEventListener('click', e => {
                 e.stopPropagation();
                 const o = entries[+btn.dataset.cidx];
-                if (o) copyWithToast(o.text, o.toastKey, o.fallback);
+                if (o && typeof o.action === 'function') o.action();
+                else if (o) copyWithToast(o.text, o.toastKey, o.fallback);
                 hideMenu();
             });
             btn.addEventListener('mouseenter', () => clearTimeout(submenuTimer));
@@ -311,10 +341,11 @@
         positionSubmenu(parentBtn);
     }
 
-    function copyItem(kind, idVar, url, idLabel, linkLabel, idToast, linkToast) {
+    function copyItem(kind, idVar, url, idLabel, linkLabel, idToast, linkToast, extra) {
         return { icon: 'content_copy', label: cm('copy', 'Copy'), submenuFn: btn => showCopySubmenu([
             { icon: 'id_card', label: cm(kind + '.copy_id', idLabel), text: idVar, toastKey: kind + '.id_copied', fallback: idToast },
             { icon: 'link_2', label: cm(kind + '.copy_link', linkLabel), text: url, toastKey: kind + '.share_copied', fallback: linkToast },
+            ...(Array.isArray(extra) ? extra : []),
         ], btn) };
     }
 
@@ -499,6 +530,23 @@
 
     function positionSubmenu(parentBtn) {
         const rect = parentBtn.getBoundingClientRect();
+        if (parentBtn.classList && parentBtn.classList.contains('vn-ctx-tool')) {
+            const pr = menu.getBoundingClientRect();
+            const vw2 = window.innerWidth;
+            const vh2 = window.innerHeight;
+            submenu.style.visibility = 'hidden';
+            submenu.style.display = 'block';
+            const sw2 = submenu.offsetWidth;
+            const sh2 = submenu.offsetHeight;
+            submenu.style.visibility = '';
+            let l2 = pr.right + 4;
+            if (l2 + sw2 > vw2 - 6) l2 = Math.max(4, pr.left - sw2 - 4);
+            let t2 = rect.bottom + 4;
+            if (t2 + sh2 > vh2 - 6) t2 = Math.max(4, vh2 - sh2 - 6);
+            submenu.style.left = l2 + 'px';
+            submenu.style.top = t2 + 'px';
+            return;
+        }
         const vw = window.innerWidth;
         const vh = window.innerHeight;
         submenu.style.visibility = 'hidden';
@@ -527,7 +575,8 @@
                 resetConfirmBtn(confirmState.idx);
             }
             btn.classList.add('confirm-pending');
-            btn.querySelector('.vn-ctx-label').textContent = cm('confirm', 'Confirm?');
+            const lab = btn.querySelector('.vn-ctx-label');
+            if (lab) lab.textContent = cm('confirm', 'Confirm?'); else btn.title = cm('confirm', 'Confirm?');
             const timer = setTimeout(() => {
                 if (confirmState?.idx === idx) {
                     resetConfirmBtn(idx);
@@ -539,14 +588,40 @@
     }
 
     function resetConfirmBtn(idx) {
-        const btn = menu.querySelector(`.vn-ctx-item[data-idx="${idx}"]`);
+        const btn = menu.querySelector(`.vn-ctx-item[data-idx="${idx}"], .vn-ctx-tool[data-idx="${idx}"]`);
         if (!btn) return;
         btn.classList.remove('confirm-pending');
-        btn.querySelector('.vn-ctx-label').textContent = callbacks[idx]?.label || '';
+        const lab = btn.querySelector('.vn-ctx-label');
+        if (lab) lab.textContent = callbacks[idx]?.label || ''; else btn.title = callbacks[idx]?.label || '';
     }
 
     /* HTML builder */
+    function tidyItems(items) {
+        const out = [];
+        for (const it of items) {
+            if (it === 'sep') { if (!out.length || out[out.length - 1] === 'sep') continue; }
+            out.push(it);
+        }
+        while (out.length && out[out.length - 1] === 'sep') out.pop();
+        return out;
+    }
+
+    function buildToolbarHTML(tools) {
+        return '<div class="vn-ctx-tools">' + tools.filter(Boolean).map(item => {
+            const idx = callbacks.length;
+            callbacks.push(item);
+            const cls = ['vn-ctx-tool', item.submenuFn ? 'has-sub' : '', item.danger ? 'danger' : '', item.active ? 'active' : ''].filter(Boolean).join(' ');
+            return `<button class="${cls}" data-idx="${idx}" title="${esc(item.label || '')}"${item.disabled ? ' disabled' : ''}><span class="msi${item.filled ? ' msi-fill' : ''}">${item.icon}</span></button>`;
+        }).join('') + '</div>';
+    }
+
     function buildHTML(items) {
+        const tb = items.find(i => i && typeof i === 'object' && Array.isArray(i.toolbar));
+        if (tb) {
+            const tools = tb.toolbar.filter(Boolean);
+            const rest = tidyItems(items.filter(i => i !== tb));
+            return (tools.length ? buildToolbarHTML(tools) : '') + '<div class="vn-ctx-body">' + buildHTML(rest) + '</div>';
+        }
         return items.map(item => {
             if (item === 'sep') return '<div class="vn-ctx-sep"></div>';
             const idx = callbacks.length;
@@ -558,7 +633,7 @@
             const plus = item.plusBadge ? '<span class="vrcn-supporter-badge" style="margin-left:auto;flex-shrink:0;">VRC+</span>' : '';
             const iconEl = item.dotColor
                 ? `<span class="vn-ctx-dot" style="background:${item.dotColor}"></span>`
-                : `<span class="msi">${item.icon}</span>`;
+                : `<span class="msi${item.filled ? ' msi-fill' : ''}">${item.icon}</span>`;
             return `<button class="vn-ctx-item${cls ? ' ' + cls : ''}" data-idx="${idx}">
                 ${iconEl}
                 <span class="vn-ctx-label">${esc(item.label)}</span>${plus}${check}${arrow}
@@ -766,13 +841,7 @@
         if (myInstCard) {
             const loc = myInstCard.dataset.location;
             if (loc) {
-                const instItems = buildMyInstanceItems(loc);
-                // Pin the world behind the instance, not the instance itself.
-                const instWid = extractWorldId(myInstCard);
-                const instPin = instWid && typeof pinsContextItem === 'function'
-                    ? pinsContextItem('world', instWid) : null;
-                if (instPin) { instItems.push('sep'); instItems.push(instPin); }
-                return instItems;
+                return buildMyInstanceItems(loc, extractWorldId(myInstCard));
             }
         }
 
@@ -968,10 +1037,12 @@
         const g = (typeof myGroups !== 'undefined') && myGroups.find(x => x.id === id);
         const isJoined = !!g;
 
+        const groupCopy = copyItem('group', id, 'https://vrchat.com/home/group/' + id, 'Copy Group ID', 'Copy Group Link', 'Group ID copied to clipboard', 'Group link copied to clipboard');
+        const _pinGroup = (typeof pinsContextItem === 'function') ? pinsContextItem('group', id) : null;
         if (!isJoined) {
             return [
+                { toolbar: [groupCopy, _pinGroup] },
                 { icon: 'open_in_new', label: cm('group.open_details', 'Open Details'), action: () => navOpenModal('group', id, '') },
-                copyItem('group', id, 'https://vrchat.com/home/group/' + id, 'Copy Group ID', 'Copy Group Link', 'Group ID copied to clipboard', 'Group link copied to clipboard'),
                 'sep',
                 { icon: 'group_add', label: cm('group.join', 'Join Group'), action: () => sendToCS({ action: 'vrcJoinGroup', groupId: id }) },
             ];
@@ -981,21 +1052,24 @@
         const canEvent = g.canEvent === true;
         const isRep = g.isRepresenting === true;
         const curVis = g.visibility || 'visible';
+        const tools = [
+            isRep
+                ? { icon: 'shield_person', filled: true, active: true, disabled: true, label: cm('group.representing', 'Representing this group'), action: () => {} }
+                : { icon: 'shield_person', label: cm('group.represent', 'Represent this group'), action: () => sendToCS({ action: 'vrcRepresentGroup', groupId: id }) },
+            groupCopy,
+            _pinGroup,
+        ];
         const items = [
             { icon: 'open_in_new', label: cm('group.open_details', 'Open Details'), action: () => navOpenModal('group', id, g.name || '') },
-            copyItem('group', id, 'https://vrchat.com/home/group/' + id, 'Copy Group ID', 'Copy Group Link', 'Group ID copied to clipboard', 'Group link copied to clipboard'),
             'sep',
         ];
         if (canPost) items.push({ icon: 'edit_note', label: cm('group.post', 'Post'), action: () => openGroupPostModal(id) });
         if (canEvent) items.push({ icon: 'event', label: cm('group.events', 'Events'), action: () => openGroupEventModal(id) });
         if (canPost || canEvent) items.push('sep');
-        items.push({ icon: 'shield_person', label: cm('group.represent', 'Represent this group'), action: () => sendToCS({ action: 'vrcRepresentGroup', groupId: id }), disabled: isRep });
         items.push({ icon: 'visibility', label: cm('group.visibility', 'Visibility'), submenuFn: btn => showGroupVisibilitySubmenu(id, curVis, btn) });
         items.push('sep');
         items.push({ icon: 'logout', label: cm('group.leave', 'Leave Group'), action: () => sendToCS({ action: 'vrcLeaveGroup', groupId: id }), danger: true, confirm: true });
-        const _pinGroup = (typeof pinsContextItem === 'function') ? pinsContextItem('group', id) : null;
-        if (_pinGroup) { items.push('sep'); items.push(_pinGroup); }
-        return items;
+        return [{ toolbar: tools }, ...items];
     }
 
     function showMediaUploadSubmenu(url, name, parentBtn) {
@@ -1397,50 +1471,55 @@
         }
 
         const favEntry = (typeof favAvatarsData !== 'undefined') && favAvatarsData.find(a => a.id === id);
+        const tools = [];
         const items = [
             { icon: 'info', label: cm('avatar.show', 'Show Avatar'), action: () => navOpenModal('avatar', id, '') },
-            copyItem('avatar', id, 'https://vrchat.com/home/avatar/' + id, 'Copy Avatar ID', 'Copy Avatar Link', 'Avatar ID copied to clipboard', 'Avatar link copied to clipboard'),
             { icon: 'checkroom', label: cm('avatar.use', 'Use Avatar'), action: () => sendToCS({ action: 'vrcSelectAvatar', avatarId: id }) },
             'sep',
             { icon: 'style', label: cm('avatar.similar', 'Similar Avatars'), action: () => { showTab(4); setAvatarFilter('search'); setTimeout(() => { const inp = document.getElementById('avatarSearchInput'); if (inp) { inp.value = 'similar: ' + id; doAvatarSearch(); } }, 100); } },
             'sep',
         ];
         if (favEntry) {
-            items.push({ icon: 'favorite_border', label: cm('avatar.remove_favorites', 'Remove from Favorites'), action: () => removeAvatarFavorite(id, favEntry.favoriteId) });
+            tools.push({ icon: 'favorite', filled: true, label: cm('avatar.remove_favorites', 'Remove from Favorites'), action: () => removeAvatarFavorite(id, favEntry.favoriteId) });
             items.push({ icon: 'drive_file_move', label: cm('avatar.move_to_category', 'Move to Category'), submenuFn: btn => showAvMoveToGroupSubmenu(id, favEntry, btn) });
         } else {
-            items.push({ icon: 'favorite', label: cm('avatar.add_favorites', 'Add to Favorites'), submenuFn: btn => showAvFavGroupSubmenu(id, btn) });
+            tools.push({ icon: 'favorite', label: cm('avatar.add_favorites', 'Add to Favorites'), submenuFn: btn => showAvFavGroupSubmenu(id, btn) });
         }
+        tools.push(copyItem('avatar', id, 'https://vrchat.com/home/avatar/' + id, 'Copy Avatar ID', 'Copy Avatar Link', 'Avatar ID copied to clipboard', 'Avatar link copied to clipboard'));
         const _pinAvatar = (typeof pinsContextItem === 'function') ? pinsContextItem('avatar', id) : null;
-        if (_pinAvatar) { items.push('sep'); items.push(_pinAvatar); }
-        return items;
+        if (_pinAvatar) tools.push(_pinAvatar);
+        return [{ toolbar: tools }, ...items];
     }
 
     function buildInstanceLinkItems(loc) {
         return [
             { icon: 'login', label: cm('instance.join', 'Join'), action: () => sendToCS({ action: 'vrcJoinFriend', location: loc }) },
-            { icon: 'link',  label: cm('context_menu.copy_instance_link', 'Copy Instance Link'), action: () => copyInstanceLink(loc) },
+            { icon: 'link',  label: cm('copy_instance_link', 'Copy Instance Link'), action: () => copyInstanceLink(loc) },
         ];
     }
 
-    function buildMyInstanceItems(loc) {
+    function buildMyInstanceItems(loc, fallbackWorldId) {
         const inst = (typeof _myInstancesData !== 'undefined') && _myInstancesData.find(i => i.location === loc);
-        const worldId = inst?.worldId || '';
+        const worldId = inst?.worldId || fallbackWorldId || '';
         const wn = inst?.worldName || '';
         const wt = inst?.worldThumb || '';
         const it = inst?.instanceType || '';
         const favEntry = (typeof favWorldsData !== 'undefined') && favWorldsData.find(fw => fw.id === worldId);
+        const tools = [];
         const items = [];
         if (loc) {
-            items.push({ icon: 'login', label: cm('instance.join', 'Join'), action: () => sendToCS({ action: 'vrcJoinFriend', location: loc }) });
+            tools.push({ icon: 'login', label: cm('instance.join', 'Join'), action: () => sendToCS({ action: 'vrcJoinFriend', location: loc }) });
             items.push({ icon: 'person_add', label: cm('instance.invite_friends', 'Invite Friends'), action: () => openInviteModalForLocation(loc, wn, wt, it) });
             items.push({ icon: 'close', label: cm('instance.close', 'Close Instance'), action: () => removeMyInstance(loc), danger: true, confirm: true });
             items.push('sep');
         }
+        tools.push({ icon: 'home', label: cm('world.set_home', 'Set as Home'), action: () => sendToCS({ action: 'vrcSetHomeWorld', worldId }), confirm: true });
+        const instanceCopy = loc ? [{ icon: 'link', label: cm('copy_instance_link', 'Copy Instance Link'), action: () => copyInstanceLink(loc) }] : [];
+        tools.push(copyItem('world', worldId, 'https://vrchat.com/home/world/' + worldId, 'Copy World ID', 'Copy World Link', 'World ID copied to clipboard', 'World link copied to clipboard', instanceCopy));
+        const _pinInstWorld = (typeof pinsContextItem === 'function' && worldId) ? pinsContextItem('world', worldId) : null;
+        if (_pinInstWorld) tools.push(_pinInstWorld);
         items.push({ icon: 'open_in_new', label: cm('world.open_details', 'Open Details'), action: () => navOpenModal('worldSearch', worldId, wn) });
         items.push({ icon: 'add_circle_outline', label: cm('world.create_instance', 'Create Instance'), action: () => createWorldInstance(worldId) });
-        items.push(copyItem('world', worldId, 'https://vrchat.com/home/world/' + worldId, 'Copy World ID', 'Copy World Link', 'World ID copied to clipboard', 'World link copied to clipboard'));
-        items.push({ icon: 'home', label: cm('world.set_home', 'Set as Home'), action: () => sendToCS({ action: 'vrcSetHomeWorld', worldId }), confirm: true });
         items.push('sep');
         if (favEntry) {
             items.push({ icon: 'favorite_border', label: cm('world.remove_favorites', 'Remove from Favorites'), action: () => removeWorldFavorite(worldId, favEntry.favoriteId) });
@@ -1451,7 +1530,7 @@
         } else {
             items.push({ icon: 'favorite', label: cm('world.add_favorites', 'Add to Favorites'), submenuFn: btn => showFavGroupSubmenu(worldId, btn) });
         }
-        return items;
+        return [{ toolbar: tools }, ...items];
     }
 
     function showEditModeGroupSubmenu(parentBtn) {
@@ -1494,25 +1573,26 @@
         }
 
         const favEntry = (typeof favWorldsData !== 'undefined') && favWorldsData.find(fw => fw.id === id);
+        const tools = [];
         const items = [
             { icon: 'open_in_new', label: cm('world.open_details', 'Open Details'), action: () => navOpenModal('worldSearch', id, '') },
             { icon: 'add_circle_outline', label: cm('world.create_instance', 'Create Instance'), action: () => createWorldInstance(id) },
-            copyItem('world', id, 'https://vrchat.com/home/world/' + id, 'Copy World ID', 'Copy World Link', 'World ID copied to clipboard', 'World link copied to clipboard'),
-            { icon: 'home', label: cm('world.set_home', 'Set as Home'), action: () => sendToCS({ action: 'vrcSetHomeWorld', worldId: id }), confirm: true },
-            'sep',
         ];
         if (favEntry) {
-            items.push({ icon: 'favorite_border', label: cm('world.remove_favorites', 'Remove from Favorites'), action: () => removeWorldFavorite(id, favEntry.favoriteId) });
+            tools.push({ icon: 'favorite', filled: true, label: cm('world.remove_favorites', 'Remove from Favorites'), action: () => removeWorldFavorite(id, favEntry.favoriteId) });
             const otherGroups = (typeof favWorldGroups !== 'undefined') ? favWorldGroups.filter(g => g.name !== favEntry.favoriteGroup) : [];
             if (otherGroups.length > 0) {
+                items.push('sep');
                 items.push({ icon: 'drive_file_move', label: cm('world.move_to_category', 'Move to Category'), submenuFn: btn => showMoveToGroupSubmenu(id, favEntry, btn) });
             }
         } else {
-            items.push({ icon: 'favorite', label: cm('world.add_favorites', 'Add to Favorites'), submenuFn: btn => showFavGroupSubmenu(id, btn) });
+            tools.push({ icon: 'favorite', label: cm('world.add_favorites', 'Add to Favorites'), submenuFn: btn => showFavGroupSubmenu(id, btn) });
         }
+        tools.push({ icon: 'home', label: cm('world.set_home', 'Set as Home'), action: () => sendToCS({ action: 'vrcSetHomeWorld', worldId: id }), confirm: true });
+        tools.push(copyItem('world', id, 'https://vrchat.com/home/world/' + id, 'Copy World ID', 'Copy World Link', 'World ID copied to clipboard', 'World link copied to clipboard'));
         const _pinWorld = (typeof pinsContextItem === 'function') ? pinsContextItem('world', id) : null;
-        if (_pinWorld) { items.push('sep'); items.push(_pinWorld); }
-        return items;
+        if (_pinWorld) tools.push(_pinWorld);
+        return [{ toolbar: tools }, ...items];
     }
 
     function buildFriendItems(id, sourceEl) {
@@ -1529,9 +1609,9 @@
         }
 
         const f = (typeof vrcFriendsData !== 'undefined') && vrcFriendsData.find(x => x.id === id);
+        const tools = [];
         const items = [
             { icon: 'person', label: cm('friend.view_profile', 'View Profile'), action: () => navOpenModal('friend', id, f?.displayName || '') },
-            copyItem('friend', id, 'https://vrchat.com/home/user/' + id, 'Copy User ID', 'Copy User Link', 'User ID copied to clipboard', 'Profile link copied to clipboard'),
         ];
         if (f) {
             const loc = f.location || '';
@@ -1555,7 +1635,7 @@
             if (invitableGroups.length > 0) {
                 actionItems.push({ icon: 'group_add', label: cm('friend.invite_group', 'Invite to Group'), submenuFn: btn => showGroupInviteForUserSubmenu(id, invitableGroups, btn) });
             }
-            actionItems.push({ icon: 'waving_hand', label: cm('friend.boop', 'Boop!'), action: () => openBoopModal(id, f.displayName || id) });
+            tools.push({ icon: 'waving_hand', label: cm('friend.boop', 'Boop!'), action: () => openBoopModal(id, f.displayName || id) });
             actionItems.push({ icon: 'chat', label: cm('friend.messenger', 'Messenger'), action: () => openMessenger(id, f.displayName || id, f.image || '', f.status || '', f.statusDescription || '') });
             if (actionItems.length) {
                 items.push('sep');
@@ -1569,7 +1649,7 @@
             const onFavTab = !!sourceEl?.closest('#favFriendsGrid');
             items.push('sep');
             if (isFav) {
-                items.push({ icon: 'favorite_border', label: cm('friend.unfavorite', 'Unfavorite'), action: () => sendToCS({ action: 'vrcRemoveFavoriteFriend', userId: id, fvrtId: favEntry?.fvrtId || '' }) });
+                tools.unshift({ icon: 'favorite', filled: true, label: cm('friend.unfavorite', 'Unfavorite'), action: () => sendToCS({ action: 'vrcRemoveFavoriteFriend', userId: id, fvrtId: favEntry?.fvrtId || '' }) });
                 if (onFavTab) {
                     const otherGroups = (typeof favFriendGroups !== 'undefined') ? favFriendGroups.filter(g => g.name !== favEntry?.groupName) : [];
                     if (otherGroups.length > 0) {
@@ -1577,7 +1657,7 @@
                     }
                 }
             } else {
-                items.push({ icon: 'favorite', label: cm('friend.favorite', 'Add to Favorites'), submenuFn: btn => showFavFriendGroupSubmenu(id, btn) });
+                tools.unshift({ icon: 'favorite', label: cm('friend.favorite', 'Add to Favorites'), submenuFn: btn => showFavFriendGroupSubmenu(id, btn) });
             }
 
             items.push('sep');
@@ -1590,9 +1670,10 @@
             items.push('sep');
             items.push({ icon: 'shield_person', label: cm('friend.moderate', 'Moderate'), submenuFn: btn => showModerateSubmenu(id, btn) });
         }
+        tools.push(copyItem('friend', id, 'https://vrchat.com/home/user/' + id, 'Copy User ID', 'Copy User Link', 'User ID copied to clipboard', 'Profile link copied to clipboard'));
         const _pinUser = (typeof pinsContextItem === 'function') ? pinsContextItem('user', id) : null;
-        if (_pinUser) { items.push('sep'); items.push(_pinUser); }
-        return items;
+        if (_pinUser) tools.push(_pinUser);
+        return [{ toolbar: tools }, ...items];
     }
 
     // VRC+ upload actions shared by the library grid and the photo detail modal.
@@ -1608,9 +1689,17 @@
     function buildLibCardItems(path, url, type, name) {
         const isFav = (typeof favorites !== 'undefined') && favorites.has(path);
         const isHidden = (typeof hiddenMedia !== 'undefined') && hiddenMedia.has(path);
-        const items = [
+        const tools = [
+            isFav
+                ? { icon: 'favorite', filled: true, label: cm('library.remove_favorite', 'Remove Favorite'), action: () => toggleFavorite(path) }
+                : { icon: 'favorite', label: cm('library.favorite', 'Favorite'), action: () => toggleFavorite(path) },
+            isHidden
+                ? { icon: 'visibility_off', filled: true, active: true, label: cm('library.unhide', 'Unhide'), action: () => toggleHidden(path) }
+                : { icon: 'visibility_off', label: cm('library.hide', 'Hide'), action: () => toggleHidden(path) },
             { icon: 'content_copy', label: cm('library.copy', 'Copy to Clipboard'), action: () => copyToClipboard(url, path, type) },
+            { icon: 'folder_open', label: cm('library.reveal_in_explorer', 'Reveal in Explorer'), action: () => sendToCS({ action: 'revealInExplorer', path }) },
         ];
+        const items = [];
         if (type === 'image' || type === 'gif' || type === 'video') {
             items.push({ icon: 'wallpaper',  label: cm('library.set_background',  'Set as Background'),        action: () => setLibItemAsDashBg(path, url) });
         }
@@ -1618,28 +1707,19 @@
             items.push({ icon: 'desktop_windows', label: cm('library.set_wallpaper', 'Set as Desktop Background'), action: () => sendToCS({ action: 'setDesktopBackground', path }) });
             items.push({ icon: 'upload', label: cm('library.upload', 'Upload'), submenuFn: btn => showMediaUploadSubmenu(url, name, btn) });
         }
-        items.push({ icon: 'folder_open', label: cm('library.reveal_in_explorer', 'Reveal in Explorer'), action: () => sendToCS({ action: 'revealInExplorer', path }) });
         if (typeof relayOn !== 'undefined' && relayOn) {
             items.push({ icon: 'send', label: cm('library.send_to_webhook', 'Send to Webhook'), action: () => sendToCS({ action: 'manualPost', filePath: path }) });
         }
         items.push('sep');
-        items.push(isFav
-            ? { icon: 'favorite_border', label: cm('library.remove_favorite', 'Remove Favorite'), action: () => toggleFavorite(path) }
-            : { icon: 'favorite', label: cm('library.favorite', 'Favorite'), action: () => toggleFavorite(path) }
-        );
         if (!window._isLinuxUi && (type === 'image' || type === 'gif')) {
             items.push({ icon: 'favorite', label: cm('library.rating', 'Rating'), submenuFn: btn => showLibraryRatingSubmenu(path, btn) });
         }
         if (typeof MEDIA_TAG_CATALOG !== 'undefined') {
             items.push({ icon: 'sell', label: cm('library.tags', 'Tags'), submenuFn: btn => showLibraryTagSubmenu(path, btn) });
         }
-        items.push(isHidden
-            ? { icon: 'visibility', label: cm('library.unhide', 'Unhide'), action: () => toggleHidden(path) }
-            : { icon: 'visibility_off', label: cm('library.hide', 'Hide'), action: () => toggleHidden(path) }
-        );
         items.push('sep');
         items.push({ icon: 'delete', label: cm('library.delete', 'Delete'), danger: true, action: () => showDeleteModal(path, name) });
-        return items;
+        return [{ toolbar: tools }, ...items];
     }
 
     // Viewport position of the right click; the library maps it into image space.

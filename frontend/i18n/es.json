@@ -1807,6 +1807,7 @@
   "context_menu.group.events": "Eventos",
   "context_menu.group.leave": "Abandonar grupo",
   "context_menu.group.represent": "Representar este grupo",
+  "context_menu.group.representing": "Representando este grupo",
   "context_menu.group.visibility": "Visibilidad",
   "context_menu.group.kick_member": "Expulsar del grupo",
   "context_menu.group.ban_member": "Banear del grupo",

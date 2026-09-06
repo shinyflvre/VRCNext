@@ -236,13 +236,15 @@ function pinsContextItem(type, id, data) {
     if (!type || !id) return null;
     if (pinsHas(type, id)) {
         return {
-            icon: 'push_pin',
+            icon: 'keep_off',
+            filled: true,
+            active: true,
             label: t('pins.remove', 'Remove pin'),
             action: () => pinsRemove(type, id),
         };
     }
     return {
-        icon: 'push_pin',
+        icon: 'keep',
         label: t('pins.add', 'Add to pins'),
         action: () => pinsAdd({ type, id, ...(data || {}) }),
     };

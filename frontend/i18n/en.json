@@ -1891,6 +1891,7 @@
   "context_menu.group.ban_member": "Ban from group",
   "context_menu.group.assign_role": "Assign Role",
   "context_menu.group.represent": "Represent this group",
+  "context_menu.group.representing": "Representing this group",
   "context_menu.group.visibility": "Visibility",
   "context_menu.avatar.show": "Show Avatar",
   "context_menu.avatar.share": "Share Avatar",

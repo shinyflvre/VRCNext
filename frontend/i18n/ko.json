@@ -1889,6 +1889,7 @@
   "context_menu.group.ban_member": "그룹에서 차단",
   "context_menu.group.assign_role": "역할 할당",
   "context_menu.group.represent": "이 그룹 표시",
+  "context_menu.group.representing": "이 그룹을 대표 중",
   "context_menu.group.visibility": "표시",
   "context_menu.avatar.show": "아바타 보기",
   "context_menu.avatar.share": "아바타 공유",

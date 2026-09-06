@@ -8,6 +8,7 @@
 - System stats show VRAM as used/total, e.g. **VRAM 3.7/8GB**.
 
 **Context Menu**
+- Context Menu v2: user, world, instance, group, avatar and media library menus now start with an icon toolbar for the frequent actions (Favorite, Boop, Join, Set as Home, Represent, Copy, Pin, Hide, Reveal), the list below only holds the rest.
 - **Share Profile / World / Group / Avatar** became a **Copy** submenu with **Copy ID** and **Copy Link**.
 - Right-click on the **by username** badge in Group, World and Avatar modals and on the **Organizer** in the Event modal opens the matching user or group context menu.
 - Right-click on entries in Most Visited Worlds and Interacted The Most With opens the regular world or user context menu.

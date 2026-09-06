@@ -1874,6 +1874,7 @@
   "context_menu.group.ban_member": "從群組封禁",
   "context_menu.group.assign_role": "分配角色",
   "context_menu.group.represent": "展示此群組",
+  "context_menu.group.representing": "正在代表此群組",
   "context_menu.group.visibility": "顯示",
   "context_menu.avatar.show": "顯示角色",
   "context_menu.avatar.share": "分享角色",

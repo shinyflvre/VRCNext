@@ -1806,6 +1806,7 @@
   "context_menu.group.events": "イベント",
   "context_menu.group.leave": "グループを退出",
   "context_menu.group.represent": "このグループを代表する",
+  "context_menu.group.representing": "このグループを代表中",
   "context_menu.group.visibility": "表示設定",
   "context_menu.group.kick_member": "グループからキック",
   "context_menu.group.ban_member": "グループからBAN",

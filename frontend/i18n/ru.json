@@ -1808,6 +1808,7 @@
   "context_menu.group.ban_member": "Забанить",
   "context_menu.group.assign_role": "Назначить роль",
   "context_menu.group.represent": "Представлять",
+  "context_menu.group.representing": "Вы представляете эту группу",
   "context_menu.group.visibility": "Видимость",
   "context_menu.avatar.show": "Показать",
   "context_menu.avatar.share": "Поделиться",
