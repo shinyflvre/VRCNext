@@ -96,7 +96,7 @@
 }
 .vn-ctx-count {
     margin-left: auto; font-size: calc(10px + var(--fs-off, 0px)); font-weight: 600;
-    color: var(--tx2); background: var(--bg-input);
+    color: var(--badge-tx); background: var(--badge-bg);
     padding: 1px 6px; border-radius: 8px; flex-shrink: 0;
 }
 .vn-ctx-loading {
