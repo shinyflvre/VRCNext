@@ -15,6 +15,7 @@
     --badge-tx: var(--tx2);
     --accent: #8E8EA7;
     --accent-lt: #A5A5AC;
+    --dropdown-active: var(--accent);
     --cyan: #8CA5FF;
     --ok: #2DD48C;
     --warn: #FFBA37;

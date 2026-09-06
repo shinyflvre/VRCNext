@@ -343,6 +343,12 @@
         positionSubmenu(parentBtn);
     }
 
+    function _ctxIsHomeWorld(worldId) {
+        if (!worldId || typeof currentVrcUser === 'undefined' || !currentVrcUser) return false;
+        const home = currentVrcUser.homeLocation || currentVrcUser.rawJson?.homeLocation || '';
+        return home === worldId;
+    }
+
     function copyItem(kind, idVar, url, idLabel, linkLabel, idToast, linkToast, extra) {
         return { icon: 'content_copy', label: cm('copy', 'Copy'), action: () => copyWithToast(url, kind + '.share_copied', linkToast), submenuFn: btn => showCopySubmenu([
             { icon: 'id_card', label: cm(kind + '.copy_id', idLabel), text: idVar, toastKey: kind + '.id_copied', fallback: idToast },
@@ -612,7 +618,7 @@
         return '<div class="vn-ctx-tools">' + tools.filter(Boolean).map(item => {
             const idx = callbacks.length;
             callbacks.push(item);
-            const cls = ['vn-ctx-tool', item.submenuFn ? 'has-sub' : '', item.danger ? 'danger' : '', item.active ? 'active' : ''].filter(Boolean).join(' ');
+            const cls = ['vn-ctx-tool', item.submenuFn ? 'has-sub' : '', item.danger ? 'danger' : '', (item.active || item.filled) ? 'active' : ''].filter(Boolean).join(' ');
             return `<button class="${cls}" data-idx="${idx}" title="${esc(item.label || '')}"${item.disabled ? ' disabled' : ''}><span class="msi${item.filled ? ' msi-fill' : ''}">${item.icon}</span></button>`;
         }).join('') + '</div>';
     }
@@ -1056,8 +1062,8 @@
         const curVis = g.visibility || 'visible';
         const tools = [
             isRep
-                ? { icon: 'shield_person', filled: true, active: true, disabled: true, label: cm('group.representing', 'Representing this group'), action: () => {} }
-                : { icon: 'shield_person', label: cm('group.represent', 'Represent this group'), action: () => sendToCS({ action: 'vrcRepresentGroup', groupId: id }) },
+                ? { icon: 'shield', filled: true, active: true, disabled: true, label: cm('group.representing', 'Representing this group'), action: () => {} }
+                : { icon: 'shield', label: cm('group.represent', 'Represent this group'), action: () => sendToCS({ action: 'vrcRepresentGroup', groupId: id }) },
             groupCopy,
             _pinGroup,
         ];
@@ -1515,7 +1521,7 @@
             items.push({ icon: 'close', label: cm('instance.close', 'Close Instance'), action: () => removeMyInstance(loc), danger: true, confirm: true });
             items.push('sep');
         }
-        tools.push({ icon: 'home', label: cm('world.set_home', 'Set as Home'), action: () => sendToCS({ action: 'vrcSetHomeWorld', worldId }), confirm: true });
+        tools.push({ icon: 'home', filled: _ctxIsHomeWorld(worldId), active: _ctxIsHomeWorld(worldId), label: cm('world.set_home', 'Set as Home'), action: () => sendToCS({ action: 'vrcSetHomeWorld', worldId }), confirm: true });
         const instanceCopy = loc ? [{ icon: 'link', label: cm('copy_instance_link', 'Copy Instance Link'), action: () => copyInstanceLink(loc) }] : [];
         tools.push(copyItem('world', worldId, 'https://vrchat.com/home/world/' + worldId, 'Copy World ID', 'Copy World Link', 'World ID copied to clipboard', 'World link copied to clipboard', instanceCopy));
         const _pinInstWorld = (typeof pinsContextItem === 'function' && worldId) ? pinsContextItem('world', worldId) : null;
@@ -1590,7 +1596,7 @@
         } else {
             tools.push({ icon: 'favorite', label: cm('world.add_favorites', 'Add to Favorites'), submenuFn: btn => showFavGroupSubmenu(id, btn) });
         }
-        tools.push({ icon: 'home', label: cm('world.set_home', 'Set as Home'), action: () => sendToCS({ action: 'vrcSetHomeWorld', worldId: id }), confirm: true });
+        tools.push({ icon: 'home', filled: _ctxIsHomeWorld(id), active: _ctxIsHomeWorld(id), label: cm('world.set_home', 'Set as Home'), action: () => sendToCS({ action: 'vrcSetHomeWorld', worldId: id }), confirm: true });
         tools.push(copyItem('world', id, 'https://vrchat.com/home/world/' + id, 'Copy World ID', 'Copy World Link', 'World ID copied to clipboard', 'World link copied to clipboard'));
         const _pinWorld = (typeof pinsContextItem === 'function') ? pinsContextItem('world', id) : null;
         if (_pinWorld) tools.push(_pinWorld);
@@ -1696,7 +1702,7 @@
                 ? { icon: 'favorite', filled: true, label: cm('library.remove_favorite', 'Remove Favorite'), action: () => toggleFavorite(path) }
                 : { icon: 'favorite', label: cm('library.favorite', 'Favorite'), action: () => toggleFavorite(path) },
             isHidden
-                ? { icon: 'visibility_off', filled: true, active: true, label: cm('library.unhide', 'Unhide'), action: () => toggleHidden(path) }
+                ? { icon: 'visibility_off', filled: true, label: cm('library.unhide', 'Unhide'), action: () => toggleHidden(path) }
                 : { icon: 'visibility_off', label: cm('library.hide', 'Hide'), action: () => toggleHidden(path) },
             { icon: 'content_copy', label: cm('library.copy', 'Copy to Clipboard'), action: () => copyToClipboard(url, path, type) },
             { icon: 'folder_open', label: cm('library.reveal_in_explorer', 'Reveal in Explorer'), action: () => sendToCS({ action: 'revealInExplorer', path }) },
