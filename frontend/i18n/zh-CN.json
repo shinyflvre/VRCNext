@@ -420,6 +420,7 @@
   "timeline.list.header.profile": "头像",
   "timeline.list.header.user": "用户",
   "timeline.list.header.detail": "详情",
+  "timeline.list.show_more": "显示更多",
   "timeline.list.header.hint": "点击排序，拖动可调整顺序",
   "timeline.page_size": "每页条目数",
   "timeline.list.header.sort_hint": "点击排序",

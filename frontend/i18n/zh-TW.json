@@ -418,6 +418,7 @@
   "timeline.list.header.profile": "個人檔案",
   "timeline.list.header.user": "玩家",
   "timeline.list.header.detail": "詳細資訊",
+  "timeline.list.show_more": "顯示更多",
   "timeline.list.header.hint": "點選排序，拖動可調整順序",
   "timeline.page_size": "每頁條目數",
   "timeline.list.header.sort_hint": "點選排序",

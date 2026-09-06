@@ -420,6 +420,7 @@
   "timeline.list.header.profile": "プロフィール",
   "timeline.list.header.user": "ユーザー",
   "timeline.list.header.detail": "詳細",
+  "timeline.list.show_more": "もっと見る",
   "timeline.list.header.hint": "クリックで並べ替え、ドラッグで列を移動",
   "timeline.page_size": "1ページあたりの件数",
   "timeline.list.header.sort_hint": "クリックで並べ替え",

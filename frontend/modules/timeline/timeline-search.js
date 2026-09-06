@@ -148,6 +148,27 @@ function tlSearchPick(sourceKey, id) {
     tlRunSearchFilter();
 }
 
+function tlSearchSetChip(sourceKey, id, name, image) {
+    const input = document.getElementById('tlSearchInput');
+    if (input) input.value = name || '';
+    _tlSearchChip = { sourceKey, id: id || '', name: name || '?', image: image || '' };
+    _tlSearchRenderChip();
+    _tlSearchHideDropdown();
+    tlRunSearchFilter();
+}
+
+function openTimelineWithChip(mode, sourceKey, id, name, image, closeFn) {
+    const srcEl = window._tlMoreEl || null;
+    window._tlMoreEl = null;
+    const windowed = !!(srcEl && typeof _wmOwned === 'function' && _wmOwned(srcEl));
+    if (closeFn && !windowed && typeof window[closeFn] === 'function') { try { window[closeFn](); } catch (e) { console.warn('openTimelineWithChip close failed', e); } }
+    if (typeof showTab === 'function') showTab(12);
+    if (typeof setTlMode === 'function') setTlMode(mode);
+    if (mode === 'personal' && typeof setTlFilter === 'function') setTlFilter('all');
+    if (mode === 'friends' && typeof setFtFilter === 'function') setFtFilter('all');
+    tlSearchSetChip(sourceKey, id, name, image);
+}
+
 function tlSearchClearChip() {
     _tlSearchChip = null;
     const input = document.getElementById('tlSearchInput');

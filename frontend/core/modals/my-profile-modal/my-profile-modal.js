@@ -1110,7 +1110,7 @@ function switchMypFavPill(idx, btn) {
 
 function renderMypTimeline(userId, events) {
     if (!_mypIsSelf(userId)) return;
-    if (typeof drawMiniTimeline === 'function') drawMiniTimeline(events || [], document.getElementById('mypMiniTl'));
+    if (typeof drawMiniTimeline === 'function') drawMiniTimeline(events || [], document.getElementById('mypMiniTl'), currentVrcUser ? `openTimelineWithChip('personal','friends','${jsq(currentVrcUser.id || '')}','${jsq(currentVrcUser.displayName || '')}','${jsq(currentVrcUser.image || '')}','closeMyProfile')` : '');
 }
 
 function renderMypProfileInsights(payload) {

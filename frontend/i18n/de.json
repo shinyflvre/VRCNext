@@ -420,6 +420,7 @@
   "timeline.list.header.profile": "Profil",
   "timeline.list.header.user": "Benutzer",
   "timeline.list.header.detail": "Detail",
+  "timeline.list.show_more": "Mehr anzeigen",
   "timeline.list.header.hint": "Klicken zum Sortieren, ziehen zum Verschieben",
   "timeline.page_size": "Einträge pro Seite",
   "timeline.list.header.sort_hint": "Klicken zum Sortieren",

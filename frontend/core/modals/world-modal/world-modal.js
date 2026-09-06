@@ -15,6 +15,7 @@ function _getWorldBannerImg(worldId, src) {
 }
 let _wdLiveTimer = null;
 let _wdCurrentId = '';
+let _wdCurrentWorld = null;
 let _wdCurrentTab = 'info';
 let _wdRefreshing = false;
 const _wdRawJsonCache = {};
@@ -164,6 +165,7 @@ function _wdUpdateInstancesInPlace(w) {
 }
 
 function renderWorldSearchDetail(w) {
+    _wdCurrentWorld = w || null;
     if (w.id && w.rawJson) _wdRawJsonCache[w.id] = w.rawJson;
     if (typeof navUpdateLabel === 'function') navUpdateLabel(w.name || '');
     // Stop refresh spinner if running
@@ -445,20 +447,19 @@ function renderWdInstanceHistory(worldId, events) {
         return;
     }
 
-    el.innerHTML = _wdInstanceHistory.map(ev => {
+    el.innerHTML = tlMiniListHtml(_wdInstanceHistory.map(ev => {
         const meta   = typeof tlTypeMeta === 'function' ? tlTypeMeta(ev.type) : { icon: 'event', label: ev.type };
         const color  = { instance_join:'var(--accent)', photo:'var(--ok)', first_meet:'var(--cyan)', meet_again:'#6554FF', notification:'var(--warn)', avatar_switch:'#FF7043', video_url:'#29B6F6' }[ev.type] || 'var(--tx3)';
         const d      = new Date(ev.timestamp);
         const dt     = `${fmtShortDate(d)} | ${fmtTime(d)}`;
         const ei     = ev.id.replace(/'/g, "\\'");
         const detail = typeof _tlListData === 'function' ? (_tlListData(ev).detail || '') : '';
-        return `<div style="display:flex;align-items:center;gap:8px;padding:5px 2px;border-bottom:1px solid var(--brd);cursor:pointer;" onclick="openTlDetail('${ei}', true)">
-            <span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);white-space:nowrap;">${esc(dt)}</span>
-            <span class="msi" style="font-size:14px;color:${color};flex-shrink:0;">${meta.icon}</span>
-            <span style="font-size:calc(12px + var(--fs-off, 0px));">${esc(meta.label)}</span>
-            ${detail ? `<span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">${detail}</span>` : ''}
-        </div>`;
-    }).join('');
+        return `<tr class="tl-list-row" onclick="openTlDetail('${ei}', true)">
+            <td class="tl-list-dt">${esc(dt)}</td>
+            <td class="tl-list-type"><span class="msi tl-list-icon" style="color:${color}">${meta.icon}</span><span>${esc(meta.label)}</span></td>
+            <td class="tl-list-detail">${detail || (typeof tlListNaHtml === 'function' ? tlListNaHtml() : '')}</td>
+        </tr>`;
+    }).join(''), `openTimelineWithChip('personal','worlds','${jsq(worldId || '')}','${jsq((_wdCurrentWorld && _wdCurrentWorld.name) || '')}','${jsq((_wdCurrentWorld && (_wdCurrentWorld.thumbnailImageUrl || _wdCurrentWorld.imageUrl)) || '')}','closeWorldDetail')`);
 }
 
 let _wdCurrentWorldId = '';

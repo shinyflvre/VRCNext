@@ -745,6 +745,12 @@
             if (id) return buildWorldItems(id);
         }
 
+        const tsWorld = el.closest('.ts-item[data-world-id]');
+        if (tsWorld && tsWorld.dataset.worldId) return buildWorldItems(tsWorld.dataset.worldId);
+
+        const tsUser = el.closest('.ts-item[data-user-id]');
+        if (tsUser && tsUser.dataset.userId) return buildFriendItems(tsUser.dataset.userId, tsUser);
+
         const miniWorld = el.closest('#fdContentWorlds .vrcn-mini-content');
         if (miniWorld) {
             const id = miniWorld.dataset.worldId;
@@ -830,6 +836,18 @@
 
         if (el.closest('#sidebarEl')) {
             return [{ icon: 'tune', label: cm('nav_edit', 'Edit Navigation'), action: () => openNavEditor() }];
+        }
+
+        const navEl = el.closest('[onclick*="navOpenModal("]');
+        if (navEl) {
+            const nm = (navEl.getAttribute('onclick') || '').match(/navOpenModal\('(friend|worldSearch|world|group|avatar)','([^']+)'/);
+            if (nm) {
+                const navId = nm[2];
+                if (nm[1] === 'friend' && navId.startsWith('usr_')) return buildFriendItems(navId, navEl);
+                if ((nm[1] === 'worldSearch' || nm[1] === 'world') && navId.startsWith('wrld_')) return buildWorldItems(navId);
+                if (nm[1] === 'group' && navId.startsWith('grp_')) return buildGroupItems(navId);
+                if (nm[1] === 'avatar' && navId.startsWith('avtr_')) return buildAvatarItems(navId);
+            }
         }
 
         return null;

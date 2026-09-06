@@ -12,6 +12,13 @@
 .tl-list-wrap {
     padding: 12px 0 24px;
 }
+.tl-list-mini { padding: 0; overflow-x: auto; }
+.tl-list-mini .tl-list-table thead th { height: 32px; padding: 0 10px; }
+.tl-list-mini .tl-list-row td { height: 34px; padding: 0 10px; }
+.tl-list-mini .tl-list-type { width: 170px; }
+.tl-list-th-flex { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tl-list-more { border: none; background: transparent; padding: 0; cursor: pointer; font: inherit; font-size: calc(10px + var(--fs-off, 0px)); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--accent-lt); }
+.tl-list-more:hover { color: var(--accent); }
 
 .tl-list-table {
     width: 100%;

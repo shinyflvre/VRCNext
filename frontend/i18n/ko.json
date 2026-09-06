@@ -418,6 +418,7 @@
   "timeline.list.header.profile": "프로필",
   "timeline.list.header.user": "유저",
   "timeline.list.header.detail": "상세 정보",
+  "timeline.list.show_more": "더 보기",
   "timeline.list.header.hint": "클릭하여 정렬, 드래그하여 순서 변경",
   "timeline.page_size": "페이지당 항목 수",
   "timeline.list.header.sort_hint": "클릭하여 정렬",

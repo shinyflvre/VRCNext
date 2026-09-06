@@ -942,6 +942,18 @@ function _tlListPlayerAvatars(players, max) {
     return html;
 }
 
+function tlMiniListHtml(rowsHtml, moreOnclick) {
+    return `<div class="tl-list-wrap tl-list-mini"><table class="tl-list-table">
+        <colgroup><col style="width:150px"><col style="width:170px"><col></colgroup>
+        <thead><tr>
+            <th>${esc(t('timeline.list.header.date_time', 'Date / Time'))}</th>
+            <th>${esc(t('timeline.list.header.type', 'Type'))}</th>
+            <th><div class="tl-list-th-flex"><span>${esc(t('timeline.list.header.detail', 'Detail'))}</span>${moreOnclick ? `<button type="button" class="tl-list-more" onclick="window._tlMoreEl=this;${moreOnclick}">${esc(t('timeline.list.show_more', 'Show more'))}</button>` : ''}</div></th>
+        </tr></thead>
+        <tbody>${rowsHtml}</tbody>
+    </table></div>`;
+}
+
 function _tlListData(ev) {
     switch (ev.type) {
         case 'instance_join':
