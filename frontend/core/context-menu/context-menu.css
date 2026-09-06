@@ -36,6 +36,7 @@
 .vn-ctx-item.danger { color: var(--err); }
 .vn-ctx-item.danger .msi { color: var(--err); opacity: .75; }
 .vn-ctx-item.danger:hover:not([disabled]) { background: rgba(255,75,85,.08); color: var(--err); }
+.vn-ctx-item.danger:hover:not([disabled]) .msi { color: var(--err); opacity: 1; }
 .vn-ctx-item.confirm-pending {
     background: rgba(255,75,85,.12) !important;
     color: var(--err) !important;
