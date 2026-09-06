@@ -8,6 +8,7 @@
 - System stats show VRAM as used/total, e.g. **VRAM 3.7/8GB**.
 
 **Context Menu**
+- **Share Profile / World / Group / Avatar** became a **Copy** submenu with **Copy ID** and **Copy Link**.
 - Right-click on the **by username** badge in Group, World and Avatar modals and on the **Organizer** in the Event modal opens the matching user or group context menu.
 - Right-click on entries in Most Visited Worlds and Interacted The Most With opens the regular world or user context menu.
 
@@ -18,3 +19,4 @@
 - Instance History uses the same list design as the Timeline page, with a **Show more** link that opens the Timeline with the world preselected in the search.
 
 **Bug Fixes**
+- Context menu no longer flickers on open
