@@ -72,6 +72,203 @@ const SmartSearch = (() => {
         });
     }
 
+    // ---- Tools index (tool pages + VRChat modals) ----
+
+    let _toolsIndex = null;
+
+    const TOOL_MODAL_OVERLAYS = {
+        openVrcConfigModal:        'modalVrcConfig',
+        openVrcLaunchOptionsModal: 'modalVrcLaunchOptions',
+        openMessageTemplatesModal: 'modalMessageTemplates',
+        openLogViewerModal:        'modalLogViewer',
+    };
+    const TOOL_CONTROL_SEL = 'input[type="checkbox"], input[type="range"], select, input[type="text"], input[type="number"], input[type="password"], textarea';
+    const TOOL_STOP_SEL = '.vrcn-panel-card, .modal-card, .modal-box, .tab';
+
+    function _ssText(el) {
+        if (!el) return '';
+        const clone = el.cloneNode(true);
+        clone.querySelectorAll('.msi, select, input, textarea, button, .toggle').forEach(n => n.remove());
+        return clone.textContent.replace(/\s+/g, ' ').trim();
+    }
+
+    function _ssHeaderText(hdr) {
+        const lab = [...hdr.querySelectorAll('[data-i18n]')].find(e => !e.classList.contains('msi') && !e.closest('select, button'));
+        return _ssText(lab) || _ssText(hdr);
+    }
+
+    function _ssLabelIn(row) {
+        const i18nEl = [...row.querySelectorAll('[data-i18n]')].find(el =>
+            !el.classList.contains('msi') && el.tagName !== 'OPTION' && !el.closest('.toggle, button, select'));
+        if (i18nEl) return _ssText(i18nEl);
+        const textEl = [...row.querySelectorAll('span, div, label')].find(n =>
+            !n.closest('.toggle, button, select') && !n.querySelector(TOOL_CONTROL_SEL) && /[A-Za-zÀ-￿]{3,}/.test(_ssText(n)));
+        return _ssText(textEl);
+    }
+
+    function _ssCtrlType(ctrl) {
+        if (!ctrl) return 'section';
+        if (ctrl.tagName === 'SELECT') return 'select';
+        if (ctrl.type === 'checkbox') return 'toggle';
+        if (ctrl.type === 'range') return 'slider';
+        return 'input';
+    }
+
+    function _ssCardSection(el) {
+        const card = el.closest('.vrcn-panel-card');
+        if (!card) return '';
+        const hdr = card.querySelector('.vrcn-panel-card-header');
+        return (hdr && !hdr.contains(el)) ? _ssHeaderText(hdr) : '';
+    }
+
+    function _ssSectionOf(el, container) {
+        const body = el.closest('.cb-ord-body');
+        if (body) {
+            const head = body.parentElement?.querySelector('.cb-ord-row');
+            const name = head ? _ssLabelIn(head) : '';
+            if (name) return name;
+        }
+        const cardSection = _ssCardSection(el);
+        if (cardSection) return cardSection;
+        let node = el;
+        while (node && node !== container && !node.matches('.vrcn-panel-card')) {
+            let sib = node.previousElementSibling;
+            while (sib) {
+                if (sib.classList.contains('sf-section-label')) return _ssText(sib);
+                if (sib.classList.contains('vrcn-panel-card-header')) return _ssHeaderText(sib);
+                sib = sib.previousElementSibling;
+            }
+            node = node.parentElement;
+        }
+        return '';
+    }
+
+    function _buildToolsIndex() {
+        _toolsIndex = [];
+        const seen = new Set();
+        const toolsLabel = (typeof t === 'function') ? t('nav.tools', 'Tools') : 'Tools';
+        const linux = !!window._isLinuxUi;
+
+        const add = (ctx, label, type, targets, section, desc, path) => {
+            label = (label || '').trim();
+            if (!label) return;
+            const key = `${ctx.key}|${label.toLowerCase()}|${(section || '').toLowerCase()}`;
+            if (seen.has(key)) return;
+            seen.add(key);
+            _toolsIndex.push({
+                ctx, label, type, targets, section: section || '',
+                desc: (desc || '').toLowerCase(),
+                path: path || [ctx.group, ctx.label, section].filter(Boolean).join(' › '),
+            });
+        };
+
+        const scan = (ctx, container) => {
+            const covered = new Set();
+            const cover = (els) => els.forEach(x => {
+                covered.add(x);
+                x.querySelectorAll(TOOL_CONTROL_SEL).forEach(c => covered.add(c));
+            });
+
+            container.querySelectorAll('.vrcn-panel-card-header').forEach(hdr => {
+                add(ctx, _ssHeaderText(hdr), 'section', [hdr.closest('.vrcn-panel-card') || hdr], '', '');
+            });
+
+            container.querySelectorAll('.sf-toggle-row').forEach(row => {
+                const ctrl = row.querySelector(TOOL_CONTROL_SEL);
+                if (!ctrl) return;
+                cover([row]);
+                const next = row.nextElementSibling;
+                const desc = _ssText(row.querySelector('.sf-desc, .set-desc'))
+                    || ((next && next.matches('.set-desc, .sf-desc')) ? _ssText(next) : '');
+                add(ctx, _ssLabelIn(row), _ssCtrlType(ctrl), [row], _ssSectionOf(row, container), desc);
+            });
+
+            container.querySelectorAll('label[data-i18n], .sf-section-label[data-i18n]').forEach(lab => {
+                if (lab.closest('.sf-toggle-row') || lab.classList.contains('toggle') || lab.classList.contains('msi')) return;
+                const label = _ssText(lab);
+                if (!label) return;
+                const next = lab.nextElementSibling;
+                const parent = lab.parentElement;
+                let ctrl = null, targets = [lab];
+                if (parent && !parent.matches(TOOL_STOP_SEL) && parent !== container
+                    && parent.querySelectorAll('label[data-i18n], .sf-section-label').length === 1) {
+                    ctrl = parent.querySelector(TOOL_CONTROL_SEL);
+                    if (ctrl) targets = [parent];
+                }
+                if (!ctrl && next && !next.matches('label, .sf-section-label, .vrcn-panel-card-header')) {
+                    ctrl = next.matches(TOOL_CONTROL_SEL) ? next : next.querySelector(TOOL_CONTROL_SEL);
+                    if (ctrl) targets = [lab, next];
+                }
+                if (ctrl) cover(targets);
+                const desc = (next && next.matches('.set-desc, .sf-desc')) ? _ssText(next) : '';
+                add(ctx, label, _ssCtrlType(ctrl), targets, ctrl ? _ssSectionOf(lab, container) : _ssCardSection(lab), desc);
+            });
+
+            container.querySelectorAll(TOOL_CONTROL_SEL).forEach(ctrl => {
+                if (covered.has(ctrl) || ctrl.closest('.sf-toggle-row')) return;
+                let row = (ctrl.closest('label.toggle') || ctrl).parentElement;
+                for (let i = 0; i < 3 && row && row !== container && !row.matches(TOOL_STOP_SEL); i++, row = row.parentElement) {
+                    if (covered.has(row)) return;
+                    const label = _ssLabelIn(row);
+                    if (!label) continue;
+                    cover([row]);
+                    add(ctx, label, _ssCtrlType(ctrl), [row], _ssSectionOf(row, container), _ssText(row.querySelector('.sf-desc, .set-desc')));
+                    return;
+                }
+            });
+        };
+
+        if (typeof NAV_ITEMS_DEF !== 'undefined' && typeof NAV_DEFAULT_LAYOUT !== 'undefined') {
+            const folder = NAV_DEFAULT_LAYOUT.find(e => e.type === 'folder' && e.id === 'folder-tools');
+            for (const key of (folder ? folder.items : [])) {
+                const def = NAV_ITEMS_DEF[key];
+                if (!def || (def.windowsOnly && linux)) continue;
+                const container = document.getElementById('tab' + def.tab);
+                if (!container || !container.children.length) continue;
+                const label = (typeof t === 'function') ? t(def.i18n, def.label) : def.label;
+                const tab = def.tab;
+                scan({ key, label, group: '', icon: def.icon, activate: () => { if (typeof showTab === 'function') showTab(tab); } }, container);
+            }
+        }
+
+        document.querySelectorAll('#tbMenuTools .tb-dd-item[onclick]').forEach(btn => {
+            const m = (btn.getAttribute('onclick') || '').match(/^\s*(\w+)\(\)/);
+            const fn = m && m[1];
+            const overlayId = fn && TOOL_MODAL_OVERLAYS[fn];
+            if (!overlayId) return;
+            const label = _ssText(btn);
+            const icon = btn.querySelector('.msi')?.textContent.trim() || 'tune';
+            const groupBtn = btn.closest('.tb-dd-submenu')?.querySelector(':scope > .tb-dd-item');
+            const group = groupBtn ? _ssText(groupBtn) : '';
+            const ctx = { key: overlayId, label, group, icon, activate: () => { if (typeof window[fn] === 'function') window[fn](); } };
+            add(ctx, label, 'modal', [], '', '', [toolsLabel, group].filter(Boolean).join(' › '));
+            const container = document.getElementById(overlayId);
+            if (container && container.children.length) scan(ctx, container);
+        });
+    }
+
+    function _revealToolTargets(targets) {
+        targets.forEach(el => {
+            const block = el.closest('.cb-ord-body')?.closest('.cb-ord-block');
+            if (block) block.classList.add('cb-open');
+        });
+        let els = targets.filter(el => el.offsetParent !== null);
+        if (!els.length && targets.length) {
+            const card = targets[0].closest('.vrcn-panel-card, .modal-card');
+            if (card && card.offsetParent !== null) els = [card];
+        }
+        if (!els.length) return;
+        els[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        els.forEach(el => {
+            if (el.matches(TOOL_CONTROL_SEL)) return;
+            const cls = el.matches('.vrcn-panel-card, .modal-card') ? 'ss-tool-card-highlight' : 'ss-setting-highlight';
+            el.classList.remove(cls);
+            void el.offsetWidth;
+            el.classList.add(cls);
+            setTimeout(() => el.classList.remove(cls), 1400);
+        });
+    }
+
     function _patchCalEvents() {
         if (typeof renderCalendarEvents !== 'function') return;
         const _orig = renderCalendarEvents;
@@ -275,6 +472,47 @@ const SmartSearch = (() => {
                 }, 220);
             },
         },
+        {
+            key: 'tools',
+            labelKey: 'nav.tools',
+            label: 'Tools',
+            max: 8,
+            getData: () => {
+                if (_toolsIndex === null) {
+                    _buildToolsIndex();
+                    if (!_toolsIndex.length) { _toolsIndex = null; return []; }
+                }
+                return _toolsIndex || [];
+            },
+            match: (item, q) =>
+                item.label.toLowerCase().includes(q) ||
+                item.path.toLowerCase().includes(q) ||
+                item.desc.includes(q),
+            rank: (item, q) =>
+                item.label.toLowerCase().includes(q) ? 0 :
+                item.path.toLowerCase().includes(q) ? 1 : 2,
+            getImg: () => ({ src: '', circle: false }),
+            getName: (item) => item.label,
+            getSub: (item) => item.path,
+            renderAvatar: (item) => {
+                const iconMap = { toggle: 'toggle_on', slider: 'tune', select: 'arrow_drop_down_circle', input: 'edit' };
+                const icon = iconMap[item.type] || item.ctx.icon || 'build';
+                const wrap = document.createElement('div');
+                wrap.className = 'ss-item-img-placeholder';
+                wrap.style.cssText = 'border-radius:8px;';
+                const span = document.createElement('span');
+                span.className = 'msi';
+                span.style.cssText = 'font-size:16px;color:var(--accent);';
+                span.textContent = icon;
+                wrap.appendChild(span);
+                return wrap;
+            },
+            onOpen: (item) => {
+                item.ctx.activate();
+                if (!item.targets.length) return;
+                setTimeout(() => _revealToolTargets(item.targets), 220);
+            },
+        },
     ];
 
     const MAX_PER_SECTION = 5;
@@ -284,7 +522,9 @@ const SmartSearch = (() => {
         if (!q) return [];
         const out = [];
         for (const section of SECTIONS) {
-            const hits = section.getData().filter(item => section.match(item, q)).slice(0, MAX_PER_SECTION);
+            let hits = section.getData().filter(item => section.match(item, q));
+            if (section.rank) hits.sort((a, b) => section.rank(a, q) - section.rank(b, q));
+            hits = hits.slice(0, section.max || MAX_PER_SECTION);
             if (hits.length) out.push({ section, hits });
         }
         return out;

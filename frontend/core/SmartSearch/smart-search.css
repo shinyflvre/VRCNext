@@ -389,3 +389,13 @@
     border-radius: 8px;
     animation: ss-setting-pulse 1.4s ease forwards;
 }
+
+@keyframes ss-tool-card-pulse {
+    0%   { box-shadow: 0 0 0 0 transparent; }
+    25%  { box-shadow: 0 0 0 2px var(--accent); }
+    100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+.ss-tool-card-highlight {
+    animation: ss-tool-card-pulse 1.4s ease;
+}

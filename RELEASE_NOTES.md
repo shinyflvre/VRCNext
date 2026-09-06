@@ -2,6 +2,13 @@
 
 Smaller, more compact context menus, plus saving for stickers and prints (Taskbar > Tools > VRChat > VRChat Config).
 
+**Smart Search**
+Smart Search is now 4x better. Before, you could search for settings, tools, users, groups, events, and other content. Now, you can find every single option inside VRCNext.
+Looking for print and sticker saving but can't find it? Now you can.
+Looking for a specific option but forgot which tool it belongs to? Smart Search will find it for you.
+
+**Community Suggested**
+
 **Saving Prints and Stickers**
 - New **Instance Stickers** section in the VRChat Config modal, next to Instance Prints. Stickers spawned in your instance are saved once as `player_date_stickerId.png` to a folder you choose.
 
@@ -33,6 +40,7 @@ Smaller, more compact context menus, plus saving for stickers and prints (Taskba
 - Timeline, Last Activity and Instance History use the Timeline page list design, with **Show more** opening the Timeline preselected for that user or world.
 
 **Changes**
+- Smart Search (Ctrl K) now searches all tools: options, sliders, dropdowns and section headers of every tool page and of the VRChat Config, Launch Options, Message Templates and Log Viewer modals. Selecting a result opens the tool or modal and highlights the option, like Settings results.
 - Text now uses ClearType (subpixel antialiasing) instead of grayscale.
 - Updated some badge colors.
 - Removed the glow from VRC+ and local group badges.
