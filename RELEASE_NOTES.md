@@ -50,5 +50,6 @@ Looking for a specific option but forgot which tool it belongs to? Smart Search 
 - Context menus use the configured badge base color.
 - Context menus: icons of red actions like Unfriend or Block stay red on hover instead of turning gray.
 - Taskbar: the clock and date are no longer cut off when the menu labels are longer, for example in French. The menu area now grows with its content.
+- Kikitan XD: Kawai mode with Local Models keeps the spoken or translated sentence and picks a mood-matching kaomoji. Small local models previously answered with just ^-^.
 - Timeline: instance events no longer show a few minutes of Time Spent for players who stayed the whole session. Leave times now come from the VRChat log, so restarting mid-instance no longer creates a bogus second leave. Existing entries are repaired on next start.
 - Profile and group icons in compact modals are 64px instead of 61px, for pixel-sharp rendering at 100% scale.
