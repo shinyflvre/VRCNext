@@ -600,6 +600,29 @@ public class NotificationsController
         }
         else notifLoc = "";
 
+        var notifTypeStr = (string)n.type;
+        string? notifGroupId = null;
+        if (notifTypeStr.StartsWith("group."))
+        {
+            JObject? dataObj = null;
+            try
+            {
+                var rawData = n._data as JToken;
+                if (rawData is JObject djo) dataObj = djo;
+                else if (rawData?.Type == JTokenType.String) { try { dataObj = JObject.Parse(rawData.ToString()); } catch { } }
+            }
+            catch { }
+            dataObj ??= detObj;
+            notifGroupId = dataObj?["groupId"]?.ToString();
+            if (string.IsNullOrEmpty(notifGroupId))
+            {
+                var ownerId = dataObj?["ownerId"]?.ToString();
+                if (!string.IsNullOrEmpty(ownerId) && ownerId.StartsWith("grp_")) notifGroupId = ownerId;
+            }
+            if (string.IsNullOrEmpty(notifGroupId))
+                notifGroupId = ExtractGroupIdFromLink((string?)n._link);
+        }
+
         var notifEv = new TimelineService.TimelineEvent
         {
             Type        = "notification",
@@ -608,7 +631,7 @@ public class NotificationsController
             NotifType   = n.type,
             NotifTitle  = (string?)n._title ?? "",
             SenderName  = n.senderUsername,
-            SenderId    = n.senderUserId,
+            SenderId    = !string.IsNullOrEmpty(notifGroupId) ? notifGroupId : (senderUserId ?? ""),
             SenderImage = senderImg,
             Message     = msgText,
             Location    = notifLoc,
@@ -670,38 +693,9 @@ public class NotificationsController
 
         // For group notifications: fetch group name + icon from _data
         // (runs for ALL group.* types — even when senderUserId is present, we want the group image)
-        var notifTypeStr = (string)n.type;
         if (notifTypeStr.StartsWith("group.") && _core.VrcApi.IsLoggedIn)
         {
-            JObject? dataObj = null;
-            try
-            {
-                var rawData = n._data as JToken;
-                if (rawData is JObject djo) dataObj = djo;
-                else if (rawData?.Type == JTokenType.String) { try { dataObj = JObject.Parse(rawData.ToString()); } catch { } }
-            }
-            catch { }
-            // Also try details (v1 group notifications)
-            if (dataObj == null)
-            {
-                try
-                {
-                    var rawDet = n.details as JToken;
-                    if (rawDet is JObject djo2) dataObj = djo2;
-                    else if (rawDet?.Type == JTokenType.String) { try { dataObj = JObject.Parse(rawDet.ToString()); } catch { } }
-                }
-                catch { }
-            }
-            // groupId can be in "groupId" directly, or in "ownerId" (group.event.created uses ownerId = grp_xxx)
-            var groupId = dataObj?["groupId"]?.ToString();
-            if (string.IsNullOrEmpty(groupId))
-            {
-                var ownerId = dataObj?["ownerId"]?.ToString();
-                if (!string.IsNullOrEmpty(ownerId) && ownerId.StartsWith("grp_")) groupId = ownerId;
-            }
-            // Fallback: extract from _link
-            if (string.IsNullOrEmpty(groupId))
-                groupId = ExtractGroupIdFromLink((string?)n._link);
+            var groupId = notifGroupId;
             if (!string.IsNullOrEmpty(groupId))
             {
                 var evId    = notifEv.Id;

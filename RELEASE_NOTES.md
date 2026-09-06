@@ -27,7 +27,7 @@ Smaller, more compact context menus, plus saving for stickers and prints (Taskba
 
 **Timeline**
 - List view: user names in the **User** column open the profile, avatar names in the **Detail** column open the avatar.
-- Group notifications (announcements, events, invites and other group entries) show the group as a link in the **User** column, and the detail popup has a **View Group** button.
+- Group notifications (announcements, events, invites and other group entries) show the group as a link in the **User** column, and the detail popup has a **View Group** button. New notification events store the sender user or group id directly, older entries resolve the group from the cached icon.
 
 **User & World Modals**
 - Timeline, Last Activity and Instance History use the Timeline page list design, with **Show more** opening the Timeline preselected for that user or world.
