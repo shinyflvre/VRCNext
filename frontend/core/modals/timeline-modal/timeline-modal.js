@@ -407,10 +407,13 @@ function renderTlDetailNotif(ev, el) {
         ev.message    ? _tlMr(esc(t('timeline.detail.message', 'Message')), esc(ev.message))    : '',
     ].filter(Boolean).join('');
 
+    const notifGid = tlNotifGroupId(ev);
+    const senderIsUser = !!ev.senderId && !ev.senderId.startsWith('grp_');
     const actions = [
         hasInst ? `<button class="vrcn-button-round vrcn-btn-join" onclick="sendToCS({action:'vrcJoinFriend',location:'${jsq(loc)}'})"><span class="msi" style="font-size:16px;">play_arrow</span> ${esc(t('timeline.actions.join_instance', 'Join Instance'))}</button>` : '',
         hasInst ? `<button class="vrcn-button-round" title="${esc(t('timeline.actions.copy_instance_link', 'Copy Instance Link'))}" onclick="copyInstanceLink('${jsq(loc)}')"><span class="msi" style="font-size:16px;">content_copy</span></button>` : '',
-        ev.senderId ? `<button class="vrcn-button-round" onclick="navOpenModal('friend','${jsq(ev.senderId)}','${jsq(ev.senderName || '')}')">${esc(t('timeline.actions.view_profile', 'View Profile'))}</button>` : '',
+        notifGid ? `<button class="vrcn-button-round vrcn-btn-join" onclick="navOpenModal('group','${jsq(notifGid)}','${jsq(ev.senderName || '')}')">${esc(t('timeline.actions.view_group', 'View Group'))}</button>` : '',
+        senderIsUser ? `<button class="vrcn-button-round" onclick="navOpenModal('friend','${jsq(ev.senderId)}','${jsq(ev.senderName || '')}')">${esc(t('timeline.actions.view_profile', 'View Profile'))}</button>` : '',
     ].filter(Boolean).join('');
 
     el.innerHTML = `${_tlBar(ev.senderName || typeLabel)}<div class="fd-content" style="padding:20px 0;">
@@ -960,6 +963,21 @@ function tlListUserLink(name, userId) {
     return `<span class="tl-list-link" title="${esc(t('timeline.actions.view_profile', 'View Profile'))}" onclick="if(typeof tlEditMode!=='undefined'&&tlEditMode)return;event.stopPropagation();navOpenModal('friend','${jsq(userId)}','${jsq(name || '')}')">${label}</span>`;
 }
 
+function tlNotifGroupId(ev) {
+    if (!ev || typeof ev.notifType !== 'string' || !ev.notifType.startsWith('group.')) return '';
+    const re = /grp_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/;
+    const fromId = (ev.senderId || '').match(re);
+    if (fromId) return fromId[0];
+    const fromImg = (ev.senderImage || '').match(re);
+    return fromImg ? fromImg[0] : '';
+}
+
+function tlListGroupLink(name, groupId) {
+    const label = esc(name || t('timeline.unknown', 'Unknown'));
+    if (!groupId) return label;
+    return `<span class="tl-list-link" title="${esc(t('timeline.actions.view_group', 'View Group'))}" onclick="if(typeof tlEditMode!=='undefined'&&tlEditMode)return;event.stopPropagation();navOpenModal('group','${jsq(groupId)}','${jsq(name || '')}')">${label}</span>`;
+}
+
 function tlListAvatarLink(name, avatarId) {
     const label = esc(name || t('timeline.unknown_avatar', 'Unknown Avatar'));
     if (!avatarId) return label;
@@ -978,7 +996,8 @@ function _tlListData(ev) {
             return { userHtml: tlListUserLink(ev.userName, ev.userId), detail: ev.worldName ? esc(ev.worldName) : '' };
         case 'notification': {
             const sender = ev.senderName || '';
-            const userHtml = sender ? tlListUserLink(sender, ev.senderId) : '';
+            const notifGid = tlNotifGroupId(ev);
+            const userHtml = sender ? (notifGid ? tlListGroupLink(sender, notifGid) : tlListUserLink(sender, ev.senderId)) : '';
             if (sender && ev.notifType === 'invite') {
                 const s = ev.worldName
                     ? tf('timeline.notif.invited_you_to', { name: sender, world: ev.worldName }, `${sender} invited you to ${ev.worldName}`)

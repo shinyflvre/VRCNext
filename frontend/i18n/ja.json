@@ -406,6 +406,7 @@
   "timeline.actions.copy_instance_link": "インスタンスリンクをコピー",
   "timeline.actions.view_profile": "プロフィールを表示",
   "timeline.actions.view_avatar": "アバターを表示",
+  "timeline.actions.view_group": "グループを表示",
   "timeline.actions.open_world": "ワールドを開く",
   "timeline.actions.full_size": "フルサイズ",
   "timeline.actions.open_url": "URLを開く",

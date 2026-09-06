@@ -404,6 +404,7 @@
   "timeline.actions.copy_instance_link": "인스턴스 링크 복사",
   "timeline.actions.view_profile": "프로필 보기",
   "timeline.actions.view_avatar": "아바타 보기",
+  "timeline.actions.view_group": "그룹 보기",
   "timeline.actions.open_world": "월드 열기",
   "timeline.actions.full_size": "전체 크기",
   "timeline.actions.open_url": "URL 열기",

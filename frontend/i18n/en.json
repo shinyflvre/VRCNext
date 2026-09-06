@@ -404,6 +404,7 @@
   "timeline.actions.copy_instance_link": "Copy Instance Link",
   "timeline.actions.view_profile": "View Profile",
   "timeline.actions.view_avatar": "View Avatar",
+  "timeline.actions.view_group": "View Group",
   "timeline.actions.open_world": "Open World",
   "timeline.actions.full_size": "Full Size",
   "timeline.actions.open_url": "Open URL",
