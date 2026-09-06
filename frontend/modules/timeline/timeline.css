@@ -471,8 +471,7 @@
 
 .tl-date {
     font-size: calc(9px + var(--fs-off, 0px));
-    color: var(--tx2);
-    opacity: .7;
+    color: color-mix(in srgb, var(--tx2) 70%, transparent);
 }
 
 .tl-card-body {

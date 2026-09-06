@@ -29,6 +29,7 @@ This update makes context menus smaller and more compact, and adds saving for st
 - Timeline, Last Activity and Instance History now use the Timeline page list design, with a **Show more** link that opens the Timeline with the user or world preselected in the search.
 
 **Changes**
+- Text rendering: all text now uses ClearType (subpixel antialiasing) instead of grayscale.
 - Updated some badge colors.
 - Removed the glow effect from VRC+ and local group badges.
 

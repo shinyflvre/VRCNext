@@ -91,7 +91,7 @@
     background: linear-gradient(135deg, rgba(255,100,130,.13), rgba(220,50,100,.07));
     border: 1px solid rgba(255,100,130,.22);
     text-align: center;
-    animation: boop-pop .45s cubic-bezier(.34,1.56,.64,1) both;
+    animation: boop-pop .45s cubic-bezier(.34,1.56,.64,1);
 }
 @keyframes boop-pop {
     from { opacity: 0; transform: scale(.65); }
@@ -157,8 +157,7 @@
 .scm-thumb img.scm-img-loaded { display: block; }
 .scm-thumb-icon {
     font-size: calc(32px + var(--fs-off, 0px));
-    color: var(--tx2);
-    opacity: .45;
+    color: color-mix(in srgb, var(--tx2) 45%, transparent);
 }
 .scm-thumb.scm-has-image .scm-thumb-icon { display: none; }
 @keyframes scm-shimmer {

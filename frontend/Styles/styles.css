@@ -126,8 +126,6 @@
     pointer-events: none;
     z-index: 2;
     opacity: 0;
-    animation: tt-fade-l linear both;
-    animation-timeline: scroll(nearest inline);
 }
 .tt-scroll::before, .tl-filter-row::before {
     left: 0;
@@ -138,10 +136,22 @@
     right: 0;
     margin-left: calc(-24px - var(--tt-gap, 8px));
     background: linear-gradient(to left, var(--tab-card-bg, var(--bg-input)), transparent);
-    animation-name: tt-fade-r;
 }
-@keyframes tt-fade-l { from { opacity: 0; } 4% { opacity: 1; } to { opacity: 1; } }
-@keyframes tt-fade-r { from { opacity: 1; } 96% { opacity: 1; } to { opacity: 0; } }
+.tt-scroll.tt-fade-l::before, .tl-filter-row.tt-fade-l::before,
+.tt-scroll.tt-fade-r::after, .tl-filter-row.tt-fade-r::after { opacity: 1; }
+
+/* ClearType: floating panels keep their look, their direct children get an own opaque layer */
+#vn-ctx-menu > *, #vn-ctx-submenu > *, .tb-dropdown > *, .tb-dd-sub-drop > *, .tb-modal-dropdown > *,
+.notif-panel > *, .tl-date-picker > *, .notif-toast > *, .fot-ctx-menu > *,
+.nav-folder-popout > *, .fd-vrc-badge-tooltip-global > *, .dash-pick-menu > *, .ne-icon-picker > *,
+.vro-zone-menu > *, #apiHealthPanel > *, .ss-dropdown > *, #messengerPanel > *, .photo-detail-box > *,
+.gp-modal > *, .launch-modal > *, .ss-modal-box > *, .vn-tooltip-inner { backface-visibility: hidden; }
+:where(#vn-ctx-menu, #vn-ctx-submenu, .tb-dropdown, .tb-dd-sub-drop, .tb-modal-dropdown, .notif-panel,
+.tl-date-picker, .notif-toast, .fot-ctx-menu, .nav-folder-popout, .fd-vrc-badge-tooltip-global, .dash-pick-menu,
+.ne-icon-picker, .vro-zone-menu, #apiHealthPanel, .ss-dropdown, #messengerPanel, .photo-detail-box, .gp-modal,
+.launch-modal, .ss-modal-box) > :where(*) { background-color: var(--bg-card); }
+.vn-tooltip-inner { display: block; background: var(--bg-card); margin: 0 -1px; padding: 0 1px; }
+
 
 .vrcn-edit-bar {
     position: sticky;

@@ -28,16 +28,15 @@
 
 .ne-handle {
     font-size: calc(18px + var(--fs-off, 0px)) !important;
-    color: var(--tx2);
+    color: color-mix(in srgb, var(--tx2) 60%, transparent);
     cursor: grab;
     user-select: none;
     flex-shrink: 0;
-    opacity: 0.6;
-    transition: opacity .15s;
+    transition: color .15s;
 }
 
 .ne-row:hover .ne-handle {
-    opacity: 1;
+    color: var(--tx2);
 }
 
 .ne-handle:active {
@@ -98,14 +97,12 @@
 }
 
 .ne-del-btn {
-    color: var(--err);
-    opacity: 0.6;
+    color: color-mix(in srgb, var(--err) 60%, transparent);
 }
 
 .ne-del-btn:hover {
     color: var(--err) !important;
     background: rgba(255, 75, 85, .08) !important;
-    opacity: 1;
 }
 
 /* Folder section */
@@ -163,13 +160,16 @@
 
 /* Hidden rows */
 
-.ne-hidden-row {
-    opacity: 0.45;
+.ne-hidden-row { position: relative; }
+.ne-hidden-row::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: color-mix(in srgb, var(--bg-card) 55%, transparent);
+    pointer-events: none;
 }
-
-.ne-hidden-row:hover {
-    opacity: 0.75;
-}
+.ne-hidden-row:hover::after { background: color-mix(in srgb, var(--bg-card) 25%, transparent); }
 
 /* Drag drop indicators */
 

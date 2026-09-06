@@ -48,9 +48,10 @@
 .wm-window > .modal-overlay > .modal-box {
     max-width: none;
     max-height: calc(100vh - var(--tb-h) - 72px);
-    box-shadow: 0 24px 70px rgba(0,0,0,.6);
     animation: none;
+    contain: paint;
 }
+.wm-window > .modal-overlay::after { box-shadow: 0 24px 70px rgba(0,0,0,.6); animation: none; }
 
 .wm-window .fd-modal-bar { cursor: grab; }
 .wm-window .fd-modal-bar button,

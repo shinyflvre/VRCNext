@@ -1900,7 +1900,6 @@ document.documentElement.addEventListener('languagechange', rerenderDashTranslat
         position: 'fixed',
         inset: '0',
         pointerEvents: 'none',
-        willChange: 'opacity',
         background: [
             'linear-gradient(to right,  rgba(0,0,0,0.80), transparent 280px)',
             'linear-gradient(to left,   rgba(0,0,0,0.80), transparent 280px)',
@@ -1930,11 +1929,13 @@ document.documentElement.addEventListener('languagechange', rerenderDashTranslat
         glassHosts.forEach(el => el.style.setProperty('--sidebar-glass-t', sig));
         if (_fadeAnim) { _fadeAnim.cancel(); _fadeAnim = null; }
         if (onDash && !_wasDash) {
+            vignette.style.display = '';
             vignette.style.opacity = '0';
             _fadeAnim = vignette.animate([{ opacity: 0 }, { opacity: target }], { duration: 800, easing: 'ease-in' });
             _fadeAnim.onfinish = () => { _fadeAnim = null; _glassLast = ''; applyGlass(); };
         } else {
             vignette.style.opacity = target.toFixed(3);
+            vignette.style.display = target > 0.001 ? '' : 'none';
         }
         _wasDash = onDash;
     }

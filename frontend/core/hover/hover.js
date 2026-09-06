@@ -7,7 +7,11 @@
     let _active = false;
 
     function show(text, rect, placement) {
-        tip.textContent = text;
+        tip.textContent = '';
+        const inner = document.createElement('span');
+        inner.className = 'vn-tooltip-inner';
+        inner.textContent = text;
+        tip.appendChild(inner);
         tip.classList.add('vn-tooltip-visible');
         _active = true;
         position(rect, placement);

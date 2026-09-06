@@ -327,7 +327,7 @@ body.maximized .tb-icon-restore { display: block; }
     background: var(--bg-card); border: 1px solid var(--brd);
     border-radius: 14px; padding: 28px;
     max-width: 360px; width: 90%;
-    box-shadow: 0 24px 64px rgba(0,0,0,.5); text-align: center;
+    text-align: center;
 }
 .modal-title { font-size: 16px; font-weight: 700; color: var(--tx0); margin-bottom: 8px; }
 .modal-msg { font-size: 12px; color: var(--tx1); margin-bottom: 16px; line-height: 1.5; }
@@ -375,3 +375,6 @@ body.maximized .tb-icon-restore { display: block; }
 /* ── Small windows ── */
 @media (max-height: 620px) {
     .setup-container { padding: calc(var(--tb-h) + 8px) 12px 12px; align-items: flex-start; }}
+
+.modal-overlay::after { box-shadow: 0 24px 64px rgba(0,0,0,.5); }
+.modal-box { border-radius: 0; clip-path: inset(0 round 14px); border-color: transparent; }

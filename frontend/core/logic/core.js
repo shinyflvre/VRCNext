@@ -2600,9 +2600,10 @@ function regionBadgeHtml(loc) {
 }
 
 function vnPanelAnchor(wrap, panel, below) {
-    if (!wrap.closest('.tt-scroll')) { panel.style.position = ''; panel.style.minWidth = ''; return; }
+    if (!wrap.closest('.tt-scroll')) { panel.style.position = ''; panel.style.minWidth = ''; wrap.classList.remove('vn-select-fixed'); return; }
     const r = wrap.getBoundingClientRect();
     panel.style.position = 'fixed';
+    wrap.classList.add('vn-select-fixed');
     panel.style.minWidth = r.width + 'px';
     panel.style.top    = below ? (r.bottom + 4) + 'px' : 'auto';
     panel.style.bottom = below ? 'auto' : (window.innerHeight - r.top + 4) + 'px';

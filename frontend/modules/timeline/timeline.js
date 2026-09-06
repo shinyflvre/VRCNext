@@ -1777,5 +1777,22 @@ function renderFtAvatarBody(ev) {
         if (!(e.target instanceof Element) || !e.target.classList.contains('tt-scroll')) return;
         e.target.querySelectorAll('.vn-select.vn-open').forEach(w => w.classList.remove('vn-open'));
     }, true);
+
+    const FADE_SEL = '.tl-filter-row, .tt-scroll';
+    function updateFade(row) {
+        const max = row.scrollWidth - row.clientWidth;
+        row.classList.toggle('tt-fade-l', max > 1 && row.scrollLeft > 1);
+        row.classList.toggle('tt-fade-r', max > 1 && row.scrollLeft < max - 1);
+    }
+    let _fadeRaf = 0;
+    function updateAllFades() {
+        if (_fadeRaf) return;
+        _fadeRaf = requestAnimationFrame(() => { _fadeRaf = 0; document.querySelectorAll(FADE_SEL).forEach(updateFade); });
+    }
+    document.addEventListener('scroll', e => { if (e.target instanceof Element && e.target.matches(FADE_SEL)) updateFade(e.target); }, true);
+    window.addEventListener('resize', updateAllFades);
+    new MutationObserver(updateAllFades).observe(document.documentElement, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['class', 'style', 'hidden'] });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(updateAllFades);
+    updateAllFades();
 })();
 

@@ -141,14 +141,13 @@ body:has(.rsidebar.collapsed) .dash-hero-content { padding-right: calc(var(--rsi
     background: none;
     border: none;
     border-radius: 6px;
-    color: var(--dash-onbg-tx3, var(--tx3));
+    color: color-mix(in srgb, var(--dash-onbg-tx3, var(--tx3)) 60%, transparent);
     cursor: pointer;
     padding: 0;
     line-height: 1;
-    opacity: 0.6;
-    transition: opacity .15s, background .15s;
+    transition: color .15s, background .15s;
 }
-.mi-refresh-btn:hover { opacity: 1; }
+.mi-refresh-btn:hover { color: var(--dash-onbg-tx3, var(--tx3)); }
 .mi-refresh-btn .msi { font-size: calc(14px + var(--fs-off, 0px)); }
 .mi-refresh-btn:hover { background: var(--bg-hover); }
 .mi-refresh-btn.spinning .msi { animation: mi-spin .6s linear infinite; }
@@ -251,12 +250,11 @@ body:has(.rsidebar.collapsed) .dash-hero-content { padding-right: calc(var(--rsi
     font-size: calc(10px + var(--fs-off, 0px));
     font-weight: 700;
     letter-spacing: .5px;
-    color: var(--dash-onbg-accent, var(--accent));
+    color: color-mix(in srgb, var(--dash-onbg-accent, var(--accent)) 65%, transparent);
     font-family: inherit;
-    opacity: .65;
-    transition: opacity .15s;
+    transition: color .15s;
 }
-.dash-section-seeall:hover { opacity: 1; }
+.dash-section-seeall:hover { color: var(--dash-onbg-accent, var(--accent)); }
 
 
 
