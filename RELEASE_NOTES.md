@@ -26,6 +26,9 @@ This update focuses on UI improvements for context menus, making them smaller an
 - Removed the glow effect from VRC+ badges.
 - Removed the glow effect from local group badges.
 
+**People Tab**
+- People > All Friends: the All, In-Game, Active and Offline filters show a count badge.
+
 **Bug Fixes**
 - Context menus no longer flicker on open.
 - Fixed an issue where context menus weren't using the configured badge base color.

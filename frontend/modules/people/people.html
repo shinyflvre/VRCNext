@@ -49,10 +49,10 @@
                     <div class="tab-toolbar-body">
                     <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
                         <div style="display:flex;gap:4px;flex-shrink:0;">
-                            <button class="vrcn-button sub-tab-btn active" id="allFriendFilterAll" onclick="setAllFriendsStatusFilter('all')" data-i18n="profiles.people.status_filter.all">All</button>
-                            <button class="vrcn-button sub-tab-btn" id="allFriendFilterIngame" onclick="setAllFriendsStatusFilter('ingame')" data-i18n="profiles.people.status_filter.ingame">In-Game</button>
-                            <button class="vrcn-button sub-tab-btn" id="allFriendFilterActive" onclick="setAllFriendsStatusFilter('active')" data-i18n="profiles.people.status_filter.active">Active</button>
-                            <button class="vrcn-button sub-tab-btn" id="allFriendFilterOffline" onclick="setAllFriendsStatusFilter('offline')" data-i18n="profiles.people.status_filter.offline">Offline</button>
+                            <button class="vrcn-button sub-tab-btn active" id="allFriendFilterAll" onclick="setAllFriendsStatusFilter('all')"><span data-i18n="profiles.people.status_filter.all">All</span> <span class="vrcn-badge fd-tab-badge" id="allFriendFilterAllCount">0</span></button>
+                            <button class="vrcn-button sub-tab-btn" id="allFriendFilterIngame" onclick="setAllFriendsStatusFilter('ingame')"><span data-i18n="profiles.people.status_filter.ingame">In-Game</span> <span class="vrcn-badge fd-tab-badge" id="allFriendFilterIngameCount">0</span></button>
+                            <button class="vrcn-button sub-tab-btn" id="allFriendFilterActive" onclick="setAllFriendsStatusFilter('active')"><span data-i18n="profiles.people.status_filter.active">Active</span> <span class="vrcn-badge fd-tab-badge" id="allFriendFilterActiveCount">0</span></button>
+                            <button class="vrcn-button sub-tab-btn" id="allFriendFilterOffline" onclick="setAllFriendsStatusFilter('offline')"><span data-i18n="profiles.people.status_filter.offline">Offline</span> <span class="vrcn-badge fd-tab-badge" id="allFriendFilterOfflineCount">0</span></button>
                         </div>
                         <div class="search-bar-row" style="margin-bottom:0;flex:1;min-width:140px;"><span class="msi search-ico">search</span><input type="text" id="allFriendSearchInput" class="vrcn-input" placeholder="Filter friends..." data-i18n-placeholder="profiles.people.all_search_placeholder" oninput="_dbFilterAllFriends()"></div>
                     </div>

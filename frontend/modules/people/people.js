@@ -702,6 +702,15 @@ function filterAllFriendsIfLive() {
     }, ALL_FRIENDS_LIVE_MS);
 }
 
+function _updateAllFriendsFilterCounts(list) {
+    const counts = { all: list.length, ingame: 0, active: 0, offline: 0 };
+    for (const f of list) { const c = _allFriendCategory(f); if (counts[c] !== undefined) counts[c]++; }
+    for (const k of Object.keys(counts)) {
+        const el = document.getElementById('allFriendFilter' + k.charAt(0).toUpperCase() + k.slice(1) + 'Count');
+        if (el) el.textContent = counts[k].toLocaleString();
+    }
+}
+
 function filterAllFriends() {
     const el = document.getElementById('allFriendsGrid');
     if (!el) return;
@@ -712,6 +721,7 @@ function filterAllFriends() {
             (f.username || f.userName || '').toLowerCase().includes(q) ||
             (f.id || '').toLowerCase().includes(q))
         : [...vrcFriendsData];
+    _updateAllFriendsFilterCounts(all);
     if (_allFriendsStatusFilter !== 'all') all = all.filter(f => _allFriendCategory(f) === _allFriendsStatusFilter);
     const listMode = _peopleListMode();
     all = listMode ? _plSort(all) : all.sort((a, b) => (a.displayName || '').localeCompare(b.displayName || ''));
