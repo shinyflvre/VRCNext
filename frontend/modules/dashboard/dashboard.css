@@ -9,13 +9,13 @@
     position: relative;
     overflow: hidden;
     height: 100vh;
-    margin: calc(-54px - var(--tb-h)) calc(-1 * (var(--rsidebar-w) + 28px)) 0 calc(-1 * (var(--sidebar-w) + 28px));
+    margin: calc(-40px - var(--tb-h)) calc(-1 * (var(--rsidebar-w) + 14px)) 0 calc(-1 * (var(--sidebar-w) + 14px));
     transition: margin-left .22s ease, margin-right .22s ease;
 }
 
 body:has(.sidebar.collapsed) .dash-hero,
-body:has(.sidebar.collapsing) .dash-hero { margin-left:  calc(-1 * (var(--sidebar-c)  + 28px)); }
-body:has(.rsidebar.collapsed) .dash-hero { margin-right: calc(-1 * (var(--rsidebar-c) + 28px)); }
+body:has(.sidebar.collapsing) .dash-hero { margin-left:  calc(-1 * (var(--sidebar-c)  + 14px)); }
+body:has(.rsidebar.collapsed) .dash-hero { margin-right: calc(-1 * (var(--rsidebar-c) + 14px)); }
 
 .dash-hero-bg {
     position: absolute;

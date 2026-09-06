@@ -46,7 +46,7 @@
     content: '';
     position: sticky;
     display: block;
-    bottom: -28px;
+    bottom: -14px;
     height: 80px;
     margin-top: -80px;
     background: linear-gradient(to bottom, transparent, var(--bg-base));

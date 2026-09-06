@@ -6,6 +6,7 @@ This update makes context menus smaller and more compact, and adds saving for st
 - New **Instance Stickers** section in the VRChat Config modal, next to Instance Prints. Stickers spawned in your instance are saved once as `player_date_stickerId.png` to a folder you choose, so moderators can trace who placed what.
 
 **Responsive Changes**
+- All tabs: the gap between the center content and the sidebars, the taskbar and the window bottom is halved from 28px to 14px.
 - Media Library, Worlds, People, Groups, Avatars, Calendar and Inventory: the toolbar now stays in one row. On narrow windows the filter buttons scroll horizontally.
 - Scrollable filter rows now fade at both edges to show there's more to scroll.
 - Filter buttons now show their count as a badge, like the People tab:
