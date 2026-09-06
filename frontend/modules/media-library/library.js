@@ -1093,6 +1093,7 @@ function onWorldsResolved(dict) {
     renderDashboard();
     if (typeof scheduleRenderVrcFriends === 'function' && vrcFriendsData?.length) scheduleRenderVrcFriends();
     if (typeof refreshAllUserItemWorlds === 'function') refreshAllUserItemWorlds();
+    if (typeof filterAllFriendsIfLive === 'function' && document.querySelector('#allFriendsGrid .fav-group-header[data-wid]')) filterAllFriendsIfLive();
     document.querySelectorAll('.lib-world-badge[data-wid]').forEach(btn => {
         const wid  = btn.getAttribute('data-wid');
         const info = worldInfoCache[wid];

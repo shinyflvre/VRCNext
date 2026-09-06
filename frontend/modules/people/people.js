@@ -771,6 +771,11 @@ function filterAllFriends() {
         return;
     }
     el.classList.toggle('search-grid', !listMode);
+    if (!listMode && _allFriendsStatusFilter === 'ingame') {
+        el.innerHTML = _plIngameSectionsHtml(all, vrcFriendsData.filter(f => _allFriendCategory(f) === 'ingame'));
+        plSetPaginator('peopleAllPaginatorBar', '');
+        return;
+    }
     el.innerHTML = listMode
         ? buildPeopleListHtml(slice)
         : slice.map(f => renderPeopleFriendCard(f)).join('');
@@ -779,6 +784,58 @@ function filterAllFriends() {
         ? plPaginator(page, totalPages, 'peopleAllGoPage', all.length)
         : buildPaginator(page, totalPages, 'peopleAllGoPage',
             `<span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);padding:0 8px;">${all.length.toLocaleString()} total</span>`));
+}
+
+function _plIngameSectionsHtml(friends, allIngame) {
+    const instKey = f => (f.location || '').split('~')[0];
+    const byInst = new Map();
+    for (const f of allIngame) {
+        if (!(f.location || '').startsWith('wrld_')) continue;
+        const key = instKey(f);
+        if (!byInst.has(key)) byInst.set(key, []);
+        byInst.get(key).push(f);
+    }
+    const same = [], single = [], priv = [];
+    for (const f of friends) {
+        const loc = f.location || '';
+        if (loc.startsWith('private')) priv.push(f);
+        else if (loc.startsWith('wrld_') && byInst.get(instKey(f)).length >= 2) same.push(f);
+        else single.push(f);
+    }
+    const sameByInst = new Map();
+    for (const f of same) {
+        const key = instKey(f);
+        if (!sameByInst.has(key)) sameByInst.set(key, []);
+        sameByInst.get(key).push(f);
+    }
+    const instGroups = [...sameByInst.entries()].sort(([ka, la], [kb, lb]) => (lb.length - la.length) || ka.localeCompare(kb));
+    const missingWorlds = [];
+    const sections = instGroups.map(([key, list]) => {
+        const wid = key.split(':')[0];
+        const iid = key.split(':')[1] || '';
+        const loc = list[0].location || '';
+        const wc = (typeof dashWorldCache !== 'undefined' && dashWorldCache[wid]) || null;
+        if (!wc && wid.startsWith('wrld_')) missingWorlds.push(wid);
+        const region = (loc.match(/~region\(([^)]+)\)/) || [])[1] || '';
+        const { instanceType } = parseFriendLocation(loc);
+        const { cls, label } = getInstanceBadge(instanceType);
+        const title = [wc?.name || wid, iid ? '#' + iid : '', region.toUpperCase()].filter(Boolean).join(' · ');
+        return { title, badge: `<span class="vrcn-badge ${cls}">${esc(label)}</span>`, list, wid, loc };
+    });
+    if (missingWorlds.length) sendToCS({ action: 'vrcResolveWorlds', worldIds: [...new Set(missingWorlds)] });
+    sections.push({ title: t('profiles.people.sections.single_instances', 'In Single Instances'), badge: '', list: single });
+    sections.push({ title: t('profiles.people.sections.private_instances', 'In Private Instances'), badge: '', list: priv });
+    let html = '', first = true;
+    for (const sec of sections) {
+        if (!sec.list.length) continue;
+        const titleHtml = sec.loc
+            ? `<span class="topbar-title pl-inst-link" onclick="openFriendLocationDetail('${jsq(sec.wid)}','${jsq(sec.loc)}')">${esc(sec.title)}</span>`
+            : `<span class="topbar-title">${esc(sec.title)}</span>`;
+        html += `<div class="fav-group-header${first ? ' fav-group-header-first' : ''}"${sec.wid ? ` data-wid="${esc(sec.wid)}"` : ''}>${titleHtml}${sec.badge}<span class="fav-group-count">${sec.list.length}</span></div>`;
+        html += sec.list.map(f => renderPeopleFriendCard(f)).join('');
+        first = false;
+    }
+    return html;
 }
 
 function peopleAllGoPage(page) {

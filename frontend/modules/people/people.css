@@ -109,6 +109,8 @@
 .sloc-inst-card .vrc-friend-card:hover {
     background: var(--bg-hover);
 }
+.pl-inst-link { cursor: pointer; }
+.pl-inst-link:hover { color: var(--accent-lt); }
 
 /* Sidebar login box */
 .vrc-login-box {
