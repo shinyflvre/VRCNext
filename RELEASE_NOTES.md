@@ -16,5 +16,9 @@
 **User & World Modals**
 - Timeline, Last Activity and Instance History use the Timeline page list design, with a **Show more** link that opens the Timeline with the user or world preselected in the search.
 
+**Removed**
+- Removed the glow effect from VRC+ badges.
+- Removed the glow effect from local group badges.
+
 **Bug Fixes**
 - Context menu no longer flickers on open
