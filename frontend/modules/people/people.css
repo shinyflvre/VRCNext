@@ -11,6 +11,7 @@
 #peopleAllArea,
 #peopleRecentArea,
 #peopleSearchArea,
+#peopleModeratedArea,
 #peopleBlockedArea,
 #peopleInstanceArea,
 #peopleMutedArea {
@@ -24,6 +25,7 @@
 #peopleAllArea .search-bar-row,
 #peopleRecentArea .search-bar-row,
 #peopleSearchArea .search-bar-row,
+#peopleModeratedArea .search-bar-row,
 #peopleBlockedArea .search-bar-row,
 #peopleMutedArea .search-bar-row {
     flex-shrink: 0;
