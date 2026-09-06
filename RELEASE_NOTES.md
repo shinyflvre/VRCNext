@@ -40,6 +40,7 @@ Looking for a specific option but forgot which tool it belongs to? Smart Search 
 - Timeline, Last Activity and Instance History use the Timeline page list design, with **Show more** opening the Timeline preselected for that user or world.
 
 **Changes**
+- People tab: **Blocked** and **Muted** moved into a new **Moderated** filter, shown as sub-filters with their counts.
 - Smart Search (Ctrl K) now searches all tools: options, sliders, dropdowns and section headers of every tool page and of the VRChat Config, Launch Options, Message Templates and Log Viewer modals. Selecting a result opens the tool or modal and highlights the option, like Settings results.
 - Text now uses ClearType (subpixel antialiasing) instead of grayscale.
 - Updated some badge colors.

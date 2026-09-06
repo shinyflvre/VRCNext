@@ -1149,6 +1149,7 @@
   "profiles.people.recent_seen.filter_placeholder": "최근 본 유저 검색...",
   "profiles.people.filters.blocked": "차단됨",
   "profiles.people.filters.muted": "음소거됨",
+  "profiles.people.filters.moderated": "관리됨",
   "profiles.people.status_filter.all": "모두",
   "profiles.people.status_filter.ingame": "인게임",
   "profiles.people.status_filter.active": "활성",

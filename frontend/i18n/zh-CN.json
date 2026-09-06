@@ -1127,6 +1127,7 @@
   "profiles.people.recent_seen.filter_placeholder": "筛选最近见过的...",
   "profiles.people.filters.blocked": "已屏蔽",
   "profiles.people.filters.muted": "已静音",
+  "profiles.people.filters.moderated": "已管理",
   "profiles.people.status_filter.all": "全部",
   "profiles.people.status_filter.ingame": "游戏中",
   "profiles.people.status_filter.active": "活跃",

@@ -293,8 +293,13 @@ window.getPeopleStat = function (userId) { return _peopleStatsMap[userId] || nul
 window.requestPeopleStats = function () { if (!_peopleStatsLoaded) sendToCS({ action: 'vrcGetPeopleStats' }); };
 window.fmtPeopleStatTime = function (seconds) { return _peopleStatsFmtTime(seconds); };
 
+let _peopleModLast = 'blocked';
+
 function setPeopleFilter(filter) {
     if (_favFriendEditMode) exitFriendEditMode();
+    if (filter === 'moderated') filter = _peopleModLast;
+    const modSub = filter === 'blocked' || filter === 'muted';
+    if (modSub) _peopleModLast = filter;
     _peopleAllPage = 0; _peopleBlockedPage = 0; _peopleMutedPage = 0; _peopleFavPage = 0;
     peopleFilter = filter;
     _peopleRecentPage = 0;
@@ -307,6 +312,7 @@ function setPeopleFilter(filter) {
     document.getElementById('peopleFilterInstance')?.classList.toggle('active', filter === 'instance');
     document.getElementById('peopleFilterRecent').classList.toggle('active', filter === 'recentseen');
     document.getElementById('peopleFilterSearch').classList.toggle('active', filter === 'search');
+    document.getElementById('peopleFilterModerated').classList.toggle('active', modSub);
     document.getElementById('peopleFilterBlocked').classList.toggle('active', filter === 'blocked');
     document.getElementById('peopleFilterMuted').classList.toggle('active', filter === 'muted');
     document.getElementById('peopleFavArea').style.display     = filter === 'favorites'  ? '' : 'none';
@@ -315,8 +321,11 @@ function setPeopleFilter(filter) {
     if (instArea) instArea.style.display = filter === 'instance' ? '' : 'none';
     document.getElementById('peopleRecentArea').style.display  = filter === 'recentseen' ? '' : 'none';
     document.getElementById('peopleSearchArea').style.display  = filter === 'search'     ? '' : 'none';
+    document.getElementById('peopleModeratedArea').style.display = modSub ? '' : 'none';
     document.getElementById('peopleBlockedArea').style.display = filter === 'blocked'    ? '' : 'none';
     document.getElementById('peopleMutedArea').style.display   = filter === 'muted'      ? '' : 'none';
+    document.getElementById('blockedSearchRow').style.display  = filter === 'blocked'    ? '' : 'none';
+    document.getElementById('mutedSearchRow').style.display    = filter === 'muted'      ? '' : 'none';
     ['peopleAllPaginatorBar', 'peopleBlockedPaginatorBar', 'peopleMutedPaginatorBar'].forEach(id => {
         const bar = document.getElementById(id);
         if (bar) bar.innerHTML = '';

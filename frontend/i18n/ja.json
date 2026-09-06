@@ -1127,6 +1127,7 @@
   "profiles.people.recent_seen.filter_placeholder": "最近見た人を絞り込む...",
   "profiles.people.filters.blocked": "ブロック済み",
   "profiles.people.filters.muted": "ミュート済み",
+  "profiles.people.filters.moderated": "モデレート済み",
   "profiles.people.status_filter.all": "すべて",
   "profiles.people.status_filter.ingame": "ゲーム中",
   "profiles.people.status_filter.active": "アクティブ",

@@ -1128,6 +1128,7 @@
   "profiles.people.recent_seen.filter_placeholder": "Фильтр недавно встреченных...",
   "profiles.people.filters.blocked": "Заблокированные",
   "profiles.people.filters.muted": "Заглушённые",
+  "profiles.people.filters.moderated": "Модерация",
   "profiles.people.status_filter.all": "Все",
   "profiles.people.status_filter.ingame": "В игре",
   "profiles.people.status_filter.active": "Активные",

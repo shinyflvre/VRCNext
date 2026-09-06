@@ -1127,6 +1127,7 @@
   "profiles.people.recent_seen.filter_placeholder": "Filtrar vistos recientemente...",
   "profiles.people.filters.blocked": "Bloqueados",
   "profiles.people.filters.muted": "Silenciados",
+  "profiles.people.filters.moderated": "Moderados",
   "profiles.people.status_filter.all": "Todos",
   "profiles.people.status_filter.ingame": "En juego",
   "profiles.people.status_filter.active": "Activo",
