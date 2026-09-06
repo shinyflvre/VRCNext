@@ -1742,7 +1742,7 @@ function renderFtAvatarBody(ev) {
     let _row = null, _startX = 0, _scrollStart = 0, _dragging = false;
 
     document.addEventListener('mousedown', e => {
-        const row = e.target.closest('.tl-filter-row');
+        const row = e.target.closest('.tl-filter-row, .tt-scroll');
         if (!row) return;
         _row         = row;
         _startX      = e.clientX;
@@ -1767,10 +1767,15 @@ function renderFtAvatarBody(ev) {
     });
 
     document.addEventListener('wheel', e => {
-        const row = e.target.closest('.tl-filter-row');
+        const row = e.target.closest('.tl-filter-row, .tt-scroll');
         if (!row || e.deltaX !== 0) return;
         row.scrollLeft += e.deltaY;
         e.preventDefault();
     }, { passive: false });
+
+    document.addEventListener('scroll', e => {
+        if (!(e.target instanceof Element) || !e.target.classList.contains('tt-scroll')) return;
+        e.target.querySelectorAll('.vn-select.vn-open').forEach(w => w.classList.remove('vn-open'));
+    }, true);
 })();
 

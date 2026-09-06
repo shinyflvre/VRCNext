@@ -622,6 +622,7 @@ function _renderLibRatingSelect() {
         const below = rect.bottom + 220 < window.innerHeight;
         panel.style.top    = below ? 'calc(100% + 4px)' : 'auto';
         panel.style.bottom = below ? 'auto' : 'calc(100% + 4px)';
+        vnPanelAnchor(wrap, panel, below);
         setTimeout(() => document.addEventListener('click', onOut, { once: true }), 0);
     }
     function onOut(e) { wrap.contains(e.target) ? document.addEventListener('click', onOut, { once: true }) : close(); }
@@ -678,6 +679,7 @@ function _renderLibIconSelect(wrapperId, items, currentVal, allLabel, allIcon, r
         const below = rect.bottom + 270 < window.innerHeight;
         panel.style.top    = below ? 'calc(100% + 4px)' : 'auto';
         panel.style.bottom = below ? 'auto' : 'calc(100% + 4px)';
+        vnPanelAnchor(wrap, panel, below);
         setTimeout(() => document.addEventListener('click', onOut, { once: true }), 0);
     }
     function onOut(e) { wrap.contains(e.target) ? document.addEventListener('click', onOut, { once: true }) : close(); }

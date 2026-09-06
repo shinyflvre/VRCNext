@@ -1,5 +1,5 @@
-                <div class="tab-toolbar tt-split" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-                    <div id="avatarFilterBtns" style="display:flex;gap:8px;align-items:center;flex-wrap:nowrap;min-width:0;">
+                <div class="tab-toolbar tt-split" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:nowrap;gap:8px;">
+                    <div id="avatarFilterBtns" class="tt-scroll">
                         <button class="vrcn-button sub-tab-btn active" id="avatarFilterOwn" onclick="setAvatarFilter('own')"><span class="msi" style="font-size:16px;">person</span> <span data-i18n="avatars.filters.own">My Avatars</span></button>
                         <button class="vrcn-button sub-tab-btn" id="avatarFilterFav" onclick="setAvatarFilter('favorites')"><span class="msi" style="font-size:16px;">favorite</span> <span data-i18n="avatars.filters.favorites">Favorites</span></button>
                         <button class="vrcn-button sub-tab-btn" id="avatarFilterRecent" onclick="setAvatarFilter('recent')"><span class="msi" style="font-size:16px;">history</span> <span data-i18n="avatars.filters.recent">Recently Used</span></button>
@@ -8,7 +8,7 @@
                         <select id="avatarSearchDbDrop" class="vrcn-dropdown" onchange="setAvatarSearchDb(this.value)" style="min-width:112px;flex-shrink:0;"><option value="avtrdb">Avtrdb</option><option value="avtricu">Avtr.icu</option><option value="vrcn">VRCN</option><option value="all">Search all</option></select>
                         <span id="avatarCount" style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>
                     </div>
-                    <div style="display:flex;gap:4px;align-items:center;">
+                    <div style="display:flex;gap:4px;align-items:center;flex-shrink:0;">
                         <button id="avatarEditModeBtn" class="vrcn-button" style="display:none;" onclick="toggleAvEditMode()" title="Edit favorites" data-i18n-title="avatars.edit.button"><span class="msi" style="font-size:16px;">edit</span> <span data-i18n="avatars.edit.button">Edit</span></button>
                         <button class="vrcn-button sub-tab-btn active" id="avatarGridLarge" onclick="setGridSize('avatars','default');setAvatarsViewMode('grid')" title="Large grid"><span class="msi" style="font-size:16px;">grid_on</span></button>
                         <button class="vrcn-button sub-tab-btn" id="avatarGridSmall" onclick="setGridSize('avatars','compact');setAvatarsViewMode('grid')" title="Compact grid"><span class="msi" style="font-size:14px;">apps</span></button>

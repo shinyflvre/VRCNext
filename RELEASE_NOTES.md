@@ -5,6 +5,11 @@ This update focuses on UI improvements for context menus, making them smaller an
 **Saving Prints and Stickers**
 - VRChat Config modal: new **Instance Stickers** section next to Instance Prints. Stickers spawned in your instance are saved once as `player_date_stickerId.png` into a configurable folder, so moderators can trace who placed what.
 
+**Responsive Changes**
+- Media Library, Worlds, People, Groups, Avatars, Calendar and Inventory: the toolbar now always stays in one row. When the window gets narrower, the filter buttons on the left become horizontally scrollable.
+- Scrollable filter rows now show a fade on the left and right edge, so you can see where there is more to scroll.
+- Inventory: the item count next to the Upload button is gone. Each category button now shows its count as a badge, like the People tab. Categories that have not been loaded yet show **X**.
+
 **Custom Chatbox**
 - Custom text lines can now be reordered by drag and drop, like the modules.
 - System stats now show VRAM as used/total, e.g. **VRAM 3.7/8GB**.

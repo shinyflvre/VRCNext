@@ -1,14 +1,13 @@
                 <div class="inv-topbar tab-toolbar">
-                    <div class="inv-filter-row">
-                        <button class="vrcn-button sub-tab-btn active" id="invFPhotos" onclick="switchInvTab('photos')"><span class="msi" style="font-size:14px;">photo_library</span> <span data-i18n="inventory.tabs.photos">Photos</span></button>
-                        <button class="vrcn-button sub-tab-btn" id="invFIcons" onclick="switchInvTab('icons')"><span class="msi" style="font-size:14px;">account_circle</span> <span data-i18n="inventory.tabs.icons">Icons</span></button>
-                        <button class="vrcn-button sub-tab-btn" id="invFEmojis" onclick="switchInvTab('emojis')"><span class="msi" style="font-size:14px;">emoji_emotions</span> <span data-i18n="inventory.tabs.emojis">Emojis</span></button>
-                        <button class="vrcn-button sub-tab-btn" id="invFStickers" onclick="switchInvTab('stickers')"><span class="msi" style="font-size:14px;">sticky_note_2</span> <span data-i18n="inventory.tabs.stickers">Stickers</span></button>
-                        <button class="vrcn-button sub-tab-btn" id="invFPrints" onclick="switchInvTab('prints')"><span class="msi" style="font-size:14px;">print</span> <span data-i18n="inventory.tabs.prints">Prints</span></button>
-                        <button class="vrcn-button sub-tab-btn" id="invFInventory" onclick="switchInvTab('inventory')"><span class="msi" style="font-size:14px;">inventory_2</span> <span data-i18n="inventory.tabs.inventory">Inventory</span></button>
+                    <div class="inv-filter-row tt-scroll">
+                        <button class="vrcn-button sub-tab-btn active" id="invFPhotos" onclick="switchInvTab('photos')"><span class="msi" style="font-size:14px;">photo_library</span> <span data-i18n="inventory.tabs.photos">Photos</span> <span class="vrcn-badge fd-tab-badge" id="invFPhotosCount">X</span></button>
+                        <button class="vrcn-button sub-tab-btn" id="invFIcons" onclick="switchInvTab('icons')"><span class="msi" style="font-size:14px;">account_circle</span> <span data-i18n="inventory.tabs.icons">Icons</span> <span class="vrcn-badge fd-tab-badge" id="invFIconsCount">X</span></button>
+                        <button class="vrcn-button sub-tab-btn" id="invFEmojis" onclick="switchInvTab('emojis')"><span class="msi" style="font-size:14px;">emoji_emotions</span> <span data-i18n="inventory.tabs.emojis">Emojis</span> <span class="vrcn-badge fd-tab-badge" id="invFEmojisCount">X</span></button>
+                        <button class="vrcn-button sub-tab-btn" id="invFStickers" onclick="switchInvTab('stickers')"><span class="msi" style="font-size:14px;">sticky_note_2</span> <span data-i18n="inventory.tabs.stickers">Stickers</span> <span class="vrcn-badge fd-tab-badge" id="invFStickersCount">X</span></button>
+                        <button class="vrcn-button sub-tab-btn" id="invFPrints" onclick="switchInvTab('prints')"><span class="msi" style="font-size:14px;">print</span> <span data-i18n="inventory.tabs.prints">Prints</span> <span class="vrcn-badge fd-tab-badge" id="invFPrintsCount">X</span></button>
+                        <button class="vrcn-button sub-tab-btn" id="invFInventory" onclick="switchInvTab('inventory')"><span class="msi" style="font-size:14px;">inventory_2</span> <span data-i18n="inventory.tabs.inventory">Inventory</span> <span class="vrcn-badge fd-tab-badge" id="invFInventoryCount">X</span></button>
                     </div>
-                    <div style="display:flex;gap:8px;align-items:center;">
-                        <span id="invCount" style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);"></span>
+                    <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">
                         <button class="vrcn-button" id="invUploadBtn" onclick="openInvUploadModal()" style="display:none;"><span class="msi" style="font-size:16px;">upload</span> <span data-i18n="inventory.actions.upload">Upload</span></button>
                         <button class="vrcn-button" onclick="refreshInventory(true)"><span class="msi" style="font-size:16px;">refresh</span> <span data-i18n="common.refresh">Refresh</span></button>
                     </div>

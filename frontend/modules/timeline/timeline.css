@@ -304,8 +304,9 @@
 .tl-filter-row {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 4px 12px 8px;
+    --tt-gap: 6px;
+    gap: var(--tt-gap);
+    padding: 4px 0 8px;
     flex-shrink: 0;
     flex-wrap: nowrap;
     overflow-x: auto;
@@ -316,6 +317,8 @@
     overscroll-behavior-x: contain;
 }
 .tl-filter-row::-webkit-scrollbar { display: none; }
+.tl-filter-row::before { margin-right: calc(-12px - var(--tt-gap)); }
+.tl-filter-row::after { margin-left: calc(-12px - var(--tt-gap)); }
 .tl-filter-row .sub-tab-btn { flex-shrink: 0; white-space: nowrap; }
 
 #tab12.active {

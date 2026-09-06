@@ -2599,6 +2599,19 @@ function regionBadgeHtml(loc) {
     return `<span class="vrcn-badge"><span class="msi" style="font-size:10px;">language</span>${esc(getRegionShortLabel(code))}</span>`;
 }
 
+function vnPanelAnchor(wrap, panel, below) {
+    if (!wrap.closest('.tt-scroll')) { panel.style.position = ''; panel.style.minWidth = ''; return; }
+    const r = wrap.getBoundingClientRect();
+    panel.style.position = 'fixed';
+    panel.style.minWidth = r.width + 'px';
+    panel.style.top    = below ? (r.bottom + 4) + 'px' : 'auto';
+    panel.style.bottom = below ? 'auto' : (window.innerHeight - r.top + 4) + 'px';
+    panel.style.left   = r.left + 'px';
+    panel.style.right  = 'auto';
+    const pr = panel.getBoundingClientRect();
+    if (pr.right > window.innerWidth - 8) panel.style.left = Math.max(8, window.innerWidth - 8 - pr.width) + 'px';
+}
+
 // Custom Dropdown
 function initVnSelect(el) {
     if (!el || el._vnSelect) return;
@@ -2733,6 +2746,7 @@ function initVnSelect(el) {
         if (panelRect.right > window.innerWidth - 8) {
             panel.style.left = 'auto'; panel.style.right = '0';
         }
+        vnPanelAnchor(wrap, panel, below);
         setTimeout(() => document.addEventListener('click', onOutside, { once: true }), 0);
     }
 

@@ -1,14 +1,14 @@
-                <div class="tab-toolbar tt-split" style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;">
-                    <div style="display:flex;gap:8px;align-items:center;">
+                <div class="tab-toolbar tt-split" style="display:flex;align-items:center;flex-wrap:nowrap;gap:10px;">
+                    <div class="tt-scroll">
                         <button class="vrcn-button sub-tab-btn active" id="groupFilterJoined" onclick="setGroupFilter('joined')"><span class="msi" style="font-size:16px;">groups</span> <span data-i18n="groups.filters.joined">Joined Groups</span></button>
                         <button class="vrcn-button sub-tab-btn" id="groupFilterInstances" onclick="setGroupFilter('instances')"><span class="msi" style="font-size:16px;">public</span> <span data-i18n="groups.filters.instances">Group Instances</span></button>
                         <button class="vrcn-button sub-tab-btn" id="groupFilterMine" onclick="setGroupFilter('mine')"><span class="msi" style="font-size:16px;">workspace_premium</span> <span data-i18n="groups.filters.mine">My Groups</span></button>
                         <button class="vrcn-button sub-tab-btn" id="groupFilterMod" onclick="setGroupFilter('mod')"><span class="msi" style="font-size:16px;">shield_person</span> <span data-i18n="groups.filters.moderate">Moderate Groups</span></button>
                         <button class="vrcn-button sub-tab-btn" id="groupFilterSearch" onclick="setGroupFilter('search')"><span class="msi" style="font-size:16px;">search</span> <span data-i18n="common.search">Search</span></button>
                     </div>
-                    <div style="display:flex;gap:6px;align-items:center;margin-left:auto;">
+                    <div style="display:flex;gap:6px;align-items:center;margin-left:auto;flex-shrink:0;">
                         <button id="groupEditModeBtn" class="vrcn-button" onclick="toggleGroupEditMode()" title="Edit groups" data-i18n-title="groups.edit.button"><span class="msi" style="font-size:16px;">edit</span> <span data-i18n="groups.edit.button">Edit</span></button>
-                        <button id="groupsRefreshBtn" class="vrcn-button" onclick="refreshGroups()" title="Refresh my groups" data-i18n-title="groups.mine.refresh_title"><span class="msi" style="font-size:16px;">refresh</span> <span data-i18n="common.refresh">Refresh</span></button>
+                        <button id="groupsRefreshBtn" class="vrcn-button" onclick="refreshGroups()" title="Refresh my groups" data-i18n-title="groups.mine.refresh_title"><span class="msi" style="font-size:16px;">refresh</span></button>
                         <button class="vrcn-button sub-tab-btn active" id="groupGridLarge" onclick="setGridSize('groups','default');setGroupsViewMode('grid')" title="Large grid"><span class="msi" style="font-size:16px;">grid_on</span></button>
                         <button class="vrcn-button sub-tab-btn" id="groupGridSmall" onclick="setGridSize('groups','compact');setGroupsViewMode('grid')" title="Compact grid"><span class="msi" style="font-size:14px;">apps</span></button>
                         <button class="vrcn-button sub-tab-btn" id="groupViewList" onclick="setGroupsViewMode('list')" title="List view" data-i18n-title="people.view.list"><span class="msi" style="font-size:14px;">format_list_bulleted</span></button>

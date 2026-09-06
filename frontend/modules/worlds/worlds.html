@@ -1,11 +1,11 @@
-                <div class="tab-toolbar tt-split" id="worldToolbar" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-                    <div id="worldFilterBtns" style="display:flex;gap:8px;align-items:center;">
+                <div class="tab-toolbar tt-split" id="worldToolbar" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:nowrap;gap:8px;">
+                    <div id="worldFilterBtns" class="tt-scroll">
                         <button class="vrcn-button sub-tab-btn active" id="worldFilterFav" onclick="setWorldFilter('favorites')"><span class="msi" style="font-size:16px;">favorite</span> <span data-i18n="worlds.filters.favorites">Favorites</span></button>
                         <button class="vrcn-button sub-tab-btn" id="worldFilterRecent" onclick="setWorldFilter('recent')"><span class="msi" style="font-size:16px;">history</span> <span data-i18n="worlds.filters.recent">Recently Visited</span></button>
                         <button class="vrcn-button sub-tab-btn" id="worldFilterMine" onclick="setWorldFilter('mine')"><span class="msi" style="font-size:16px;">cloud_upload</span> <span data-i18n="worlds.filters.mine">My Worlds</span></button>
                         <button class="vrcn-button sub-tab-btn" id="worldFilterSearch" onclick="setWorldFilter('search')"><span class="msi" style="font-size:16px;">search</span> <span data-i18n="worlds.filters.search">Search</span></button>
                     </div>
-                    <div style="display:flex;gap:4px;align-items:center;">
+                    <div style="display:flex;gap:4px;align-items:center;flex-shrink:0;">
                         <button id="worldEditModeBtn" class="vrcn-button" onclick="toggleWorldEditMode()" title="Edit favorites" data-i18n-title="worlds.edit.button"><span class="msi" style="font-size:16px;">edit</span> <span data-i18n="worlds.edit.button">Edit</span></button>
                         <button class="vrcn-button sub-tab-btn active" id="worldGridLarge" onclick="setGridSize('worlds','default');setWorldsViewMode('grid')" title="Large grid"><span class="msi" style="font-size:16px;">grid_on</span></button>
                         <button class="vrcn-button sub-tab-btn" id="worldGridSmall" onclick="setGridSize('worlds','compact');setWorldsViewMode('grid')" title="Compact grid"><span class="msi" style="font-size:14px;">apps</span></button>
