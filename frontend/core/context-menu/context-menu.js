@@ -228,7 +228,7 @@
             btn.addEventListener('click', e => {
                 e.stopPropagation();
                 if (btn.disabled || !item) return;
-                if (item.submenuFn) { openSub(); return; }
+                if (item.submenuFn && typeof item.action !== 'function') { openSub(); return; }
                 if (item.confirm) handleConfirm(btn, item, +btn.dataset.idx);
                 else { item.action(); hideMenu(); }
             });
@@ -270,6 +270,8 @@
             });
             btn.addEventListener('click', e => {
                 e.stopPropagation();
+                const item = callbacks[+btn.dataset.idx];
+                if (item && typeof item.action === 'function') { item.action(); hideMenu(); return; }
                 open();
             });
         });
@@ -342,7 +344,7 @@
     }
 
     function copyItem(kind, idVar, url, idLabel, linkLabel, idToast, linkToast, extra) {
-        return { icon: 'content_copy', label: cm('copy', 'Copy'), submenuFn: btn => showCopySubmenu([
+        return { icon: 'content_copy', label: cm('copy', 'Copy'), action: () => copyWithToast(url, kind + '.share_copied', linkToast), submenuFn: btn => showCopySubmenu([
             { icon: 'id_card', label: cm(kind + '.copy_id', idLabel), text: idVar, toastKey: kind + '.id_copied', fallback: idToast },
             { icon: 'link_2', label: cm(kind + '.copy_link', linkLabel), text: url, toastKey: kind + '.share_copied', fallback: linkToast },
             ...(Array.isArray(extra) ? extra : []),
