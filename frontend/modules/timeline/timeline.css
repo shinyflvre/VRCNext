@@ -20,6 +20,9 @@
 .tl-list-more { border: none; background: transparent; padding: 0; cursor: pointer; font: inherit; font-size: calc(10px + var(--fs-off, 0px)); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--accent-lt); }
 .tl-list-more:hover { color: var(--accent); }
 
+.tl-list-link { cursor: pointer; }
+.tl-list-link:hover { color: var(--accent-lt); }
+
 .tl-list-table {
     width: 100%;
     border-collapse: collapse;

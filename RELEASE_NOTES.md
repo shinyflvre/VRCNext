@@ -25,6 +25,9 @@ This update makes context menus smaller and more compact, and adds saving for st
 - Custom text lines can be reordered by drag and drop, like the modules.
 - System stats show VRAM as used/total, e.g. **VRAM 3.7/8GB**.
 
+**Timeline**
+- List view: a single user name in the **User** column opens the profile directly, and an avatar name in the **Detail** column opens the avatar.
+
 **User & World Modals**
 - Timeline, Last Activity and Instance History now use the Timeline page list design, with a **Show more** link that opens the Timeline with the user or world preselected in the search.
 

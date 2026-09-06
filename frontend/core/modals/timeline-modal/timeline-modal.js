@@ -954,19 +954,31 @@ function tlMiniListHtml(rowsHtml, moreOnclick) {
     </table></div>`;
 }
 
+function tlListUserLink(name, userId) {
+    const label = esc(name || t('timeline.unknown', 'Unknown'));
+    if (!userId) return label;
+    return `<span class="tl-list-link" title="${esc(t('timeline.actions.view_profile', 'View Profile'))}" onclick="if(typeof tlEditMode!=='undefined'&&tlEditMode)return;event.stopPropagation();navOpenModal('friend','${jsq(userId)}','${jsq(name || '')}')">${label}</span>`;
+}
+
+function tlListAvatarLink(name, avatarId) {
+    const label = esc(name || t('timeline.unknown_avatar', 'Unknown Avatar'));
+    if (!avatarId) return label;
+    return `<span class="tl-list-link" title="${esc(t('timeline.actions.view_avatar', 'View Avatar'))}" onclick="if(typeof tlEditMode!=='undefined'&&tlEditMode)return;event.stopPropagation();navOpenModal('avatar','${jsq(avatarId)}','${jsq(name || '')}')">${label}</span>`;
+}
+
 function _tlListData(ev) {
     switch (ev.type) {
         case 'instance_join':
-            return { userHtml: esc(currentVrcUser?.displayName || t('timeline.unknown', 'Unknown')), detail: tlInstanceListDetail(ev, ev.worldName || ev.worldId || t('timeline.unknown_world', 'Unknown World')) };
+            return { userHtml: tlListUserLink(currentVrcUser?.displayName, currentVrcUser?.id), detail: tlInstanceListDetail(ev, ev.worldName || ev.worldId || t('timeline.unknown_world', 'Unknown World')) };
         case 'photo':
             return { userHtml: _tlListPlayerAvatars(ev.players, 3), detail: esc(ev.photoPath ? ev.photoPath.split(/[\\/]/).pop() : t('timeline.photo', 'Photo')) };
         case 'first_meet':
-            return { userHtml: esc(ev.userName || t('timeline.unknown', 'Unknown')), detail: ev.worldName ? esc(ev.worldName) : '' };
+            return { userHtml: tlListUserLink(ev.userName, ev.userId), detail: ev.worldName ? esc(ev.worldName) : '' };
         case 'meet_again':
-            return { userHtml: esc(ev.userName || t('timeline.unknown', 'Unknown')), detail: ev.worldName ? esc(ev.worldName) : '' };
+            return { userHtml: tlListUserLink(ev.userName, ev.userId), detail: ev.worldName ? esc(ev.worldName) : '' };
         case 'notification': {
             const sender = ev.senderName || '';
-            const userHtml = sender ? esc(sender) : '';
+            const userHtml = sender ? tlListUserLink(sender, ev.senderId) : '';
             if (sender && ev.notifType === 'invite') {
                 const s = ev.worldName
                     ? tf('timeline.notif.invited_you_to', { name: sender, world: ev.worldName }, `${sender} invited you to ${ev.worldName}`)
@@ -980,7 +992,7 @@ function _tlListData(ev) {
             return { userHtml, detail: text ? `${esc(text.slice(0, 90))}${text.length > 90 ? '…' : ''}` : '' };
         }
         case 'avatar_switch':
-            return { userHtml: esc(currentVrcUser?.displayName || t('timeline.unknown', 'Unknown')), detail: esc(ev.userName || '') };
+            return { userHtml: tlListUserLink(currentVrcUser?.displayName, currentVrcUser?.id), detail: ev.userName ? tlListAvatarLink(ev.userName, ev.userId) : '' };
         case 'video_url': {
             const url = ev.message || '';
             const short = url.length > 60 ? url.slice(0, 60) + '...' : url;
@@ -989,11 +1001,11 @@ function _tlListData(ev) {
         case 'moderation': {
             const active = (ev.message || 'on') !== 'off';
             const label  = (typeof tlModTypeLabel === 'function') ? tlModTypeLabel(ev.notifType, active) : (ev.notifType || '');
-            return { userHtml: esc(ev.userName || t('timeline.unknown', 'Unknown')), detail: `<span style="color:${active ? 'var(--err)' : 'var(--ok)'}">${esc(label)}</span>` };
+            return { userHtml: tlListUserLink(ev.userName, ev.userId), detail: `<span style="color:${active ? 'var(--err)' : 'var(--ok)'}">${esc(label)}</span>` };
         }
         case 'profile': {
             const meta = (typeof tlProfileMeta === 'function') ? tlProfileMeta(ev) : { label: t('timeline.types.profile', 'Profile') };
-            const uh = esc(ev.userName || currentVrcUser?.displayName || t('timeline.unknown', 'Unknown'));
+            const uh = tlListUserLink(ev.userName || currentVrcUser?.displayName, ev.userId || currentVrcUser?.id);
             let detail;
             if (ev.notifType === 'status') {
                 const oldCls = statusCssClass(ev.notifTitle);
@@ -1037,7 +1049,7 @@ function buildFriendListHtml(events, staticHeader) {
             dt:      `<td class="tl-list-dt">${esc(`${tlFormatShortDate(ev.timestamp)} | ${tlFormatTime(ev.timestamp)}`)}</td>`,
             type:    `<td class="tl-list-type"><span class="msi tl-list-icon" style="color:${color}">${meta.icon}</span><span>${esc(meta.label)}</span></td>`,
             profile: `<td class="tl-list-profile">${_tlListProfHtml(ev.friendImage, ev.friendName)}</td>`,
-            user:    `<td class="tl-list-user">${esc(ev.friendName || t('timeline.unknown', 'Unknown'))}</td>`,
+            user:    `<td class="tl-list-user">${tlListUserLink(ev.friendName, ev.friendId)}</td>`,
             detail:  `<td class="tl-list-detail">${detail || tlListNaHtml()}</td>`,
         });
     });
@@ -1067,7 +1079,7 @@ function _ftListDetail(ev) {
         }
         case 'friend_added':      return `<span style="color:var(--ok)">${esc(t('timeline.friend.added_full', 'Friend Added'))}</span>`;
         case 'friend_removed':    return `<span style="color:var(--err)">${esc(t('timeline.friend.unfriended', 'Unfriended'))}</span>`;
-        case 'friend_avatar':     return esc(ev.worldName || ev.newValue || t('timeline.unknown', 'Unknown'))
+        case 'friend_avatar':     return tlListAvatarLink(ev.worldName || ev.newValue || t('timeline.unknown', 'Unknown'), ev.worldId)
             + (ev.worldId ? '' : `<span class="msi" title="${esc(t('profiles.badges.avatar_not_in_db', 'Avatar not found in any database'))}" style="font-size:12px;color:var(--tx2);vertical-align:middle;margin-left:4px;">lock</span>`);
         default: return '';
     }
