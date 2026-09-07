@@ -42,6 +42,7 @@ Looking for a specific option but forgot which tool it belongs to? Smart Search 
 **Changes**
 - People tab: **Blocked** and **Muted** moved into a new **Moderated** filter, shown as sub-filters with their counts.
 - People > All Friends > In-Game: friends are grouped with separators.
+- Dashboard > Friends Activity: friends are grouped by shared instances
 - People > Instance: the instance info is a card at the height of the search box next to it, with the world name, an #id badge, the type badge and the player count on the right.
 - Smart Search (Ctrl K) now searches all tools: options, sliders, dropdowns and section headers of every tool page and of the VRChat Config, Launch Options, Message Templates and Log Viewer modals. Selecting a result opens the tool or modal and highlights the option, like Settings results.
 - Text now uses ClearType (subpixel antialiasing) instead of grayscale.
@@ -50,6 +51,7 @@ Looking for a specific option but forgot which tool it belongs to? Smart Search 
 
 **Bug Fixes**
 - Context menus no longer flicker on open.
+- Dashboard: Friends Activity and Group Activity keep their scroll position when the list updates instead of jumping back to the top.
 - Context menus use the configured badge base color.
 - Context menus: icons of red actions like Unfriend or Block stay red on hover instead of turning gray.
 - Taskbar: the clock and date are no longer cut off when the menu labels are longer, for example in French. The menu area now grows with its content.

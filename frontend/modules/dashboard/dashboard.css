@@ -1311,6 +1311,22 @@ body:has(.rsidebar.collapsed) .dash-hero-content { padding-right: calc(var(--rsi
     align-content: start;
 }
 .dash-hw-friends::-webkit-scrollbar { display: none; }
+.dash-hw-sep {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 6px 2px 0;
+    font-size: calc(11px + var(--fs-off, 0px));
+    font-weight: 600;
+    color: rgba(255,255,255,.78);
+}
+.dash-hw-sep-head { padding-top: 0; }
+.dash-hw-sep-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: uppercase; letter-spacing: .5px; }
+.dash-hw-sep-line { flex: 1; }
+.dash-hw-sep-count { flex-shrink: 0; font-weight: 500; color: rgba(255,255,255,.6); font-variant-numeric: tabular-nums; }
+.dash-hw-sep .dash-hw-seeall { margin-left: 0; flex-shrink: 0; }
 .dash-hw-more {
     display: flex;
     align-items: center;
