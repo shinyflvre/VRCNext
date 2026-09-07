@@ -51,6 +51,7 @@ Looking for a specific option but forgot which tool it belongs to? Smart Search 
 
 **Bug Fixes**
 - Context menus no longer flicker on open.
+- People lists: the Language column shows every language as a badge with its full name and wraps instead of cutting off after the first one. Instance, All Friends, Favorites and the other lists use the same badges.
 - Dashboard: Friends Activity and Group Activity keep their scroll position when the list updates instead of jumping back to the top.
 - Context menus use the configured badge base color.
 - Context menus: icons of red actions like Unfriend or Block stay red on hover instead of turning gray.

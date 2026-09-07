@@ -554,10 +554,9 @@ function _plLangs(tags) {
 function _plLangCell(f) {
     const langs = _plLangs(f.tags);
     if (!langs.length) return '';
-    return langs.slice(0, 3).map(k => {
+    return langs.map(k => {
         const name = (typeof LANG_MAP !== 'undefined' && LANG_MAP[k]) ? LANG_MAP[k] : k.replace('language_', '').toUpperCase();
-        const flag = (typeof LANG_FLAG !== 'undefined' && LANG_FLAG[k]) ? LANG_FLAG[k] : '';
-        return `<span class="pl-lang" title="${esc(name)}">${flag ? esc(flag) : esc(name)}</span>`;
+        return `<span class="vrcn-badge">${esc(name)}</span>`;
     }).join('');
 }
 
