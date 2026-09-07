@@ -42,6 +42,7 @@ Looking for a specific option but forgot which tool it belongs to? Smart Search 
 **Changes**
 - People tab: **Blocked** and **Muted** moved into a new **Moderated** filter, shown as sub-filters with their counts.
 - People > All Friends > In-Game: friends are grouped with separators.
+- People > Instance: the instance info is a card at the height of the search box next to it, with the world name, an #id badge, the type badge and the player count on the right.
 - Smart Search (Ctrl K) now searches all tools: options, sliders, dropdowns and section headers of every tool page and of the VRChat Config, Launch Options, Message Templates and Log Viewer modals. Selecting a result opens the tool or modal and highlights the option, like Settings results.
 - Text now uses ClearType (subpixel antialiasing) instead of grayscale.
 - Updated some badge colors.

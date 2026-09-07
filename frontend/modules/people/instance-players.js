@@ -140,28 +140,33 @@ function renderInstancePlayers() {
 
     const titleEl = document.getElementById('instancePlayersTitle');
     const countEl = document.getElementById('instancePlayersCount');
+    const infoEl  = document.getElementById('instancePlayersInfo');
+    const numEl   = document.getElementById('instancePlayersNum');
     const { data, users } = _ipUsers();
 
     if (!data) {
         el.innerHTML = emptyStateHtml('travel_explore', esc(t('profiles.people.instance.empty', 'You are not in an instance')));
         if (titleEl) titleEl.textContent = '';
         if (countEl) countEl.textContent = '';
+        if (numEl) numEl.textContent = '';
+        if (infoEl) infoEl.style.display = 'none';
         return;
     }
 
+    if (infoEl) infoEl.style.display = '';
+    const instNum = (data.location || '').split(':')[1]?.split('~')[0] || '';
     if (titleEl) titleEl.textContent = data.worldName || '';
+    if (numEl) numEl.textContent = `${users.length || data.nUsers || 0}${data.capacity ? '/' + data.capacity : ''}`;
     if (countEl) {
         const badge = (typeof getInstanceBadge === 'function') ? getInstanceBadge(data.instanceType) : null;
-        const instNum = (data.location || '').split(':')[1]?.split('~')[0] || '';
         const parts = [];
+        if (instNum) parts.push(`<span class="vrcn-badge ip-inst-id" title="${esc(t('timeline.actions.copy_instance_link', 'Copy Instance Link'))}" onclick="copyInstanceLink('${jsq(data.location || '')}')">#${esc(instNum)}</span>`);
         if (badge?.label) parts.push(`<span class="vrcn-badge ${badge.cls || ''}">${esc(badge.label)}</span>`);
-        if (instNum) parts.push(`<span class="vrcn-id-clip" onclick="copyInstanceLink('${jsq(data.location || '')}')"><span class="msi" style="font-size:12px;">content_copy</span>#${esc(instNum)}</span>`);
         if (data.ageGate) parts.push(`<span class="vrcn-badge" style="background:rgba(255,75,85,.15);color:var(--err);">${esc(t('worlds.instances.age_gated', 'Age Gated'))}</span>`);
         if (typeof getOwnerBadgeHtml === 'function') {
             const owner = getOwnerBadgeHtml(data.ownerId || '', data.ownerName || '', data.ownerGroup || '', '');
             if (owner) parts.push(owner);
         }
-        parts.push(`<span class="vrcn-badge"><span class="msi" style="font-size:11px;">person</span>&nbsp;${users.length || data.nUsers || 0}${data.capacity ? '/' + data.capacity : ''}</span>`);
         countEl.innerHTML = parts.join('');
     }
 
