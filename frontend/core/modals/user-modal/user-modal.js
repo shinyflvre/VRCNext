@@ -1422,10 +1422,11 @@ function patchFriendDetailLive(f) {
 function renderFdTimeline(userId, events) {
     if (!currentFriendDetail || currentFriendDetail.id !== userId) return;
     _fdTimelineEvents = events || [];
-    drawMiniTimeline(_fdTimelineEvents, document.getElementById('fdMiniTl'));
+    const _fdTlMore = currentFriendDetail ? `openTimelineWithChip('personal','friends','${jsq(currentFriendDetail.id || '')}','${jsq(currentFriendDetail.displayName || '')}','${jsq(currentFriendDetail.image || '')}','closeFriendDetail')` : '';
+    drawMiniTimeline(_fdTimelineEvents, document.getElementById('fdMiniTl'), _fdTlMore);
 }
 
-function drawMiniTimeline(events, el) {
+function drawMiniTimeline(events, el, moreOnclick) {
     if (!el) return;
 
     if (!events || !events.length) {
@@ -1433,20 +1434,19 @@ function drawMiniTimeline(events, el) {
         return;
     }
 
-    el.innerHTML = events.map(ev => {
+    el.innerHTML = tlMiniListHtml(events.map(ev => {
         const meta   = typeof tlTypeMeta === 'function' ? tlTypeMeta(ev.type) : { icon: 'event', label: ev.type };
         const color  = { instance_join:'var(--accent)', photo:'var(--ok)', first_meet:'var(--cyan)', meet_again:'#6554FF', notification:'var(--warn)', avatar_switch:'#FF7043', video_url:'#29B6F6' }[ev.type] || 'var(--tx3)';
         const d      = new Date(ev.timestamp);
         const dt     = `${fmtShortDate(d)} | ${fmtTime(d)}`;
         const ei     = ev.id.replace(/'/g, "\\'");
         const detail = typeof _tlListData === 'function' ? (_tlListData(ev).detail || '') : '';
-        return `<div style="display:flex;align-items:center;gap:8px;padding:5px 2px;border-bottom:1px solid var(--brd);cursor:pointer;" onclick="openTlDetail('${ei}', true)">
-            <span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);white-space:nowrap;">${esc(dt)}</span>
-            <span class="msi" style="font-size:14px;color:${color};flex-shrink:0;">${meta.icon}</span>
-            <span style="font-size:calc(12px + var(--fs-off, 0px));">${esc(meta.label)}</span>
-            ${detail ? `<span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">${detail}</span>` : ''}
-        </div>`;
-    }).join('');
+        return `<tr class="tl-list-row" onclick="openTlDetail('${ei}', true)">
+            <td class="tl-list-dt">${esc(dt)}</td>
+            <td class="tl-list-type"><span class="msi tl-list-icon" style="color:${color}">${meta.icon}</span><span>${esc(meta.label)}</span></td>
+            <td class="tl-list-detail">${detail || (typeof tlListNaHtml === 'function' ? tlListNaHtml() : '')}</td>
+        </tr>`;
+    }).join(''), moreOnclick || '');
 }
 
 function renderFdUserActivity(userId, events) {
@@ -1463,20 +1463,19 @@ function renderFdUserActivity(userId, events) {
 
     const FT_COLOR = { friend_gps:'var(--accent)', friend_status:'var(--cyan)', friend_statusdesc:'var(--cyan)', friend_online:'var(--ok)', friend_offline:'var(--tx3)', friend_bio:'#6554FF', friend_added:'var(--ok)', friend_removed:'var(--err)' };
 
-    el.innerHTML = events.map(ev => {
+    el.innerHTML = tlMiniListHtml(events.map(ev => {
         const meta   = typeof ftTypeMeta === 'function' ? ftTypeMeta(ev.type) : { icon: 'circle', label: ev.type };
         const color  = FT_COLOR[ev.type] || 'var(--tx3)';
         const d      = new Date(ev.timestamp);
         const dt     = `${fmtShortDate(d)} | ${fmtTime(d)}`;
         const ei     = jsq(ev.id);
         const detail = typeof _ftListDetail === 'function' ? (_ftListDetail(ev) || '') : '';
-        return `<div style="display:flex;align-items:center;gap:8px;padding:5px 2px;border-bottom:1px solid var(--brd);cursor:pointer;" onclick="openFdActivityDetail('${ei}')">
-            <span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);white-space:nowrap;">${esc(dt)}</span>
-            <span class="msi" style="font-size:14px;color:${color};flex-shrink:0;">${meta.icon}</span>
-            <span style="font-size:calc(12px + var(--fs-off, 0px));">${esc(meta.label)}</span>
-            ${detail ? `<span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">${detail}</span>` : ''}
-        </div>`;
-    }).join('');
+        return `<tr class="tl-list-row" onclick="openFdActivityDetail('${ei}')">
+            <td class="tl-list-dt">${esc(dt)}</td>
+            <td class="tl-list-type"><span class="msi tl-list-icon" style="color:${color}">${meta.icon}</span><span>${esc(meta.label)}</span></td>
+            <td class="tl-list-detail">${detail || (typeof tlListNaHtml === 'function' ? tlListNaHtml() : '')}</td>
+        </tr>`;
+    }).join(''), `openTimelineWithChip('friends','friends','${jsq(currentFriendDetail.id || '')}','${jsq(currentFriendDetail.displayName || '')}','${jsq(currentFriendDetail.image || '')}','closeFriendDetail')`);
 }
 
 function switchFdMiniTlPill(pill, btn) {
@@ -1518,7 +1517,7 @@ function renderFdInsightsWorlds(worlds, elId = 'fdInsightsWorlds') {
             : `<div class="ts-item-thumb ts-thumb-placeholder"><span class="msi" style="font-size:18px;color:var(--tx2);">travel_explore</span></div>`;
         const click = w.worldId ? `onclick="navOpenModal('worldSearch','${jsq(w.worldId)}','${jsq(w.worldName || '')}')" style="cursor:pointer"` : '';
         const visits = tf(`timespent.visit.${w.visits === 1 ? 'one' : 'other'}`, { count: w.visits }, `${w.visits} visit${w.visits === 1 ? '' : 's'}`);
-        return `<div class="ts-item" ${click}>
+        return `<div class="ts-item" ${w.worldId ? `data-world-id="${esc(w.worldId)}"` : ''} ${click}>
             <div class="ts-item-rank">#${i + 1}</div>
             ${thumb}
             <div class="ts-item-body">
@@ -1546,7 +1545,7 @@ function renderFdInsightsPersons(persons, elId = 'fdInsightsPersons') {
             ? `<img class="ts-item-avatar" src="${esc(imgThumb(p.image, 96))}" onerror="this.style.display='none'">`
             : `<div class="ts-item-avatar ts-avatar-placeholder"><span class="msi" style="font-size:16px;color:var(--tx2);">person</span></div>`;
         const encounters = tf(`timespent.encounter.${p.meets === 1 ? 'one' : 'other'}`, { count: p.meets }, `${p.meets} encounter${p.meets === 1 ? '' : 's'}`);
-        return `<div class="ts-item" onclick="navOpenModal('friend','${jsq(p.userId)}','${jsq(p.displayName || '')}')" style="cursor:pointer">
+        return `<div class="ts-item" data-user-id="${esc(p.userId)}" onclick="navOpenModal('friend','${jsq(p.userId)}','${jsq(p.displayName || '')}')" style="cursor:pointer">
             <div class="ts-item-rank">#${i + 1}</div>
             <div class="ts-avatar-wrap">${avatar}</div>
             <div class="ts-item-body">
@@ -1912,6 +1911,7 @@ function handleFavFriendToggled(payload) {
     const { userId, fvrtId, isFavorited, groupName } = payload;
     favFriendsData = favFriendsData.filter(f => f.favoriteId !== userId);
     if (isFavorited) favFriendsData.push({ fvrtId, favoriteId: userId, groupName: groupName || 'group_0' });
+    if (typeof _pplUpdateCounts === 'function') _pplUpdateCounts();
     const btn = document.getElementById('fdFavBtn');
     if (btn) {
         btn.disabled = false;

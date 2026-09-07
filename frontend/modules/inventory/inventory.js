@@ -70,6 +70,20 @@ function invCountText(kind, count) {
     return tf(`inventory.count.items.${form}`, { count }, `${count} item${count === 1 ? '' : 's'}`);
 }
 
+let _invPrintsLoaded = false;
+let _invInventoryLoaded = false;
+
+function _invUpdateCounts() {
+    const counts = {
+        photos: invFilesCache['gallery'], icons: invFilesCache['icon'], emojis: invFilesCache['emoji'], stickers: invFilesCache['sticker'],
+        prints: _invPrintsLoaded ? invPrintsCache : null, inventory: _invInventoryLoaded ? invInventoryCache : null
+    };
+    Object.keys(INV_TABS).forEach(key => {
+        const el = document.getElementById('invF' + key.charAt(0).toUpperCase() + key.slice(1) + 'Count');
+        if (el) el.textContent = Array.isArray(counts[key]) ? String(counts[key].length) : 'X';
+    });
+}
+
 function invGroupDateLabel(value) {
     const date = value ? new Date(value) : new Date(0);
     if (isNaN(date.getTime())) return t('inventory.date.unknown', 'Unknown date');
@@ -133,8 +147,7 @@ function refreshInventory(force = false) {
 
     grid.innerHTML = sk('feed', 6);
 
-    const count = document.getElementById('invCount');
-    if (count) count.textContent = '';
+    _invUpdateCounts();
 
     if (tab === 'prints') {
         sendToCS({ action: 'invGetPrints', force });
@@ -156,8 +169,7 @@ function renderInvFiles(files, tab) {
     const grid = document.getElementById('invGrid');
     if (!grid) return;
 
-    const count = document.getElementById('invCount');
-    if (count) count.textContent = invCountText('items', files.length);
+    _invUpdateCounts();
 
     if (!files.length) {
         const hint = invTabHint(tab);
@@ -226,12 +238,12 @@ function renderInvPrints(prints) {
     }
 
     invPrintsCache = prints;
+    _invPrintsLoaded = true;
 
     const grid = document.getElementById('invGrid');
     if (!grid) return;
 
-    const count = document.getElementById('invCount');
-    if (count) count.textContent = invCountText('prints', prints.length);
+    _invUpdateCounts();
 
     if (!prints.length) {
         grid.innerHTML = `<div class="empty-msg">${t('inventory.empty.prints', 'No prints found.')}<br><span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);">${esc(t('inventory.empty.prints_desc', 'Prints are photos taken inside VRChat.'))}</span></div>`;
@@ -291,12 +303,12 @@ function buildInvPrintCard(print) {
 
 function renderInvInventory(items) {
     invInventoryCache = items;
+    _invInventoryLoaded = true;
 
     const grid = document.getElementById('invGrid');
     if (!grid) return;
 
-    const count = document.getElementById('invCount');
-    if (count) count.textContent = invCountText('items', items.length);
+    _invUpdateCounts();
 
     if (!items.length) {
         grid.innerHTML = `<div class="empty-msg">${t('inventory.empty.inventory', 'No inventory items found.')}<br><span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);">${esc(t('inventory.empty.inventory_desc', 'Items you own appear here (props, emojis, stickers from bundles).'))}</span></div>`;
@@ -494,6 +506,8 @@ function handleInvPrintUploadResult(payload) {
         if (typeof closeInvUploadModal === 'function') closeInvUploadModal();
         showToast(true, t('inventory.upload.print_done', 'Print uploaded'));
         invPrintsCache = [];
+        _invPrintsLoaded = false;
+        _invUpdateCounts();
         if (activeInvTab === 'prints') refreshInventory(true);
         return;
     }

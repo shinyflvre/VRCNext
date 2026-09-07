@@ -283,18 +283,17 @@
 
 .cb-ord-handle {
     font-size: calc(18px + var(--fs-off, 0px)) !important;
-    color: var(--tx2);
+    color: color-mix(in srgb, var(--tx2) 50%, transparent);
     cursor: grab;
     user-select: none;
     flex-shrink: 0;
-    opacity: .5;
-    transition: opacity .15s;
+    transition: color .15s;
 }
 
-.cb-ord-row:hover .cb-ord-handle { opacity: 1; }
+.cb-ord-row:hover .cb-ord-handle { color: var(--tx2); }
 .cb-ord-handle:active { cursor: grabbing; }
 .cb-line-item .cb-line-handle { font-size: calc(16px + var(--fs-off, 0px)) !important; margin-left: -4px; }
-.cb-line-item:hover .cb-line-handle { opacity: 1; }
+.cb-line-item:hover .cb-line-handle { color: var(--tx2); }
 
 .cb-ord-sub {
     padding-left: 26px;

@@ -1,5 +1,5 @@
-                <div class="tab-toolbar" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <div class="tab-toolbar" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:nowrap;gap:10px;">
+                    <div class="tt-scroll">
                         <button class="vrcn-button" id="libFavBtn" onclick="toggleFavFilter()"><span class="msi" style="font-size:16px;">favorite</span> <span data-i18n="library.favorites">Favorites</span></button>
                         <div id="libRatingFilterWrap"></div>
                         <div id="libFriendFilterWrap"></div>
@@ -9,10 +9,10 @@
                         <select id="libFolderFilter" class="vrcn-dropdown" onchange="filterLibrary()"><option value="__all__" data-i18n="library.filters.all_folders">All Folders</option></select>
                         <select id="libTypeFilter" class="vrcn-dropdown" onchange="filterLibrary()"><option value="all" data-i18n="library.filters.all_media">All Media</option><option value="image" data-i18n="library.filters.images">Images</option><option value="video" data-i18n="library.filters.videos">Videos</option><option value="gif" data-i18n="library.filters.gifs">GIFs</option></select>
                     </div>
-                    <div style="display:flex;gap:8px;align-items:center;">
+                    <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">
                         <button class="vrcn-button" id="libResetFiltersBtn" onclick="resetLibFilters()" style="display:none;" data-i18n="library.filters.reset">Reset</button>
                         <button class="vrcn-button" id="libEditModeBtn" onclick="toggleLibEditMode()" title="Edit" data-i18n-title="library.edit.button"><span class="msi" style="font-size:16px;">edit</span> <span data-i18n="library.edit.button">Edit</span></button>
-                        <button class="vrcn-button" onclick="forceRefreshLibrary()"><span class="msi" style="font-size:16px;">refresh</span> <span data-i18n="common.refresh">Refresh</span></button>
+                        <button class="vrcn-button" onclick="forceRefreshLibrary()" title="Refresh" data-i18n-title="common.refresh"><span class="msi" style="font-size:16px;">refresh</span></button>
                         <button class="vrcn-button sub-tab-btn active" id="libViewGrid" onclick="setLibViewMode('grid')" title="Grid View"><span class="msi" style="font-size:16px;">grid_view</span></button>
                         <button class="vrcn-button sub-tab-btn" id="libViewFolder" onclick="setLibViewMode('folder')" title="Folder View"><span class="msi" style="font-size:16px;">folder</span></button>
                     </div>

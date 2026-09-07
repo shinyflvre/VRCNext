@@ -11,6 +11,7 @@
 #peopleAllArea,
 #peopleRecentArea,
 #peopleSearchArea,
+#peopleModeratedArea,
 #peopleBlockedArea,
 #peopleInstanceArea,
 #peopleMutedArea {
@@ -24,6 +25,7 @@
 #peopleAllArea .search-bar-row,
 #peopleRecentArea .search-bar-row,
 #peopleSearchArea .search-bar-row,
+#peopleModeratedArea .search-bar-row,
 #peopleBlockedArea .search-bar-row,
 #peopleMutedArea .search-bar-row {
     flex-shrink: 0;
@@ -107,6 +109,40 @@
 .sloc-inst-card .vrc-friend-card:hover {
     background: var(--bg-hover);
 }
+.ip-inst-card {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 32px;
+    box-sizing: border-box;
+    padding: 0 12px;
+    border-radius: 7px;
+    background: var(--ui-input-bg);
+    border: 1px solid transparent;
+}
+.ip-inst-title {
+    font-size: calc(12px + var(--fs-off, 0px));
+    font-weight: 600;
+    color: var(--tx0);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.ip-inst-id { cursor: pointer; font-variant-numeric: tabular-nums; }
+.ip-inst-id:hover { filter: brightness(1.15); }
+.ip-inst-badges { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.ip-inst-num {
+    margin-left: auto;
+    flex-shrink: 0;
+    font-size: calc(11px + var(--fs-off, 0px));
+    font-weight: 500;
+    color: var(--tx2);
+    font-variant-numeric: tabular-nums;
+}
+.pl-inst-link { cursor: pointer; }
+.pl-inst-link:hover { color: var(--accent-lt); }
 
 /* Sidebar login box */
 .vrc-login-box {
@@ -179,8 +215,8 @@
     color: var(--tx2);
 }
 .pl-status-txt { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.pl-langs { white-space: nowrap; }
-.pl-lang { margin-right: 4px; font-size: calc(13px + var(--fs-off, 0px)); }
+.tl-list-fixed td.pl-langs, .pl-langs { white-space: normal; }
+.pl-langs .vrcn-badge { display: inline-block; margin: 1px 4px 1px 0; white-space: nowrap; }
 .pl-bios { white-space: nowrap; }
 .pl-bio-link {
     display: inline-flex;

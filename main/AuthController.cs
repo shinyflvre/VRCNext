@@ -1446,7 +1446,7 @@ public class AuthController
     private void ReconcilePlayerSessionsFromLog(TimelineService.TimelineEvent lastJoin)
     {
         if (lastJoin == null) return;
-        const long ToleranceMs = 1000;
+        const long ToleranceMs = 5000;
 
         long ToMs(string iso)
         {
@@ -1496,7 +1496,7 @@ public class AuthController
                 }
                 else
                 {
-                    if (HasNearby(leftMs, ms)) continue;
+                    if (HasNearby(leftMs, ms) || dbLefts.Count >= dbJoins.Count) continue;
                     dbLefts.Add(iso); leftMs.Add(ms); changed = true;
                 }
             }
@@ -1510,6 +1510,16 @@ public class AuthController
                 _instance.CumulativeInstancePlayers[uid] = (perUserName[uid], img);
             }
             _instance.MeetAgainThisInstance.Add(uid);
+        }
+
+        foreach (var uid in _instance.PlayerJoinTimes.Keys.ToList())
+        {
+            if (uid == selfId) continue;
+            if (!_instance.PlayerLeftTimes.TryGetValue(uid, out var storedLefts) || storedLefts.Count < 2) continue;
+            var deduped = TimelineService.PlayerSnap.DedupeLefts(_instance.PlayerJoinTimes[uid], storedLefts);
+            if (deduped.Count == storedLefts.Count) continue;
+            _instance.PlayerLeftTimes[uid] = deduped;
+            changed = true;
         }
 
         var currentlyPresent = new HashSet<string>(

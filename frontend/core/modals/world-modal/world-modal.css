@@ -84,8 +84,8 @@
 #modalDetail.gd-style-compact .fd-left .fd-avatar {
     position: relative;
     z-index: 1;
-    width: 61px;
-    height: 61px;
+    width: 64px;
+    height: 64px;
     border-radius: 14px;
     flex-shrink: 0;
 }

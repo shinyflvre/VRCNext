@@ -48,8 +48,8 @@
 .vrcn-badge.warn { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); }
 .vrcn-badge.err  { background: rgba(239,83,80,.15);   color: var(--err); }
 .vrcn-badge.cyan { background: color-mix(in srgb, var(--cyan) 18%, transparent); color: var(--cyan); }
-.vrcn-supporter-badge { display: inline-flex; align-items: center; gap: 2px; font-size: calc(7px + var(--fs-off, 0px)); font-weight: 600; padding: 2px 5px; border-radius: 4px; background: #000; color: #FFD700; border: 1px solid #FFD700; box-shadow: 0 0 6px #FFD70066; letter-spacing: .4px; }
-.vrcn-local-badge { display: inline-flex; align-items: center; gap: 2px; font-size: calc(7px + var(--fs-off, 0px)); font-weight: 600; padding: 2px 5px; border-radius: 4px; background: #2a0a1f; color: #ff5fbf; border: 1px solid #ff5fbf; box-shadow: 0 0 7px #ff5fbf88; text-shadow: 0 0 5px #ff5fbf99; letter-spacing: .4px; }
+.vrcn-supporter-badge { display: inline-flex; align-items: center; gap: 2px; font-size: calc(7px + var(--fs-off, 0px)); font-weight: 600; padding: 2px 5px; border-radius: 4px; background: #000; color: #FFD700; border: 1px solid #FFD700; letter-spacing: .4px; }
+.vrcn-local-badge { display: inline-flex; align-items: center; gap: 2px; font-size: calc(7px + var(--fs-off, 0px)); font-weight: 600; padding: 2px 5px; border-radius: 4px; background: #000; color: #FFFFFF; border: 1px solid #FFFFFF; letter-spacing: .4px; }
 .vrcn-badge.db-avtrdb  { background: var(--accent); color: #fff; }
 .vrcn-badge.db-avtricu { background: #e879f9; color: #fff; }
 .vrcn-badge.db-vrcndb  { background: #2DD48C; color: #fff; }

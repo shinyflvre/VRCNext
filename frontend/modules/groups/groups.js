@@ -177,6 +177,7 @@ function groupEditLeaveConfirmed() {
     ids.forEach(id => sendToCS({ action: 'vrcLeaveGroup', groupId: id }));
     const leaving = new Set(ids);
     myGroups = myGroups.filter(g => !leaving.has(g.id));
+    _groupUpdateCounts();
     exitGroupEditMode();
 }
 
@@ -195,6 +196,21 @@ function groupBulkLeaveConsume(success) {
 }
 
 const _GROUP_TAB_BTNS = { joined: 'groupFilterJoined', mine: 'groupFilterMine', mod: 'groupFilterMod', search: 'groupFilterSearch', instances: 'groupFilterInstances' };
+
+function _groupUpdateCounts() {
+    const loaded = typeof myGroupsLoaded !== 'undefined' && myGroupsLoaded && Array.isArray(myGroups);
+    const inst = (typeof _dashGroupInstances !== 'undefined') ? _dashGroupInstances : null;
+    const counts = {
+        groupFilterJoinedCount: loaded ? myGroups : null,
+        groupFilterMineCount: loaded ? myGroups.filter(_groupIsOwn) : null,
+        groupFilterModCount: loaded ? myGroups.filter(g => !_groupIsOwn(g) && _groupCanModerate(g)) : null,
+        groupFilterInstancesCount: inst
+    };
+    Object.keys(counts).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = Array.isArray(counts[id]) ? String(counts[id].length) : 'X';
+    });
+}
 
 function setGroupFilter(filter) {
     if (!_GROUP_TAB_BTNS[filter]) filter = 'joined';
@@ -325,6 +341,7 @@ function buildGroupsListHtml(groups, staticHeader) {
 
 let _myGroupsDirty = false;
 function filterMyGroups() {
+    _groupUpdateCounts();
     const tab = document.getElementById('tab2');
     if (tab && !tab.classList.contains('active')) { _myGroupsDirty = true; return; }
     _myGroupsDirty = false;
@@ -423,6 +440,7 @@ function _groupInstCardHtml(inst) {
 }
 
 function renderGroupInstancesView() {
+    _groupUpdateCounts();
     const tab = document.getElementById('tab2');
     if (tab && !tab.classList.contains('active')) { _groupInstDirty = true; return; }
     _groupInstDirty = false;
@@ -528,6 +546,7 @@ function groupEditDeleteSelected() {
             ids.forEach(groupId => sendToCS({ action: 'vrcDeleteGroup', groupId }));
             const gone = new Set(ids);
             myGroups = myGroups.filter(g => !gone.has(g.id));
+            _groupUpdateCounts();
             exitGroupEditMode();
         },
     });

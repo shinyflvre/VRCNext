@@ -657,19 +657,25 @@ public sealed class LocalKikitanService : IKikitanSpeechService
             OnRecognized?.Invoke(srcText, false);
 
             string outText = srcText;
+            bool kawai = string.Equals(_personality, "kawai", StringComparison.OrdinalIgnoreCase);
             if (_translateEnabled && !string.IsNullOrWhiteSpace(_targetLang))
             {
                 string translated = Translate(srcText).GetAwaiter().GetResult();
                 if (!string.IsNullOrWhiteSpace(translated))
                 {
                     outText = translated;
+                    if (kawai)
+                    {
+                        string kaomoji = PickKaomoji(srcText).GetAwaiter().GetResult();
+                        if (kaomoji.Length > 0) outText = translated + " " + kaomoji;
+                    }
                     OnTranslated?.Invoke(outText);
                 }
             }
-            else if (string.Equals(_personality, "kawai", StringComparison.OrdinalIgnoreCase))
+            else if (kawai)
             {
-                string withKaomoji = AppendKaomoji(srcText).GetAwaiter().GetResult();
-                if (!string.IsNullOrWhiteSpace(withKaomoji)) outText = withKaomoji;
+                string kaomoji = PickKaomoji(srcText).GetAwaiter().GetResult();
+                if (kaomoji.Length > 0) outText = srcText + " " + kaomoji;
             }
 
             if (_oscEnabled) { SendChatbox(outText, _chatboxNotify); OnChatboxSent?.Invoke(); }
@@ -722,9 +728,16 @@ public sealed class LocalKikitanService : IKikitanSpeechService
         "Output ONLY the translated text. No explanations, no quotes, no labels. " +
         "If the text is already in {TARGET}, output it unchanged.";
 
-    private const string KawaiAddon =
-        " After the translation, append exactly one kaomoji (text emoticon like ^-^ or (>_<)) matching the mood. " +
-        "Never use Unicode emoji.";
+    private const string KaomojiSystemPrompt =
+        "You choose ONE kaomoji (Japanese-style text emoticon built from punctuation, letters and symbols) that matches the emotional mood of the user's text. " +
+        "Output ONLY the kaomoji. No words, no explanations, no quotes, no Unicode emoji like 😀 or 😢.\n" +
+        "Mood reference pools (examples, you may also invent your own):\n" +
+        "Happy / cheerful / positive: ^-^   ^^   ♡(>ᴗ•)   (✿◕‿◕)   (≧◡≦)\n" +
+        "Love / affection / romantic: ♡   (♡˙︶˙♡)   ( ˘ ³˘)♥\n" +
+        "Sad / disappointed / down: (ノ_<。)   (>﹏<)   (╥﹏╥)   (T_T)\n" +
+        "Embarrassed / shy / pain / frustrated: ( 〃▽〃)   >_<   (x_x)   (╯°□°)╯\n" +
+        "Surprised / shocked: w(°ｏ°)w   (×_×)   Σ(°ロ°)\n" +
+        "Neutral / calm / informative: (・_・)   (._.)   (¬_¬)";
 
     private static readonly Dictionary<string, string> LangNames = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -740,16 +753,24 @@ public sealed class LocalKikitanService : IKikitanSpeechService
     private Task<string> Translate(string text)
     {
         string target = LangNames.TryGetValue(_targetLang, out var n) ? n : _targetLang;
-        string system = TranslateSystemPrompt.Replace("{TARGET}", target);
-        if (string.Equals(_personality, "kawai", StringComparison.OrdinalIgnoreCase))
-            system += KawaiAddon;
-        return RunLlm(system, text, 256);
+        return RunLlm(TranslateSystemPrompt.Replace("{TARGET}", target), text, 256);
     }
 
-    private Task<string> AppendKaomoji(string text)
-        => RunLlm("Repeat the user's text unchanged, then a space, then exactly one kaomoji " +
-                  "(text emoticon like ^-^ or (>_<)) matching the mood. Never use Unicode emoji. " +
-                  "Output nothing else.", text, 128);
+    private async Task<string> PickKaomoji(string text)
+    {
+        string raw = await RunLlm(KaomojiSystemPrompt, text, 24);
+        return SanitizeKaomoji(raw);
+    }
+
+    private static string SanitizeKaomoji(string raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return "";
+        string s = raw.Split('\n')[0].Trim().Trim('"', '\'', '`');
+        if (s.Length == 0 || s.Length > 24) return "";
+        if (System.Text.RegularExpressions.Regex.IsMatch(s, "[A-Za-z]{3,}")) return "";
+        if (System.Text.RegularExpressions.Regex.IsMatch(s, "[\\uD800-\\uDFFF]")) return "";
+        return s;
+    }
 
     private void SendPartial(string text)
     {

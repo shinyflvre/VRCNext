@@ -142,3 +142,26 @@ div.vn-select {
     font-size: calc(12px + var(--fs-off, 0px));
     line-height: 32px;
 }
+
+/* ClearType: the option list renders on an own opaque layer, the shadow is drawn by the wrapper at the same place */
+.vn-select-panel {
+    anchor-name: --vrcn-selp;
+    border-radius: 0;
+    clip-path: inset(0 round 8px);
+    box-shadow: none;
+    backface-visibility: hidden;
+    background-attachment: local;
+}
+.vn-select.vn-open::after {
+    content: '';
+    position: absolute;
+    top: anchor(--vrcn-selp top, -9999px);
+    left: anchor(--vrcn-selp left, -9999px);
+    width: anchor-size(--vrcn-selp width, 0px);
+    height: anchor-size(--vrcn-selp height, 0px);
+    border-radius: 8px;
+    box-shadow: 0 8px 28px rgba(0,0,0,.45);
+    pointer-events: none;
+    z-index: 1199;
+}
+.vn-select.vn-open.vn-select-fixed::after { position: fixed; }

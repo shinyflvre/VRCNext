@@ -471,6 +471,7 @@ function declineNotif(notifId, btn) {
 /* === Current Instance (sidebar) === */
 function renderCurrentInstance(data) {
     currentInstanceData = data;
+    if (typeof _pplUpdateCounts === 'function') _pplUpdateCounts();
     if (typeof onInstancePlayersLive === 'function') onInstancePlayersLive();
 
     // Feed Discord presence preview

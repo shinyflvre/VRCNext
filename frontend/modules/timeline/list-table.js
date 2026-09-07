@@ -407,3 +407,35 @@ function tlTableSortLocal(list, entries, accessors) {
         return (va > vb ? 1 : -1) * dir;
     });
 }
+
+(function () {
+    function attach(wrap) {
+        if (wrap.dataset.hbar) return;
+        wrap.dataset.hbar = '1';
+        const bar = document.createElement('div');
+        bar.className = 'tl-list-hbar';
+        bar.appendChild(document.createElement('div'));
+        wrap.parentNode.insertBefore(bar, wrap);
+        let lock = false;
+        const update = () => {
+            if (!wrap.isConnected) return;
+            const need = wrap.scrollWidth > wrap.clientWidth + 1;
+            bar.classList.toggle('on', need);
+            bar.firstChild.style.width = wrap.scrollWidth + 'px';
+            if (bar.scrollLeft !== wrap.scrollLeft) bar.scrollLeft = wrap.scrollLeft;
+        };
+        bar.addEventListener('scroll', () => { if (lock) return; lock = true; wrap.scrollLeft = bar.scrollLeft; lock = false; });
+        wrap.addEventListener('scroll', () => { if (lock) return; lock = true; bar.scrollLeft = wrap.scrollLeft; lock = false; });
+        const ro = new ResizeObserver(update);
+        ro.observe(wrap);
+        if (wrap.firstElementChild) ro.observe(wrap.firstElementChild);
+        update();
+    }
+    function scan(root) {
+        if (!(root instanceof Element)) return;
+        if (root.classList.contains('tl-list-wrap')) attach(root);
+        root.querySelectorAll('.tl-list-wrap:not([data-hbar])').forEach(attach);
+    }
+    new MutationObserver(muts => { for (const m of muts) m.addedNodes.forEach(scan); }).observe(document.documentElement, { childList: true, subtree: true });
+    if (document.readyState !== 'loading') scan(document.body); else document.addEventListener('DOMContentLoaded', () => scan(document.body));
+})();

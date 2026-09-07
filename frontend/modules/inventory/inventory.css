@@ -7,14 +7,14 @@
     gap: 10px;
     padding: 10px 12px;
     flex-shrink: 0;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
 }
 
 .inv-filter-row {
     display: flex;
     align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
+    --tt-gap: 6px;
+    gap: var(--tt-gap);
 }
 
 .inv-grid {

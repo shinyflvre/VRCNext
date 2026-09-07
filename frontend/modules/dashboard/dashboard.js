@@ -1292,14 +1292,49 @@ function _dashHeroLabel(side, id) {
     return o ? t(o.nameKey, o.name) : '';
 }
 
-function _dashHeroFriendsHtml() {
+function _dashHeroFriendsHtml(seeAll = '') {
     if (!currentVrcUser) return `<div class="dash-hw-empty">${esc(t('dashboard.section.login', 'Login to VRChat'))}</div>`;
     const all = (typeof vrcFriendsData !== 'undefined' ? vrcFriendsData : [])
         .filter(f => f.presence === 'game');
-    const list = all.slice(0, 60);
-    if (!list.length) return `<div class="dash-hw-empty">${esc(t('dashboard.friends.empty', 'No friends online'))}</div>`;
-    const more = all.length > 60 ? `<button class="dash-hw-more" onclick="showTab(3)">+${all.length - 60}</button>` : '';
-    return `<div class="dash-hw-friends">` + list.map(_dashFlocsCardHtml).join('') + more + `</div>`;
+    if (!all.length) return `<div class="dash-hw-empty">${esc(t('dashboard.friends.empty', 'No friends online'))}</div>`;
+    const instKey = f => (f.location || '').split('~')[0];
+    const byInst = new Map();
+    for (const f of all) {
+        if (!(f.location || '').startsWith('wrld_')) continue;
+        const key = instKey(f);
+        if (!byInst.has(key)) byInst.set(key, []);
+        byInst.get(key).push(f);
+    }
+    const single = [], priv = [];
+    for (const f of all) {
+        const loc = f.location || '';
+        if (loc.startsWith('private')) priv.push(f);
+        else if (!(loc.startsWith('wrld_') && byInst.get(instKey(f)).length >= 2)) single.push(f);
+    }
+    const sections = [...byInst.entries()].filter(([, list]) => list.length >= 2)
+        .sort(([ka, la], [kb, lb]) => (lb.length - la.length) || ka.localeCompare(kb))
+        .map(([key, list]) => {
+            const wid = key.split(':')[0];
+            const loc = list[0].location || '';
+            const region = ((loc.match(/~region\(([^)]+)\)/) || [])[1] || '').toUpperCase();
+            const wname = dashWorldCache[wid]?.name || t('dashboard.friends.location_world', 'In World');
+            return { title: [wname, region].filter(Boolean).join(' · '), list };
+        });
+    sections.push({ title: t('profiles.people.sections.single_instances', 'In Single Instances'), list: single });
+    sections.push({ title: t('profiles.people.sections.private_instances', 'In Private Instances'), list: priv });
+    const MAX = 60;
+    let head = '', html = '', shown = 0;
+    for (const sec of sections) {
+        if (!sec.list.length || shown >= MAX) continue;
+        const part = sec.list.slice(0, MAX - shown);
+        const first = shown === 0;
+        const sep = `<div class="dash-hw-sep${first ? ' dash-hw-sep-head' : ''}"><span class="dash-hw-sep-title">${esc(sec.title)}</span><span class="dash-hw-sep-line"></span><span class="dash-hw-sep-count">${sec.list.length}</span>${first && seeAll ? `<span class="dash-hw-sep-count">·</span>${seeAll}` : ''}</div>`;
+        if (first) head = sep; else html += sep;
+        html += part.map(_dashFlocsCardHtml).join('');
+        shown += part.length;
+    }
+    const more = all.length > MAX ? `<button class="dash-hw-more" onclick="showTab(3)">+${all.length - MAX}</button>` : '';
+    return `<div class="dash-hw-friends">` + head + html + more + `</div>`;
 }
 
 function _dashHeroGroupsHtml() {
@@ -1415,8 +1450,13 @@ function renderDashHeroWidgets() {
         const slot = document.getElementById(side === 'left' ? 'dashHeroLeft' : 'dashHeroRight');
         if (!slot) return;
         const id = _dashLayout.hero[side];
+        let seeAll = '';
+        if (!_dashEditMode && id === 'friends_activity')
+            seeAll = `<button class="dash-hw-seeall" onclick="showTab(3);setTimeout(()=>{if(typeof setPeopleFilter==='function')setPeopleFilter('all');if(typeof setAllFriendsStatusFilter==='function')setAllFriendsStatusFilter('ingame');},80)">${esc(t('dashboard.section.see_all', 'SEE ALL →'))}</button>`;
+        else if (!_dashEditMode && id === 'group_activity')
+            seeAll = `<button class="dash-hw-seeall" onclick="showTab(2);setTimeout(()=>{if(typeof setGroupFilter==='function')setGroupFilter('instances');},80)">${esc(t('dashboard.section.see_all', 'SEE ALL →'))}</button>`;
         let body = '';
-        if (id === 'friends_activity') body = _dashHeroFriendsHtml();
+        if (id === 'friends_activity') body = _dashHeroFriendsHtml(seeAll);
         else if (id === 'group_activity') body = _dashHeroGroupsHtml();
         else if (id === 'next_event') body = _dashHeroEventHtml();
         else if (id === 'vrchat_news') body = _dashHeroNewsHtml();
@@ -1430,12 +1470,13 @@ function renderDashHeroWidgets() {
         const editBtn = _dashEditMode
             ? `<button class="dash-hw-edit" onclick="dashHeroPick(event, '${side}')"><span class="msi">dashboard_customize</span></button>`
             : '';
-        let seeAll = '';
-        if (!_dashEditMode && id === 'friends_activity')
-            seeAll = `<button class="dash-hw-seeall" onclick="showTab(3);setTimeout(()=>{if(typeof setPeopleFilter==='function')setPeopleFilter('all');if(typeof setAllFriendsStatusFilter==='function')setAllFriendsStatusFilter('ingame');},80)">${esc(t('dashboard.section.see_all', 'SEE ALL →'))}</button>`;
-        else if (!_dashEditMode && id === 'group_activity')
-            seeAll = `<button class="dash-hw-seeall" onclick="showTab(2);setTimeout(()=>{if(typeof setGroupFilter==='function')setGroupFilter('instances');},80)">${esc(t('dashboard.section.see_all', 'SEE ALL →'))}</button>`;
-        setHtmlIfChanged(slot, `<div class="dash-hw-label">${esc(_dashHeroLabel(side, id))}${editBtn}${seeAll}</div>${body}`);
+        const labelInSep = id === 'friends_activity' && !_dashEditMode && body.includes('dash-hw-sep');
+        const prevScroll = slot.querySelector('.dash-hw-friends')?.scrollTop || 0;
+        const changed = setHtmlIfChanged(slot, (labelInSep ? '' : `<div class="dash-hw-label">${esc(_dashHeroLabel(side, id))}${editBtn}${seeAll}</div>`) + body);
+        if (changed && prevScroll) {
+            const list = slot.querySelector('.dash-hw-friends');
+            if (list) list.scrollTop = prevScroll;
+        }
     });
 }
 
@@ -1900,7 +1941,6 @@ document.documentElement.addEventListener('languagechange', rerenderDashTranslat
         position: 'fixed',
         inset: '0',
         pointerEvents: 'none',
-        willChange: 'opacity',
         background: [
             'linear-gradient(to right,  rgba(0,0,0,0.80), transparent 280px)',
             'linear-gradient(to left,   rgba(0,0,0,0.80), transparent 280px)',
@@ -1930,11 +1970,13 @@ document.documentElement.addEventListener('languagechange', rerenderDashTranslat
         glassHosts.forEach(el => el.style.setProperty('--sidebar-glass-t', sig));
         if (_fadeAnim) { _fadeAnim.cancel(); _fadeAnim = null; }
         if (onDash && !_wasDash) {
+            vignette.style.display = '';
             vignette.style.opacity = '0';
             _fadeAnim = vignette.animate([{ opacity: 0 }, { opacity: target }], { duration: 800, easing: 'ease-in' });
             _fadeAnim.onfinish = () => { _fadeAnim = null; _glassLast = ''; applyGlass(); };
         } else {
             vignette.style.opacity = target.toFixed(3);
+            vignette.style.display = target > 0.001 ? '' : 'none';
         }
         _wasDash = onDash;
     }

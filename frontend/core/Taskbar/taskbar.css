@@ -390,7 +390,8 @@ body:has(#rsidebar:not(.collapsed)) #taskbar::before {
     display: flex;
     align-items: stretch;
     overflow: hidden;
-    max-width: 400px;
+    max-width: max-content;
+    interpolate-size: allow-keywords;
     opacity: 1;
     transition: max-width .2s ease .2s, opacity .15s ease .2s;
 }

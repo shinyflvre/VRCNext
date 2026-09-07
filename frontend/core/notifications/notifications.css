@@ -252,13 +252,19 @@
     transition: background .12s, color .12s;
 }
 .notif-act .msi { font-size: calc(14px + var(--fs-off, 0px)); }
-.notif-act:disabled { opacity: .45; cursor: not-allowed; }
+.notif-act:disabled { color: color-mix(in srgb, var(--tx1) 45%, transparent); cursor: not-allowed; }
 .notif-act-accept:hover  { background: var(--accent); color: #fff; }
 .notif-act-answer:hover  { background: var(--bg-hover); color: var(--tx0); }
 .notif-act-dismiss:hover { background: color-mix(in srgb, var(--err) 14%, transparent); color: var(--err); }
 
-.notif-seen {
-    opacity: .55;
+.notif-seen { position: relative; }
+.notif-seen::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    background: color-mix(in srgb, var(--bg-card) 45%, transparent);
+    pointer-events: none;
 }
 
 .notif-avatar {

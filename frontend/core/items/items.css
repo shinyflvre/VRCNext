@@ -230,7 +230,7 @@
     color: var(--tx0);
 }
 .inst-owner-group-sep {
-    opacity: .5;
+    color: color-mix(in srgb, currentcolor 50%, transparent);
     font-weight: 400;
 }
 .inst-item-right {

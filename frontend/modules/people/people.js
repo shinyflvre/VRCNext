@@ -293,8 +293,13 @@ window.getPeopleStat = function (userId) { return _peopleStatsMap[userId] || nul
 window.requestPeopleStats = function () { if (!_peopleStatsLoaded) sendToCS({ action: 'vrcGetPeopleStats' }); };
 window.fmtPeopleStatTime = function (seconds) { return _peopleStatsFmtTime(seconds); };
 
+let _peopleModLast = 'blocked';
+
 function setPeopleFilter(filter) {
     if (_favFriendEditMode) exitFriendEditMode();
+    if (filter === 'moderated') filter = _peopleModLast;
+    const modSub = filter === 'blocked' || filter === 'muted';
+    if (modSub) _peopleModLast = filter;
     _peopleAllPage = 0; _peopleBlockedPage = 0; _peopleMutedPage = 0; _peopleFavPage = 0;
     peopleFilter = filter;
     _peopleRecentPage = 0;
@@ -307,6 +312,7 @@ function setPeopleFilter(filter) {
     document.getElementById('peopleFilterInstance')?.classList.toggle('active', filter === 'instance');
     document.getElementById('peopleFilterRecent').classList.toggle('active', filter === 'recentseen');
     document.getElementById('peopleFilterSearch').classList.toggle('active', filter === 'search');
+    document.getElementById('peopleFilterModerated').classList.toggle('active', modSub);
     document.getElementById('peopleFilterBlocked').classList.toggle('active', filter === 'blocked');
     document.getElementById('peopleFilterMuted').classList.toggle('active', filter === 'muted');
     document.getElementById('peopleFavArea').style.display     = filter === 'favorites'  ? '' : 'none';
@@ -315,14 +321,18 @@ function setPeopleFilter(filter) {
     if (instArea) instArea.style.display = filter === 'instance' ? '' : 'none';
     document.getElementById('peopleRecentArea').style.display  = filter === 'recentseen' ? '' : 'none';
     document.getElementById('peopleSearchArea').style.display  = filter === 'search'     ? '' : 'none';
+    document.getElementById('peopleModeratedArea').style.display = modSub ? '' : 'none';
     document.getElementById('peopleBlockedArea').style.display = filter === 'blocked'    ? '' : 'none';
     document.getElementById('peopleMutedArea').style.display   = filter === 'muted'      ? '' : 'none';
+    document.getElementById('blockedSearchRow').style.display  = filter === 'blocked'    ? '' : 'none';
+    document.getElementById('mutedSearchRow').style.display    = filter === 'muted'      ? '' : 'none';
     ['peopleAllPaginatorBar', 'peopleBlockedPaginatorBar', 'peopleMutedPaginatorBar'].forEach(id => {
         const bar = document.getElementById(id);
         if (bar) bar.innerHTML = '';
     });
     const editBtn = document.getElementById('favFriendEditModeBtn');
     if (editBtn) editBtn.style.display = (filter === 'favorites' || filter === 'all') ? '' : 'none';
+    _pplUpdateCounts();
     refreshPeopleTab();
 }
 
@@ -402,9 +412,31 @@ function refreshPeopleTab(force) {
 
 let _recentSeenData = [];
 let _peopleRecentPage = 0;
+let _pplFavLoaded = false;
+let _pplRecentLoaded = false;
+
+function _pplUpdateCounts() {
+    const inst = (typeof currentInstanceData !== 'undefined') ? currentInstanceData : null;
+    let instUsers = null;
+    if (inst && !inst.error) instUsers = (inst.empty || typeof _ipUsers !== 'function') ? [] : _ipUsers().users;
+    const counts = {
+        peopleFilterFavCount: _pplFavLoaded ? favFriendsData : null,
+        peopleFilterAllCount: (typeof vrcFriendsLoaded !== 'undefined' && vrcFriendsLoaded) ? vrcFriendsData : null,
+        peopleFilterInstanceCount: instUsers,
+        peopleFilterRecentCount: _pplRecentLoaded ? _recentSeenData : null,
+        peopleFilterBlockedCount: (typeof blockedData !== 'undefined') ? blockedData : null,
+        peopleFilterMutedCount: (typeof mutedData !== 'undefined') ? mutedData : null
+    };
+    Object.keys(counts).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = Array.isArray(counts[id]) ? String(counts[id].length) : 'X';
+    });
+}
 
 function renderRecentSeen(players) {
     _recentSeenData = Array.isArray(players) ? players : [];
+    _pplRecentLoaded = true;
+    _pplUpdateCounts();
     filterRecentSeen();
 }
 
@@ -522,10 +554,9 @@ function _plLangs(tags) {
 function _plLangCell(f) {
     const langs = _plLangs(f.tags);
     if (!langs.length) return '';
-    return langs.slice(0, 3).map(k => {
+    return langs.map(k => {
         const name = (typeof LANG_MAP !== 'undefined' && LANG_MAP[k]) ? LANG_MAP[k] : k.replace('language_', '').toUpperCase();
-        const flag = (typeof LANG_FLAG !== 'undefined' && LANG_FLAG[k]) ? LANG_FLAG[k] : '';
-        return `<span class="pl-lang" title="${esc(name)}">${flag ? esc(flag) : esc(name)}</span>`;
+        return `<span class="vrcn-badge">${esc(name)}</span>`;
     }).join('');
 }
 
@@ -686,6 +717,7 @@ const ALL_FRIENDS_LIVE_MS = 400;
 let _allFriendsLiveTimer = null;
 
 function filterAllFriendsIfLive() {
+    _pplUpdateCounts();
     const tab = document.getElementById('tab3');
     if (!tab || !tab.classList.contains('active')) return;
     if (peopleFilter !== 'all') return;
@@ -702,7 +734,17 @@ function filterAllFriendsIfLive() {
     }, ALL_FRIENDS_LIVE_MS);
 }
 
+function _updateAllFriendsFilterCounts(list) {
+    const counts = { all: list.length, ingame: 0, active: 0, offline: 0 };
+    for (const f of list) { const c = _allFriendCategory(f); if (counts[c] !== undefined) counts[c]++; }
+    for (const k of Object.keys(counts)) {
+        const el = document.getElementById('allFriendFilter' + k.charAt(0).toUpperCase() + k.slice(1) + 'Count');
+        if (el) el.textContent = counts[k].toLocaleString();
+    }
+}
+
 function filterAllFriends() {
+    _pplUpdateCounts();
     const el = document.getElementById('allFriendsGrid');
     if (!el) return;
     const q = (document.getElementById('allFriendSearchInput')?.value || '').toLowerCase();
@@ -712,6 +754,7 @@ function filterAllFriends() {
             (f.username || f.userName || '').toLowerCase().includes(q) ||
             (f.id || '').toLowerCase().includes(q))
         : [...vrcFriendsData];
+    _updateAllFriendsFilterCounts(all);
     if (_allFriendsStatusFilter !== 'all') all = all.filter(f => _allFriendCategory(f) === _allFriendsStatusFilter);
     const listMode = _peopleListMode();
     all = listMode ? _plSort(all) : all.sort((a, b) => (a.displayName || '').localeCompare(b.displayName || ''));
@@ -727,6 +770,11 @@ function filterAllFriends() {
         return;
     }
     el.classList.toggle('search-grid', !listMode);
+    if (!listMode && _allFriendsStatusFilter === 'ingame') {
+        el.innerHTML = _plIngameSectionsHtml(all, vrcFriendsData.filter(f => _allFriendCategory(f) === 'ingame'));
+        plSetPaginator('peopleAllPaginatorBar', '');
+        return;
+    }
     el.innerHTML = listMode
         ? buildPeopleListHtml(slice)
         : slice.map(f => renderPeopleFriendCard(f)).join('');
@@ -735,6 +783,58 @@ function filterAllFriends() {
         ? plPaginator(page, totalPages, 'peopleAllGoPage', all.length)
         : buildPaginator(page, totalPages, 'peopleAllGoPage',
             `<span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);padding:0 8px;">${all.length.toLocaleString()} total</span>`));
+}
+
+function _plIngameSectionsHtml(friends, allIngame) {
+    const instKey = f => (f.location || '').split('~')[0];
+    const byInst = new Map();
+    for (const f of allIngame) {
+        if (!(f.location || '').startsWith('wrld_')) continue;
+        const key = instKey(f);
+        if (!byInst.has(key)) byInst.set(key, []);
+        byInst.get(key).push(f);
+    }
+    const same = [], single = [], priv = [];
+    for (const f of friends) {
+        const loc = f.location || '';
+        if (loc.startsWith('private')) priv.push(f);
+        else if (loc.startsWith('wrld_') && byInst.get(instKey(f)).length >= 2) same.push(f);
+        else single.push(f);
+    }
+    const sameByInst = new Map();
+    for (const f of same) {
+        const key = instKey(f);
+        if (!sameByInst.has(key)) sameByInst.set(key, []);
+        sameByInst.get(key).push(f);
+    }
+    const instGroups = [...sameByInst.entries()].sort(([ka, la], [kb, lb]) => (lb.length - la.length) || ka.localeCompare(kb));
+    const missingWorlds = [];
+    const sections = instGroups.map(([key, list]) => {
+        const wid = key.split(':')[0];
+        const iid = key.split(':')[1] || '';
+        const loc = list[0].location || '';
+        const wc = (typeof dashWorldCache !== 'undefined' && dashWorldCache[wid]) || null;
+        if (!wc && wid.startsWith('wrld_')) missingWorlds.push(wid);
+        const region = (loc.match(/~region\(([^)]+)\)/) || [])[1] || '';
+        const { instanceType } = parseFriendLocation(loc);
+        const { cls, label } = getInstanceBadge(instanceType);
+        const title = [wc?.name || wid, iid ? '#' + iid : '', region.toUpperCase()].filter(Boolean).join(' · ');
+        return { title, badge: `<span class="vrcn-badge ${cls}">${esc(label)}</span>`, list, wid, loc };
+    });
+    if (missingWorlds.length) sendToCS({ action: 'vrcResolveWorlds', worldIds: [...new Set(missingWorlds)] });
+    sections.push({ title: t('profiles.people.sections.single_instances', 'In Single Instances'), badge: '', list: single });
+    sections.push({ title: t('profiles.people.sections.private_instances', 'In Private Instances'), badge: '', list: priv });
+    let html = '', first = true;
+    for (const sec of sections) {
+        if (!sec.list.length) continue;
+        const titleHtml = sec.loc
+            ? `<span class="topbar-title pl-inst-link" onclick="openFriendLocationDetail('${jsq(sec.wid)}','${jsq(sec.loc)}')">${esc(sec.title)}</span>`
+            : `<span class="topbar-title">${esc(sec.title)}</span>`;
+        html += `<div class="fav-group-header${first ? ' fav-group-header-first' : ''}"${sec.wid ? ` data-wid="${esc(sec.wid)}"` : ''}>${titleHtml}${sec.badge}<span class="fav-group-count">${sec.list.length}</span></div>`;
+        html += sec.list.map(f => renderPeopleFriendCard(f)).join('');
+        first = false;
+    }
+    return html;
 }
 
 function peopleAllGoPage(page) {
@@ -789,6 +889,7 @@ function buildModListHtml(entries, actionType) {
 }
 
 function renderModList(containerId, list, actionType) {
+    _pplUpdateCounts();
     const el = document.getElementById(containerId);
     if (!el) return;
     const isBlock = actionType === 'block';
@@ -888,6 +989,8 @@ function renderFavFriends(payload) {
     const groups  = payload?.groups  || [];
     favFriendsData  = friends;
     favFriendGroups = groups;
+    _pplFavLoaded = true;
+    _pplUpdateCounts();
     const sel = document.getElementById('favFriendGroupFilter');
     if (sel) {
         const prev = favFriendGroupFilter;
@@ -1067,6 +1170,7 @@ function filterFavFriendsIfVisible() {
 }
 
 function filterFavFriends() {
+    _pplUpdateCounts();
     _favFriendsDirty = false;
     const el = document.getElementById('favFriendsGrid');
     if (!el) return;

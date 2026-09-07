@@ -6,7 +6,6 @@
 .vrcn-world-card-small {
     position: relative;
     overflow: hidden;
-    will-change: transform;
     display: flex;
     align-items: flex-end;
     padding: 10px 10px;
@@ -59,7 +58,6 @@
     position: relative;
     border-radius: 16px;
     overflow: hidden;
-    will-change: transform;
     cursor: pointer;
     min-height: 200px;
     transition: transform .3s cubic-bezier(.22,1,.36,1), box-shadow .3s;

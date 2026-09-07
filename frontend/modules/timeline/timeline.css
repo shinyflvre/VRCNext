@@ -12,6 +12,16 @@
 .tl-list-wrap {
     padding: 12px 0 24px;
 }
+.tl-list-mini { padding: 0; overflow-x: auto; }
+.tl-list-mini .tl-list-table thead th { height: 32px; padding: 0 10px; }
+.tl-list-mini .tl-list-row td { height: 34px; padding: 0 10px; }
+.tl-list-mini .tl-list-type { width: 170px; }
+.tl-list-th-flex { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tl-list-more { border: none; background: transparent; padding: 0; cursor: pointer; font: inherit; font-size: calc(10px + var(--fs-off, 0px)); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--accent-lt); }
+.tl-list-more:hover { color: var(--accent); }
+
+.tl-list-link { cursor: pointer; }
+.tl-list-link:hover { color: var(--accent-lt); }
 
 .tl-list-table {
     width: 100%;
@@ -297,8 +307,9 @@
 .tl-filter-row {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 4px 12px 8px;
+    --tt-gap: 6px;
+    gap: var(--tt-gap);
+    padding: 4px 0 8px;
     flex-shrink: 0;
     flex-wrap: nowrap;
     overflow-x: auto;
@@ -309,6 +320,8 @@
     overscroll-behavior-x: contain;
 }
 .tl-filter-row::-webkit-scrollbar { display: none; }
+.tl-filter-row::before { margin-right: calc(-12px - var(--tt-gap)); }
+.tl-filter-row::after { margin-left: calc(-12px - var(--tt-gap)); }
 .tl-filter-row .sub-tab-btn { flex-shrink: 0; white-space: nowrap; }
 
 #tab12.active {
@@ -461,8 +474,7 @@
 
 .tl-date {
     font-size: calc(9px + var(--fs-off, 0px));
-    color: var(--tx2);
-    opacity: .7;
+    color: color-mix(in srgb, var(--tx2) 70%, transparent);
 }
 
 .tl-card-body {

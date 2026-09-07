@@ -75,7 +75,7 @@ function _renderCalUI() {
 
     tab.innerHTML = `<div id="calInner">
         <div class="tab-toolbar" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-            <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+            <div class="tt-scroll" style="--tt-gap:4px;">
                 <button class="vrcn-button tl-datebtn" onclick="_calNav(-1)"><span class="msi" style="font-size:16px;">chevron_left</span></button>
                 <button class="vrcn-button tl-datebtn cal-date-btn" id="calDateBtn" onclick="toggleCalDatePicker()" title="${esc(t('calendar.date.jump_title', 'Jump to date'))}">
                     <span class="msi" style="font-size:15px;">calendar_today</span>
@@ -87,7 +87,7 @@ function _renderCalUI() {
                 <button class="vrcn-button sub-tab-btn cal-filter-btn${calendarFilter === 'following' ? ' active' : ''}" data-filter="following" onclick="setCalFilter('following')"><span class="msi" style="font-size:14px;">notifications_active</span> ${esc(t('calendar.filters.following', 'Following'))}</button>
                 <button class="vrcn-button" id="calRefreshBtn" onclick="refreshCalendar()" title="${refreshTitle}"${refreshDisabled}><span class="msi" style="font-size:18px;">${refreshIcon}</span></button>
             </div>
-            <div style="display:flex;gap:4px;align-items:center;">
+            <div style="display:flex;gap:4px;align-items:center;flex-shrink:0;">
                 <button class="vrcn-button sub-tab-btn cal-view-btn${calendarGroupColors ? ' active' : ''}" onclick="toggleCalGroupColors()" title="${esc(t('calendar.help_sort', 'Help Sort'))}"><span class="msi" style="font-size:16px;">palette</span></button>
                 <button class="vrcn-button sub-tab-btn cal-view-btn${calendarView === 'calendar' ? ' active' : ''}" data-view="calendar" onclick="setCalView('calendar')" title="${esc(t('calendar.view.calendar', 'Calendar View'))}"><span class="msi" style="font-size:16px;">calendar_month</span></button>
                 <button class="vrcn-button sub-tab-btn cal-view-btn${calendarView === 'week' ? ' active' : ''}" data-view="week" onclick="setCalView('week')" title="${esc(t('calendar.view.week', 'Week View'))}"><span class="msi" style="font-size:16px;">today</span></button>

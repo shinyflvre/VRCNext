@@ -175,19 +175,29 @@
 
 .tl-list-wrap {
     overflow-x: auto;
-    transform: rotateX(180deg);
+    scrollbar-width: none;
 }
-.tl-list-wrap > * { transform: rotateX(180deg); }
+.tl-list-wrap::-webkit-scrollbar:horizontal { display: none; height: 0; }
 
-.tl-list-wrap::-webkit-scrollbar:horizontal { height: 5px; }
-.tl-list-wrap::-webkit-scrollbar-thumb:horizontal {
+.tl-list-hbar {
+    display: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    height: 5px;
+    flex-shrink: 0;
+}
+.tl-list-hbar.on { display: block; }
+.tl-list-hbar > div { height: 1px; }
+.tl-list-hbar::-webkit-scrollbar { height: 5px; }
+.tl-list-hbar::-webkit-scrollbar-track { background: transparent; }
+.tl-list-hbar::-webkit-scrollbar-thumb {
     border: 0;
     background: var(--brd);
     background-clip: border-box;
     border-radius: 3px;
     min-width: 40px;
 }
-.tl-list-wrap::-webkit-scrollbar-thumb:horizontal:hover { background: var(--accent); }
+.tl-list-hbar::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
 .lv-scroll .tl-list-wrap,
 #favWorldsGrid .tl-list-wrap, #worldMineGrid .tl-list-wrap,

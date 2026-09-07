@@ -5,7 +5,7 @@
     background: var(--bg-card);
     border: 1px solid var(--brd-lt);
     border-radius: 10px; padding: 4px;
-    min-width: 178px;
+    min-width: 200px;
     max-height: calc(100vh - 16px);
     overflow-y: auto;
     box-shadow: 0 8px 32px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.25);
@@ -36,10 +36,32 @@
 .vn-ctx-item.danger { color: var(--err); }
 .vn-ctx-item.danger .msi { color: var(--err); opacity: .75; }
 .vn-ctx-item.danger:hover:not([disabled]) { background: rgba(255,75,85,.08); color: var(--err); }
+.vn-ctx-item.danger:hover:not([disabled]) .msi { color: var(--err); opacity: 1; }
 .vn-ctx-item.confirm-pending {
     background: rgba(255,75,85,.12) !important;
     color: var(--err) !important;
 }
+#vn-ctx-menu.has-tools { padding: 0; }
+.vn-ctx-tools {
+    display: flex; gap: 2px; padding: 6px;
+    background: var(--ui-input-bg); border-bottom: 1px solid var(--brd);
+}
+.vn-ctx-tool {
+    position: relative; flex: 1; display: flex; align-items: center; justify-content: center;
+    height: 30px; min-width: 34px; border: 0; background: transparent; border-radius: 7px;
+    color: var(--tx2); cursor: pointer; font-family: inherit;
+    transition: background .1s, color .1s;
+}
+.vn-ctx-tool:hover:not([disabled]), .vn-ctx-tool.on { background: var(--ui-input-hover-bg); color: var(--tx0); }
+.vn-ctx-tool[disabled] { opacity: .4; cursor: default; }
+.vn-ctx-tool.active { color: var(--dropdown-active); }
+.vn-ctx-tool.active:hover:not([disabled]) { color: var(--dropdown-active); }
+.vn-ctx-tool[disabled].active { opacity: 1; }
+.vn-ctx-tool .msi.msi-fill, .vn-ctx-item .msi.msi-fill { font-variation-settings: 'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 24; }
+.vn-ctx-tool .msi { font-size: 17px; width: auto; color: inherit; }
+.vn-ctx-tool.danger { color: var(--err); }
+.vn-ctx-tool.confirm-pending { background: rgba(255,75,85,.14) !important; color: var(--err) !important; }
+.vn-ctx-body { padding: 4px; }
 .vn-ctx-sep {
     height: 1px; background: var(--brd); margin: 4px 6px;
 }
@@ -71,11 +93,11 @@
     flex-shrink: 0; margin: 0 5px;
 }
 .vn-ctx-check {
-    margin-left: auto; font-size: calc(14px + var(--fs-off, 0px)) !important; color: var(--accent); width: auto !important;
+    margin-left: auto; font-size: calc(14px + var(--fs-off, 0px)) !important; color: var(--dropdown-active); width: auto !important;
 }
 .vn-ctx-count {
     margin-left: auto; font-size: calc(10px + var(--fs-off, 0px)); font-weight: 600;
-    color: var(--tx2); background: var(--bg-input);
+    color: var(--badge-tx); background: var(--badge-bg);
     padding: 1px 6px; border-radius: 8px; flex-shrink: 0;
 }
 .vn-ctx-loading {

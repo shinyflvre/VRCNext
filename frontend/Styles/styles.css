@@ -15,6 +15,7 @@
     --badge-tx: var(--tx2);
     --accent: #8E8EA7;
     --accent-lt: #A5A5AC;
+    --dropdown-active: var(--accent);
     --cyan: #8CA5FF;
     --ok: #2DD48C;
     --warn: #FFBA37;
@@ -100,6 +101,58 @@
 }
 .tab-toolbar-body > :last-child { margin-bottom: 0 !important; }
 
+.tt-scroll {
+    display: flex;
+    align-items: center;
+    --tt-gap: 8px;
+    gap: var(--tt-gap);
+    flex: 1 1 auto;
+    min-width: 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    cursor: grab;
+    overscroll-behavior-x: contain;
+}
+.tt-scroll::-webkit-scrollbar { display: none; }
+.tt-scroll > * { flex-shrink: 0; white-space: nowrap; }
+.tt-scroll::before, .tt-scroll::after, .tl-filter-row::before, .tl-filter-row::after {
+    content: '';
+    position: sticky;
+    flex: 0 0 24px;
+    align-self: stretch;
+    pointer-events: none;
+    z-index: 2;
+    opacity: 0;
+}
+.tt-scroll::before, .tl-filter-row::before {
+    left: 0;
+    margin-right: calc(-24px - var(--tt-gap, 8px));
+    background: linear-gradient(to right, var(--tab-card-bg, var(--bg-input)), transparent);
+}
+.tt-scroll::after, .tl-filter-row::after {
+    right: 0;
+    margin-left: calc(-24px - var(--tt-gap, 8px));
+    background: linear-gradient(to left, var(--tab-card-bg, var(--bg-input)), transparent);
+}
+.tt-scroll.tt-fade-l::before, .tl-filter-row.tt-fade-l::before,
+.tt-scroll.tt-fade-r::after, .tl-filter-row.tt-fade-r::after { opacity: 1; }
+
+/* ClearType: floating panels keep their look, their direct children get an own opaque layer */
+#vn-ctx-menu > *, #vn-ctx-submenu > *, .tb-dropdown > *, .tb-dd-sub-drop > *, .tb-modal-dropdown > *,
+.notif-panel > *, .tl-date-picker > *, .notif-toast > *, .fot-ctx-menu > *,
+.nav-folder-popout > *, .fd-vrc-badge-tooltip-global > *, .dash-pick-menu > *, .ne-icon-picker > *,
+.vro-zone-menu > *, #apiHealthPanel > *, .ss-dropdown > *, #messengerPanel > *, .photo-detail-box > *,
+.gp-modal > *, .launch-modal > *, .ss-modal-box > *, .vn-tooltip-inner { backface-visibility: hidden; }
+:where(#vn-ctx-menu, #vn-ctx-submenu, .tb-dropdown, .tb-dd-sub-drop, .tb-modal-dropdown, .notif-panel,
+.tl-date-picker, .notif-toast, .fot-ctx-menu, .nav-folder-popout, .fd-vrc-badge-tooltip-global, .dash-pick-menu,
+.ne-icon-picker, .vro-zone-menu, #apiHealthPanel, .ss-dropdown, #messengerPanel, .photo-detail-box, .gp-modal,
+.launch-modal, .ss-modal-box) > :where(*) { background-color: var(--bg-card); }
+.vn-tooltip-inner { display: block; background: var(--bg-card); margin: 0 -1px; padding: 0 1px; }
+
+
 .vrcn-edit-bar {
     position: sticky;
     bottom: 0;
@@ -183,13 +236,13 @@ body {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: calc(var(--tb-h) + 28px) calc(var(--rsidebar-w) + 28px) 28px calc(var(--sidebar-w) + 28px);
+    padding: calc(var(--tb-h) + 14px) calc(var(--rsidebar-w) + 14px) 14px calc(var(--sidebar-w) + 14px);
     transition: padding-left .22s ease, padding-right .22s ease;
 }
 
 body:has(.sidebar.collapsed) .content,
-body:has(.sidebar.collapsing) .content  { padding-left:  calc(var(--sidebar-c)  + 28px); }
-body:has(.rsidebar.collapsed) .content  { padding-right: calc(var(--rsidebar-c) + 28px); }
+body:has(.sidebar.collapsing) .content  { padding-left:  calc(var(--sidebar-c)  + 14px); }
+body:has(.rsidebar.collapsed) .content  { padding-right: calc(var(--rsidebar-c) + 14px); }
 
 .tab {
     display: none;

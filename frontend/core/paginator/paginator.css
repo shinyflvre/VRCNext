@@ -7,8 +7,8 @@
     position: relative;
     gap: 4px;
     flex-wrap: wrap;
-    padding: 10px 28px 14px;
-    margin: 0 -28px;
+    padding: 10px 14px 14px;
+    margin: 0 -14px;
     background: var(--bg-base);
 }
 .tl-paginator-bar::before {

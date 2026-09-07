@@ -46,7 +46,7 @@
     content: '';
     position: sticky;
     display: block;
-    bottom: -28px;
+    bottom: -14px;
     height: 80px;
     margin-top: -80px;
     background: linear-gradient(to bottom, transparent, var(--bg-base));
@@ -389,7 +389,7 @@
     width: min(1400px, 95vw);
     height: min(900px, calc(100vh - var(--tb-h) - 40px));
     box-shadow: 0 20px 60px rgba(0,0,0,.5);
-    animation: modalPop .10s ease forwards;
+    animation: modalPop .10s ease;
     display: flex;
     flex-direction: column;
     overflow: hidden;

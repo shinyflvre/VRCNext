@@ -236,7 +236,7 @@
 
 .cal-wk-evt-time {
     font-size: calc(9px + var(--fs-off, 0px));
-    opacity: .8;
+    color: color-mix(in srgb, currentcolor 80%, transparent);
     line-height: 1.3;
     white-space: nowrap;
     overflow: hidden;
