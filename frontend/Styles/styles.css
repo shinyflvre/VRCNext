@@ -6,6 +6,8 @@
     --bg-hover: #1C1C1F;
     --bg-input: #121212;
     --tab-card-bg: #0D0D0D;
+    --modal-bg: var(--bg-card);
+    --modal-card: var(--bg-input);
     --bg-btn: #0D0D0E;
     --bg-btn-h: #1C1C1F;
     --ui-input-bg: var(--bg-card);

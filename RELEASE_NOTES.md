@@ -4,6 +4,8 @@
 * **Smart Search**: You can now ask Smart Search a question and it shows the matching section straight from the VRCNext wiki.Type a question (adding a "?" at the end works too) and press Enter. When a normal search finds nothing, Smart Search offers to look it up in the wiki. The search box now also covers tools, settings and the wiki.
 
 **Changes**
+* **Theme Editor**: new "Modals" section with the colors "Modal BG" and "Modal Card". Every modal (profiles, worlds, groups, avatars and all other dialogs) now uses these two colors instead of "Card BG" and "Input BG". All built-in themes keep their current look.
+* **Tools**: all tools and the Settings tab now use the V2 card design with "Tab Card BG" and outlines, matching the Worlds, Groups and Timeline tabs.
 
 **Fixed Bugs**
 * **Smart Search**: the search icon in the taskbar no longer changes size when you adjust the app text size. It now matches the other taskbar icons.

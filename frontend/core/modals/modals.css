@@ -21,6 +21,12 @@ html.modal-refreshing .fd-refresh-spin { animation: modal-refresh-spin 0.8s line
     padding: calc(var(--tb-h) + 20px) 0 20px;
 }
 
+.modal-overlay,
+.ss-modal-overlay {
+    --bg-card: var(--modal-bg);
+    --bg-input: var(--modal-card);
+}
+
 #modalFriendDetail { z-index: 10001; }
 #modalFtGpsDetail  { z-index: 10002; }
 

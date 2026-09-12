@@ -312,9 +312,9 @@
 }
 
 .vrcn-panel-card {
-    background: var(--bg-card);
-    border: none;
-    border-radius: 10px;
+    background: var(--tab-card-bg, var(--bg-input));
+    border: 1px solid var(--brd);
+    border-radius: 12px;
     padding: 14px 16px;
     min-width: 0;
 }
