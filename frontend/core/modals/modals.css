@@ -605,6 +605,7 @@ html.modal-refreshing .fd-refresh-spin { animation: modal-refresh-spin 0.8s line
 .lgv-lvl-btn.active {
     background: color-mix(in srgb, var(--lgv-c) 20%, transparent);
     color: var(--lgv-c);
+    border-color: color-mix(in srgb, var(--lgv-c) 40%, transparent);
 }
 .lgv-lvl-btn.active:hover { background: color-mix(in srgb, var(--lgv-c) 30%, transparent); }
 

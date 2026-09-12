@@ -173,7 +173,7 @@
 
 .vn-select.vro-input-mode .vn-select-trigger {
     background: var(--ui-input-bg);
-    border: 1px solid var(--bdr);
+    border: 1px solid var(--brd);
     color: var(--tx1);
     height: 32px;
     gap: 6px;
@@ -267,7 +267,7 @@
     min-height: 28px;
     background: var(--ui-input-bg);
     border-radius: 8px;
-    border: 1px solid var(--bdr);
+    border: 1px solid var(--brd);
     padding: 4px 8px;
 }
 .vro-keybind-chip {

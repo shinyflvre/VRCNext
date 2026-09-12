@@ -292,7 +292,7 @@
 
 .vrc-fs-card {
     background: var(--tab-card-bg, var(--bg-input));
-    border: 0;
+    border: 1px solid var(--brd);
     border-radius: 12px;
     padding: 5px;
     margin-bottom: 10px;

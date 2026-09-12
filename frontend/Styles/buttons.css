@@ -13,7 +13,7 @@
 .win-btn:hover { background: var(--bg-hover); color: var(--tx0); }
 
 .vrcn-button, .vrcn-button-round {
-    border: none;
+    border: 1px solid var(--brd);
     font-weight: 600;
     cursor: pointer;
     font-family: inherit;
@@ -34,11 +34,11 @@
 }
 .vrcn-button:hover { background: var(--ui-input-hover-bg); color: var(--tx0); }
 .vrcn-button:disabled { color: color-mix(in srgb, var(--tx1) 40%, transparent); background: color-mix(in srgb, var(--ui-input-bg) 40%, transparent); cursor: not-allowed; }
-.vrcn-button.active { background: var(--ui-input-active-bg); color: #fff; }
+.vrcn-button.active { background: var(--ui-input-active-bg); color: #fff; border-color: color-mix(in srgb, var(--ui-input-active-bg) 80%, #fff); }
 
 .vrcn-icon-button {
     background: none;
-    border: none;
+    border: 1px solid var(--brd);
     color: var(--tx2);
     cursor: pointer;
     font-family: inherit;
@@ -64,13 +64,14 @@
 }
 .vrcn-button-round:hover { background: var(--ui-input-hover-bg); color: var(--tx0); }
 .vrcn-button-round:disabled { opacity: .4; cursor: not-allowed; }
-.vrcn-button-round.active { background: var(--ui-input-active-bg); color: #fff; }
+.vrcn-button-round.active { background: var(--ui-input-active-bg); color: #fff; border-color: color-mix(in srgb, var(--ui-input-active-bg) 80%, #fff); }
 .vrcn-button-round .msi { font-size: 14px !important; line-height: 1; }
 
 .vrcn-mini-pill-group {
     position: relative;
     display: inline-flex;
     background: var(--ui-input-bg);
+    border: 1px solid var(--brd);
     border-radius: 99px;
     padding: 2px;
     gap: 0;
@@ -105,10 +106,10 @@
 .vrcn-mini-pill:hover:not(.active) { color: var(--tx0); background: var(--ui-input-hover-bg); }
 .vrcn-mini-pill.active { color: #fff; }
 
-.vrcn-btn-danger { background: rgba(255,75,85,.15) !important; color: var(--err) !important; }
+.vrcn-btn-danger { background: rgba(255,75,85,.15) !important; color: var(--err) !important; border-color: color-mix(in srgb, var(--err) 40%, transparent) !important; }
 .vrcn-btn-danger:hover { background: var(--err) !important; color: #fff !important; }
 
-.vrcn-btn-accent { background: var(--accent) !important; color: #fff !important; }
+.vrcn-btn-accent { background: var(--accent) !important; color: #fff !important; border-color: var(--accent-lt) !important; }
 .vrcn-btn-accent:hover { background: var(--accent-lt) !important; color: #fff !important; }
 
 .sub-tab-btn {
@@ -122,6 +123,7 @@
 .sub-tab-btn.active {
     background: var(--ui-input-active-bg);
     color: #fff;
+    border-color: color-mix(in srgb, var(--ui-input-active-bg) 80%, #fff);
 }
 .sub-tab-btn.active .fd-tab-badge { color: var(--badge-tx); background: var(--badge-bg); }
 
