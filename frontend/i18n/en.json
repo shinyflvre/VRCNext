@@ -2646,6 +2646,7 @@
   "search.wiki.ask": "Search the wiki",
   "search.wiki.error": "Nothing found in the VRCNext wiki for this.",
   "search.wiki.source": "From the wiki",
+  "search.wiki.alternatives": "Or were you looking for:",
   "settings.search.placeholder": "Search settings...",
   "settings.search.no_results": "No settings match \"{query}\"",
   "settings.nav.appearance": "Appearance",

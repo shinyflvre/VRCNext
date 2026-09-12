@@ -2579,6 +2579,7 @@
   "search.wiki.ask": "搜索维基",
   "search.wiki.error": "在 VRCNext 维基中未找到相关内容。",
   "search.wiki.source": "来自维基",
+  "search.wiki.alternatives": "或者你在找：",
   "settings.search.placeholder": "搜索设置...",
   "settings.search.no_results": "没有与“{query}”匹配的设置",
   "settings.nav.appearance": "外观",

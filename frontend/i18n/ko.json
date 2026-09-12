@@ -2644,6 +2644,7 @@
   "search.wiki.ask": "위키 검색",
   "search.wiki.error": "이에 대한 내용을 VRCNext 위키에서 찾지 못했습니다.",
   "search.wiki.source": "위키에서",
+  "search.wiki.alternatives": "혹시 이것을 찾고 계신가요:",
   "settings.search.placeholder": "설정 검색...",
   "settings.search.no_results": "\"{query}\"와 일치하는 설정이 없습니다",
   "settings.nav.appearance": "표시",

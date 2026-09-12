@@ -3888,8 +3888,8 @@ public partial class AppShell
                     var reqId = msg["reqId"]?.ToString() ?? "";
                     _ = Task.Run(async () =>
                     {
-                        var (ok, answer, title, slug) = await VRCNext.Services.SmartSearch.SmartSearchService.LookupAsync(question);
-                        Invoke(() => SendToJS("smartSearchAnswer", new { reqId, ok, answer, title, slug }));
+                        var r = await VRCNext.Services.SmartSearch.SmartSearchService.LookupAsync(question);
+                        Invoke(() => SendToJS("smartSearchAnswer", new { reqId, ok = r.ok, answer = r.answer, title = r.title, slug = r.slug, alternatives = r.alternatives }));
                     });
                     break;
                 }

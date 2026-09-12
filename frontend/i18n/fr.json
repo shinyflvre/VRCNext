@@ -2579,6 +2579,7 @@
   "search.wiki.ask": "Chercher dans le wiki",
   "search.wiki.error": "Rien trouvé dans le wiki VRCNext pour cela.",
   "search.wiki.source": "Depuis le wiki",
+  "search.wiki.alternatives": "Ou cherchiez-vous ceci :",
   "settings.search.placeholder": "Rechercher des parametres...",
   "settings.search.no_results": "Aucun parametre ne correspond a \"{query}\"",
   "settings.nav.appearance": "Apparence",

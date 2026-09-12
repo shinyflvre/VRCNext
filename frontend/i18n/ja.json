@@ -2578,6 +2578,7 @@
   "search.wiki.ask": "ウィキを検索",
   "search.wiki.error": "これに関する項目はVRCNextウィキで見つかりませんでした。",
   "search.wiki.source": "ウィキから",
+  "search.wiki.alternatives": "もしかしてこちらをお探しですか：",
   "settings.search.placeholder": "設定を検索...",
   "settings.search.no_results": "「{query}」に一致する設定はありません",
   "settings.nav.appearance": "外観",

@@ -12,6 +12,8 @@
 
 * **Themes**: Added the new built-in theme **Frostbite**, a cool dark blue-grey look. It is also available for the VR overlay.
 
+* **Smart Search**: Wiki answers now come with a second message, "Or were you looking for:", listing up to three other matching wiki sections with a lower score. Click one to read it right in the chat.
+
 ### **Fixed Bugs**
 * **Profiles**: Fixed the status text of offline friends disappearing when their profile was opened again within the cache window, or when the friends list refreshed while the profile was open. The friends list often has no status text for offline friends, so the profile now keeps the text it already loaded.
 * **Smart Search**: Fixed the taskbar search icon changing size when adjusting the app text size. It now stays consistent with the other taskbar icons.
