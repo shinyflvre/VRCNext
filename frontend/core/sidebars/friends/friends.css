@@ -148,10 +148,13 @@
     pointer-events: none;
 }
 .rsidebar.collapsed #vrcProfileArea {
-    top: -4px;
-    margin: -4px -4px 0;
-    padding: 4px 4px 10px;
+    position: static;
+    margin: 0;
+    padding: 0;
+    background: transparent;
 }
+.rsidebar.collapsed #vrcProfileArea.scrolled::after { display: none; }
+.rsidebar.collapsed #vrcProfileArea .vrc-profile { margin-bottom: 10px; }
 
 .vrc-avatar, .vrc-friend-avatar, .fd-avatar { object-fit: cover; background: var(--bg-input); flex-shrink: 0; }
 .vrc-avatar { width: 42px; height: 42px; border-radius: 10px; }
