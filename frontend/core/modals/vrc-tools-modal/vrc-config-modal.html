@@ -6,7 +6,7 @@
             <div class="modal-card">
             <div class="modal-msg" style="margin:0 0 18px;" data-i18n="vrc_config.desc">Edit VRChat's config.json directly. Changes are written to VRChat's own data folder.</div>
 
-            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;background:var(--bg-card);border-radius:8px;padding:10px 12px;margin-bottom:18px;">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;background:var(--bg-card);border:1px solid var(--brd);border-radius:8px;padding:10px 12px;margin-bottom:18px;">
                 <span style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);"><span data-i18n="vrc_config.cache_size">Cache Size</span>: <strong id="vrcCfgCacheSize" style="color:var(--tx0);">—</strong></span>
                 <span style="flex:1;"></span>
                 <button class="vrcn-button" onclick="vrcCfgRefreshCache()"><span class="msi" style="font-size:14px;">refresh</span> <span data-i18n="vrc_config.refresh">Refresh</span></button>
@@ -14,6 +14,7 @@
                 <button class="vrcn-button" onclick="vrcCfgSweepCache()"><span class="msi" style="font-size:14px;">cleaning_services</span> <span data-i18n="vrc_config.sweep_cache">Sweep Cache</span></button>
             </div>
 
+            <div class="vrc-cfg-card">
             <div class="vrc-cfg-grid">
                 <div class="vrc-cfg-field">
                     <div class="sf-section-label" data-i18n="vrc_config.max_cache_size">Max Cache Size [GB] (min 30)</div>
@@ -58,11 +59,11 @@
                         <select id="vrcCfgScreenshotRes" class="vrcn-dropdown"></select>
                     </div>
                 </div>
-                
+            </div>
+            </div>
 
-                
-                
-
+            <div class="vrc-cfg-card">
+            <div class="vrc-cfg-grid">
                 <div class="vrc-cfg-field">
                     <div class="sf-toggle-row" style="margin:0;"><span data-i18n="vrc_config.picture_sort_by_date">Sort pictures into folders by date</span><label class="toggle"><input type="checkbox" id="vrcCfgSplitByDate"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
                 </div>
@@ -103,6 +104,7 @@
                         <button class="vrcn-button" onclick="vrcCfgPickFolder('vrcCfgStickersDir')" title="Browse" data-i18n-title="common.browse"><span class="msi" style="font-size:16px;">folder_open</span></button>
                     </div>
                 </div>
+            </div>
             </div>
             </div>
             <div class="modal-foot">

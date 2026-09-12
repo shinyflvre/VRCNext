@@ -534,6 +534,12 @@ html.modal-refreshing .fd-refresh-spin { animation: modal-refresh-spin 0.8s line
 .vrc-cfg-path .vrcn-edit-field { flex: 1; min-width: 0; }
 .vrc-cfg-path .vrcn-button { flex-shrink: 0; }
 .vrc-cfg-field .sf-toggle-row { height: 100%; align-items: center; }
+.vrc-cfg-card {
+    border: 1px solid var(--brd);
+    border-radius: 10px;
+    padding: 12px 14px;
+}
+.vrc-cfg-card + .vrc-cfg-card { margin-top: 12px; }
 
 .mt-list { display: flex; flex-direction: column; gap: 6px; max-height: 420px; overflow-y: auto; }
 .mt-row {
