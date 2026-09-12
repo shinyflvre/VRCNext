@@ -1,17 +1,13 @@
-﻿**2026.50.1**
+﻿# **2026.50.1**
 
-**Improvements**
-* **Smart Search**: You can now ask Smart Search a question and it shows the matching section straight from the VRCNext wiki.Type a question (adding a "?" at the end works too) and press Enter. When a normal search finds nothing, Smart Search offers to look it up in the wiki. The search box now also covers tools, settings and the wiki.
+### **Improvements**
+* **Smart Search**: Smart Search can now answer questions using the VRCNext Wiki and directly show the matching documentation section. Type a question and press Enter. If a normal search finds no results, Smart Search will offer to search the Wiki instead. Search now also covers tools, settings, and Wiki content.
 
-**Changes**
-* **Theme Editor**: new "Modals" section with the colors "Modal BG" and "Modal Card". Every modal (profiles, worlds, groups, avatars and all other dialogs) now uses these two colors instead of "Card BG" and "Input BG". All built-in themes keep their current look.
-* **Tools**: all tools and the Settings tab now use the V2 card design with "Tab Card BG" and outlines, matching the Worlds, Groups and Timeline tabs.
-* **Theme Editor**: the editor and its color picker now stay on top of every modal, so you can open a profile, world or group and check the modal colors live.
-* **VRChat Config**: the cache size bar, the cache and camera settings, and the pictures, prints and stickers options are now grouped into outlined cards.
-* **Buttons and inputs**: all buttons, icon buttons, pill groups, text fields, edit fields and dropdowns now have an outline, matching the V2 card design. Colored buttons (for example Unfriend, accent, active and danger buttons) use their own color for the outline, slightly lighter, instead of the standard border color.
-* **Friends sidebar**: the search card at the top of the friends list now has an outline.
-* **Modal tabs**: the tab bar in modals (for example Info, Groups, Content, Favs and JSON in a profile) and the sub-tab bars inside them (for example Worlds / Avatars, Friends / Groups) now have an outline.
+### **Changes**
+* **Theme Editor**: Added a new **Modals** section with **Modal BG** and **Modal Card** colors. All modals, including profiles, worlds, groups, avatars, and other dialogs, now use these colors instead of **Card BG** and **Input BG**. The Theme Editor and color picker also stay above other modals, allowing you to preview color changes live. Existing built-in themes keep their current appearance.
 
-**Fixed Bugs**
-* **Smart Search**: the search icon in the taskbar no longer changes size when you adjust the app text size. It now matches the other taskbar icons.
-* **Smart Search**: fixed a broken icon that showed in front of the wiki source line in an answer.
+* **V2 UI Design**: All tools and the Settings tab now use the V2 card design with **Tab Card BG**, outlines, and consistent styling matching the Worlds, Groups, and Timeline tabs. This also includes the VRChat Config sections, Friends Sidebar search card, modal tab bars, sub-tab bars, buttons, icon buttons, pill groups, text fields, edit fields, and dropdowns. Colored buttons such as accent, active, danger, and Unfriend buttons use a slightly lighter version of their own color for the outline.
+
+### **Fixed Bugs**
+* **Smart Search**: Fixed the taskbar search icon changing size when adjusting the app text size. It now stays consistent with the other taskbar icons.
+* **Smart Search**: Fixed a broken icon appearing in front of the Wiki source line in Smart Search answers.
