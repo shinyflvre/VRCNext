@@ -430,3 +430,10 @@ function filterFriendsList() {
     h += `</div>`;
     setHtmlIfChanged(el, h);
 }
+
+(function () {
+    const panel = document.getElementById('vrcPanel');
+    const area = document.getElementById('vrcProfileArea');
+    if (!panel || !area) return;
+    panel.addEventListener('scroll', () => area.classList.toggle('scrolled', panel.scrollTop > 0), { passive: true });
+})();

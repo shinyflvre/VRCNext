@@ -8,7 +8,7 @@
 
 * **V2 UI Design**: All tools and the Settings tab now use the V2 card design with **Tab Card BG**, outlines, and consistent styling matching the Worlds, Groups, and Timeline tabs. This also includes the VRChat Config sections, Friends Sidebar search card, modal tab bars, sub-tab bars, buttons, icon buttons, pill groups, text fields, edit fields, and dropdowns. Colored buttons such as accent, active, danger, and Unfriend buttons use a slightly lighter version of their own color for the outline.
 
-* **Sidebar**: Your own profile card in the friends sidebar now uses the **Buttons Base** color, matching the Play VRChat button on the left.
+* **Sidebar**: Your own profile card in the friends sidebar now uses the **Buttons Base** color, matching the Play VRChat button on the left. It also stays pinned at the top while you scroll the friends list, with a soft fade below it once you have scrolled down, so your profile is always one click away.
 
 * **Themes**: Added the new built-in theme **Frostbite**, a cool dark blue-grey look. It is also available for the VR overlay.
 

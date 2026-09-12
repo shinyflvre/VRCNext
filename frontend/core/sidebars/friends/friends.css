@@ -127,6 +127,32 @@
     scrollbar-width: none;
 }
 
+#vrcProfileArea {
+    position: sticky;
+    top: -8px;
+    z-index: 5;
+    margin: -8px -8px 0;
+    padding: 8px 8px 10px;
+    background: var(--bg-side);
+}
+#vrcProfileArea:empty { display: none; }
+#vrcProfileArea .vrc-profile { margin-bottom: 0; }
+#vrcProfileArea.scrolled::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    height: 16px;
+    background: linear-gradient(to bottom, var(--bg-side), transparent);
+    pointer-events: none;
+}
+.rsidebar.collapsed #vrcProfileArea {
+    top: -4px;
+    margin: -4px -4px 0;
+    padding: 4px 4px 10px;
+}
+
 .vrc-avatar, .vrc-friend-avatar, .fd-avatar { object-fit: cover; background: var(--bg-input); flex-shrink: 0; }
 .vrc-avatar { width: 42px; height: 42px; border-radius: 10px; }
 
