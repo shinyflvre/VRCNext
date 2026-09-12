@@ -2014,7 +2014,10 @@ public class FriendsController
             JObject? live;
             lock (_friendStore) _friendStore.TryGetValue(userId, out live);
             var liveStatus          = live?["status"]?.ToString()                                            ?? cachedEntry.ProfileStatus;
-            var liveStatusDesc      = live?["statusDescription"]?.ToString()                                 ?? cachedEntry.ProfileStatusDesc;
+            var liveStatusDescRaw   = live?["statusDescription"]?.ToString();
+            var liveStatusDesc      = (liveStatus == "offline" && string.IsNullOrEmpty(liveStatusDescRaw))
+                ? cachedEntry.ProfileStatusDesc
+                : (liveStatusDescRaw ?? cachedEntry.ProfileStatusDesc);
             var liveLoc             = live?["location"]?.ToString()                                          ?? cachedEntry.ProfileLocation;
             var liveDisplayName     = live?["displayName"]?.ToString();
             var liveRawImage        = live != null ? VRChatApiService.GetUserImage(live) : "";

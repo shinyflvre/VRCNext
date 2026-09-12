@@ -305,7 +305,8 @@
     border-radius: 12px;
 }
 .rsidebar:not(.collapsed) .inst-card { margin-bottom: 10px; }
-.rsidebar:not(.collapsed) .vrc-profile:hover { background: var(--bg-hover); }
+.rsidebar:not(.collapsed) .vrc-profile { background: var(--ui-input-bg); }
+.rsidebar:not(.collapsed) .vrc-profile:hover { background: var(--ui-input-hover-bg); }
 .rsidebar:not(.collapsed) .inst-header-fade {
     background: linear-gradient(to top, var(--tab-card-bg, var(--bg-card)) 0%, transparent 60%);
 }

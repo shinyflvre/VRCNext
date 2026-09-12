@@ -163,8 +163,10 @@ function renderVrcFriends(friends, counts) {
     if (currentFriendDetail && friends) {
         const lf = friends.find(f => f.id === currentFriendDetail.id);
         if (lf) {
+            const keepOfflineDesc = lf.presence === 'offline' && !lf.statusDescription && !!currentFriendDetail.statusDescription;
+            const liveDesc = keepOfflineDesc ? currentFriendDetail.statusDescription : lf.statusDescription;
             currentFriendDetail.status = lf.status;
-            currentFriendDetail.statusDescription = lf.statusDescription;
+            currentFriendDetail.statusDescription = liveDesc;
             currentFriendDetail.location = lf.location;
             currentFriendDetail.presence = lf.presence;
             const detailStatusEl = document.getElementById('fd-live-status');
@@ -172,9 +174,9 @@ function renderVrcFriends(friends, counts) {
                 const isWeb = lf.presence === 'web';
                 const isOff = lf.presence === 'offline';
                 // Status text is just the description; dot lives on the avatar.
-                detailStatusEl.innerHTML = lf.statusDescription ? esc(lf.statusDescription) : '';
+                detailStatusEl.innerHTML = liveDesc ? esc(liveDesc) : '';
                 const statusRow = detailStatusEl.closest('.fd-status-row');
-                if (statusRow) statusRow.style.display = lf.statusDescription ? '' : 'none';
+                if (statusRow) statusRow.style.display = liveDesc ? '' : 'none';
                 const detailDotEl = document.getElementById('fd-live-dot');
                 if (detailDotEl) {
                     const dotClass = isWeb ? 'vrc-status-ring' : 'vrc-status-dot';

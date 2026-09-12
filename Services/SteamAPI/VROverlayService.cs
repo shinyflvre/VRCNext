@@ -731,6 +731,7 @@ namespace VRCNext.Services
                 ["ender"]       = new() { BgCard=H("#0A0714"),BgHover=H("#191327"),Accent=H("#CC60FF"),Ok=H("#2DD48C"),Warn=H("#FFBA37"),Err=H("#FF4B55"),Cyan=H("#8CA5FF"),Tx1=H("#EBEBFF"),Tx2=H("#B7B7C3"),Tx3=H("#FFFFFF"),Brd=H("#1C162C") },
                 ["redruby"]       = new() { BgCard=H("#151517"),BgHover=H("#232326"),Accent=H("#D04F4F"),Ok=H("#46C88C"),Warn=H("#E0A43C"),Err=H("#E05555"),Cyan=H("#D9A58F"),Tx1=H("#E4DADA"),Tx2=H("#AB9D9D"),Tx3=H("#7C7070"),Brd=H("#232326") },
                 ["mates"]         = new() { BgCard=H("#151517"),BgHover=H("#232326"),Accent=H("#4F50D0"),Ok=H("#46C88C"),Warn=H("#E0A43C"),Err=H("#E05555"),Cyan=H("#9E8FD9"),Tx1=H("#DADCE4"),Tx2=H("#9D9EAB"),Tx3=H("#70727C"),Brd=H("#232326") },
+                ["frostbite"]     = new() { BgCard=H("#0B0D10"),BgHover=H("#191C1F"),Accent=H("#6C7C92"),Ok=H("#5FB2FF"),Warn=H("#FFBA37"),Err=H("#FF4B55"),Cyan=H("#8CA5FF"),Tx1=H("#B2BCCC"),Tx2=H("#B2BCCC"),Tx3=H("#788392"),Brd=H("#1A1B20") },
             };
         }
 

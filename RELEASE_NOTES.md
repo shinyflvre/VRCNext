@@ -8,6 +8,11 @@
 
 * **V2 UI Design**: All tools and the Settings tab now use the V2 card design with **Tab Card BG**, outlines, and consistent styling matching the Worlds, Groups, and Timeline tabs. This also includes the VRChat Config sections, Friends Sidebar search card, modal tab bars, sub-tab bars, buttons, icon buttons, pill groups, text fields, edit fields, and dropdowns. Colored buttons such as accent, active, danger, and Unfriend buttons use a slightly lighter version of their own color for the outline.
 
+* **Sidebar**: Your own profile card in the friends sidebar now uses the **Buttons Base** color, matching the Play VRChat button on the left.
+
+* **Themes**: Added the new built-in theme **Frostbite**, a cool dark blue-grey look. It is also available for the VR overlay.
+
 ### **Fixed Bugs**
+* **Profiles**: Fixed the status text of offline friends disappearing when their profile was opened again within the cache window, or when the friends list refreshed while the profile was open. The friends list often has no status text for offline friends, so the profile now keeps the text it already loaded.
 * **Smart Search**: Fixed the taskbar search icon changing size when adjusting the app text size. It now stays consistent with the other taskbar icons.
 * **Smart Search**: Fixed a broken icon appearing in front of the Wiki source line in Smart Search answers.
