@@ -24,14 +24,22 @@ public static class SmartSearchService
         "their", "them", "they", "we", "want", "need", "please", "some", "any", "all", "vrcnext", "vrchat"
     };
 
-    public static async Task<(bool ok, string answer, string title, string slug)> LookupAsync(string question)
+    private const int MaxAlternatives = 3;
+    private const double MinAlternativeScore = 2.0;
+    private const double MinAlternativeRatio = 0.25;
+
+    public sealed record WikiHit(string title, string slug, string heading, string answer);
+    public sealed record LookupResult(bool ok, string answer, string title, string slug, List<WikiHit> alternatives);
+
+    public static async Task<LookupResult> LookupAsync(string question)
     {
-        if (string.IsNullOrWhiteSpace(question)) return (false, "", "", "");
+        var none = new LookupResult(false, "", "", "", new List<WikiHit>());
+        if (string.IsNullOrWhiteSpace(question)) return none;
 
         try
         {
             var kws = Keywords(question);
-            if (kws.Count == 0) return (false, "", "", "");
+            if (kws.Count == 0) return none;
 
             var pages = await FetchPagesTreeAsync();
             var titles = pages.ToDictionary(p => p.slug, p => p.title, StringComparer.OrdinalIgnoreCase);
@@ -43,11 +51,10 @@ public static class SmartSearchService
             foreach (var kw in kws.Take(MaxKeywordSearches))
                 foreach (var s in await WikiSearchSlugsAsync(kw)) Add(s);
 
-            if (candidates.Count == 0) return (false, "", "", "");
+            if (candidates.Count == 0) return none;
             if (candidates.Count > MaxCandidatePages) candidates = candidates.Take(MaxCandidatePages).ToList();
 
-            double bestScore = 0;
-            string bestMd = "", bestTitle = "", bestSlug = "";
+            var hits = new List<(double score, string md, string title, string slug, string heading)>();
 
             foreach (var slug in candidates)
             {
@@ -58,25 +65,37 @@ public static class SmartSearchService
                 foreach (var (heading, raw) in SplitSections(content))
                 {
                     double score = ScoreSection(heading, raw, pageTitle, kws);
-                    if (score > bestScore)
-                    {
-                        bestScore = score;
-                        bestMd = raw.Trim();
-                        bestTitle = pageTitle;
-                        bestSlug = slug;
-                    }
+                    if (score <= 0) continue;
+                    var md = raw.Trim();
+                    if (string.IsNullOrWhiteSpace(md)) continue;
+                    hits.Add((score, md, pageTitle, slug, heading));
                 }
             }
 
-            if (bestScore <= 0 || string.IsNullOrWhiteSpace(bestMd)) return (false, "", "", "");
-            if (bestMd.Length > MaxSectionChars) bestMd = bestMd.Substring(0, MaxSectionChars);
-            return (true, bestMd, bestTitle, bestSlug);
+            if (hits.Count == 0) return none;
+            hits.Sort((a, b) => b.score.CompareTo(a.score));
+            var best = hits[0];
+
+            var alternatives = new List<WikiHit>();
+            foreach (var h in hits.Skip(1))
+            {
+                if (alternatives.Count >= MaxAlternatives) break;
+                if (h.score < MinAlternativeScore || h.score < best.score * MinAlternativeRatio) break;
+                if (h.slug == best.slug || alternatives.Any(a => a.slug == h.slug)) continue;
+                alternatives.Add(new WikiHit(h.title, h.slug, CleanHeading(h.heading), Clip(h.md)));
+            }
+
+            return new LookupResult(true, Clip(best.md), best.title, best.slug, alternatives);
         }
         catch
         {
-            return (false, "", "", "");
+            return none;
         }
     }
+
+    private static string Clip(string md) => md.Length > MaxSectionChars ? md.Substring(0, MaxSectionChars) : md;
+
+    private static string CleanHeading(string heading) => (heading ?? "").Replace("*", "").Replace("`", "").Replace("_", " ").Trim();
 
     private static List<string> Keywords(string question)
     {

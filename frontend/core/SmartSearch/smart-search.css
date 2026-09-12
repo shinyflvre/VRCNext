@@ -507,3 +507,37 @@
 }
 .ss-ai-source:hover { text-decoration: underline; }
 .ss-ai-source .msi { font-size: 15px; }
+
+.ss-ai-bubble-alts {
+    width: 100%;
+    max-width: 100%;
+}
+.ss-ai-alts-label { margin-bottom: 8px; }
+.ss-ai-alts {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.ss-ai-alt {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    width: 100%;
+    padding: 7px 10px;
+    background: var(--ui-input-bg);
+    border: 1px solid var(--brd);
+    border-radius: 8px;
+    color: var(--tx1);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background .12s, border-color .12s, color .12s;
+}
+.ss-ai-alt:hover {
+    background: var(--ui-input-hover-bg);
+    border-color: var(--accent);
+    color: var(--tx0);
+}
+.ss-ai-alt-title { font-weight: 600; color: var(--tx0); }
+.ss-ai-alt-sub { font-size: calc(11px + var(--fs-off, 0px)); color: var(--tx2); }

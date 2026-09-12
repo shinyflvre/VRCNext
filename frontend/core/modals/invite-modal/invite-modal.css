@@ -10,6 +10,7 @@
     padding: 6px 10px;
     border-radius: 7px;
     background: color-mix(in srgb, var(--accent) 10%, transparent);
+    border-color: color-mix(in srgb, var(--accent) 40%, transparent);
     color: var(--accent);
     font-size: calc(11px + var(--fs-off, 0px));
     justify-content: center;

@@ -17,6 +17,7 @@ div.vn-select {
     justify-content: space-between;
     gap: 8px;
     background: var(--ui-input-bg);
+    border: 1px solid var(--brd);
     color: var(--tx1);
     padding: 6px 10px;
     border-radius: 8px;

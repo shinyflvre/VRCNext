@@ -286,7 +286,7 @@
     width: 28px;
     height: 28px;
     border-radius: 6px;
-    border: none;
+    border: 1px solid var(--brd);
     cursor: pointer;
     transition: all .15s;
     backdrop-filter: blur(6px);

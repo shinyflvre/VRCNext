@@ -2,8 +2,9 @@
 
 .log-area {
     margin-top: 10px;
-    background: var(--bg-card);
-    border-radius: 10px;
+    background: var(--tab-card-bg, var(--bg-input));
+    border: 1px solid var(--brd);
+    border-radius: 12px;
     padding: 10px 0 0;
     overflow: hidden;
     display: flex;

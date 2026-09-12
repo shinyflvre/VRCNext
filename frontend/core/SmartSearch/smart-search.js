@@ -795,29 +795,85 @@ const SmartSearch = (() => {
         if (typeof sendToCS === 'function') sendToCS({ action: 'smartSearchAsk', question, reqId: _aiPendingReqId });
     }
 
+    function _aiRenderAnswerInto(a, res) {
+        if (res.title) {
+            const src = document.createElement('a');
+            src.className = 'ss-ai-source';
+            const icon = document.createElement('span'); icon.className = 'msi'; icon.textContent = 'open_in_new';
+            const label = document.createElement('span');
+            label.textContent = ((typeof t === 'function') ? t('search.wiki.source', 'From the wiki') : 'From the wiki') + ': ' + res.title;
+            src.appendChild(icon); src.appendChild(label);
+            if (res.slug) {
+                src.href = '#';
+                src.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (typeof sendToCS === 'function') sendToCS({ action: 'openUrl', url: 'https://wiki.vrcnext.com/#page/' + res.slug });
+                });
+            }
+            a.appendChild(src);
+        }
+        a.appendChild(_aiRenderMarkdown(res.answer || ''));
+    }
+
+    function _aiAppendBubble(kind) {
+        const chat = _dropdown ? _dropdown.querySelector('.ss-ai-chat') : null;
+        if (!chat) return null;
+        const row = document.createElement('div');
+        row.className = 'ss-ai-row ' + (kind === 'user' ? 'ss-ai-row-user' : 'ss-ai-row-bot');
+        const bubble = document.createElement('div');
+        bubble.className = 'ss-ai-bubble ' + (kind === 'user' ? 'ss-ai-bubble-user' : 'ss-ai-bubble-bot');
+        row.appendChild(bubble);
+        chat.appendChild(row);
+        return bubble;
+    }
+
+    function _aiRenderAlternatives(alts) {
+        const bubble = _aiAppendBubble('bot');
+        if (!bubble) return;
+        bubble.classList.add('ss-ai-bubble-alts');
+        const label = document.createElement('div');
+        label.className = 'ss-ai-alts-label';
+        label.textContent = (typeof t === 'function') ? t('search.wiki.alternatives', 'Or were you looking for:') : 'Or were you looking for:';
+        bubble.appendChild(label);
+        const list = document.createElement('div');
+        list.className = 'ss-ai-alts';
+        alts.forEach(alt => {
+            if (!alt || !alt.answer) return;
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'ss-ai-alt';
+            const title = document.createElement('span');
+            title.className = 'ss-ai-alt-title';
+            title.textContent = alt.title || alt.slug || '';
+            btn.appendChild(title);
+            if (alt.heading) {
+                const sub = document.createElement('span');
+                sub.className = 'ss-ai-alt-sub';
+                sub.textContent = alt.heading;
+                btn.appendChild(sub);
+            }
+            btn.addEventListener('click', () => {
+                const u = _aiAppendBubble('user');
+                if (u) u.textContent = alt.heading ? (alt.title + ' · ' + alt.heading) : (alt.title || alt.slug || '');
+                const b = _aiAppendBubble('bot');
+                if (!b) return;
+                _aiRenderAnswerInto(b, alt);
+                b.scrollIntoView({ block: 'nearest' });
+            });
+            list.appendChild(btn);
+        });
+        bubble.appendChild(list);
+        bubble.scrollIntoView({ block: 'nearest' });
+    }
+
     function onAnswer(payload) {
         if (!payload || payload.reqId !== _aiPendingReqId) return;
         const a = document.getElementById('ssAiAnswer');
         if (!a) return;
         a.innerHTML = '';
         if (payload.ok && payload.answer) {
-            if (payload.title) {
-                const src = document.createElement('a');
-                src.className = 'ss-ai-source';
-                const icon = document.createElement('span'); icon.className = 'msi'; icon.textContent = 'open_in_new';
-                const label = document.createElement('span');
-                label.textContent = ((typeof t === 'function') ? t('search.wiki.source', 'From the wiki') : 'From the wiki') + ': ' + payload.title;
-                src.appendChild(icon); src.appendChild(label);
-                if (payload.slug) {
-                    src.href = '#';
-                    src.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        if (typeof sendToCS === 'function') sendToCS({ action: 'openUrl', url: 'https://wiki.vrcnext.com/#page/' + payload.slug });
-                    });
-                }
-                a.appendChild(src);
-            }
-            a.appendChild(_aiRenderMarkdown(payload.answer));
+            _aiRenderAnswerInto(a, payload);
+            if (Array.isArray(payload.alternatives) && payload.alternatives.length) _aiRenderAlternatives(payload.alternatives);
         } else {
             const err = document.createElement('div');
             err.className = 'ss-ai-error';

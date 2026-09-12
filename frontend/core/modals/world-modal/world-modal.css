@@ -358,6 +358,7 @@
 .wi-modes {
     display: flex;
     gap: 0;
+    border: 1px solid var(--brd);
     border-radius: 8px;
     overflow: hidden;
     background: var(--bg-input);

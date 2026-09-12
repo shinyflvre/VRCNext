@@ -9,8 +9,9 @@
 
 .file-table {
     margin-top: 12px;
-    background: var(--bg-card);
-    border-radius: 10px;
+    background: var(--tab-card-bg, var(--bg-input));
+    border: 1px solid var(--brd);
+    border-radius: 12px;
     overflow: hidden;
 }
 
@@ -60,7 +61,8 @@
 }
 
 .wh-card {
-    background: var(--bg-card);
+    background: var(--tab-card-bg, var(--bg-input));
+    border: 1px solid var(--brd);
     border-radius: 10px;
     padding: 12px 16px;
     margin-bottom: 8px;
@@ -86,7 +88,8 @@
 
 .ts-stat {
     flex: 1;
-    background: var(--bg-card);
+    background: var(--tab-card-bg, var(--bg-input));
+    border: 1px solid var(--brd);
     border-radius: 10px;
     padding: 12px 14px;
     display: flex;

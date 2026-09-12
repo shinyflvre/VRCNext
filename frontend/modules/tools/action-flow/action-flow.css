@@ -63,7 +63,7 @@
     align-items: center;
     justify-content: center;
     pointer-events: none;
-    background: var(--bg-card);
+    background: var(--tab-card-bg, var(--bg-input));
     z-index: 2;
 }
 
@@ -127,7 +127,7 @@
 .af-blockly-host .blocklyScrollbarVertical   .blocklyScrollbarHandle { transform: scaleX(0.35); transform-origin: right;  }
 .af-blockly-host .blocklyScrollbarHorizontal .blocklyScrollbarHandle { transform: scaleY(0.35); transform-origin: bottom; }
 .af-blockly-host .blocklyToolboxDiv {
-    background: var(--bg-card) !important;
+    background: var(--tab-card-bg, var(--bg-input)) !important;
     border-right: 1px solid var(--brd-lt) !important;
     color: var(--tx1) !important;
     padding-top: 6px !important;
@@ -153,7 +153,7 @@
 .af-blockly-host .blocklyTreeRow:hover    { background: var(--bg-input) !important; }
 .af-blockly-host .blocklyTreeSelected     { background: var(--bg-input) !important; }
 .af-blockly-host .blocklyTreeLabel        { color: var(--tx2) !important; font-family: var(--font-app) !important; font-weight: 600 !important; font-size: calc(12px + var(--fs-off, 0px)) !important; }
-.af-blockly-host .blocklyFlyoutBackground { fill: var(--bg-card); fill-opacity: 0.96; }
+.af-blockly-host .blocklyFlyoutBackground { fill: var(--tab-card-bg, var(--bg-input)); fill-opacity: 0.96; }
 .af-blockly-host .blocklyText             { font-family: var(--font-app) !important; font-weight: 500 !important; }
 
 .af-blockly-host .blocklyWidgetDiv input,
@@ -176,7 +176,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: var(--bg-card);
+    background: var(--tab-card-bg, var(--bg-input));
     border: 1px solid var(--brd-lt);
     border-radius: 6px;
     color: var(--tx1);
@@ -229,7 +229,7 @@
     width: 175px;
     display: flex;
     flex-direction: column;
-    background: var(--bg-card);
+    background: var(--tab-card-bg, var(--bg-input));
     border-top: 1px solid var(--brd-lt);
     border-right: 1px solid var(--brd-lt);
     z-index: 100;             /* must beat Blockly's toolbox (~70) */

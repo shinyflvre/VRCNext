@@ -6,6 +6,8 @@
     --bg-hover: #1C1C1F;
     --bg-input: #121212;
     --tab-card-bg: #0D0D0D;
+    --modal-bg: var(--bg-card);
+    --modal-card: var(--bg-input);
     --bg-btn: #0D0D0E;
     --bg-btn-h: #1C1C1F;
     --ui-input-bg: var(--bg-card);
@@ -865,6 +867,7 @@ html.deco-dashboard-on.nameplate-deco-on .dash-flocs-card > .dash-flocs-world-th
     display: flex;
     gap: 0;
     margin-bottom: 14px;
+    border: 1px solid var(--brd);
     border-radius: 8px;
     overflow: hidden;
     background: var(--ui-input-bg);
@@ -964,6 +967,7 @@ html.deco-dashboard-on.nameplate-deco-on .dash-flocs-card > .dash-flocs-world-th
     display: flex;
     gap: 0;
     margin-bottom: 14px;
+    border: 1px solid var(--brd);
     border-radius: 8px;
     overflow: hidden;
     background: var(--ui-input-bg);
@@ -989,6 +993,7 @@ html.deco-dashboard-on.nameplate-deco-on .dash-flocs-card > .dash-flocs-world-th
     padding: 6px 10px;
     border-radius: 7px;
     background: color-mix(in srgb, var(--accent) 10%, transparent);
+    border-color: color-mix(in srgb, var(--accent) 40%, transparent);
     color: var(--accent);
     font-size: calc(11px + var(--fs-off, 0px));
     justify-content: center;

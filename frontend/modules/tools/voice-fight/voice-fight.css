@@ -151,7 +151,7 @@
     gap: 6px;
 }
 .vf-sound {
-    background: var(--bg-card);
+    background: var(--tab-card-bg, var(--bg-input));
     border-radius: 6px;
     padding: 8px 10px;
     display: flex;

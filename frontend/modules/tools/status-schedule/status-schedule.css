@@ -242,6 +242,7 @@
 .ss-btn-danger {
     background: rgba(255,75,85,.15) !important;
     color: var(--err) !important;
+    border-color: color-mix(in srgb, var(--err) 40%, transparent) !important;
 }
 .ss-btn-danger:hover {
     background: var(--err) !important;
