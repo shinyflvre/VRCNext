@@ -830,6 +830,7 @@ const SmartSearch = (() => {
     function _aiRenderAlternatives(alts) {
         const bubble = _aiAppendBubble('bot');
         if (!bubble) return;
+        bubble.classList.add('ss-ai-bubble-alts');
         const label = document.createElement('div');
         label.className = 'ss-ai-alts-label';
         label.textContent = (typeof t === 'function') ? t('search.wiki.alternatives', 'Or were you looking for:') : 'Or were you looking for:';

@@ -508,6 +508,10 @@
 .ss-ai-source:hover { text-decoration: underline; }
 .ss-ai-source .msi { font-size: 15px; }
 
+.ss-ai-bubble-alts {
+    width: 100%;
+    max-width: 100%;
+}
 .ss-ai-alts-label { margin-bottom: 8px; }
 .ss-ai-alts {
     display: flex;
