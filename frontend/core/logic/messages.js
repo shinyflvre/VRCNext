@@ -17,6 +17,10 @@ window.external.receiveMessage(rawMsg => {
                 }
                 break;
             case 'translationData': handleTranslationData(payload); break;
+            case 'smartSearchAnswer':
+                if (window.SmartSearch && typeof SmartSearch.onAnswer === 'function') SmartSearch.onAnswer(payload);
+                break;
+
             case 'loadSettings':
                 loadSettingsToUI(payload);
                 if (typeof requestAccountsList === 'function') requestAccountsList();

@@ -3882,6 +3882,18 @@ public partial class AppShell
                     _ = Task.Run(() => FetchApiHealthAsync());
                     break;
 
+                case "smartSearchAsk":
+                {
+                    var question = msg["question"]?.ToString() ?? "";
+                    var reqId = msg["reqId"]?.ToString() ?? "";
+                    _ = Task.Run(async () =>
+                    {
+                        var (ok, answer, title, slug) = await VRCNext.Services.SmartSearch.SmartSearchService.LookupAsync(question);
+                        Invoke(() => SendToJS("smartSearchAnswer", new { reqId, ok, answer, title, slug }));
+                    });
+                    break;
+                }
+
                 case "getApiHealthDetail":
                     _ = Task.Run(() => SendApiHealthDetailAsync());
                     break;
