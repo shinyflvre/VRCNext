@@ -1,5 +1,11 @@
 ﻿# **2026.50.1**
 
+PLEASE READ
+If you have questions about features or are trying to find something, you can now use **Smart Search**!
+Click the search icon in the upper-right corner of the taskbar and type in your question.
+Smart Search will try to find the answer for you using the **VRCNext Wiki**. Keep your questions as simple and specific as possible for the best results.
+**Smart Search is not AI.** It does not generate solutions or answers on its own. It uses a normal search algorithm to find the most relevant information from the VRCNext Wiki.
+
 ### **Improvements**
 * **Smart Search**: Smart Search can now answer questions using the VRCNext Wiki and directly show the matching documentation section. Type a question and press Enter. If a normal search finds no results, Smart Search will offer to search the Wiki instead. Search now also covers tools, settings, and Wiki content.
 
