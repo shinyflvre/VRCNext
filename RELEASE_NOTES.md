@@ -16,6 +16,7 @@
   * SHIFT + Left Click can now open Profiles, Groups, Worlds, Avatars, Events and Instances in separate desktop windows.
   * Detached windows share the existing WebView, so they do not create additional browser instances.
   * Windows only and requires a restart.
+  * The maximum number of open Multi-Task windows is now 8 instead of 12.
 
 ### **Fixed Bugs**
   * Fixed scaling and zooming in detached windows.
@@ -24,5 +25,6 @@
   * Fixed the image picker for profile icons and banners opening in the main window when triggered from a detached window.
   * Fixed the content of detached windows shifting for a moment while the main window or another detached window is resized.
   * Detached windows no longer stay blank after a browser process failure. The page is reloaded or the windows are reattached automatically.
+  * Fixed detached windows turning black once about ten windows were open or a window was made very wide. The shared drawing surface hit the GPU texture limit, windows are now arranged in rows below that limit.
   * Fixed duplicate **Restart VRCNext** buttons appearing under Performance.
   * Fixed some badges appearing taller than others.

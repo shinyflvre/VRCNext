@@ -2569,7 +2569,7 @@
   "settings.experimental.multitask.warning": "Esta es una función experimental, es probable que haya errores.",
   "settings.multitasking.newwindow.label": "Abrir en nueva ventana",
   "settings.multitasking.newwindow.desc": "Las ventanas abiertas en modo multitarea (SHIFT + clic izquierdo) aparecen como ventanas de escritorio independientes en lugar de ventanas flotantes dentro de la aplicación. Comparten la única instancia del navegador de la aplicación, por lo que no se carga ningún WebView adicional. Solo Windows. Se aplica tras reiniciar VRCNext.",
-  "wm.limit_reached": "Se alcanzó el máximo de 12 ventanas",
+  "wm.limit_reached": "Se alcanzó el máximo de 8 ventanas",
   "wm.already_open": "{name} ya está abierto",
   "settings.search_debounce.ms_15": "15 ms",
   "settings.search_debounce.ms_50": "50 ms",

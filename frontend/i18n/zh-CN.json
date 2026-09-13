@@ -2569,7 +2569,7 @@
   "settings.experimental.multitask.warning": "这是实验性功能，可能存在问题。",
   "settings.multitasking.newwindow.label": "在新窗口中打开",
   "settings.multitasking.newwindow.desc": "在多任务模式下打开的窗口（SHIFT + 鼠标左键）将显示为独立的桌面窗口，而不是应用内的浮动窗口。这些窗口共享应用的单一浏览器实例，不会加载额外的 WebView。仅限 Windows。重启 VRCNext 后生效。",
-  "wm.limit_reached": "已达到 12 个窗口的上限",
+  "wm.limit_reached": "已达到 8 个窗口的上限",
   "wm.already_open": "{name} 已经打开了",
   "settings.search_debounce.ms_15": "15 ms",
   "settings.search_debounce.ms_50": "50 ms",

@@ -1,4 +1,4 @@
-﻿const WM_MAX = 12;
+﻿const WM_MAX = 8;
 const WM_Z_BASE = 9000;
 const WM_MIN_W = 560;
 const WM_MIN_H = 360;
@@ -783,7 +783,7 @@ function wmOpen(type, id, label, id2) {
 
     if (_wmWindows.length >= WM_MAX) {
         if (typeof showToast === 'function') {
-            showToast(false, _wmT('wm.limit_reached', 'Maximum of 12 windows reached'));
+            showToast(false, _wmT('wm.limit_reached', 'Maximum of 8 windows reached'));
         }
         return true;
     }
