@@ -1063,6 +1063,7 @@ function _wmPrepareSurfaceDoc(doc) {
         _wmRootObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
     }
     if (typeof window.VrcnCtxAttach === 'function') window.VrcnCtxAttach(doc);
+    if (typeof vnTooltipAttach === 'function') vnTooltipAttach(doc);
     _wmShareGlobals(doc.defaultView);
     _wmBindSurfaceDoc(doc);
 }
@@ -1108,7 +1109,7 @@ function _wmOverlayHidden(el) {
 
 function _wmMaybePortal(el) {
     if (!el || el.nodeType !== 1 || el.__wmPortal) return;
-    if (el.parentNode !== document.body || !el.classList.contains('modal-overlay')) return;
+    if (el.parentNode !== document.body || !(el.classList.contains('modal-overlay') || el.hasAttribute('data-wm-portal'))) return;
     if (_wmOverlayHidden(el)) return;
     const cur = _wmCurrent();
     if (!cur || !cur.surfaced || !cur.surfaceWin) return;

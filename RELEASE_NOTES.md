@@ -20,5 +20,7 @@
 ### **Fixed Bugs**
   * Fixed scaling and zooming in detached windows.
   * Fixed detached windows briefly showing the desktop while resizing.
+  * Fixed detached windows showing the plain browser tooltip instead of the VRCNext tooltip when hovering elements.
+  * Fixed the image picker for profile icons and banners opening in the main window when triggered from a detached window.
   * Fixed duplicate **Restart VRCNext** buttons appearing under Performance.
   * Fixed some badges appearing taller than others.
