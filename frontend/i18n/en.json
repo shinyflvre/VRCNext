@@ -2625,6 +2625,8 @@
   "settings.perf.blur.desc": "Disables blur filters on modals and overlays. Instead of a blurred background, a dark overlay (75%) is shown. Especially useful when GPU acceleration is disabled, as blur effects are CPU-intensive. It is recommended to disable Blur Filters when using the app without GPU acceleration.",
   "settings.perf.efficiency.label": "Efficiency Mode",
   "settings.perf.efficiency.desc": "Runs the VRCNext process and its WebView processes in Windows Efficiency Mode (EcoQoS). Lowers power usage and background CPU impact; the leaf icon appears in Task Manager. May slightly reduce responsiveness. Applies immediately, no restart needed.",
+  "settings.perf.reduced_background.label": "Reduced Background Usage",
+  "settings.perf.reduced_background.desc": "Pauses rendering and releases GPU memory while VRCNext is minimized or hidden in the tray. Notifications, the friends list and all background features keep running at full speed. Rendering resumes instantly when the window is shown again. Applies immediately, no restart needed.",
   "settings.search_debounce.title": "Performance",
   "settings.search_debounce.label": "Search Index Debounce Speed",
   "settings.search_debounce.desc": "Search Index Debounce determines how many milliseconds it takes until it starts searching the database or certain entries after your last key press. Default is 500ms which works fine for almost every user. If you have more than 1000 Friends, 500ms is perfect. If you have more than 2500 Friends, it is recommended to use 750ms.",

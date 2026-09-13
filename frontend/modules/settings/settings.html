@@ -128,6 +128,14 @@
                                 </label>
                             </div>
                             <div class="set-desc" data-i18n="settings.perf.efficiency.desc">Runs the VRCNext process and its WebView processes in Windows Efficiency Mode (EcoQoS). Lowers power usage and background CPU impact; the leaf icon appears in Task Manager. May slightly reduce responsiveness. Applies immediately, no restart needed.</div>
+                            <div class="sf-toggle-row" style="margin-top:14px;">
+                                <span data-i18n="settings.perf.reduced_background.label">Reduced Background Usage</span>
+                                <label class="toggle">
+                                    <input type="checkbox" id="setReducedBackgroundUsage" onchange="autoSave()">
+                                    <div class="toggle-track"><div class="toggle-knob"></div></div>
+                                </label>
+                            </div>
+                            <div class="set-desc" data-i18n="settings.perf.reduced_background.desc">Pauses rendering and releases GPU memory while VRCNext is minimized or hidden in the tray. Notifications, the friends list and all background features keep running at full speed. Rendering resumes instantly when the window is shown again. Applies immediately, no restart needed.</div>
                         </div>
                         <div data-linux-only style="display:none;">
                             <div class="sf-toggle-row">

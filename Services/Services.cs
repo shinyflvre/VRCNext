@@ -762,6 +762,7 @@ public class AppSettings
     public bool V8Heap128           { get; set; } = false;
     public bool TwoRenderProcesses  { get; set; } = false;
     public bool EfficiencyMode      { get; set; } = false;
+    public bool ReducedBackgroundUsage { get; set; } = false;
     public bool AnimationsEnabled   { get; set; } = true;
     public bool BlurEnabled         { get; set; } = true;
     public int  SearchDebounceMs    { get; set; } = 500;

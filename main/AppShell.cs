@@ -535,6 +535,10 @@ public partial class AppShell
 #if WINDOWS
             .SetBrowserControlInitParameters(BuildChromiumFlags(_settings))
             .SetCompositionHosting(_settings.MultiTaskMode && _settings.OpenModalsInNewWindow)
+            .SetBackgroundTimerThrottling(false)
+            .SetAutoSuspendOnMinimize(_settings.ReducedBackgroundUsage
+                ? Photino.NET.PhotinoSuspendableResources.Rendering | Photino.NET.PhotinoSuspendableResources.Gpu
+                : Photino.NET.PhotinoSuspendableResources.None)
 #endif
             .RegisterWindowCreatedHandler((_, _) => _windowReady.TrySetResult())
             .RegisterWebMessageReceivedHandler((_, message) => { _ = OnWebMessage(message); });

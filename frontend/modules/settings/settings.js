@@ -342,6 +342,7 @@ function saveSettings() {
             animationsEnabled:  document.getElementById('setPerfAnimations')?.checked   ?? true,
             blurEnabled:        document.getElementById('setPerfBlur')?.checked         ?? true,
             efficiencyMode:     document.getElementById('setPerfEfficiency')?.checked   ?? false,
+            reducedBackgroundUsage: document.getElementById('setReducedBackgroundUsage')?.checked ?? false,
             avtrdbReportDeleted: document.getElementById('setAvtrdbReport').checked,
             avtrdbSubmitAvatars: document.getElementById('setAvtrdbSubmit').checked,
             avtrIcuReportDeleted: document.getElementById('setAvtrIcuReport').checked,
@@ -1111,6 +1112,7 @@ function loadSettingsToUI(s) {
     _perfSet('setPerfV8Heap',      s.V8Heap128          ?? s.v8Heap128          ?? false);
     _perfSet('setPerfRenderProc',  s.TwoRenderProcesses ?? s.twoRenderProcesses ?? false);
     _perfSet('setPerfEfficiency',  s.EfficiencyMode     ?? s.efficiencyMode     ?? false);
+    _perfSet('setReducedBackgroundUsage', s.ReducedBackgroundUsage ?? s.reducedBackgroundUsage ?? false);
     const animationsEnabled = s.AnimationsEnabled ?? s.animationsEnabled ?? true;
     const blurEnabled       = s.BlurEnabled       ?? s.blurEnabled       ?? true;
     _perfSet('setPerfAnimations', animationsEnabled);
@@ -1250,10 +1252,11 @@ function handleImgCacheOptimizeProgress(data) {
 
 function onPerfSettingChange() {
     autoSave();
+    const isLinux = !!window._isLinuxUi;
     const hint = document.getElementById('perfRestartHint');
-    if (hint) hint.style.display = '';
+    if (hint) hint.style.display = isLinux ? 'none' : '';
     const linuxHint = document.getElementById('linuxPerfRestartHint');
-    if (linuxHint) linuxHint.style.display = '';
+    if (linuxHint) linuxHint.style.display = isLinux ? '' : 'none';
 }
 
 function onMultiTaskModeChange(el) {

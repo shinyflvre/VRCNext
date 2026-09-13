@@ -2323,6 +2323,22 @@ public class AuthController
             _core.Settings.GpuShaderCache     = data["gpuShaderCache"]?.Value<bool>()     ?? false;
             _core.Settings.V8Heap128          = data["v8Heap128"]?.Value<bool>()          ?? false;
             _core.Settings.TwoRenderProcesses = data["twoRenderProcesses"]?.Value<bool>() ?? false;
+            var _newReducedBg = data["reducedBackgroundUsage"]?.Value<bool>() ?? _core.Settings.ReducedBackgroundUsage;
+            if (_newReducedBg != _core.Settings.ReducedBackgroundUsage)
+            {
+                _core.Settings.ReducedBackgroundUsage = _newReducedBg;
+#if WINDOWS
+                try
+                {
+                    if (_core.Window != null)
+                        _core.Window.AutoSuspendOnMinimize = _newReducedBg
+                            ? Photino.NET.PhotinoSuspendableResources.Rendering | Photino.NET.PhotinoSuspendableResources.Gpu
+                            : Photino.NET.PhotinoSuspendableResources.None;
+                }
+                catch (Exception ex) { VRCNext.Services.CrashHandler.WriteEntry("ReducedBackgroundUsage", ex); }
+#endif
+            }
+
             var _newEffMode = data["efficiencyMode"]?.Value<bool>() ?? _core.Settings.EfficiencyMode;
             if (_newEffMode != _core.Settings.EfficiencyMode || _newEffMode)
             {

@@ -2623,6 +2623,8 @@
   "settings.perf.blur.desc": "모달과 오버레이에 블러 필터를 비활성화합니다. 흐린 배경 대신 어두운 배경이 (75%) 표시됩니다. 특히 흐린 효과는 CPU 자원을 많이 소모하기 때문에 GPU 가속이 비활성화된 경우 유용합니다. GPU 가속 설정 없이 앱을 사용할 땐 블러 필터를 끄는 것을 추천합니다.",
   "settings.perf.efficiency.label": "효율성 모드",
   "settings.perf.efficiency.desc": "VRCNext 프로세스와 WebView 프로세스를 Windows 효율성 모드로 (EcoQoS) 실행합니다. 전원 사용량과 백그라운드 CPU 사용량을 줄입니다. 작업 관리자에 나뭇잎 아이콘이 표시됩니다. 반응 속도가 약간 저하될 수 있습니다. 즉시 적용되며, 다시 시작하지 않아도 됩니다.",
+  "settings.perf.reduced_background.label": "백그라운드 사용량 줄이기",
+  "settings.perf.reduced_background.desc": "VRCNext가 최소화되거나 트레이에 숨겨져 있는 동안 렌더링을 일시 중지하고 GPU 메모리를 해제합니다. 알림, 친구 목록 및 모든 백그라운드 기능은 정상 속도로 계속 동작합니다. 창을 다시 표시하면 렌더링이 즉시 재개됩니다. 즉시 적용되며 재시작이 필요 없습니다.",
   "settings.search_debounce.title": "성능",
   "settings.search_debounce.label": "검색 인덱스 디바운드 속도",
   "settings.search_debounce.desc": "검색 인덱스 디바운드는 마지막 키를 누른 후 데이터베이스 또는 특정 항목 검색을 시작할 때 까지 걸리는 시간을 밀리초 단위로 결정합니다. 기본값은 500ms이며 이는 대부분의 유저들이 정상적으로 작동하는 값입니다. 친구가 1000명보다 많다면 500ms가 좋습니다. 친구가 2500명보다 많다면 750ms를 추천합니다.",

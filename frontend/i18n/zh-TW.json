@@ -2608,6 +2608,8 @@
   "settings.perf.blur.desc": "停用模態框和遮罩層上的模糊濾鏡。用深色遮罩（75%）替代模糊背景。停用 GPU 加速時尤為實用，因為模糊效果對 CPU 消耗較大。在不使用 GPU 加速的情況下執行應用時，建議停用模糊濾鏡。",
   "settings.perf.efficiency.label": "效率模式",
   "settings.perf.efficiency.desc": "以 Windows 效率模式（EcoQoS）執行 VRCNext 程式及其 WebView 程式。降低功耗和背景 CPU 佔用；工作管理員中會顯示葉子圖示。響應速度可能略有下降。立即生效，無需重啟。",
+  "settings.perf.reduced_background.label": "降低背景佔用",
+  "settings.perf.reduced_background.desc": "在 VRCNext 最小化或隱藏到系統匣時暫停轉譯並釋放 GPU 記憶體。通知、好友清單和所有背景功能仍以全速運作。視窗再次顯示時立即恢復轉譯。立即生效，無需重新啟動。",
   "settings.search_debounce.title": "效能",
   "settings.search_debounce.label": "搜尋索引防抖速度",
   "settings.search_debounce.desc": "搜尋索引防抖決定了從最後一次按鍵到開始搜尋資料庫或特定條目所需的毫秒數。預設值為500ms，對幾乎所有玩家都適用。如果你有超過1000個好友，500ms是完美的選擇。如果你有超過2500個好友，建議使用750ms。",
