@@ -1,4 +1,4 @@
-/* === My Instance Modal === */
+﻿/* === My Instance Modal === */
 
 .mi-layout {
     display: grid;
@@ -170,7 +170,8 @@
     flex-wrap: wrap;
 }
 
-.mi-inst-display-name {
+.mi-inst-display-name-text {
+    display: block;
     max-width: 160px;
     overflow: hidden;
     text-overflow: ellipsis;

@@ -1,4 +1,4 @@
-{
+﻿{
   "nav.dashboard": "儀表板",
   "nav.worlds": "世界",
   "nav.groups": "群組",
@@ -2615,6 +2615,8 @@
   "settings.experimental.multitask.label": "多工模式",
   "settings.experimental.multitask.desc": "啟用後，你可以同時開啟最多 12 個群組、個人檔案、活動、世界、虛擬化身或房間視窗。對任何會開啟視窗的項目按下 Shift + 滑鼠左鍵，即可以多工模式開啟。你可以拖曳視窗的標題列來移動視窗、拖曳邊角調整大小，或將視窗最小化至底部的停駐列。由於在較小的視窗中操作會變得相當困難，因此建議僅在應用程式最大化時使用此功能。",
   "settings.experimental.multitask.warning": "此功能仍處於實驗階段，使用時可能會遇到錯誤。",
+  "settings.multitasking.newwindow.label": "在新視窗中開啟",
+  "settings.multitasking.newwindow.desc": "在多工模式下開啟的視窗（SHIFT + 滑鼠左鍵）會顯示為獨立的桌面視窗，而不是應用程式內的浮動視窗。這些視窗共用應用程式的單一瀏覽器執行個體，不會載入額外的 WebView。僅限 Windows。重新啟動 VRCNext 後生效。",
   "wm.limit_reached": "已達 12 個視窗的上限",
   "wm.already_open": "{name} 已開啟",
   "settings.search_debounce.ms_15": "15 ms",

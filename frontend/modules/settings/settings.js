@@ -320,6 +320,7 @@ function saveSettings() {
             memoryTrimEnabled: document.getElementById('setMemoryTrimEnabled').checked,
             mediaFixEnabled: document.getElementById('setMediaFixEnabled')?.checked ?? true,
             multiTaskMode: document.getElementById('setMultiTaskMode')?.checked ?? false,
+            openModalsInNewWindow: document.getElementById('setOpenModalsInWindow')?.checked ?? false,
             tilingManager: document.getElementById('setTilingManager')?.checked ?? true,
             dbOptimize: document.getElementById('setDbOptimize').checked,
             dbOptimizeMaxEntries: Math.max(500, Math.min(250000, parseInt(document.getElementById('setDbOptimizeMaxEntries').value) || 500)),
@@ -1056,6 +1057,10 @@ function loadSettingsToUI(s) {
     { const _mtEl = document.getElementById('setMultiTaskMode'); if (_mtEl) _mtEl.checked = multiTaskMode; }
     if (typeof wmSetEnabled === 'function') wmSetEnabled(multiTaskMode);
 
+    const openModalsInNewWindow = s.OpenModalsInNewWindow ?? s.openModalsInNewWindow ?? false;
+    { const _owEl = document.getElementById('setOpenModalsInWindow'); if (_owEl) _owEl.checked = openModalsInNewWindow; }
+    if (typeof wmSetSurfaced === 'function') wmSetSurfaced(openModalsInNewWindow);
+
     const tilingManager = s.TilingManager ?? s.tilingManager ?? true;
     { const _tmEl = document.getElementById('setTilingManager'); if (_tmEl) _tmEl.checked = tilingManager; }
     if (typeof wmSetTiling === 'function') wmSetTiling(tilingManager);
@@ -1257,6 +1262,11 @@ function onMultiTaskModeChange(el) {
     updateTilingManagerToggle();
 }
 
+function onOpenModalsInWindowChange(el) {
+    if (typeof wmSetSurfaced === 'function') wmSetSurfaced(!!el.checked);
+    autoSave();
+}
+
 function onTilingManagerChange(el) {
     if (typeof wmSetTiling === 'function') wmSetTiling(!!el.checked);
     autoSave();
@@ -1268,6 +1278,10 @@ function updateTilingManagerToggle() {
     const desc = document.getElementById('tilingManagerDesc');
     if (row)  row.classList.toggle('disabled', !enabled);
     if (desc) desc.classList.toggle('disabled', !enabled);
+    const owRow  = document.getElementById('openModalsInWindowRow');
+    const owDesc = document.getElementById('openModalsInWindowDesc');
+    if (owRow)  owRow.classList.toggle('disabled', !enabled);
+    if (owDesc) owDesc.classList.toggle('disabled', !enabled);
 }
 
 function onSearchDebounceMsChange() {

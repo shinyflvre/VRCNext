@@ -705,6 +705,8 @@ public class AppSettings
 
     public bool MultiTaskMode { get; set; } = false;
 
+    public bool OpenModalsInNewWindow { get; set; } = false;
+
     public bool TilingManager { get; set; } = true;
 
     // Database optimization — load limited entries into RAM at startup

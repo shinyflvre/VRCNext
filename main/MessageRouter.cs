@@ -546,6 +546,13 @@ public partial class AppShell
                 case "windowDragStart":
                 case "windowResizeStart":
                 case "setGuiZoom":
+                case "wmSurfaceOpen":
+                case "wmSurfaceClose":
+                case "wmSurfaceVisible":
+                case "wmSurfaceDrag":
+                case "wmSurfaceTitle":
+                case "wmSurfaceActivate":
+                case "windowBackground":
                     _windowCtrl.HandleMessage(action, msg);
                     break;
 

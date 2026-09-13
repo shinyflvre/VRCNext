@@ -1,4 +1,4 @@
-/* === My Instance Modal === */
+﻿/* === My Instance Modal === */
 const _instanceDetailCache = {};
 const _instanceEnrichedData = {};
 let _miModalWorldId = null;
@@ -124,7 +124,7 @@ function _miApplyEnrichedData(inst) {
     // Display name
     if (inst.displayName) {
         const dnEl = card.querySelector('.mi-inst-display-name');
-        if (dnEl) { dnEl.textContent = inst.displayName; dnEl.style.display = ''; }
+        if (dnEl) { dnEl.innerHTML = `<span class="mi-inst-display-name-text">${esc(inst.displayName)}</span>`; dnEl.style.display = ''; }
     }
 
     // Region → header badge

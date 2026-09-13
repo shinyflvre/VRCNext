@@ -1,4 +1,4 @@
-{
+﻿{
   "nav.dashboard": "대시보드",
   "nav.worlds": "월드",
   "nav.groups": "그룹",
@@ -2630,6 +2630,8 @@
   "settings.experimental.multitask.label": "멀티 태스킹 모드",
   "settings.experimental.multitask.desc": "활성화하면, 최대 12개 이상의 그룹, 프로필, 이벤트, 월드, 아바타, 인스턴스 모달을 동시에 열 수 있습니다. 모달 창을 열 곳에서 SHIFT + 왼쪽 마우스 버튼으로 멀티 태스킹 모드로 열 수 있습니다. 제목 바를 드래그해서 창을 움직이고, 모서리를 드래그해서 창 크기를 조절하고, 아래쪽에서 독으로 최소화할 수 있습니다. 작은 창에서는 탐색이 어려워지므로 앱이 최대화되었을 때에만 사용하는 것을 추천합니다.",
   "settings.experimental.multitask.warning": "이는 실험 기능이며, 버그가 있을 수 있습니다.",
+  "settings.multitasking.newwindow.label": "새 창에서 열기",
+  "settings.multitasking.newwindow.desc": "멀티태스크 모드로 연 창(SHIFT + 왼쪽 클릭)을 앱 내부의 플로팅 창 대신 별도의 데스크톱 창으로 표시합니다. 이 창들은 앱의 단일 브라우저 인스턴스를 공유하므로 추가 WebView가 로드되지 않습니다. Windows 전용. VRCNext를 다시 시작한 후 적용됩니다.",
   "wm.limit_reached": "최대 12개의 창에 도달했습니다",
   "wm.already_open": "{name} 창은 이미 열렸습니다",
   "settings.search_debounce.ms_15": "15 ms",

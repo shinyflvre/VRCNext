@@ -145,12 +145,25 @@
         return items;
     }
 
-    document.addEventListener('contextmenu', e => {
+    function ensureMenuDoc(doc) {
+        if (!doc || !doc.body || menu.ownerDocument === doc) return;
+        doc.body.appendChild(doc.adoptNode(menu));
+        doc.body.appendChild(doc.adoptNode(submenu));
+    }
+
+    function viewOf() {
+        return menu.ownerDocument.defaultView || window;
+    }
+
+    function onContextMenu(e) {
         e.preventDefault();
         const seq = ++_ctxSeq;
         const tgt = e.target;
+        const tgtDoc = tgt && tgt.ownerDocument ? tgt.ownerDocument : document;
+        if (menu.ownerDocument !== tgtDoc) { hideMenu(); ensureMenuDoc(tgtDoc); }
+        const view = tgtDoc.defaultView || window;
         const sel = (typeof _textToolsEnabled !== 'undefined' && _textToolsEnabled)
-            ? (window.getSelection()?.toString().trim() ?? '')
+            ? (view.getSelection()?.toString().trim() ?? '')
             : '';
         const copyItem = sel
             ? { icon: 'content_copy', label: cm('copy', 'Copy'), action: () => navigator.clipboard.writeText(sel).catch(() => {}) }
@@ -171,7 +184,20 @@
             if (base && menu.style.display !== 'none') renderMenuItems(cfg, true);
             else if (!base) showMenu(e.clientX, e.clientY, cfg);
         });
-    });
+    }
+
+    function attachDocument(doc) {
+        doc.addEventListener('contextmenu', onContextMenu);
+        doc.addEventListener('click', e => {
+            if (!menu.contains(e.target) && !submenu.contains(e.target)) hideMenu();
+        });
+        doc.addEventListener('keydown', e => {
+            if (e.key === 'Escape') hideMenu();
+        });
+    }
+
+    document.addEventListener('contextmenu', onContextMenu);
+    window.VrcnCtxAttach = attachDocument;
 
     /* Submenu hover persistence */
     submenu.addEventListener('mouseenter', () => clearTimeout(submenuTimer));
@@ -185,8 +211,8 @@
     function positionMenu(x, y) {
         const mw = menu.offsetWidth;
         const mh = menu.offsetHeight;
-        const vw = window.innerWidth;
-        const vh = window.innerHeight;
+        const vw = viewOf().innerWidth;
+        const vh = viewOf().innerHeight;
         menu.style.left = ((x + mw > vw - 6) ? Math.max(4, x - mw) : x) + 'px';
         menu.style.top = ((y + mh > vh - 6) ? Math.max(4, y - mh) : y) + 'px';
     }
@@ -540,8 +566,8 @@
         const rect = parentBtn.getBoundingClientRect();
         if (parentBtn.classList && parentBtn.classList.contains('vn-ctx-tool')) {
             const pr = menu.getBoundingClientRect();
-            const vw2 = window.innerWidth;
-            const vh2 = window.innerHeight;
+            const vw2 = viewOf().innerWidth;
+            const vh2 = viewOf().innerHeight;
             submenu.style.visibility = 'hidden';
             submenu.style.display = 'block';
             const sw2 = submenu.offsetWidth;
@@ -555,8 +581,8 @@
             submenu.style.top = t2 + 'px';
             return;
         }
-        const vw = window.innerWidth;
-        const vh = window.innerHeight;
+        const vw = viewOf().innerWidth;
+        const vh = viewOf().innerHeight;
         submenu.style.visibility = 'hidden';
         submenu.style.display = 'block';
         const sw = submenu.offsetWidth;

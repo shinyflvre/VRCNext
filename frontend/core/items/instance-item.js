@@ -1,4 +1,4 @@
-function _selfInstanceMember() {
+﻿function _selfInstanceMember() {
     const self = (typeof currentVrcUser !== 'undefined') ? currentVrcUser : null;
     if (!self || !self.id) return null;
     let loc = self.location || '';
@@ -70,7 +70,7 @@ function renderInstanceItem(opts) {
     if (languageRatio && typeof languageRatio === 'object') {
         const sorted = Object.entries(languageRatio).sort((a, b) => b[1] - a[1]).slice(0, 2);
         langHtml = sorted.map(([lang, pct]) =>
-            `<span class="vrcn-badge" style="font-size:calc(10px + var(--fs-off, 0px));">${esc(lang.toUpperCase())} ${Math.round(pct * 100)}%</span>`
+            `<span class="vrcn-badge">${esc(lang.toUpperCase())} ${Math.round(pct * 100)}%</span>`
         ).join('');
     }
 

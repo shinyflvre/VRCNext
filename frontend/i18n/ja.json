@@ -1,4 +1,4 @@
-{
+﻿{
   "nav.dashboard": "ダッシュボード",
   "nav.worlds": "ワールド",
   "nav.groups": "グループ",
@@ -2564,6 +2564,8 @@
   "settings.experimental.multitask.label": "マルチタスクモード",
   "settings.experimental.multitask.desc": "有効にすると、グループ・プロフィール・イベント・ワールド・アバター・インスタンスのウィンドウを最大12個まで同時に開けます。ウィンドウを開く操作に対して SHIFT + 左クリック を押すと、マルチタスクモードで開きます。タイトルバーでウィンドウを移動、角でサイズ変更、下部のドックに最小化できます。小さいウィンドウでは操作が非常に難しくなるため、アプリを最大化した状態での使用を推奨します。",
   "settings.experimental.multitask.warning": "これは実験的機能です。不具合が発生する可能性があります。",
+  "settings.multitasking.newwindow.label": "新しいウィンドウで開く",
+  "settings.multitasking.newwindow.desc": "マルチタスクモードで開いたウィンドウ（SHIFT + 左クリック）を、アプリ内のフローティングウィンドウではなく独立したデスクトップウィンドウとして表示します。これらはアプリの単一のブラウザインスタンスを共有するため、追加のWebViewは読み込まれません。Windowsのみ。VRCNextの再起動後に有効になります。",
   "wm.limit_reached": "ウィンドウは最大12個までです",
   "wm.already_open": "{name} はすでに開いています",
   "settings.search_debounce.ms_15": "15 ms",

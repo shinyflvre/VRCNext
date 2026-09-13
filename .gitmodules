@@ -1,0 +1,3 @@
+[submodule "external/photino.NET"]
+	path = external/photino.NET
+	url = https://github.com/shinyflvre/photino.NET

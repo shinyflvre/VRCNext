@@ -1,4 +1,4 @@
-/* Universal User Item */
+﻿/* Universal User Item */
 .vrcn-user-item {
     display: flex;
     align-items: center;
@@ -216,11 +216,17 @@
 .inst-owner-group-badge {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: calc(10px + var(--fs-off, 0px));
+    gap: 3px;
+    padding: 0 7px;
+    border-radius: 5px;
+    font-size: calc(9px + var(--fs-off, 0px));
     font-weight: 600;
+    line-height: 1;
+    height: calc(17px + var(--fs-off, 0px));
+    box-sizing: border-box;
+    letter-spacing: .3px;
+    flex-shrink: 0;
+    white-space: nowrap;
     background: var(--badge-bg);
     color: var(--badge-tx);
     cursor: pointer;

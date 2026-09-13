@@ -1,4 +1,4 @@
-:root {
+﻿:root {
     --bdg-user-pc: #64AAFF;
     --bdg-user-quest: #38DC78;
     --bdg-user-web: #FFA726;
@@ -17,12 +17,16 @@
     gap: 3px;
     font-size: calc(9px + var(--fs-off, 0px));
     font-weight: 600;
-    padding: 3px 7px;
+    line-height: 1;
+    height: calc(17px + var(--fs-off, 0px));
+    box-sizing: border-box;
+    padding: 0 7px;
     border-radius: 5px;
     background: var(--badge-bg);
     color: var(--badge-tx);
     letter-spacing: .3px;
     flex-shrink: 0;
+    white-space: nowrap;
 }
 .vrcn-badge.public     { background: rgba(120,241,174,.12); color: #78F1AE; }
 .vrcn-badge.friends    { background: rgba(129,119,244,.12); color: #8177F4; }

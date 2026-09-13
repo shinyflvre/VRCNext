@@ -1,4 +1,4 @@
-{
+﻿{
   "nav.dashboard": "Tableau de bord",
   "nav.worlds": "Mondes",
   "nav.groups": "Groupes",
@@ -2565,6 +2565,8 @@
   "settings.experimental.multitask.label": "Mode multitâche",
   "settings.experimental.multitask.desc": "Lorsque cette option est activée, vous pouvez ouvrir jusqu'à 12 fenêtres de Groupe, Profil, Événement, Monde, Avatar ou Instance en même temps. Appuyez sur MAJ + clic gauche sur tout élément qui ouvre une fenêtre pour l'ouvrir en mode multitâche. Vous pouvez déplacer une fenêtre par sa barre de titre, la redimensionner par les coins et la réduire dans la barre en bas. Il est recommandé de n'utiliser ceci que lorsque l'application est maximisée, car la navigation devient très difficile dans une petite fenêtre.",
   "settings.experimental.multitask.warning": "Il s'agit d'une fonctionnalité expérimentale, attendez-vous à des bugs.",
+  "settings.multitasking.newwindow.label": "Ouvrir dans une nouvelle fenêtre",
+  "settings.multitasking.newwindow.desc": "Les fenêtres ouvertes en mode multitâche (MAJ + clic gauche) apparaissent comme des fenêtres de bureau distinctes au lieu de fenêtres flottantes dans l'application. Elles partagent l'unique instance de navigateur de l'application, aucun WebView supplémentaire n'est chargé. Windows uniquement. Prend effet après un redémarrage de VRCNext.",
   "wm.limit_reached": "Maximum de 12 fenêtres atteint",
   "wm.already_open": "{name} est déjà ouvert",
   "settings.search_debounce.ms_15": "15 ms",

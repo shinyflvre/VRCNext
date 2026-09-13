@@ -1,4 +1,4 @@
-{
+﻿{
   "nav.dashboard": "仪表盘",
   "nav.worlds": "世界",
   "nav.groups": "群组",
@@ -2565,6 +2565,8 @@
   "settings.experimental.multitask.label": "多任务模式",
   "settings.experimental.multitask.desc": "启用后，你可以同时打开最多 12 个群组、资料、活动、世界、模型或实例窗口。在任何会打开窗口的位置按 SHIFT + 鼠标左键，即可以多任务模式打开。你可以通过标题栏拖动窗口、在角落调整大小，并将其最小化到底部的停靠栏。建议仅在应用最大化时使用，因为在小窗口中浏览会非常困难。",
   "settings.experimental.multitask.warning": "这是实验性功能，可能存在问题。",
+  "settings.multitasking.newwindow.label": "在新窗口中打开",
+  "settings.multitasking.newwindow.desc": "在多任务模式下打开的窗口（SHIFT + 鼠标左键）将显示为独立的桌面窗口，而不是应用内的浮动窗口。这些窗口共享应用的单一浏览器实例，不会加载额外的 WebView。仅限 Windows。重启 VRCNext 后生效。",
   "wm.limit_reached": "已达到 12 个窗口的上限",
   "wm.already_open": "{name} 已经打开了",
   "settings.search_debounce.ms_15": "15 ms",

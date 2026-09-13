@@ -534,6 +534,7 @@ public partial class AppShell
             .SetZoom(Math.Clamp(_settings.GuiZoom, 50, 200))
 #if WINDOWS
             .SetBrowserControlInitParameters(BuildChromiumFlags(_settings))
+            .SetCompositionHosting(_settings.MultiTaskMode && _settings.OpenModalsInNewWindow)
 #endif
             .RegisterWindowCreatedHandler((_, _) => _windowReady.TrySetResult())
             .RegisterWebMessageReceivedHandler((_, message) => { _ = OnWebMessage(message); });

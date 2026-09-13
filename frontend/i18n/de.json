@@ -1,4 +1,4 @@
-{
+﻿{
   "nav.dashboard": "Dashboard",
   "nav.worlds": "Welten",
   "nav.groups": "Gruppen",
@@ -2593,6 +2593,8 @@
   "settings.experimental.multitask.label": "Multi-Task-Modus",
   "settings.experimental.multitask.desc": "Wenn aktiviert, kannst du bis zu 12 Gruppen-, Profil-, Event-, Welt-, Avatar- oder Instanz-Fenster gleichzeitig öffnen. Drücke SHIFT + Linke Maustaste auf alles, was ein Fenster öffnet, um es im Multi-Task-Modus zu öffnen. Du kannst ein Fenster an der Titelleiste verschieben, an den Ecken skalieren und unten in die Leiste minimieren. Es wird empfohlen, dies nur im maximierten Fenster zu nutzen, da die Navigation in einem kleinen Fenster sehr schwierig wird.",
   "settings.experimental.multitask.warning": "Dies ist eine experimentelle Funktion, rechne mit Fehlern.",
+  "settings.multitasking.newwindow.label": "In neuem Fenster öffnen",
+  "settings.multitasking.newwindow.desc": "Fenster, die im Multi-Task-Modus geöffnet werden (SHIFT + Linke Maustaste), erscheinen als eigene Desktop-Fenster statt als schwebende Fenster in der App. Die Fenster teilen sich die eine Browser-Instanz der App, es wird keine weitere WebView geladen. Nur Windows. Wird nach einem Neustart von VRCNext wirksam.",
   "wm.limit_reached": "Maximal 12 Fenster erreicht",
   "wm.already_open": "{name} ist bereits geöffnet",
   "settings.search_debounce.ms_15": "15 ms",

@@ -17,6 +17,8 @@ window.external.receiveMessage(rawMsg => {
                 }
                 break;
             case 'translationData': handleTranslationData(payload); break;
+            case 'wmSurfaceCreated': if (typeof wmOnSurfaceCreated === 'function') wmOnSurfaceCreated(payload); break;
+            case 'wmSurfaceClosed': if (typeof wmOnSurfaceClosed === 'function') wmOnSurfaceClosed(payload); break;
             case 'smartSearchAnswer':
                 if (window.SmartSearch && typeof SmartSearch.onAnswer === 'function') SmartSearch.onAnswer(payload);
                 break;
