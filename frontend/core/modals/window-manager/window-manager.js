@@ -1202,6 +1202,17 @@ function _wmHostOf(target) {
 }
 
 function _wmBindSurfaceDoc(doc) {
+    doc.addEventListener('wheel', e => {
+        if (!e.ctrlKey) return;
+        e.preventDefault();
+        if (typeof _stepGuiZoom === 'function') _stepGuiZoom(e.deltaY < 0 ? 1 : -1);
+    }, { passive: false });
+    doc.addEventListener('keydown', e => {
+        if (!e.ctrlKey) return;
+        if (e.key === '0') { e.preventDefault(); if (typeof applyGuiZoom === 'function') applyGuiZoom(1); try { autoSave(); } catch {} }
+        else if (e.key === '+' || e.key === '=') { e.preventDefault(); if (typeof _stepGuiZoom === 'function') _stepGuiZoom(1); }
+        else if (e.key === '-') { e.preventDefault(); if (typeof _stepGuiZoom === 'function') _stepGuiZoom(-1); }
+    });
     doc.addEventListener('pointerdown', e => {
         _wmShift = e.shiftKey;
         const win = _wmHostOf(e.target);
