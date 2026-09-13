@@ -1061,7 +1061,7 @@ case 'vrcNews':
                             const color = oldIcon.style.color;
                             const av = document.createElement('div');
                             av.className = 'nc-avatar';
-                            av.style.backgroundImage = `url('${cssUrl(payload.image)}')`;
+                            av.style.backgroundImage = `url('${cssUrl(imgThumb(payload.image, 64))}')`;
                             av.innerHTML = `<span class="msi nc-avatar-badge" style="color:${color};">${icon}</span>`;
                             oldIcon.replaceWith(av);
                         }

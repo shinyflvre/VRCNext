@@ -185,7 +185,7 @@
         popup.classList.toggle('deco-self', typeof _decoIsSelf === 'function' && _decoIsSelf(f));
         popup.innerHTML = `
             <div class="fd-banner">
-                ${banner ? `<div class="fp-banner-bg" style="background-image:url('${cssUrl(banner)}')"></div>` : ''}
+                ${banner ? `<div class="fp-banner-bg" style="background-image:url('${cssUrl(imgThumb(banner, 256))}')"></div>` : ''}
                 <div class="fd-banner-fade"></div>
                 ${(typeof profileEffectHtml === 'function') ? profileEffectHtml(f.profileEffectUrl) : ''}
             </div>

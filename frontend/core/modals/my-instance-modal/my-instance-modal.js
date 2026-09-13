@@ -22,6 +22,7 @@ function closeMyInstanceDetail(silent) {
     const m = document.getElementById('modalMyInstance');
     if (m) m.style.display = 'none';
     if (!silent) navClear();
+    if (!silent && typeof releaseClosedModals === 'function') releaseClosedModals();
     _miModalWorldId = null;
 }
 

@@ -59,6 +59,7 @@ function closeMyProfile(fromNav = false) {
     const m = document.getElementById('modalMyProfile');
     if (m) m.style.display = 'none';
     if (!fromNav && typeof navClear === 'function') navClear();
+    if (!fromNav && typeof releaseClosedModals === 'function') releaseClosedModals();
 }
 
 let _profileDecoData = { iconFrame: [], nameplateEffect: [], profileEffect: [] };
@@ -107,7 +108,7 @@ function renderProfileDecoPicker(loading) {
             const items = _profileDecoData[s.key] || [];
             const noneCell = `<div class="pd-cell${!s.cur ? ' pd-sel' : ''}" onclick="setProfileDeco('${s.key}','')"><div class="pd-none"><span class="msi">block</span></div><div class="pd-name">${t('profiles.deco.none', 'None')}</div></div>`;
             const cells = items.map(it =>
-                `<div class="pd-cell${it.templateId === s.cur ? ' pd-sel' : ''}" onclick="setProfileDeco('${s.key}','${jsq(it.templateId)}')" title="${esc(it.name)}"><img src="${esc(it.imageUrl)}" onerror="this.style.display='none'"><div class="pd-name">${esc(it.name)}</div></div>`
+                `<div class="pd-cell${it.templateId === s.cur ? ' pd-sel' : ''}" onclick="setProfileDeco('${s.key}','${jsq(it.templateId)}')" title="${esc(it.name)}"><img src="${esc(imgThumb(it.imageUrl, 128))}" onerror="this.style.display='none'"><div class="pd-name">${esc(it.name)}</div></div>`
             ).join('');
             const empty = items.length === 0 ? `<div class="pd-empty">${t('profiles.deco.empty', 'You do not own any of these')}</div>` : '';
             return `<div class="pd-section"><div class="pd-section-title">${esc(s.label)}</div><div class="pd-grid">${noneCell}${cells}</div>${empty}</div>`;
@@ -201,7 +202,7 @@ function _pdVrcnPreviewHtml(u) {
     const effect = (typeof profileEffectHtml === 'function') ? profileEffectHtml(u.profileEffectUrl) : '';
     const banner = `<div class="fd-left-banner" id="pd-banner-slot">${bannerSrc ? '<div class="fd-banner-fade"></div>' : ''}${effect}</div>`;
     const avatarImg = u.image
-        ? `<img class="fd-avatar" src="${esc(u.image)}" onerror="this.style.display='none'">`
+        ? `<img class="fd-avatar" src="${esc(imgThumb(u.image, 128))}" onerror="this.style.display='none'">`
         : `<div class="fd-avatar" style="display:flex;align-items:center;justify-content:center;font-size:calc(20px + var(--fs-off, 0px));font-weight:700;color:var(--tx0)">${esc((u.displayName || '?')[0])}</div>`;
     const frame = (typeof iconFrameHtml === 'function') ? iconFrameHtml(u.iconFrameUrl, true) : '';
     const dotCls = `${u.vrcRunning ? 'vrc-status-dot' : 'vrc-status-ring'} ${statusDotClass(u.status)}`;
@@ -260,7 +261,7 @@ function _pdVrcOfficialHtml(u) {
     return `<div class="pdo-card" style="${themeVars}">
         <div class="pdo-banner">${bannerSrc ? `<img src="${esc(bannerSrc)}" alt="" onerror="this.style.display='none'">` : ''}${effect}</div>
         <div class="pdo-head">
-            <div class="pdo-icon-wrap"><div class="pdo-icon">${icon ? `<img src="${esc(icon)}" alt="" onerror="this.style.display='none'">` : ''}</div>${frame}</div>
+            <div class="pdo-icon-wrap"><div class="pdo-icon">${icon ? `<img src="${esc(imgThumb(icon, 256))}" alt="" onerror="this.style.display='none'">` : ''}</div>${frame}</div>
             <div class="pdo-status"><span class="pdo-status-ring" style="border-color:${statusColor};"></span><span>${esc(u.statusDescription || getStatusText(u.status, ''))}</span></div>
         </div>
         <div class="pdo-body">
@@ -370,7 +371,7 @@ function renderMyProfileContent() {
 
     // Avatar with edit overlay
     const avatarImg = u.image
-        ? `<img class="fd-avatar" src="${esc(u.image)}" onerror="this.style.display='none'">`
+        ? `<img class="fd-avatar" src="${esc(imgThumb(u.image, 128))}" onerror="this.style.display='none'">`
         : `<div class="fd-avatar" style="display:flex;align-items:center;justify-content:center;font-size:calc(20px + var(--fs-off, 0px));font-weight:700;color:var(--tx0)">${esc((u.displayName||'?')[0])}</div>`;
     const _mypFrame = (typeof iconFrameHtml === 'function') ? iconFrameHtml(u.iconFrameUrl, true) : '';
     const _editBtnPos = 'bottom:-4px;right:-4px;';

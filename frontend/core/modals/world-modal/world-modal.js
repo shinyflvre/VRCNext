@@ -945,6 +945,7 @@ function openWorldDetail(worldId) {
 function closeWorldDetail(fromNav = false) {
     document.getElementById('modalWorldDetail').style.display = 'none';
     if (!fromNav && typeof navClear === 'function') navClear();
+    if (!fromNav && typeof releaseClosedModals === 'function') releaseClosedModals();
 }
 
 function worldJoinAction(location) {

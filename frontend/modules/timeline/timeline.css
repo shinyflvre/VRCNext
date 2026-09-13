@@ -382,6 +382,8 @@
     margin-bottom: 14px;
     position: relative;
     z-index: 1;
+    content-visibility: auto;
+    contain-intrinsic-size: auto 120px;
 }
 
 .tl-card-side {

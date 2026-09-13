@@ -1749,21 +1749,25 @@ function tryLoadLogo() {
 }
 
 const SOUND_LIBRARY = [
-    'Amogus.wav', 'Bing.wav', 'Clicker.wav', 'Cryo.wav', 'Food Finished.wav',
-    'Fooley.wav', 'Insert Disk.wav', 'Kalimba Bell.wav', 'Karambola.wav', 'Ladida.wav',
-    'Plug.wav', 'Soft Lace.wav', 'Solana.wav', 'Sweep.wav', 'Waum.wav',
+    'Amogus.ogg', 'Bing.ogg', 'Clicker.ogg', 'Cryo.ogg', 'Food Finished.ogg',
+    'Fooley.ogg', 'Insert Disk.ogg', 'Kalimba Bell.ogg', 'Karambola.ogg', 'Ladida.ogg',
+    'Plug.ogg', 'Soft Lace.ogg', 'Solana.ogg', 'Sweep.ogg', 'Waum.ogg',
 ];
 
 const SOUND_SLOTS = {
-    notify:       { def: 'Notification.wav', fileKey: 'notifySoundFile',       volKey: 'notifySoundVolume' },
-    message:      { def: 'Message.wav',      fileKey: 'messageSoundFile',      volKey: 'messageSoundVolume' },
-    mediaRelay:   { def: 'MediaRelay.wav',   fileKey: 'mediaRelaySoundFile',   volKey: 'mediaRelaySoundVolume' },
-    steamOverlay: { def: 'SteamOverlay.wav', fileKey: 'steamOverlaySoundFile', volKey: 'steamOverlaySoundVolume' },
+    notify:       { def: 'Notification.ogg', fileKey: 'notifySoundFile',       volKey: 'notifySoundVolume' },
+    message:      { def: 'Message.ogg',      fileKey: 'messageSoundFile',      volKey: 'messageSoundVolume' },
+    mediaRelay:   { def: 'MediaRelay.ogg',   fileKey: 'mediaRelaySoundFile',   volKey: 'mediaRelaySoundVolume' },
+    steamOverlay: { def: 'SteamOverlay.ogg', fileKey: 'steamOverlaySoundFile', volKey: 'steamOverlaySoundVolume' },
 };
+
+function normalizeSoundFile(file) {
+    return String(file || '').replace(/\.wav$/i, '.ogg');
+}
 
 function soundFileUrl(file, defaultFile) {
     if (!file) return 'sounds/notifications/' + encodeURIComponent(defaultFile);
-    return 'sounds/notifications/Notificationsv2/' + encodeURIComponent(file);
+    return 'sounds/notifications/Notificationsv2/' + encodeURIComponent(normalizeSoundFile(file));
 }
 
 function soundSlotVolume(slot) {
@@ -1773,13 +1777,25 @@ function soundSlotVolume(slot) {
 }
 
 function _initAudio(path, volume) {
-    const a = new Audio(path);
+    const a = new Audio();
+    a.preload = 'none';
     a.volume = typeof volume === 'number' ? volume : 0.5;
-    a._ready = false;
-    a.addEventListener('canplaythrough', () => { a._ready = true; }, { once: true });
-    a.addEventListener('error', () => { a._ready = false; });
-    a.load();
+    a.addEventListener('error', () => { a._failed = true; });
+    a.src = path;
     return a;
+}
+
+function _releaseAudio(a) {
+    if (!a) return;
+    try { a.pause(); } catch {}
+    a.removeAttribute('src');
+    try { a.load(); } catch {}
+}
+
+function _playAudio(a) {
+    if (!a || a._failed) return;
+    if (a.readyState > 0) a.currentTime = 0;
+    a.play().catch(() => {});
 }
 
 function _initSlotAudio(slot) {
@@ -1792,10 +1808,11 @@ function tryInitNotifySound() {
     messageAudio = _initSlotAudio('message');
     mediaRelayAudio = _initSlotAudio('mediaRelay');
     steamOverlayAudio = _initSlotAudio('steamOverlay');
-    waterAudio = _initAudio('sounds/notifications/water.wav');
+    waterAudio = _initAudio('sounds/notifications/water.ogg');
 }
 
 function applySoundSettings() {
+    [notifyAudio, messageAudio, mediaRelayAudio, steamOverlayAudio].forEach(_releaseAudio);
     notifyAudio = _initSlotAudio('notify');
     messageAudio = _initSlotAudio('message');
     mediaRelayAudio = _initSlotAudio('mediaRelay');
@@ -1814,34 +1831,30 @@ function previewSound(slot, file) {
 }
 
 function playNotificationSound() {
-    if (notifyAudio?._ready && settings.notifySoundEnabled) {
+    if (notifyAudio && settings.notifySoundEnabled) {
         notifyAudio.volume = soundSlotVolume('notify');
-        notifyAudio.currentTime = 0;
-        notifyAudio.play().catch(() => {});
+        _playAudio(notifyAudio);
     }
 }
 
 function playMessageSound() {
-    if (messageAudio?._ready && settings.messageSoundEnabled) {
+    if (messageAudio && settings.messageSoundEnabled) {
         messageAudio.volume = soundSlotVolume('message');
-        messageAudio.currentTime = 0;
-        messageAudio.play().catch(() => {});
+        _playAudio(messageAudio);
     }
 }
 
 function playMediaRelaySound() {
-    if (mediaRelayAudio?._ready && settings.mediaRelaySoundEnabled) {
+    if (mediaRelayAudio && settings.mediaRelaySoundEnabled) {
         mediaRelayAudio.volume = soundSlotVolume('mediaRelay');
-        mediaRelayAudio.currentTime = 0;
-        mediaRelayAudio.play().catch(() => {});
+        _playAudio(mediaRelayAudio);
     }
 }
 
 function playSteamOverlaySound() {
-    if (steamOverlayAudio?._ready && settings.steamOverlaySoundEnabled) {
+    if (steamOverlayAudio && settings.steamOverlaySoundEnabled) {
         steamOverlayAudio.volume = soundSlotVolume('steamOverlay');
-        steamOverlayAudio.currentTime = 0;
-        steamOverlayAudio.play().catch(() => {});
+        _playAudio(steamOverlayAudio);
     }
 }
 
@@ -2479,6 +2492,12 @@ function _thumbUrl(url, size) {
 function imgThumb(url, size = 64) {
     if (!imgThumbsEnabled) return url;
     return _thumbUrl(url, size);
+}
+
+function mediaThumb(url) {
+    if (!imgThumbsEnabled || !url || url.indexOf('thumb=') !== -1) return url;
+    if (!/^https?:\/\/localhost:\d+\/media/i.test(url)) return url;
+    return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'thumb=1';
 }
 
 function imgOriginal(url) {

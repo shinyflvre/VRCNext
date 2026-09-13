@@ -365,6 +365,7 @@ function iimSort(id) {
 
 function closeInstanceInfoModal() {
     document.getElementById('modalInstanceInfo').style.display = 'none';
+    if (typeof releaseClosedModals === 'function') releaseClosedModals();
 }
 
 //Avatar Lookup avtrdb context logic

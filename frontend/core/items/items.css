@@ -11,6 +11,8 @@
     transition: background .15s;
     user-select: none;
     min-width: 0;
+    content-visibility: auto;
+    contain-intrinsic-size: auto 54px;
 }
 .vrcn-user-item:hover { background: var(--bg-hover); }
 .search-grid .vrcn-user-item { margin-bottom: 0; }

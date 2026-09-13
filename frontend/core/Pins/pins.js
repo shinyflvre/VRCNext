@@ -294,7 +294,7 @@ function _pinsRenderMenu() {
         } else if (pin.image) {
             const img = document.createElement('img');
             img.className = 'ss-item-img';
-            img.src = pin.image;
+            img.src = imgThumb(pin.image, 64);
             img.onerror = function () {
                 const ph = document.createElement('div');
                 ph.className = 'ss-item-img-placeholder';

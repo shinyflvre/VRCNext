@@ -128,7 +128,7 @@ function renderVrcProfile(u) {
     if (_myp && _myp.style.display !== 'none') renderMyProfileContent();
     const img = u.image || '';
     const imgTag = img
-        ? `<img class="vrc-avatar" src="${img}" onerror="this.style.display='none'">`
+        ? `<img class="vrc-avatar" src="${imgThumb(img, 96)}" onerror="this.style.display='none'">`
         : `<div class="vrc-avatar" style="display:flex;align-items:center;justify-content:center;font-size:calc(13px + var(--fs-off, 0px));font-weight:700;color:var(--tx0)">${esc((u.displayName || '?')[0])}</div>`;
     const ownStatusCls = statusDotClass(u.status);
     const ownDotShape = u.vrcRunning ? 'vrc-status-dot' : 'vrc-status-ring';

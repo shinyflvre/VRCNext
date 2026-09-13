@@ -204,6 +204,7 @@ function closeFriendDetail(fromNav = false) {
     _fdLastAvatarPayload = null;
     _fdLastAvatarUserId = '';
     if (!fromNav && typeof navClear === 'function') navClear();
+    if (!fromNav && typeof releaseClosedModals === 'function') releaseClosedModals();
 }
 
 
@@ -672,7 +673,7 @@ function renderFriendDetail(d) {
 
     const img = d.image || '';
     const _fdAvatarInner = img
-        ? `<img class="fd-avatar" src="${img}" onerror="this.style.display='none'">`
+        ? `<img class="fd-avatar" src="${imgThumb(img, 128)}" onerror="this.style.display='none'">`
         : `<div class="fd-avatar" style="display:flex;align-items:center;justify-content:center;font-size:calc(20px + var(--fs-off, 0px));font-weight:700;color:var(--tx0)">${esc((d.displayName || '?')[0])}</div>`;
     const _fdFrame = (typeof iconFrameHtml === 'function') ? iconFrameHtml(d.iconFrameUrl, true) : '';
     const imgTag = _fdFrame ? `<div class="icon-frame-wrap">${_fdAvatarInner}${_fdFrame}</div>` : _fdAvatarInner;
@@ -1246,7 +1247,7 @@ function patchFriendDetailLive(f) {
     // avatar image
     if (f.image) {
         const avatarEl = c.querySelector('.fd-avatar');
-        if (avatarEl?.tagName === 'IMG') avatarEl.src = f.image;
+        if (avatarEl?.tagName === 'IMG') avatarEl.src = imgThumb(f.image, 128);
         currentFriendDetail.image = f.image;
     }
 
@@ -2096,7 +2097,7 @@ function handleUserBasic(payload) {
         const name = decodeURIComponent(wrap.dataset.badgeName || '');
         const desc = decodeURIComponent(wrap.dataset.badgeDesc || '');
         t.innerHTML =
-            `<img class="fd-vrc-badge-tip-img" src="${esc(img)}" alt="">` +
+            `<img class="fd-vrc-badge-tip-img" src="${esc(imgThumb(img, 64))}" alt="">` +
             `<div class="fd-vrc-badge-tip-text">` +
                 `<div class="fd-vrc-badge-tip-name">${esc(name)}</div>` +
                 (desc ? `<div class="fd-vrc-badge-tip-desc">${esc(desc)}</div>` : '') +
