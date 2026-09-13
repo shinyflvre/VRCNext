@@ -22,5 +22,7 @@
   * Fixed detached windows briefly showing the desktop while resizing.
   * Fixed detached windows showing the plain browser tooltip instead of the VRCNext tooltip when hovering elements.
   * Fixed the image picker for profile icons and banners opening in the main window when triggered from a detached window.
+  * Fixed the content of detached windows shifting for a moment while the main window or another detached window is resized.
+  * Detached windows no longer stay blank after a browser process failure. The page is reloaded or the windows are reattached automatically.
   * Fixed duplicate **Restart VRCNext** buttons appearing under Performance.
   * Fixed some badges appearing taller than others.
