@@ -1,4 +1,4 @@
-﻿# **2026.60.1**
+﻿# **2026.60.2**
 
 PLEASE READ!!! - TRACKING BIO IS GONE!
 But you can do something to bring it back!
@@ -12,8 +12,8 @@ Maybe VRChat staff will consider adding back bio events in their websocket to tr
   * Notification sounds now use much less memory and only load when needed.
   * Modals now properly release images and content after being closed.
   * **Image Memory Optimize** now uses smaller thumbnails across more parts of the app.
-  * Large lists now only render nearby content, improving performance and reducing memory usage.
   * Improved JavaScript memory handling during large friend list updates.
+  * Large lists now only render nearby content, improving performance and reducing memory usage.
   * Profile decorations of other people now come from a single cosmetics list instead of one request per decoration. This mainly shortens the cold start, where every unknown icon frame or nameplate used to cost its own request.
   * Added **Reduced Background Usage** under Settings > Performance. When enabled, VRCNext pauses rendering and releases GPU memory while minimized or hidden in the tray. Background features continue running normally. Windows only and requires a restart.
 
@@ -38,6 +38,15 @@ Maybe VRChat staff will consider adding back bio events in their websocket to tr
   * Fixed changes to your own biography no longer showing up in the timeline. VRChat moved the biography to a different endpoint, so the detection was comparing a field that is always empty now. It reads the new endpoint instead, without any extra requests.
   * The People tab now follows live friend updates in the **Recently Seen** and **Instance** views as well. Until now only the **All** filter reacted to them, and only on its first page.
   * Live friend updates now pass on everything VRChat actually sends over the WebSocket. Banner type, banner color, join date and friend state were arriving but were thrown away before reaching the interface, so an open profile never followed a live banner change and the join date came from the local cache alone.
+  * Fixed the player list in the instance modal jumping back to the start every time a player joined or left. Only the vertical position was kept, the horizontal one was reset.
+  * Fixed the horizontal scrollbar of list views not following the mouse and making the table jump while being dragged. The scrollbar and the table kept resetting each other to outdated positions.
+  * Fixed bio links missing for players in your instance. VRChat no longer includes them in the player data, so they are now loaded from the profile when someone joins.
+  * Fixed saved biographies, bio links and badges being erased whenever you joined an instance with that person, or when loading their profile failed. This left profiles, the People list and live updates without this information.
+  * Fixed the **18+** and **Age Verified** badges disappearing from an open profile when that friend traveled or went offline, from the friend preview after a refresh, and from saved profiles when loading a profile failed.
+  * Fixed the **Creator** badge missing when reopening a profile shortly after viewing it.
+  * Fixed your own badges disappearing from My Profile after every profile refresh, and staying gone when loading your profile failed. Your profile is now loaded once per refresh instead of twice.
+  * Fixed the friend hover card showing no banner for friends who use a color banner.
+  * Fixed **Optimize Database** erasing the bio links of your friends. Since the VRChat API change they are only kept in the local cache.
   * Fixed the Action Flow conditions **has bio text** and **own bio text** failing although the text matched. Biographies of friends were missing from the friends list, and your own biography was briefly empty after every profile refresh.
   * Fixed Action Flow instance info webhooks showing your avatar picture instead of your profile icon, or no icon at all for a friend whose picture was not cached yet.
   * Fixed an open profile losing its biography and bio links the moment that person changed their status. Live friend updates no longer carry profile data since the VRChat API change, and the empty fields were overwriting what was already on screen.

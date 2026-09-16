@@ -417,6 +417,9 @@ public class FriendsController
                         ["profilePicOverride"]    = ImageCacheHelper.GetUserPicOverrideUrl(ubId, ubUser["profilePicOverride"]?.ToString()),
                         ["bannerUrl"]             = ImageCacheHelper.GetUserBannerUrl(ubId, ubUser["bannerUrl"]?.ToString()),
                         ["pronouns"]              = ubUser["pronouns"]?.ToString() ?? "",
+                        ["ageVerified"]           = ubUser["ageVerified"]?.Value<bool>() ?? false,
+                        ["ageVerificationStatus"] = ubUser["ageVerificationStatus"]?.ToString() ?? "",
+                        ["isEconomyCreator"]      = ubProfile?["isEconomyCreator"]?.Value<bool>() ?? ubUser["isEconomyCreator"]?.Value<bool>() ?? false,
                         ["tags"]                  = ubUser["tags"] as JArray ?? new JArray(),
                         ["badges"]                = ubProfile?["badges"] as JArray ?? new JArray(),
                         ["bioLinks"]              = ubProfile?["bioLinks"] as JArray ?? new JArray(),
@@ -462,6 +465,11 @@ public class FriendsController
                         thIcon    = prevSqlite.ProfileThemeIcon;
                         thSub     = prevSqlite.ProfileThemeSubtext;
                     }
+
+                    JObject? prevLive;
+                    lock (_friendStore) _friendStore.TryGetValue(prevId, out prevLive);
+                    bannerType  = prevLive?["bannerType"]?.ToString() ?? "";
+                    bannerColor = prevLive?["bannerColor"]?.ToString() ?? "";
 
                     // Live API fallback if no SQLite cache yet
                     if (string.IsNullOrEmpty(bio))
@@ -1484,6 +1492,9 @@ public class FriendsController
                     location, platform,
                     presence = isInGame ? "game" : "web",
                     tags = f["tags"]?.ToObject<List<string>>() ?? new(),
+                    ageVerified = f["ageVerified"]?.Value<bool>() ?? facts.ageVerified,
+                    isEconomyCreator = f["isEconomyCreator"]?.Value<bool>() ?? false,
+                    ageVerificationStatus = PickFact(f, "ageVerificationStatus", facts.ageVerificationStatus),
                     bio = PickFact(f, "bio", facts.bio),
                     bioLinks = PickBioLinks(f, facts.bioLinks),
                     lastLogin = PickFact(f, "last_login", facts.lastLogin),
@@ -1518,6 +1529,9 @@ public class FriendsController
                     platform = f["last_platform"]?.ToString() ?? "",
                     presence = "offline",
                     tags = f["tags"]?.ToObject<List<string>>() ?? new(),
+                    ageVerified = f["ageVerified"]?.Value<bool>() ?? offFacts.ageVerified,
+                    isEconomyCreator = f["isEconomyCreator"]?.Value<bool>() ?? false,
+                    ageVerificationStatus = PickFact(f, "ageVerificationStatus", offFacts.ageVerificationStatus),
                     bio = PickFact(f, "bio", offFacts.bio),
                     bioLinks = PickBioLinks(f, offFacts.bioLinks),
                     lastLogin = PickFact(f, "last_login", offFacts.lastLogin),
@@ -1813,9 +1827,9 @@ public class FriendsController
             worldThumb = locWorld.thumb,
             instanceType = locInstType,
             tags = f["tags"]?.ToObject<List<string>>() ?? new List<string>(),
-            ageVerified = f["ageVerified"]?.Value<bool>() ?? false,
+            ageVerified = f["ageVerified"]?.Value<bool>() ?? upFacts.ageVerified,
             isEconomyCreator = f["isEconomyCreator"]?.Value<bool>() ?? false,
-            ageVerificationStatus = f["ageVerificationStatus"]?.ToString() ?? "",
+            ageVerificationStatus = PickFact(f, "ageVerificationStatus", upFacts.ageVerificationStatus),
             avatarFileId = ExtractAvatarFileId(f),
             bio = PickFact(f, "bio", upFacts.bio),
             pronouns = PickPronouns(f, upFacts.pronouns),
@@ -1870,9 +1884,9 @@ public class FriendsController
                 pendingOffline = IsPendingOffline(f["id"]?.ToString() ?? ""),
                 traveling = IsTravelingFriend(f["id"]?.ToString() ?? ""),
                 tags = f["tags"]?.ToObject<List<string>>() ?? new List<string>(),
-                ageVerified = f["ageVerified"]?.Value<bool>() ?? false,
+                ageVerified = f["ageVerified"]?.Value<bool>() ?? facts.ageVerified,
                 isEconomyCreator = f["isEconomyCreator"]?.Value<bool>() ?? false,
-                ageVerificationStatus = f["ageVerificationStatus"]?.ToString() ?? "",
+                ageVerificationStatus = PickFact(f, "ageVerificationStatus", facts.ageVerificationStatus),
                 avatarFileId = ExtractAvatarFileId(f),
                 bio = PickFact(f, "bio", facts.bio),
                 bioLinks = PickBioLinks(f, facts.bioLinks),
@@ -2132,7 +2146,7 @@ public class FriendsController
                 ["pronouns"]              = !string.IsNullOrEmpty(livePronouns) ? livePronouns : cachedEntry.ProfilePronouns,
                 ["ageVerificationStatus"] = !string.IsNullOrEmpty(liveAgeVerifStatus) ? liveAgeVerifStatus : cachedEntry.ProfileAgeVerification,
                 ["ageVerified"]           = liveAgeVerified ?? cachedEntry.ProfileAgeVerified != 0,
-                ["isEconomyCreator"]      = live?["isEconomyCreator"]?.Value<bool>() ?? false,
+                ["isEconomyCreator"]      = live?["isEconomyCreator"]?.Value<bool>() ?? cachedEntry.ProfileEconomyCreator != 0,
                 ["representedGroup"]      = (JToken?)cRepGroup ?? JValue.CreateNull(),
                 ["userGroups"]            = JArray.FromObject(cGroups),
                 ["mutuals"]               = JArray.FromObject(cMutuals),
@@ -2574,7 +2588,9 @@ public class FriendsController
 
         if (mutualsTask.IsCompletedSuccessfully && (mutualsArr.Count > 0 || mutualsOptedOut))
             _core.TimeEngine.SaveUserMutualsCache(userId, Newtonsoft.Json.JsonConvert.SerializeObject(new { mutuals = mutualsArr, optedOut = mutualsOptedOut }));
-        var badgesArr = appearance?["badges"] as JArray ?? user["badges"] as JArray ?? new JArray();
+        var badgesArr = appearance != null
+            ? appearance["badges"] as JArray ?? new JArray()
+            : TryParseJArray(dbCache?.ProfileBadges) ?? new JArray();
 
         if (instanceType == "private" && inst?["canRequestInvite"]?.Value<bool>() == true)
             instanceType = "invite_plus";
@@ -2623,14 +2639,14 @@ public class FriendsController
         foreach (var b in badgesArr)
         {
             if (b is not JObject bObj) continue;
-            var rawBadgeUrl = bObj["badgeImageUrl"]?.ToString() ?? "";
+            var rawBadgeUrl = bObj["badgeImageUrl"]?.ToString() ?? bObj["imageUrl"]?.ToString() ?? "";
             if (string.IsNullOrEmpty(rawBadgeUrl)) continue;
-            var badgeId = bObj["badgeId"]?.ToString() ?? "";
+            var badgeId = bObj["badgeId"]?.ToString() ?? bObj["id"]?.ToString() ?? "";
             badges.Add(new
             {
                 id = badgeId,
-                name = bObj["badgeName"]?.ToString() ?? "",
-                description = bObj["badgeDescription"]?.ToString() ?? "",
+                name = bObj["badgeName"]?.ToString() ?? bObj["name"]?.ToString() ?? "",
+                description = bObj["badgeDescription"]?.ToString() ?? bObj["description"]?.ToString() ?? "",
                 imageUrl = ImageCacheHelper.GetBadgeUrl(badgeId, rawBadgeUrl),
                 showcased = bObj["showcased"]?.Value<bool>() ?? false,
             });
@@ -2668,7 +2684,7 @@ public class FriendsController
             backgroundGradientBottom = appearance?["backgroundGradientBottom"]?.ToString() ?? "",
             status = user["status"]?.ToString() ?? "offline",
             statusDescription = user["statusDescription"]?.ToString() ?? "",
-            bio = appearance?["bio"]?.ToString() ?? user["bio"]?.ToString() ?? "",
+            bio = appearance != null ? appearance["bio"]?.ToString() ?? "" : dbCache?.ProfileBio ?? "",
             lastLogin = ParseIsoDate(user["last_login"]),
             lastActivity = ParseIsoDate(user["last_activity"]),
             dateJoined = user["date_joined"]?.ToString() ?? "",
@@ -2697,12 +2713,14 @@ public class FriendsController
                 && _core.LogWatcher.GetCurrentPlayers().Any(p => p.UserId == userId),
             lastSeenTracked = _core.Timeline?.GetLastSeenTimestamp(userId) ?? "",
             pronouns = user["pronouns"]?.ToString() ?? "",
-            ageVerificationStatus = user["ageVerificationStatus"]?.ToString() ?? "",
-            ageVerified = user["ageVerified"]?.Value<bool>() ?? false,
-            isEconomyCreator = appearance?["isEconomyCreator"]?.Value<bool>() ?? user["isEconomyCreator"]?.Value<bool>() ?? false,
+            ageVerificationStatus = appearance?["ageVerificationStatus"]?.ToString() ?? user["ageVerificationStatus"]?.ToString() ?? dbCache?.ProfileAgeVerification ?? "",
+            ageVerified = appearance?["ageVerified"]?.Value<bool>() ?? user["ageVerified"]?.Value<bool>() ?? (dbCache != null && dbCache.ProfileAgeVerified != 0),
+            isEconomyCreator = appearance?["isEconomyCreator"]?.Value<bool>() ?? user["isEconomyCreator"]?.Value<bool>() ?? (dbCache != null && dbCache.ProfileEconomyCreator != 0),
             allowAvatarCopying = user["allowAvatarCopying"]?.Value<bool>() ?? false,
             representedGroup, userGroups, mutuals = mutualsList, mutualGroups = mutualGroupsList, mutualsOptedOut, userWorlds,
-            bioLinks = appearance?["bioLinks"]?.ToObject<List<string>>() ?? user["bioLinks"]?.ToObject<List<string>>() ?? new List<string>(),
+            bioLinks = appearance != null
+                ? appearance["bioLinks"]?.ToObject<List<string>>() ?? new List<string>()
+                : TryParseJArray(dbCache?.ProfileBioLinks)?.ToObject<List<string>>() ?? new List<string>(),
             languages = appearance?["languages"]?.ToObject<List<string>>() ?? new List<string>(),
             discordId = user["discordId"]?.ToString() ?? "",
             isFavorited = _favoriteFriends.ContainsKey(userId),
@@ -2769,21 +2787,22 @@ public class FriendsController
 
     // Join Friend
 
-    private (string dateJoined, string pronouns, int mutualFriends, int mutualGroups, string lastSeen, string lastLogin, string lastActivity, string bioLinks, string bio) CachedFacts(string userId)
+    private (string dateJoined, string pronouns, int mutualFriends, int mutualGroups, string lastSeen, string lastLogin, string lastActivity, string bioLinks, string bio, bool ageVerified, string ageVerificationStatus) CachedFacts(string userId)
     {
-        if (string.IsNullOrEmpty(userId)) return ("", "", 0, 0, "", "", "", "[]", "");
+        if (string.IsNullOrEmpty(userId)) return ("", "", 0, 0, "", "", "", "[]", "", false, "");
         var lastSeen = LastSeenTogether(userId);
         try
         {
             var c = _core.TimeEngine.GetUserProfileCache(userId);
-            if (c == null) return ("", "", 0, 0, lastSeen, "", "", "[]", "");
+            if (c == null) return ("", "", 0, 0, lastSeen, "", "", "[]", "", false, "");
             return (c.ProfileDateJoined, c.ProfilePronouns, MutualFriendCount(c.MutualsJson), JsonArrayCount(c.MutualGroupsJson), lastSeen,
-                c.ProfileLastLogin, c.ProfileLastActivity, c.ProfileBioLinks, c.ProfileBio);
+                c.ProfileLastLogin, c.ProfileLastActivity, c.ProfileBioLinks, c.ProfileBio,
+                c.ProfileAgeVerified != 0, c.ProfileAgeVerification);
         }
-        catch { return ("", "", 0, 0, lastSeen, "", "", "[]", ""); }
+        catch { return ("", "", 0, 0, lastSeen, "", "", "[]", "", false, ""); }
     }
 
-    private Dictionary<string, (string dateJoined, string pronouns, int mutualFriends, int mutualGroups, string lastLogin, string lastActivity, string bioLinks, string bio)>? PrefetchFacts(IEnumerable<string> userIds)
+    private Dictionary<string, (string dateJoined, string pronouns, int mutualFriends, int mutualGroups, string lastLogin, string lastActivity, string bioLinks, string bio, bool ageVerified, string ageVerificationStatus)>? PrefetchFacts(IEnumerable<string> userIds)
     {
         try
         {
@@ -2793,15 +2812,15 @@ public class FriendsController
         catch { return null; }
     }
 
-    private (string dateJoined, string pronouns, int mutualFriends, int mutualGroups, string lastSeen, string lastLogin, string lastActivity, string bioLinks, string bio) FactsFrom(
-        Dictionary<string, (string dateJoined, string pronouns, int mutualFriends, int mutualGroups, string lastLogin, string lastActivity, string bioLinks, string bio)>? map, string userId)
+    private (string dateJoined, string pronouns, int mutualFriends, int mutualGroups, string lastSeen, string lastLogin, string lastActivity, string bioLinks, string bio, bool ageVerified, string ageVerificationStatus) FactsFrom(
+        Dictionary<string, (string dateJoined, string pronouns, int mutualFriends, int mutualGroups, string lastLogin, string lastActivity, string bioLinks, string bio, bool ageVerified, string ageVerificationStatus)>? map, string userId)
     {
-        if (string.IsNullOrEmpty(userId)) return ("", "", 0, 0, "", "", "", "[]", "");
+        if (string.IsNullOrEmpty(userId)) return ("", "", 0, 0, "", "", "", "[]", "", false, "");
         if (map == null) return CachedFacts(userId);
         var lastSeen = LastSeenTogether(userId);
         return map.TryGetValue(userId, out var f)
-            ? (f.dateJoined, f.pronouns, f.mutualFriends, f.mutualGroups, lastSeen, f.lastLogin, f.lastActivity, f.bioLinks, f.bio)
-            : ("", "", 0, 0, lastSeen, "", "", "[]", "");
+            ? (f.dateJoined, f.pronouns, f.mutualFriends, f.mutualGroups, lastSeen, f.lastLogin, f.lastActivity, f.bioLinks, f.bio, f.ageVerified, f.ageVerificationStatus)
+            : ("", "", 0, 0, lastSeen, "", "", "[]", "", false, "");
     }
 
     private readonly object _lastSeenLock = new();
@@ -3122,6 +3141,7 @@ public class FriendsController
         {
             fname = e.User["displayName"]?.ToString() ?? "";
             fimg = VRChatApiService.GetUserImage(e.User);
+            if (fimg.Length == 0) fimg = _friendNameImg.GetValueOrDefault(e.UserId).image ?? "";
             _friendNameImg[e.UserId] = (fname, fimg);
         }
         else
@@ -3283,6 +3303,7 @@ public class FriendsController
         {
             fname = e.User["displayName"]?.ToString() ?? "";
             fimg = VRChatApiService.GetUserImage(e.User);
+            if (fimg.Length == 0) fimg = _friendNameImg.GetValueOrDefault(e.UserId).image ?? "";
             _friendNameImg[e.UserId] = (fname, fimg);
         }
 

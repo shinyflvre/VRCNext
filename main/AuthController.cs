@@ -1399,23 +1399,31 @@ public class AuthController
         {
             _ = Task.Run(async () =>
             {
-                JArray? badgesArr = user["badges"] as JArray;
                 var selfProfile = await _core.Users.GetProfileAppearanceAsync(userId, asSelf: true);
-                if (badgesArr == null || badgesArr.Count == 0)
-                    badgesArr = selfProfile?["badges"] as JArray ?? new JArray();
-                if (selfProfile != null)
-                    Invoke(() =>
+                if (selfProfile == null) return;
+                Invoke(() =>
+                {
+                    DetectSelfBioChange(selfProfile["bio"]?.ToString());
+                    _core.SendToJS("vrcMyProfile", new
                     {
-                        DetectSelfBioChange(selfProfile["bio"]?.ToString());
-                        _core.SendToJS("vrcMyProfile", new
-                        {
-                            bio       = selfProfile["bio"]?.ToString() ?? "",
-                            bioLinks  = selfProfile["bioLinks"]?.ToObject<List<string>>()  ?? new List<string>(),
-                            languages = selfProfile["languages"]?.ToObject<List<string>>() ?? new List<string>(),
-                        });
+                        bio       = selfProfile["bio"]?.ToString() ?? "",
+                        bioLinks  = selfProfile["bioLinks"]?.ToObject<List<string>>()  ?? new List<string>(),
+                        languages = selfProfile["languages"]?.ToObject<List<string>>() ?? new List<string>(),
                     });
+                });
+                var texId = selfProfile["backgroundTextureId"]?.ToString() ?? "";
+                Invoke(() => _core.SendToJS("vrcSelfAppearance", new
+                {
+                    themeId                  = selfProfile["themeId"]?.ToString() ?? "",
+                    themes                   = selfProfile["themes"] as JArray ?? new JArray(),
+                    backgroundType           = selfProfile["backgroundType"]?.ToString() ?? "",
+                    backgroundTextureId      = texId,
+                    backgroundTextureUrl     = ProfileBackgroundHelper.UrlFor(texId),
+                    backgroundGradientTop    = selfProfile["backgroundGradientTop"]?.ToString() ?? "",
+                    backgroundGradientBottom = selfProfile["backgroundGradientBottom"]?.ToString() ?? "",
+                }));
                 var badges = new List<object>();
-                foreach (var b in badgesArr)
+                foreach (var b in selfProfile["badges"] as JArray ?? new JArray())
                 {
                     if (b is not JObject bObj) continue;
                     var imageUrl = bObj["badgeImageUrl"]?.ToString() ?? "";
@@ -1442,28 +1450,6 @@ public class AuthController
             });
         }
 
-        // The profile background sits on its own endpoint and this method is sync, so it
-        // is fetched afterwards and patched onto the already-sent user payload.
-        var selfId = user["id"]?.ToString();
-        if (!string.IsNullOrEmpty(selfId))
-        {
-            _ = Task.Run(async () =>
-            {
-                var appearance = await _core.Users.GetProfileAppearanceAsync(selfId, asSelf: true);
-                if (appearance == null) return;
-                var texId = appearance["backgroundTextureId"]?.ToString() ?? "";
-                Invoke(() => _core.SendToJS("vrcSelfAppearance", new
-                {
-                    themeId                  = appearance["themeId"]?.ToString() ?? "",
-                    themes                   = appearance["themes"] as JArray ?? new JArray(),
-                    backgroundType           = appearance["backgroundType"]?.ToString() ?? "",
-                    backgroundTextureId      = texId,
-                    backgroundTextureUrl     = ProfileBackgroundHelper.UrlFor(texId),
-                    backgroundGradientTop    = appearance["backgroundGradientTop"]?.ToString() ?? "",
-                    backgroundGradientBottom = appearance["backgroundGradientBottom"]?.ToString() ?? "",
-                }));
-            });
-        }
     }
 
     private void ReconcilePlayerSessionsFromLog(TimelineService.TimelineEvent lastJoin)

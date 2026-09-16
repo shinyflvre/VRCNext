@@ -1258,7 +1258,7 @@ function patchFriendDetailLive(f) {
     }
 
     // bio
-    if (f.bio !== undefined) {
+    if (f.bio) {
         const bioEl = c.querySelector('.fd-bio');
         if (bioEl) bioEl.textContent = f.bio;
         currentFriendDetail.bio = f.bio;
@@ -1272,7 +1272,7 @@ function patchFriendDetailLive(f) {
     }
 
     // bio links
-    if (f.bioLinks) {
+    if (Array.isArray(f.bioLinks) && f.bioLinks.length) {
         const linksEl = c.querySelector('.fd-bio-links');
         if (linksEl) {
             let html = f.bioLinks.map(u => renderBioLink(u)).join('');

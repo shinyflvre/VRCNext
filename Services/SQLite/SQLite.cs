@@ -1114,6 +1114,7 @@ public class UnifiedTimeEngine : IDisposable
         public string ProfilePronouns         { get; set; } = "";
         public string ProfileAgeVerification  { get; set; } = "";
         public int    ProfileAgeVerified      { get; set; }
+        public int    ProfileEconomyCreator   { get; set; }
         public string ProfileBioLinks         { get; set; } = "[]";
         public int    ProfileIsFavorited      { get; set; }
         public string ProfileFavFriendId      { get; set; } = "";
@@ -1164,7 +1165,7 @@ public class UnifiedTimeEngine : IDisposable
                     mutuals, mutuals_cached_at, mutual_groups, mutual_groups_cached_at,
                     profile_current_avatar, profile_icon_frame, profile_nameplate, profile_effect,
                     profile_bg_type, profile_bg_texture, profile_bg_grad_top, profile_bg_grad_bottom,
-                    profile_theme_button, profile_theme_icon, profile_theme_subtext
+                    profile_theme_button, profile_theme_icon, profile_theme_subtext, profile_economy_creator
                     FROM user_tracking WHERE user_id=$id";
                 cmd.Parameters.AddWithValue("$id", userId);
                 using var r = cmd.ExecuteReader();
@@ -1210,6 +1211,7 @@ public class UnifiedTimeEngine : IDisposable
                     ProfilePronouns        = S("profile_pronouns"),
                     ProfileAgeVerification = S("profile_age_verification"),
                     ProfileAgeVerified     = I("profile_age_verified"),
+                    ProfileEconomyCreator  = I("profile_economy_creator"),
                     ProfileBioLinks        = SA("profile_bio_links", "[]"),
                     ProfileIsFavorited     = I("profile_is_favorited"),
                     ProfileFavFriendId     = S("profile_fav_friend_id"),
@@ -1241,9 +1243,9 @@ public class UnifiedTimeEngine : IDisposable
         }
     }
 
-    public Dictionary<string, (string dateJoined, string pronouns, int mutualFriends, int mutualGroups, string lastLogin, string lastActivity, string bioLinks, string bio)>? GetUserFactsBatch(IReadOnlyList<string> userIds)
+    public Dictionary<string, (string dateJoined, string pronouns, int mutualFriends, int mutualGroups, string lastLogin, string lastActivity, string bioLinks, string bio, bool ageVerified, string ageVerificationStatus)>? GetUserFactsBatch(IReadOnlyList<string> userIds)
     {
-        var result = new Dictionary<string, (string, string, int, int, string, string, string, string)>();
+        var result = new Dictionary<string, (string, string, int, int, string, string, string, string, bool, string)>();
         if (userIds.Count == 0) return result;
         lock (_lock)
         {
@@ -1260,7 +1262,8 @@ public class UnifiedTimeEngine : IDisposable
                         CASE WHEN json_valid(mutuals) AND COALESCE(json_extract(mutuals,'$.optedOut'),0) != 1
                              THEN COALESCE(json_array_length(mutuals,'$.mutuals'),0) ELSE 0 END,
                         CASE WHEN json_valid(mutual_groups) THEN COALESCE(json_array_length(mutual_groups),0) ELSE 0 END,
-                        profile_last_login, profile_last_activity, profile_bio_links, profile_bio
+                        profile_last_login, profile_last_activity, profile_bio_links, profile_bio,
+                        profile_age_verified, profile_age_verification
                         FROM user_tracking
                         WHERE COALESCE(profile_cached_at,'') != '' AND user_id IN ({ps})";
                     for (int i = 0; i < slice.Count; i++) cmd.Parameters.AddWithValue($"$u{i}", slice[i]);
@@ -1275,7 +1278,9 @@ public class UnifiedTimeEngine : IDisposable
                             r.IsDBNull(5) ? "" : r.GetString(5),
                             r.IsDBNull(6) ? "" : r.GetString(6),
                             r.IsDBNull(7) ? "[]" : r.GetString(7),
-                            r.IsDBNull(8) ? "" : r.GetString(8));
+                            r.IsDBNull(8) ? "" : r.GetString(8),
+                            !r.IsDBNull(9) && r.GetInt64(9) != 0,
+                            r.IsDBNull(10) ? "" : r.GetString(10));
                     }
                 }
             }
@@ -1317,7 +1322,10 @@ public class UnifiedTimeEngine : IDisposable
                 using var cmd = _db.CreateCommand();
                 cmd.CommandText = @"UPDATE user_tracking SET
                     display_name=$dn, image=$img,
-                    profile_status=$st, profile_status_desc=$sd, profile_bio=$bio, profile_location=$loc,
+                    profile_status=$st, profile_status_desc=$sd, profile_location=$loc,
+                    profile_bio           = CASE WHEN $bioSet    = 1 THEN $bio    ELSE profile_bio           END,
+                    profile_bio_links     = CASE WHEN $blSet     = 1 THEN $bl     ELSE profile_bio_links     END,
+                    profile_badges        = CASE WHEN $badgesSet = 1 THEN $badges ELSE profile_badges        END,
                     profile_is_friend=$fr, profile_avatar_img=$ai, profile_cached_at=$cat,
                     profile_last_login    = CASE WHEN $ll  <> '' THEN $ll  ELSE profile_last_login    END,
                     profile_last_activity = CASE WHEN $la  <> '' THEN $la  ELSE profile_last_activity END,
@@ -1331,9 +1339,11 @@ public class UnifiedTimeEngine : IDisposable
                     profile_state=$state, profile_last_platform=$lp, profile_platform=$pl, profile_user_note=$un,
                     profile_in_same_instance=$isi,
                     profile_pronouns      = CASE WHEN $pro <> '' THEN $pro ELSE profile_pronouns      END,
-                    profile_age_verification=$av,
-                    profile_age_verified=$avd, profile_bio_links=$bl, profile_is_favorited=$ifav,
-                    profile_fav_friend_id=$ffid, profile_badges=$badges,
+                    profile_age_verification = CASE WHEN $avSet  = 1 THEN $av  ELSE profile_age_verification END,
+                    profile_age_verified     = CASE WHEN $avdSet = 1 THEN $avd ELSE profile_age_verified     END,
+                    profile_economy_creator  = CASE WHEN $ecSet  = 1 THEN $ec  ELSE profile_economy_creator  END,
+                    profile_is_favorited=$ifav,
+                    profile_fav_friend_id=$ffid,
                     profile_represented_group=$rg,
                     profile_icon_frame=$icf, profile_nameplate=$npl, profile_effect=$pfx,
                     profile_bg_type=$bgt, profile_bg_texture=$bgx, profile_bg_grad_top=$bgu, profile_bg_grad_bottom=$bgd,
@@ -1345,6 +1355,9 @@ public class UnifiedTimeEngine : IDisposable
                 cmd.Parameters.AddWithValue("$st",    p["status"]?.ToString() ?? "");
                 cmd.Parameters.AddWithValue("$sd",    p["statusDescription"]?.ToString() ?? "");
                 cmd.Parameters.AddWithValue("$bio",   p["bio"]?.ToString() ?? "");
+                cmd.Parameters.AddWithValue("$bioSet",    p["bio"] != null ? 1 : 0);
+                cmd.Parameters.AddWithValue("$blSet",     p["bioLinks"] != null ? 1 : 0);
+                cmd.Parameters.AddWithValue("$badgesSet", p["badges"] != null ? 1 : 0);
                 cmd.Parameters.AddWithValue("$loc",   p["location"]?.ToString() ?? "");
                 cmd.Parameters.AddWithValue("$fr",    p["isFriend"]?.Value<bool>() == true ? 1 : 0);
                 cmd.Parameters.AddWithValue("$ai",    p["currentAvatarImageUrl"]?.ToString() ?? "");
@@ -1376,6 +1389,10 @@ public class UnifiedTimeEngine : IDisposable
                 cmd.Parameters.AddWithValue("$pro",   p["pronouns"]?.ToString() ?? "");
                 cmd.Parameters.AddWithValue("$av",    p["ageVerificationStatus"]?.ToString() ?? "");
                 cmd.Parameters.AddWithValue("$avd",   p["ageVerified"]?.Value<bool>() == true ? 1 : 0);
+                cmd.Parameters.AddWithValue("$avSet",  p["ageVerificationStatus"] != null ? 1 : 0);
+                cmd.Parameters.AddWithValue("$avdSet", p["ageVerified"] != null ? 1 : 0);
+                cmd.Parameters.AddWithValue("$ec",     p["isEconomyCreator"]?.Value<bool>() == true ? 1 : 0);
+                cmd.Parameters.AddWithValue("$ecSet",  p["isEconomyCreator"] != null ? 1 : 0);
                 cmd.Parameters.AddWithValue("$bl",    p["bioLinks"]?.ToString() ?? "[]");
                 cmd.Parameters.AddWithValue("$ifav",  p["isFavorited"]?.Value<bool>() == true ? 1 : 0);
                 cmd.Parameters.AddWithValue("$ffid",  p["favFriendId"]?.ToString() ?? "");
@@ -2319,6 +2336,7 @@ public class UnifiedTimeEngine : IDisposable
             "profile_theme_button        TEXT    NOT NULL DEFAULT ''",
             "profile_theme_icon          TEXT    NOT NULL DEFAULT ''",
             "profile_theme_subtext       TEXT    NOT NULL DEFAULT ''",
+            "profile_economy_creator     INTEGER NOT NULL DEFAULT 0",
         })
         {
             try

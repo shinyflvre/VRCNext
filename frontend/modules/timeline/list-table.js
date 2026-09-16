@@ -416,16 +416,31 @@ function tlTableSortLocal(list, entries, accessors) {
         bar.className = 'tl-list-hbar';
         bar.appendChild(document.createElement('div'));
         wrap.parentNode.insertBefore(bar, wrap);
-        let lock = false;
+        let echoBar = -1, echoWrap = -1;
+        const ratio = (from, to) => {
+            const fromMax = from.scrollWidth - from.clientWidth;
+            return fromMax > 0 ? (to.scrollWidth - to.clientWidth) / fromMax : 0;
+        };
         const update = () => {
             if (!wrap.isConnected) return;
             const need = wrap.scrollWidth > wrap.clientWidth + 1;
             bar.classList.toggle('on', need);
             bar.firstChild.style.width = wrap.scrollWidth + 'px';
-            if (bar.scrollLeft !== wrap.scrollLeft) bar.scrollLeft = wrap.scrollLeft;
+            const target = wrap.scrollLeft * ratio(wrap, bar);
+            if (Math.abs(bar.scrollLeft - target) >= 1) { echoBar = target; bar.scrollLeft = target; }
         };
-        bar.addEventListener('scroll', () => { if (lock) return; lock = true; wrap.scrollLeft = bar.scrollLeft; lock = false; });
-        wrap.addEventListener('scroll', () => { if (lock) return; lock = true; bar.scrollLeft = wrap.scrollLeft; lock = false; });
+        bar.addEventListener('scroll', () => {
+            if (Math.abs(bar.scrollLeft - echoBar) < 1) { echoBar = -1; return; }
+            const target = bar.scrollLeft * ratio(bar, wrap);
+            echoWrap = target;
+            wrap.scrollLeft = target;
+        }, { passive: true });
+        wrap.addEventListener('scroll', () => {
+            if (Math.abs(wrap.scrollLeft - echoWrap) < 1) { echoWrap = -1; return; }
+            const target = wrap.scrollLeft * ratio(wrap, bar);
+            echoBar = target;
+            bar.scrollLeft = target;
+        }, { passive: true });
         const ro = new ResizeObserver(update);
         ro.observe(wrap);
         if (wrap.firstElementChild) ro.observe(wrap.firstElementChild);

@@ -125,6 +125,7 @@ function renderVrcProfile(u) {
         if (!u.bio && currentVrcUser.bio) u.bio = currentVrcUser.bio;
         if (!(u.bioLinks && u.bioLinks.length) && currentVrcUser.bioLinks) u.bioLinks = currentVrcUser.bioLinks;
         if (!(u.languages && u.languages.length) && currentVrcUser.languages) u.languages = currentVrcUser.languages;
+        if (!(u.badges && u.badges.length) && currentVrcUser.badges) u.badges = currentVrcUser.badges;
     }
     currentVrcUser = u;
     if (!window._rewindChecked) { window._rewindChecked = true; setTimeout(() => sendToCS({ action: 'checkRewind' }), 4000); }

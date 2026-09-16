@@ -181,7 +181,7 @@ public static class SQLiteOptimizing
 
         using (var cmd = db.CreateCommand())
         {
-            cmd.CommandText = "UPDATE user_tracking SET profile_bio_links='[]' WHERE profile_bio_links<>'' AND profile_bio_links<>'[]'";
+            cmd.CommandText = "UPDATE user_tracking SET profile_bio_links='[]' WHERE profile_bio_links<>'' AND profile_bio_links<>'[]' AND (profile_is_friend IS NULL OR profile_is_friend!=1)";
             userCleaned += cmd.ExecuteNonQuery();
         }
 

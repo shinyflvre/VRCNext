@@ -1015,6 +1015,7 @@ public class InstanceController
                                 _core.PlayerAgeVerifiedCache[p.UserId] = profile["ageVerified"]?.Value<bool>() ?? false;
                                 _core.StorePlayerProfile(p.UserId, profile);
                                 _core.TimeEngine.SaveUserProfileCache(p.UserId, profile.ToString(Newtonsoft.Json.Formatting.None));
+                                EnrichPlayerProfileInBackground(p.UserId, profile);
                                 lock (userProfiles)
                                     userProfiles[p.UserId] = profile;
                             }
@@ -1577,6 +1578,7 @@ public class InstanceController
                     _core.PlayerAgeVerifiedCache[userId] = profile["ageVerified"]?.Value<bool>() ?? false;
                     _core.StorePlayerProfile(userId, profile);
                     _core.TimeEngine.SaveUserProfileCache(userId, profile.ToString(Newtonsoft.Json.Formatting.None));
+                    EnrichPlayerProfileInBackground(userId, profile);
 
                     // Also enrich the cumulative instance player record with the resolved image
                     if (_cumulativeInstancePlayers.TryGetValue(userId, out var existing) && string.IsNullOrEmpty(existing.image))
@@ -1664,6 +1666,33 @@ public class InstanceController
     }
 
     private static readonly TimeSpan _tlPayloadCacheCutoff = TimeSpan.FromDays(7);
+
+    private readonly SemaphoreSlim _profileEnrichGate = new(3);
+    private int _enrichPushPending;
+
+    private void EnrichPlayerProfileInBackground(string userId, JObject profile)
+    {
+        var source = (JObject)profile.DeepClone();
+        _ = Task.Run(async () =>
+        {
+            await _profileEnrichGate.WaitAsync();
+            try
+            {
+                var appearance = await _core.Users.GetProfileAppearanceAsync(userId);
+                if (appearance == null) return;
+                foreach (var key in new[] { "bio", "bioLinks", "badges" })
+                    if (appearance[key] != null) source[key] = appearance[key]!.DeepClone();
+                _core.StorePlayerProfile(userId, source);
+                _core.TimeEngine.SaveUserProfileCache(userId, source.ToString(Newtonsoft.Json.Formatting.None));
+            }
+            catch { return; }
+            finally { _profileEnrichGate.Release(); }
+            if (Interlocked.Exchange(ref _enrichPushPending, 1) == 1) return;
+            await Task.Delay(500);
+            Interlocked.Exchange(ref _enrichPushPending, 0);
+            Invoke(() => PushCurrentInstanceFromCache());
+        });
+    }
 
     private string ResolveWithDiskFallback(string? userId, string? storedImage)
     {
