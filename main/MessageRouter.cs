@@ -936,8 +936,8 @@ public partial class AppShell
                         {
                             if (updOk)
                             {
+                                SendToJS("vrcProfileUpdated", new { success = true, bio = upBio, bioLinks = upBioLinks, languages = upLanguages, pronouns = upPronouns });
                                 if (updUser != null) _authCtrl.SendVrcUserData(updUser);
-                                SendToJS("vrcProfileUpdated", new { success = true });
                                 SendToJS("log", new { msg = "VRChat: Profile updated", color = "ok" });
                             }
                             else

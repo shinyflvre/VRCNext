@@ -93,7 +93,7 @@ public static class SQLiteOptimizing
 
         using (var cmd = db.CreateCommand())
         {
-            cmd.CommandText = "SELECT COALESCE(SUM(CASE WHEN profile_bio_links<>'' AND profile_bio_links<>'[]' THEN 1 ELSE 0 END),0) FROM user_tracking";
+            cmd.CommandText = "SELECT COALESCE(SUM(CASE WHEN profile_bio_links<>'' AND profile_bio_links<>'[]' THEN 1 ELSE 0 END),0) FROM user_tracking WHERE (profile_is_friend IS NULL OR profile_is_friend!=1)";
             var bioCount = Convert.ToInt64(cmd.ExecuteScalar() ?? 0L);
             var idx = result.Counts.FindIndex(x => x.Label == "Bio Links");
             if (idx >= 0) result.Counts[idx] = ("Bio Links", bioCount);
@@ -171,7 +171,7 @@ public static class SQLiteOptimizing
                 profile_tags='[]', profile_note='', profile_friend_key='', profile_traveling_to='',
                 profile_state='', profile_last_platform='', profile_platform='', profile_user_note='',
                 profile_in_same_instance=0, profile_pronouns='', profile_age_verification='',
-                profile_age_verified=0, profile_bio_links='[]', profile_is_favorited=0,
+                profile_age_verified=0, profile_economy_creator=0, profile_bio_links='[]', profile_is_favorited=0,
                 profile_fav_friend_id='', profile_badges='[]',
                 groups='', groups_cached_at='', content='', content_cached_at='',
                 mutuals='', mutuals_cached_at='', mutual_groups='', mutual_groups_cached_at=''
@@ -179,11 +179,6 @@ public static class SQLiteOptimizing
             userCleaned = cmd.ExecuteNonQuery();
         }
 
-        using (var cmd = db.CreateCommand())
-        {
-            cmd.CommandText = "UPDATE user_tracking SET profile_bio_links='[]' WHERE profile_bio_links<>'' AND profile_bio_links<>'[]' AND (profile_is_friend IS NULL OR profile_is_friend!=1)";
-            userCleaned += cmd.ExecuteNonQuery();
-        }
 
         const int keepRecent = 100;
 

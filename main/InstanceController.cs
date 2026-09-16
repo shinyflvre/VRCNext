@@ -1690,7 +1690,8 @@ public class InstanceController
             if (Interlocked.Exchange(ref _enrichPushPending, 1) == 1) return;
             await Task.Delay(500);
             Interlocked.Exchange(ref _enrichPushPending, 0);
-            Invoke(() => PushCurrentInstanceFromCache());
+            try { Invoke(() => PushCurrentInstanceFromCache()); }
+            catch { }
         });
     }
 

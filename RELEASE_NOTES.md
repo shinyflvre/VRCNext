@@ -1,4 +1,4 @@
-﻿# **2026.60.2**
+﻿# **2026.60.4**
 
 PLEASE READ!!! - TRACKING BIO IS GONE!
 But you can do something to bring it back!
@@ -46,7 +46,9 @@ Maybe VRChat staff will consider adding back bio events in their websocket to tr
   * Fixed the **Creator** badge missing when reopening a profile shortly after viewing it.
   * Fixed your own badges disappearing from My Profile after every profile refresh, and staying gone when loading your profile failed. Your profile is now loaded once per refresh instead of twice.
   * Fixed the friend hover card showing no banner for friends who use a color banner.
-  * Fixed **Optimize Database** erasing the bio links of your friends. Since the VRChat API change they are only kept in the local cache.
+  * Fixed **Optimize Database** erasing the bio links of your friends. Since the VRChat API change they are only kept in the local cache. The bio link count shown before optimizing now matches what actually gets cleaned.
+  * Fixed badges not showing when a profile was opened from the local cache.
+  * Fixed a deleted biography, bio links or languages briefly reappearing in My Profile right after saving.
   * Fixed the Action Flow conditions **has bio text** and **own bio text** failing although the text matched. Biographies of friends were missing from the friends list, and your own biography was briefly empty after every profile refresh.
   * Fixed Action Flow instance info webhooks showing your avatar picture instead of your profile icon, or no icon at all for a friend whose picture was not cached yet.
   * Fixed an open profile losing its biography and bio links the moment that person changed their status. Live friend updates no longer carry profile data since the VRChat API change, and the empty fields were overwriting what was already on screen.

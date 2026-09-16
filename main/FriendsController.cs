@@ -2157,7 +2157,7 @@ public class FriendsController
                 ["discordId"]             = live?["discordId"]?.ToString() ?? "",
                 ["isFavorited"]           = _favoriteFriends.ContainsKey(userId),
                 ["favFriendId"]           = GetFavoriteFriendId(userId),
-                ["badges"]                = liveBadges ?? TryParseJArray(cachedEntry.ProfileBadges) ?? new JArray(),
+                ["badges"]                = BuildBadgeList(liveBadges ?? TryParseJArray(cachedEntry.ProfileBadges)),
                 ["cachedAvatar"]          = CachedAvatarToken(cachedEntry.ProfileCurrentAvatar),
                 ["iconFrame"]             = live?["iconFrame"]?.ToString() ?? cachedEntry.ProfileIconFrame,
                 ["iconFrameUrl"]          = IconFrameHelper.UrlFor(live?["iconFrame"]?.ToString() ?? cachedEntry.ProfileIconFrame, _core.Inventory),
@@ -2635,22 +2635,7 @@ public class FriendsController
         var mutualGroupsList               = BuildMutualGroupsDisplay(mutualGroupsArr);
         var mutualsList                    = BuildMutualsDisplay(mutualsArr);
 
-        List<object> badges = new();
-        foreach (var b in badgesArr)
-        {
-            if (b is not JObject bObj) continue;
-            var rawBadgeUrl = bObj["badgeImageUrl"]?.ToString() ?? bObj["imageUrl"]?.ToString() ?? "";
-            if (string.IsNullOrEmpty(rawBadgeUrl)) continue;
-            var badgeId = bObj["badgeId"]?.ToString() ?? bObj["id"]?.ToString() ?? "";
-            badges.Add(new
-            {
-                id = badgeId,
-                name = bObj["badgeName"]?.ToString() ?? bObj["name"]?.ToString() ?? "",
-                description = bObj["badgeDescription"]?.ToString() ?? bObj["description"]?.ToString() ?? "",
-                imageUrl = ImageCacheHelper.GetBadgeUrl(badgeId, rawBadgeUrl),
-                showcased = bObj["showcased"]?.Value<bool>() ?? false,
-            });
-        }
+        var badges = BuildBadgeList(badgesArr);
 
         var isCoPresent = (_core.IsVrcRunning?.Invoke() ?? false)
             && _core.LogWatcher.GetCurrentPlayers().Any(p => p.UserId == userId);
@@ -2932,6 +2917,28 @@ public class FriendsController
     {
         var live = f["pronouns"]?.ToString() ?? "";
         return string.IsNullOrEmpty(live) ? cached : live;
+    }
+
+    private static JArray BuildBadgeList(JArray? source)
+    {
+        var result = new JArray();
+        if (source == null) return result;
+        foreach (var b in source)
+        {
+            if (b is not JObject bObj) continue;
+            var rawBadgeUrl = bObj["badgeImageUrl"]?.ToString() ?? bObj["imageUrl"]?.ToString() ?? "";
+            if (string.IsNullOrEmpty(rawBadgeUrl)) continue;
+            var badgeId = bObj["badgeId"]?.ToString() ?? bObj["id"]?.ToString() ?? "";
+            result.Add(new JObject
+            {
+                ["id"]          = badgeId,
+                ["name"]        = bObj["badgeName"]?.ToString() ?? bObj["name"]?.ToString() ?? "",
+                ["description"] = bObj["badgeDescription"]?.ToString() ?? bObj["description"]?.ToString() ?? "",
+                ["imageUrl"]    = ImageCacheHelper.GetBadgeUrl(badgeId, rawBadgeUrl),
+                ["showcased"]   = bObj["showcased"]?.Value<bool>() ?? false,
+            });
+        }
+        return result;
     }
 
     private static string PickFact(JObject f, string key, string cached)

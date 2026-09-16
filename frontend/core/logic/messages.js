@@ -586,6 +586,12 @@ window.external.receiveMessage(rawMsg => {
                 break;
             case 'vrcProfileUpdated':
                 if (payload.success) {
+                    if (typeof currentVrcUser !== 'undefined' && currentVrcUser) {
+                        if (payload.bio != null) currentVrcUser.bio = payload.bio;
+                        if (Array.isArray(payload.bioLinks)) currentVrcUser.bioLinks = payload.bioLinks;
+                        if (Array.isArray(payload.languages)) currentVrcUser.languages = payload.languages;
+                        if (payload.pronouns != null) currentVrcUser.pronouns = payload.pronouns;
+                    }
                     renderMyProfileContent();
                     showToast(true, t('profiles.my_profile.saved', 'Saved!'));
                 } else {
