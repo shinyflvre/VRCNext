@@ -25,7 +25,7 @@ const TL_TABLE_DEFS = {
         { id: 'name',       key: 'people.list.header.username',    fallback: 'Username',    width: '160px', sort: 'name' },
         { id: 'rank',       key: 'people.list.header.trust_rank',  fallback: 'Trust Rank',  width: '120px', sort: 'rank' },
         { id: 'status',     key: 'people.list.header.status',      fallback: 'Status',      width: '150px', sort: 'status' },
-        { id: 'language',   key: 'people.list.header.language',    fallback: 'Language',    width: '110px', sort: 'language' },
+        { id: 'language',   key: 'people.list.header.language',    fallback: 'Language',    width: '200px', sort: 'language' },
         { id: 'biolinks',   key: 'people.list.header.bio_links',   fallback: 'Bio Links',   width: '100px', sort: 'biolinks' },
         { id: 'pronouns',   key: 'people.list.header.pronouns',    fallback: 'Pronouns',    width: '120px', sort: 'pronouns' },
         { id: 'mutualfriends', key: 'people.list.header.mutual_friends', fallback: 'Mutual Friends', width: '140px', sort: 'mutualfriends' },

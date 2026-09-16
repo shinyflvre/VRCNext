@@ -78,7 +78,7 @@ function openCreateInstanceModal() {
         ${renderModalBar(t('worlds.instances.create_title', 'Create Instance'), [modalCloseAction('closeCreateInstanceModal()')])}
         <div class="modal-card">
             <div class="ci-world-row">
-                ${thumb ? `<img class="ci-world-thumb" src="${esc(thumb)}" onerror="this.style.display='none'">` : ''}
+                ${thumb ? `<img class="ci-world-thumb" src="${esc(imgThumb(thumb, 128))}" onerror="this.style.display='none'">` : ''}
                 <div class="ci-world-name" title="${esc(worldName)}">${esc(worldName)}</div>
             </div>
 

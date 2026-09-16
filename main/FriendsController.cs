@@ -394,6 +394,7 @@ public class FriendsController
                 var ubUser = await _core.Users.GetUserAsync(ubId);
                 if (ubUser != null)
                 {
+                    var ubProfile = await _core.Users.GetProfileAppearanceAsync(ubId);
                     var ubRawImg = VRChatApiService.GetUserImage(ubUser);
                     var ubImg = await ResolveUserImageAsync(ubId, ubRawImg);
                     var ubName = ubUser["displayName"]?.ToString() ?? "";
@@ -407,7 +408,7 @@ public class FriendsController
                         ["image"]                 = ubImg,
                         ["status"]                = ubStatus,
                         ["statusDescription"]     = ubStatusDesc,
-                        ["bio"]                   = ubUser["bio"]?.ToString() ?? "",
+                        ["bio"]                   = ubProfile?["bio"]?.ToString() ?? "",
                         ["dateJoined"]            = ubUser["date_joined"]?.ToString() ?? "",
                         ["lastLogin"]             = ParseIsoDate(ubUser["last_login"]),
                         ["lastActivity"]          = ParseIsoDate(ubUser["last_activity"]),
@@ -417,7 +418,8 @@ public class FriendsController
                         ["bannerUrl"]             = ImageCacheHelper.GetUserBannerUrl(ubId, ubUser["bannerUrl"]?.ToString()),
                         ["pronouns"]              = ubUser["pronouns"]?.ToString() ?? "",
                         ["tags"]                  = ubUser["tags"] as JArray ?? new JArray(),
-                        ["badges"]                = ubUser["badges"] as JArray ?? new JArray(),
+                        ["badges"]                = ubProfile?["badges"] as JArray ?? new JArray(),
+                        ["bioLinks"]              = ubProfile?["bioLinks"] as JArray ?? new JArray(),
                     }.ToString());
 
                     _core.SendToJS("vrcUserBasic", new {
@@ -440,6 +442,8 @@ public class FriendsController
                     var bio = "";
                     var profilePicOverride = "";
                     var bannerUrl = "";
+                    var bannerType = "";
+                    var bannerColor = "";
 
                     // SQLite cache
                     var bgType = ""; var bgTexture = ""; var bgTop = ""; var bgBottom = "";
@@ -463,12 +467,14 @@ public class FriendsController
                     if (string.IsNullOrEmpty(bio))
                     {
                         _core.SendToJS("vrcFriendPreview", new { id = prevId, bio, profilePicOverride, bannerUrl });
-                        var user = await _core.Users.GetUserAsync(prevId);
-                        if (user != null)
+                        var prevProfile = await _core.Users.GetProfileAppearanceAsync(prevId);
+                        if (prevProfile != null)
                         {
-                            bio = user["bio"]?.ToString() ?? "";
-                            var pic = user["profilePicOverride"]?.ToString() ?? "";
-                            if (!string.IsNullOrEmpty(pic)) profilePicOverride = pic;
+                            bio         = prevProfile["bio"]?.ToString() ?? "";
+                            bannerType  = prevProfile["bannerType"]?.ToString() ?? "";
+                            bannerColor = prevProfile["bannerColor"]?.ToString() ?? "";
+                            if (string.IsNullOrEmpty(bannerUrl))
+                                bannerUrl = prevProfile["bannerUrl"]?.ToString() ?? "";
                         }
                     }
 
@@ -497,6 +503,8 @@ public class FriendsController
                         bio,
                         profilePicOverride = ImageCacheHelper.GetUserPicOverrideUrl(prevId, profilePicOverride),
                         bannerUrl          = ImageCacheHelper.GetUserBannerUrl(prevId, bannerUrl),
+                        bannerType,
+                        bannerColor,
                         backgroundType           = bgType,
                         backgroundTextureId      = bgTexture,
                         backgroundTextureUrl     = ProfileBackgroundHelper.UrlFor(bgTexture),
@@ -1415,10 +1423,15 @@ public class FriendsController
             {
                 var onlineIds = new HashSet<string>(
                     online.Select(f => f["id"]?.ToString() ?? "").Where(id => !string.IsNullOrEmpty(id)));
+                var carry = new[] { "ageVerified", "ageVerificationStatus", "isEconomyCreator", "pronouns" };
                 foreach (var f in online)
                 {
                     var uid = f["id"]?.ToString() ?? "";
-                    if (!string.IsNullOrEmpty(uid)) _friendStore[uid] = f;
+                    if (string.IsNullOrEmpty(uid)) continue;
+                    if (_friendStore.TryGetValue(uid, out var prevOn))
+                        foreach (var k in carry)
+                            if (f[k] == null && prevOn[k] != null) f[k] = prevOn[k];
+                    _friendStore[uid] = f;
                 }
                 foreach (var f in offline)
                 {
@@ -1427,11 +1440,22 @@ public class FriendsController
                     var copy = (JObject)f.DeepClone();
                     copy["location"] = "offline";
                     copy["status"] = "offline";
+                    if (_friendStore.TryGetValue(uid, out var prevOff))
+                        foreach (var k in carry)
+                            if (copy[k] == null && prevOff[k] != null) copy[k] = prevOff[k];
                     _friendStore[uid] = copy;
                 }
             }
 
-            await WarmDecorationsAsync(online.Concat(offline));
+            var warmFriends = online.Concat(offline).ToList();
+            _ = Task.Run(async () =>
+            {
+                if (await WarmDecorationsAsync(warmFriends) > 0)
+                {
+                    _warmRepushPending = true;
+                    DoPushFriendsFromStore();
+                }
+            });
 
             var refreshFactsMap = PrefetchFacts(online.Concat(offline).Select(f => f["id"]?.ToString() ?? ""));
 
@@ -1460,9 +1484,9 @@ public class FriendsController
                     location, platform,
                     presence = isInGame ? "game" : "web",
                     tags = f["tags"]?.ToObject<List<string>>() ?? new(),
-                    bioLinks = f["bioLinks"]?.ToObject<List<string>>() ?? new(),
-                    lastLogin = f["last_login"]?.ToString() ?? "",
-                    lastActivity = f["last_activity"]?.ToString() ?? "",
+                    bioLinks = PickBioLinks(f, facts.bioLinks),
+                    lastLogin = PickFact(f, "last_login", facts.lastLogin),
+                    lastActivity = PickFact(f, "last_activity", facts.lastActivity),
                     dateJoined = facts.dateJoined,
                     pronouns = PickPronouns(f, facts.pronouns),
                     mutualFriends = facts.mutualFriends,
@@ -1493,9 +1517,9 @@ public class FriendsController
                     platform = f["last_platform"]?.ToString() ?? "",
                     presence = "offline",
                     tags = f["tags"]?.ToObject<List<string>>() ?? new(),
-                    bioLinks = f["bioLinks"]?.ToObject<List<string>>() ?? new(),
-                    lastLogin = f["last_login"]?.ToString() ?? "",
-                    lastActivity = f["last_activity"]?.ToString() ?? "",
+                    bioLinks = PickBioLinks(f, offFacts.bioLinks),
+                    lastLogin = PickFact(f, "last_login", offFacts.lastLogin),
+                    lastActivity = PickFact(f, "last_activity", offFacts.lastActivity),
                     dateJoined = offFacts.dateJoined,
                     pronouns = PickPronouns(f, offFacts.pronouns),
                     mutualFriends = offFacts.mutualFriends,
@@ -1710,6 +1734,8 @@ public class FriendsController
             if (userObj != null)
             {
                 foreach (var prop in userObj.Properties()) entry[prop.Name] = prop.Value;
+                foreach (var dead in new[] { "currentAvatarImageUrl", "currentAvatarThumbnailImageUrl", "userIcon", "profilePicOverride" })
+                    if (userObj[dead] == null) entry.Remove(dead);
                 var img = VRChatApiService.GetUserImage(userObj);
                 if (!string.IsNullOrEmpty(img))
                     _friendNameImg[userId] = (userObj["displayName"]?.ToString() ?? _friendNameImg.GetValueOrDefault(userId).name ?? "", img);
@@ -1789,17 +1815,20 @@ public class FriendsController
             isEconomyCreator = f["isEconomyCreator"]?.Value<bool>() ?? false,
             ageVerificationStatus = f["ageVerificationStatus"]?.ToString() ?? "",
             avatarFileId = ExtractAvatarFileId(f),
-            bio = f["bio"]?.ToString() ?? "",
+            bio = PickFact(f, "bio", CachedBio(userId)),
             pronouns = PickPronouns(f, upFacts.pronouns),
-            bioLinks = f["bioLinks"]?.ToObject<List<string>>() ?? new List<string>(),
+            bioLinks = PickBioLinks(f, upFacts.bioLinks),
             profilePicOverride = f["profilePicOverride"]?.ToString() ?? "",
-            lastLogin = f["last_login"]?.ToString() ?? "",
-            lastActivity = f["last_activity"]?.ToString() ?? "",
-            dateJoined = upFacts.dateJoined,
+            lastLogin = PickFact(f, "last_login", upFacts.lastLogin),
+            lastActivity = PickFact(f, "last_activity", upFacts.lastActivity),
+            dateJoined = PickFact(f, "date_joined", upFacts.dateJoined),
             mutualFriends = upFacts.mutualFriends,
             mutualGroups = upFacts.mutualGroups,
             lastSeen = upFacts.lastSeen,
+            isFriend = f["isFriend"]?.Value<bool>() ?? true,
             bannerUrl = f["bannerUrl"]?.ToString() ?? "",
+            bannerType = f["bannerType"]?.ToString() ?? "",
+            bannerColor = f["bannerColor"]?.ToString() ?? "",
             currentAvatarImageUrl = f["currentAvatarImageUrl"]?.ToString() ?? f["currentAvatarThumbnailImageUrl"]?.ToString() ?? "",
             badges = f["badges"] ?? new JArray(),
         });
@@ -1843,9 +1872,9 @@ public class FriendsController
                 isEconomyCreator = f["isEconomyCreator"]?.Value<bool>() ?? false,
                 ageVerificationStatus = f["ageVerificationStatus"]?.ToString() ?? "",
                 avatarFileId = ExtractAvatarFileId(f),
-                bioLinks = f["bioLinks"]?.ToObject<List<string>>() ?? new List<string>(),
-                lastLogin = f["last_login"]?.ToString() ?? "",
-                lastActivity = f["last_activity"]?.ToString() ?? "",
+                bioLinks = PickBioLinks(f, facts.bioLinks),
+                lastLogin = PickFact(f, "last_login", facts.lastLogin),
+                lastActivity = PickFact(f, "last_activity", facts.lastActivity),
                 dateJoined = facts.dateJoined,
                 pronouns = PickPronouns(f, facts.pronouns),
                 mutualFriends = facts.mutualFriends,
@@ -1875,7 +1904,7 @@ public class FriendsController
 #endif
     }
 
-    private async Task WarmDecorationsAsync(IEnumerable<JObject> friends)
+    private async Task<int> WarmDecorationsAsync(IEnumerable<JObject> friends)
     {
         var ids = friends
             .SelectMany(f => new[] { f["iconFrame"]?.ToString(), f["nameplateEffect"]?.ToString(), f["profileEffect"]?.ToString() })
@@ -1883,6 +1912,7 @@ public class FriendsController
             .Distinct()
             .ToList();
         foreach (var id in ids) await _core.Inventory.ResolveDecorationAsync(id!);
+        return ids.Count;
     }
 
     private volatile bool _warmRepushPending;
@@ -2080,6 +2110,9 @@ public class FriendsController
                 ["avatarFileId"]          = liveFileId,
                 ["profilePicOverride"]    = !string.IsNullOrEmpty(livePicOverride) ? ImageCacheHelper.GetUserPicOverrideUrl(userId, livePicOverride) : cachedEntry.ProfilePicOverride,
                 ["bannerUrl"]             = !string.IsNullOrEmpty(liveBannerUrl) ? ImageCacheHelper.GetUserBannerUrl(userId, liveBannerUrl) : cachedEntry.ProfileBannerUrl,
+                ["bannerType"]            = live?["bannerType"]?.ToString() ?? "",
+                ["bannerColor"]           = live?["bannerColor"]?.ToString() ?? "",
+                ["languages"]             = new JArray(),
                 ["tags"]                  = liveTags ?? TryParseJArray(cachedEntry.ProfileTags) ?? new JArray(),
                 ["note"]                  = cachedEntry.ProfileNote,
                 ["friendKey"]             = cachedEntry.ProfileFriendKey,
@@ -2248,7 +2281,7 @@ public class FriendsController
 
     internal static string ExtractAvatarFileId(JObject user)
     {
-        foreach (var field in new[] { "currentAvatarImageUrl", "currentAvatarThumbnailImageUrl" })
+        foreach (var field in new[] { "currentAvatarImageUrl", "currentAvatarThumbnailImageUrl", "iconUrl" })
         {
             var url = user[field]?.ToString() ?? "";
             var m = _fileIdRx.Match(url);
@@ -2479,7 +2512,7 @@ public class FriendsController
         var activeTheme = ResolveActiveTheme(appearance);
 
         user = storeSnapshot;
-        if (forceFresh || user == null || user["badges"] == null)
+        if (forceFresh || user == null || user["date_joined"] == null)
         {
             var fresh = await _core.Users.GetUserAsync(userId);
             if (fresh != null) user = fresh;
@@ -2538,7 +2571,7 @@ public class FriendsController
 
         if (mutualsTask.IsCompletedSuccessfully && (mutualsArr.Count > 0 || mutualsOptedOut))
             _core.TimeEngine.SaveUserMutualsCache(userId, Newtonsoft.Json.JsonConvert.SerializeObject(new { mutuals = mutualsArr, optedOut = mutualsOptedOut }));
-        var badgesArr = user["badges"] as JArray ?? new JArray();
+        var badgesArr = appearance?["badges"] as JArray ?? user["badges"] as JArray ?? new JArray();
 
         if (instanceType == "private" && inst?["canRequestInvite"]?.Value<bool>() == true)
             instanceType = "invite_plus";
@@ -2632,7 +2665,7 @@ public class FriendsController
             backgroundGradientBottom = appearance?["backgroundGradientBottom"]?.ToString() ?? "",
             status = user["status"]?.ToString() ?? "offline",
             statusDescription = user["statusDescription"]?.ToString() ?? "",
-            bio = user["bio"]?.ToString() ?? "",
+            bio = appearance?["bio"]?.ToString() ?? user["bio"]?.ToString() ?? "",
             lastLogin = ParseIsoDate(user["last_login"]),
             lastActivity = ParseIsoDate(user["last_activity"]),
             dateJoined = user["date_joined"]?.ToString() ?? "",
@@ -2645,6 +2678,8 @@ public class FriendsController
             avatarFileId = ExtractAvatarFileId(user),
             profilePicOverride = ImageCacheHelper.GetUserPicOverrideUrl(user["id"]?.ToString(), user["profilePicOverride"]?.ToString()),
             bannerUrl = ImageCacheHelper.GetUserBannerUrl(user["id"]?.ToString(), user["bannerUrl"]?.ToString()),
+            bannerType = appearance?["bannerType"]?.ToString() ?? user["bannerType"]?.ToString() ?? "",
+            bannerColor = appearance?["bannerColor"]?.ToString() ?? user["bannerColor"]?.ToString() ?? "",
             tags = user["tags"]?.ToObject<List<string>>() ?? new(),
             note = user["note"]?.ToString() ?? "",
             friendKey = user["friendKey"]?.ToString() ?? "",
@@ -2661,10 +2696,11 @@ public class FriendsController
             pronouns = user["pronouns"]?.ToString() ?? "",
             ageVerificationStatus = user["ageVerificationStatus"]?.ToString() ?? "",
             ageVerified = user["ageVerified"]?.Value<bool>() ?? false,
-            isEconomyCreator = user["isEconomyCreator"]?.Value<bool>() ?? false,
+            isEconomyCreator = appearance?["isEconomyCreator"]?.Value<bool>() ?? user["isEconomyCreator"]?.Value<bool>() ?? false,
             allowAvatarCopying = user["allowAvatarCopying"]?.Value<bool>() ?? false,
             representedGroup, userGroups, mutuals = mutualsList, mutualGroups = mutualGroupsList, mutualsOptedOut, userWorlds,
-            bioLinks = user["bioLinks"]?.ToObject<List<string>>() ?? new List<string>(),
+            bioLinks = appearance?["bioLinks"]?.ToObject<List<string>>() ?? user["bioLinks"]?.ToObject<List<string>>() ?? new List<string>(),
+            languages = appearance?["languages"]?.ToObject<List<string>>() ?? new List<string>(),
             discordId = user["discordId"]?.ToString() ?? "",
             isFavorited = _favoriteFriends.ContainsKey(userId),
             favFriendId = GetFavoriteFriendId(userId),
@@ -2672,6 +2708,7 @@ public class FriendsController
             badges,
             cachedAvatar = CachedAvatarToken(dbCache?.ProfileCurrentAvatar),
             rawJson = user,
+            rawProfileJson = appearance,
         };
     }
 
@@ -2729,20 +2766,21 @@ public class FriendsController
 
     // Join Friend
 
-    private (string dateJoined, string pronouns, int mutualFriends, int mutualGroups, string lastSeen) CachedFacts(string userId)
+    private (string dateJoined, string pronouns, int mutualFriends, int mutualGroups, string lastSeen, string lastLogin, string lastActivity, string bioLinks) CachedFacts(string userId)
     {
-        if (string.IsNullOrEmpty(userId)) return ("", "", 0, 0, "");
+        if (string.IsNullOrEmpty(userId)) return ("", "", 0, 0, "", "", "", "[]");
         var lastSeen = LastSeenTogether(userId);
         try
         {
             var c = _core.TimeEngine.GetUserProfileCache(userId);
-            if (c == null) return ("", "", 0, 0, lastSeen);
-            return (c.ProfileDateJoined, c.ProfilePronouns, MutualFriendCount(c.MutualsJson), JsonArrayCount(c.MutualGroupsJson), lastSeen);
+            if (c == null) return ("", "", 0, 0, lastSeen, "", "", "[]");
+            return (c.ProfileDateJoined, c.ProfilePronouns, MutualFriendCount(c.MutualsJson), JsonArrayCount(c.MutualGroupsJson), lastSeen,
+                c.ProfileLastLogin, c.ProfileLastActivity, c.ProfileBioLinks);
         }
-        catch { return ("", "", 0, 0, lastSeen); }
+        catch { return ("", "", 0, 0, lastSeen, "", "", "[]"); }
     }
 
-    private Dictionary<string, (string dateJoined, string pronouns, int mutualFriends, int mutualGroups)>? PrefetchFacts(IEnumerable<string> userIds)
+    private Dictionary<string, (string dateJoined, string pronouns, int mutualFriends, int mutualGroups, string lastLogin, string lastActivity, string bioLinks)>? PrefetchFacts(IEnumerable<string> userIds)
     {
         try
         {
@@ -2752,15 +2790,15 @@ public class FriendsController
         catch { return null; }
     }
 
-    private (string dateJoined, string pronouns, int mutualFriends, int mutualGroups, string lastSeen) FactsFrom(
-        Dictionary<string, (string dateJoined, string pronouns, int mutualFriends, int mutualGroups)>? map, string userId)
+    private (string dateJoined, string pronouns, int mutualFriends, int mutualGroups, string lastSeen, string lastLogin, string lastActivity, string bioLinks) FactsFrom(
+        Dictionary<string, (string dateJoined, string pronouns, int mutualFriends, int mutualGroups, string lastLogin, string lastActivity, string bioLinks)>? map, string userId)
     {
-        if (string.IsNullOrEmpty(userId)) return ("", "", 0, 0, "");
+        if (string.IsNullOrEmpty(userId)) return ("", "", 0, 0, "", "", "", "[]");
         if (map == null) return CachedFacts(userId);
         var lastSeen = LastSeenTogether(userId);
         return map.TryGetValue(userId, out var f)
-            ? (f.dateJoined, f.pronouns, f.mutualFriends, f.mutualGroups, lastSeen)
-            : ("", "", 0, 0, lastSeen);
+            ? (f.dateJoined, f.pronouns, f.mutualFriends, f.mutualGroups, lastSeen, f.lastLogin, f.lastActivity, f.bioLinks)
+            : ("", "", 0, 0, lastSeen, "", "", "[]");
     }
 
     private readonly object _lastSeenLock = new();
@@ -2862,6 +2900,9 @@ public class FriendsController
             mutualFriends = facts.mutualFriends,
             mutualGroups = facts.mutualGroups,
             lastSeen = facts.lastSeen,
+            lastLogin = facts.lastLogin,
+            lastActivity = facts.lastActivity,
+            bioLinks = TryParseJArray(facts.bioLinks) ?? new JArray(),
         });
     }
 
@@ -2869,6 +2910,26 @@ public class FriendsController
     {
         var live = f["pronouns"]?.ToString() ?? "";
         return string.IsNullOrEmpty(live) ? cached : live;
+    }
+
+    private string CachedBio(string userId)
+    {
+        if (string.IsNullOrEmpty(userId)) return "";
+        try { return _core.TimeEngine.GetUserProfileCache(userId)?.ProfileBio ?? ""; }
+        catch { return ""; }
+    }
+
+    private static string PickFact(JObject f, string key, string cached)
+    {
+        var live = f[key]?.ToString() ?? "";
+        return string.IsNullOrEmpty(live) ? cached : live;
+    }
+
+    private static List<string> PickBioLinks(JObject f, string cached)
+    {
+        var live = f["bioLinks"]?.ToObject<List<string>>();
+        if (live is { Count: > 0 }) return live;
+        return TryParseJArray(cached)?.ToObject<List<string>>() ?? new List<string>();
     }
 
     private Task HandleJoinFriendAsync(string joinLoc)

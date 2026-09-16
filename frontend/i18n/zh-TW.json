@@ -2619,7 +2619,7 @@
   "settings.experimental.multitask.warning": "此功能仍處於實驗階段，使用時可能會遇到錯誤。",
   "settings.multitasking.newwindow.label": "在新視窗中開啟",
   "settings.multitasking.newwindow.desc": "在多工模式下開啟的視窗（SHIFT + 滑鼠左鍵）會顯示為獨立的桌面視窗，而不是應用程式內的浮動視窗。這些視窗共用應用程式的單一瀏覽器執行個體，不會載入額外的 WebView。僅限 Windows。重新啟動 VRCNext 後生效。",
-  "wm.limit_reached": "已達 12 個視窗的上限",
+  "wm.limit_reached": "已達 8 個視窗的上限",
   "wm.already_open": "{name} 已開啟",
   "settings.search_debounce.ms_15": "15 ms",
   "settings.search_debounce.ms_50": "50 ms",

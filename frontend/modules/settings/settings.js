@@ -463,7 +463,7 @@ function sndPopulateSelects() {
         for (const file of lib) {
             const o = document.createElement('option');
             o.value = file;
-            o.textContent = file.replace(/\.wav$/i, '');
+            o.textContent = file.replace(/\.(wav|ogg)$/i, '');
             el.appendChild(o);
         }
         el.value = prev;
@@ -621,7 +621,7 @@ function loadSettingsToUI(s) {
     for (const [slot, id] of Object.entries(SND_SLOT_IDS)) {
         const cfg = SOUND_SLOTS[slot];
         const key = cfg.fileKey.charAt(0).toUpperCase() + cfg.fileKey.slice(1);
-        const file = s[key] ?? s[cfg.fileKey] ?? '';
+        const file = normalizeSoundFile(s[key] ?? s[cfg.fileKey] ?? '');
         settings[cfg.fileKey] = file;
         const el = document.getElementById(id);
         if (el) { el.value = file; el._vnRefresh?.(); }

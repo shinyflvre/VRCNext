@@ -517,7 +517,7 @@
     <div class="modal-overlay" id="modalFtGpsDetail" style="display:none;" onclick="if(event.target===this)closeFtGpsDetail()"></div>
 
     <!-- Universal Detail Modal (groups / events / world search) -->
-    <div class="modal-overlay" id="modalDetail" style="display:none;z-index:10001;" onclick="if(event.target===this){this.style.display='none';navClear();}">
+    <div class="modal-overlay" id="modalDetail" style="display:none;z-index:10001;" onclick="if(event.target===this){this.style.display='none';navClear();releaseClosedModals();}">
         <div class="modal-box wide" style="position:relative;padding:0;">
             <div class="myp-breadcrumb-bar" id="dt_navBar" style="display:none;">
                 <div class="myp-breadcrumbs" id="dt_navCrumbs">
@@ -533,7 +533,7 @@
         </div>
     </div>
 
-    <div class="modal-overlay" id="modalDetail2" style="display:none;z-index:10003;" onclick="if(event.target===this){this.style.display='none';}">
+    <div class="modal-overlay" id="modalDetail2" style="display:none;z-index:10003;" onclick="if(event.target===this){this.style.display='none';releaseClosedModals();}">
         <div class="modal-box wide" style="position:relative;padding:0;">
             <div class="modal-box-body" id="detailModalContent2"></div>
         </div>

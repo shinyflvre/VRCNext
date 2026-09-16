@@ -128,7 +128,7 @@ function renderVrcProfile(u) {
     if (_myp && _myp.style.display !== 'none') renderMyProfileContent();
     const img = u.image || '';
     const imgTag = img
-        ? `<img class="vrc-avatar" src="${img}" onerror="this.style.display='none'">`
+        ? `<img class="vrc-avatar" src="${imgThumb(img, 96)}" onerror="this.style.display='none'">`
         : `<div class="vrc-avatar" style="display:flex;align-items:center;justify-content:center;font-size:calc(13px + var(--fs-off, 0px));font-weight:700;color:var(--tx0)">${esc((u.displayName || '?')[0])}</div>`;
     const ownStatusCls = statusDotClass(u.status);
     const ownDotShape = u.vrcRunning ? 'vrc-status-dot' : 'vrc-status-ring';
@@ -155,7 +155,7 @@ function renderVrcFriends(friends, counts) {
     _updateFriendTabCounts();
 
     // Lazy-load group instances once on first render
-    if (_sidebarGroupInstances === null && !window._groupInstInFlight) {
+    if (_sidebarGroupInstances === null && currentVrcUser && !window._groupInstInFlight) {
         window._groupInstInFlight = true;
         sendToCS({ action: 'vrcGetDashGroupInstances' });
     }
@@ -365,7 +365,8 @@ function renderVrcFriends(friends, counts) {
 }
 
 function onSidebarGroupInstances(instances) {
-    _sidebarGroupInstances = instances || [];
+    if (instances && instances.length) _sidebarGroupInstances = instances;
+    else if (_sidebarGroupInstances !== null) _sidebarGroupInstances = [];
     document.getElementById('vrcFriendRefreshBtn')?.classList.remove('spinning');
     _updateFriendTabCounts();
     if (friendsSidebarTab === 'groups' || (vrcFriendsData && vrcFriendsData.length)) renderVrcFriends(vrcFriendsData);

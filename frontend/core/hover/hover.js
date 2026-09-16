@@ -1,14 +1,16 @@
-(function () {
-    const tip = document.createElement('div');
+function vnTooltipAttach(doc) {
+    if (!doc || !doc.body || doc.__vnTooltip) return doc && doc.__vnTooltip;
+    const win = doc.defaultView || window;
+    const tip = doc.createElement('div');
     tip.id = 'vnTip';
     tip.className = 'vn-tooltip';
-    document.body.appendChild(tip);
+    doc.body.appendChild(tip);
 
     let _active = false;
 
     function show(text, rect, placement) {
         tip.textContent = '';
-        const inner = document.createElement('span');
+        const inner = doc.createElement('span');
         inner.className = 'vn-tooltip-inner';
         inner.textContent = text;
         tip.appendChild(inner);
@@ -25,7 +27,7 @@
     function position(rect, placement) {
         tip.style.left = '-9999px';
         tip.style.top  = '-9999px';
-        requestAnimationFrame(() => {
+        win.requestAnimationFrame(() => {
             const tw = tip.offsetWidth;
             const th = tip.offsetHeight;
             const rLeft   = rect.left;
@@ -34,8 +36,8 @@
             const rHeight = rect.height;
             const rRight  = rect.right;
             const rBottom = rect.bottom;
-            const vw = window.innerWidth;
-            const vh = window.innerHeight;
+            const vw = win.innerWidth;
+            const vh = win.innerHeight;
             let left, top;
             if (placement === 'right') {
                 left = rRight + 7;
@@ -58,7 +60,7 @@
         return (typeof settings === 'undefined') || settings.navSidebarHoverText !== false;
     }
 
-    document.addEventListener('mouseover', e => {
+    doc.addEventListener('mouseover', e => {
         const el = e.target.closest('[data-tooltip], [title]');
         if (!el) {
             const navBtn = e.target.closest('#navEl .nav-btn');
@@ -85,7 +87,7 @@
         show(text, el.getBoundingClientRect());
     });
 
-    document.addEventListener('mouseleave', e => {
+    doc.addEventListener('mouseleave', e => {
         const el = e.target;
         if (el._vnTitle) {
             el.setAttribute('title', el._vnTitle);
@@ -95,5 +97,9 @@
         hide();
     }, true);
 
-    window.vnTooltip = { show, hide };
-})();
+    const api = { show, hide };
+    doc.__vnTooltip = api;
+    return api;
+}
+
+window.vnTooltip = vnTooltipAttach(document);

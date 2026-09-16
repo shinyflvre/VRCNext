@@ -1241,9 +1241,9 @@ public class UnifiedTimeEngine : IDisposable
         }
     }
 
-    public Dictionary<string, (string dateJoined, string pronouns, int mutualFriends, int mutualGroups)>? GetUserFactsBatch(IReadOnlyList<string> userIds)
+    public Dictionary<string, (string dateJoined, string pronouns, int mutualFriends, int mutualGroups, string lastLogin, string lastActivity, string bioLinks)>? GetUserFactsBatch(IReadOnlyList<string> userIds)
     {
-        var result = new Dictionary<string, (string, string, int, int)>();
+        var result = new Dictionary<string, (string, string, int, int, string, string, string)>();
         if (userIds.Count == 0) return result;
         lock (_lock)
         {
@@ -1259,7 +1259,8 @@ public class UnifiedTimeEngine : IDisposable
                     cmd.CommandText = $@"SELECT user_id, profile_date_joined, profile_pronouns,
                         CASE WHEN json_valid(mutuals) AND COALESCE(json_extract(mutuals,'$.optedOut'),0) != 1
                              THEN COALESCE(json_array_length(mutuals,'$.mutuals'),0) ELSE 0 END,
-                        CASE WHEN json_valid(mutual_groups) THEN COALESCE(json_array_length(mutual_groups),0) ELSE 0 END
+                        CASE WHEN json_valid(mutual_groups) THEN COALESCE(json_array_length(mutual_groups),0) ELSE 0 END,
+                        profile_last_login, profile_last_activity, profile_bio_links
                         FROM user_tracking
                         WHERE COALESCE(profile_cached_at,'') != '' AND user_id IN ({ps})";
                     for (int i = 0; i < slice.Count; i++) cmd.Parameters.AddWithValue($"$u{i}", slice[i]);
@@ -1270,7 +1271,10 @@ public class UnifiedTimeEngine : IDisposable
                             r.IsDBNull(1) ? "" : r.GetString(1),
                             r.IsDBNull(2) ? "" : r.GetString(2),
                             r.IsDBNull(3) ? 0 : (int)r.GetInt64(3),
-                            r.IsDBNull(4) ? 0 : (int)r.GetInt64(4));
+                            r.IsDBNull(4) ? 0 : (int)r.GetInt64(4),
+                            r.IsDBNull(5) ? "" : r.GetString(5),
+                            r.IsDBNull(6) ? "" : r.GetString(6),
+                            r.IsDBNull(7) ? "[]" : r.GetString(7));
                     }
                 }
             }

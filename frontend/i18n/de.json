@@ -2597,7 +2597,7 @@
   "settings.experimental.multitask.warning": "Dies ist eine experimentelle Funktion, rechne mit Fehlern.",
   "settings.multitasking.newwindow.label": "In neuem Fenster öffnen",
   "settings.multitasking.newwindow.desc": "Fenster, die im Multi-Task-Modus geöffnet werden (SHIFT + Linke Maustaste), erscheinen als eigene Desktop-Fenster statt als schwebende Fenster in der App. Die Fenster teilen sich die eine Browser-Instanz der App, es wird keine weitere WebView geladen. Nur Windows. Wird nach einem Neustart von VRCNext wirksam.",
-  "wm.limit_reached": "Maximal 12 Fenster erreicht",
+  "wm.limit_reached": "Maximal 8 Fenster erreicht",
   "wm.already_open": "{name} ist bereits geöffnet",
   "settings.search_debounce.ms_15": "15 ms",
   "settings.search_debounce.ms_50": "50 ms",

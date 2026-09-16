@@ -176,6 +176,7 @@ window.external.receiveMessage(rawMsg => {
             case 'regBackupDone':     handleRegBackupDone(payload); break;
             case 'log': addLog(payload.msg, payload.color); break;
             case 'consoleOutput': addLog(payload.text, payload.color); break;
+            case 'vrcMyProfile': handleMyProfileFields(payload); break;
             case 'debugImgCacheState':
                 if (typeof setImgCacheDebug === 'function') setImgCacheDebug(payload.enabled);
                 break;
@@ -1061,7 +1062,7 @@ case 'vrcNews':
                             const color = oldIcon.style.color;
                             const av = document.createElement('div');
                             av.className = 'nc-avatar';
-                            av.style.backgroundImage = `url('${cssUrl(payload.image)}')`;
+                            av.style.backgroundImage = `url('${cssUrl(imgThumb(payload.image, 64))}')`;
                             av.innerHTML = `<span class="msi nc-avatar-badge" style="color:${color};">${icon}</span>`;
                             oldIcon.replaceWith(av);
                         }

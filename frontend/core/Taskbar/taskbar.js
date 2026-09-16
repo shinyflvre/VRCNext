@@ -213,7 +213,7 @@ function updateTbAppUserHeader() {
     if (!av || !nm) return;
     var u = (typeof currentVrcUser !== 'undefined') ? currentVrcUser : null;
     if (u) {
-        av.style.backgroundImage = u.image ? "url('" + u.image.replace(/'/g, "\\'") + "')" : '';
+        av.style.backgroundImage = u.image ? "url('" + imgThumb(u.image, 64).replace(/'/g, "\\'") + "')" : '';
         nm.textContent = u.displayName || '';
     } else {
         av.style.backgroundImage = '';
