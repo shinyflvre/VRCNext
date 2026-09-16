@@ -1373,6 +1373,7 @@ public class AuthController
             tags = user["tags"]?.ToObject<List<string>>() ?? new List<string>(),
             bannerUrl             = ImageCacheHelper.GetUserBannerUrl(user["id"]?.ToString(), user["bannerUrl"]?.ToString()),
             bannerType            = user["bannerType"]?.ToString() ?? "",
+            bannerColor           = user["bannerColor"]?.ToString() ?? "",
             profilePicOverride    = ImageCacheHelper.GetUserPicOverrideUrl(user["id"]?.ToString(), user["profilePicOverride"]?.ToString()),
             currentAvatarImageUrl = ImageCacheHelper.GetAvatarUrl(user["currentAvatar"]?.ToString(), user["currentAvatarImageUrl"]?.ToString()),
             dateJoined        = user["date_joined"]?.ToString() ?? "",
@@ -1421,6 +1422,8 @@ public class AuthController
                     backgroundTextureUrl     = ProfileBackgroundHelper.UrlFor(texId),
                     backgroundGradientTop    = selfProfile["backgroundGradientTop"]?.ToString() ?? "",
                     backgroundGradientBottom = selfProfile["backgroundGradientBottom"]?.ToString() ?? "",
+                    bannerType               = selfProfile["bannerType"]?.ToString() ?? "",
+                    bannerColor              = selfProfile["bannerColor"]?.ToString() ?? "",
                 }));
                 var badges = new List<object>();
                 foreach (var b in selfProfile["badges"] as JArray ?? new JArray())

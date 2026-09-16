@@ -2127,8 +2127,8 @@ public class FriendsController
                 ["avatarFileId"]          = liveFileId,
                 ["profilePicOverride"]    = !string.IsNullOrEmpty(livePicOverride) ? ImageCacheHelper.GetUserPicOverrideUrl(userId, livePicOverride) : cachedEntry.ProfilePicOverride,
                 ["bannerUrl"]             = !string.IsNullOrEmpty(liveBannerUrl) ? ImageCacheHelper.GetUserBannerUrl(userId, liveBannerUrl) : cachedEntry.ProfileBannerUrl,
-                ["bannerType"]            = live?["bannerType"]?.ToString() ?? "",
-                ["bannerColor"]           = live?["bannerColor"]?.ToString() ?? "",
+                ["bannerType"]            = live?["bannerType"]?.ToString() ?? cachedEntry.ProfileBannerType,
+                ["bannerColor"]           = live?["bannerColor"]?.ToString() ?? cachedEntry.ProfileBannerColor,
                 ["languages"]             = new JArray(),
                 ["tags"]                  = liveTags ?? TryParseJArray(cachedEntry.ProfileTags) ?? new JArray(),
                 ["note"]                  = cachedEntry.ProfileNote,
@@ -2529,7 +2529,7 @@ public class FriendsController
         var activeTheme = ResolveActiveTheme(appearance);
 
         user = storeSnapshot;
-        if (forceFresh || user == null || user["date_joined"] == null)
+        if (forceFresh || user == null || user["date_joined"] == null || user["note"] == null)
         {
             var fresh = await _core.Users.GetUserAsync(userId);
             if (fresh != null) user = fresh;
@@ -2600,7 +2600,7 @@ public class FriendsController
         string worldThumb = ImageCacheHelper.GetWorldUrl(worldId, instWorld?["imageUrl"]?.ToString() ?? instWorld?["thumbnailImageUrl"]?.ToString());
         int worldCapacity = instWorld?["capacity"]?.Value<int>() ?? inst?["capacity"]?.Value<int>() ?? 0;
         int userCount = inst?["n_users"]?.Value<int>() ?? inst?["userCount"]?.Value<int>() ?? 0;
-        string userNote = user["note"]?.ToString() ?? "";
+        string userNote = user["note"]?.ToString() ?? dbCache?.ProfileUserNote ?? "";
 
         bool canJoin = instanceType is "public" or "friends" or "friends+" or "hidden"
             or "group-public" or "group-plus" or "group-members" or "group";
@@ -2685,7 +2685,7 @@ public class FriendsController
             bannerType = appearance?["bannerType"]?.ToString() ?? user["bannerType"]?.ToString() ?? "",
             bannerColor = appearance?["bannerColor"]?.ToString() ?? user["bannerColor"]?.ToString() ?? "",
             tags = user["tags"]?.ToObject<List<string>>() ?? new(),
-            note = user["note"]?.ToString() ?? "",
+            note = user["note"]?.ToString() ?? dbCache?.ProfileNote ?? "",
             friendKey = user["friendKey"]?.ToString() ?? "",
             travelingToLocation = user["travelingToLocation"]?.ToString() ?? "",
             state = user["state"]?.ToString() ?? "",

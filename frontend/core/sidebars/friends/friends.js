@@ -1,4 +1,5 @@
 ﻿let _sidebarGroupInstances = null;
+let _sidebarGroupInstRetried = false;
 
 const RVF_THROTTLE_MS = 300;
 let _rvfTimer = null;
@@ -126,6 +127,7 @@ function renderVrcProfile(u) {
         if (!(u.bioLinks && u.bioLinks.length) && currentVrcUser.bioLinks) u.bioLinks = currentVrcUser.bioLinks;
         if (!(u.languages && u.languages.length) && currentVrcUser.languages) u.languages = currentVrcUser.languages;
         if (!(u.badges && u.badges.length) && currentVrcUser.badges) u.badges = currentVrcUser.badges;
+        if (!u.bannerColor && currentVrcUser.bannerColor && String(u.bannerType || '') === 'color') u.bannerColor = currentVrcUser.bannerColor;
     }
     currentVrcUser = u;
     if (!window._rewindChecked) { window._rewindChecked = true; setTimeout(() => sendToCS({ action: 'checkRewind' }), 4000); }
@@ -372,7 +374,17 @@ function renderVrcFriends(friends, counts) {
 
 function onSidebarGroupInstances(instances) {
     if (instances && instances.length) _sidebarGroupInstances = instances;
-    else if (_sidebarGroupInstances !== null) _sidebarGroupInstances = [];
+    else {
+        _sidebarGroupInstances = [];
+        if (!_sidebarGroupInstRetried) {
+            _sidebarGroupInstRetried = true;
+            setTimeout(() => {
+                if (!currentVrcUser || window._groupInstInFlight) return;
+                window._groupInstInFlight = true;
+                sendToCS({ action: 'vrcGetDashGroupInstances' });
+            }, 10000);
+        }
+    }
     document.getElementById('vrcFriendRefreshBtn')?.classList.remove('spinning');
     _updateFriendTabCounts();
     if (friendsSidebarTab === 'groups' || (vrcFriendsData && vrcFriendsData.length)) renderVrcFriends(vrcFriendsData);

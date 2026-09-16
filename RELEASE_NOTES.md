@@ -48,6 +48,10 @@ Maybe VRChat staff will consider adding back bio events in their websocket to tr
   * Fixed the friend hover card showing no banner for friends who use a color banner.
   * Fixed **Optimize Database** erasing the bio links of your friends. Since the VRChat API change they are only kept in the local cache. The bio link count shown before optimizing now matches what actually gets cleaned.
   * Fixed badges not showing when a profile was opened from the local cache.
+  * Fixed the VRChat note of a friend showing as empty, and being cleared from the local cache, after that friend sent a live update.
+  * Fixed the friends sidebar requesting group instances over and over when none of your groups had an active instance.
+  * Fixed your own color banner not showing in My Profile and the Customize Profile previews.
+  * Fixed color banners missing when a profile was opened from the local cache.
   * Fixed a deleted biography, bio links or languages briefly reappearing in My Profile right after saving.
   * Fixed the Action Flow conditions **has bio text** and **own bio text** failing although the text matched. Biographies of friends were missing from the friends list, and your own biography was briefly empty after every profile refresh.
   * Fixed Action Flow instance info webhooks showing your avatar picture instead of your profile icon, or no icon at all for a friend whose picture was not cached yet.

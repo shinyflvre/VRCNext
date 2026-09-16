@@ -167,7 +167,7 @@ public static class SQLiteOptimizing
                 profile_world_name='', profile_world_thumb='', profile_instance_type='',
                 profile_user_count=0, profile_world_capacity=0,
                 profile_can_join=0, profile_can_request_invite=0, profile_can_invite=0,
-                profile_current_avatar_id='', profile_avatar_file_id='', profile_pic_override='', profile_banner_url='',
+                profile_current_avatar_id='', profile_avatar_file_id='', profile_pic_override='', profile_banner_url='', profile_banner_type='', profile_banner_color='',
                 profile_tags='[]', profile_note='', profile_friend_key='', profile_traveling_to='',
                 profile_state='', profile_last_platform='', profile_platform='', profile_user_note='',
                 profile_in_same_instance=0, profile_pronouns='', profile_age_verification='',

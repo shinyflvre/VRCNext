@@ -178,7 +178,7 @@ function _pdAfterRender(u) {
     const mini = document.getElementById('pdMiniCard');
     if (mini && typeof fpRenderPreviewInto === 'function') {
         const f = Object.assign({}, u, { presence: u.state === 'offline' ? 'offline' : (u.state === 'active' ? 'web' : 'game'), platform: u.platform || u.lastPlatform || '' });
-        const extra = Object.assign({}, u, { banner: u.bannerUrl || '', bio: u.bio || '' });
+        const extra = Object.assign({}, u, { banner: _mypBannerSrc(u), bannerColor: _mypBannerColor(u), bio: u.bio || '' });
         fpRenderPreviewInto(mini, f, extra);
         if (typeof applyProfileBg === 'function') applyProfileBg(mini, extra, undefined, true);
         if (typeof applyProfileTheme === 'function') applyProfileTheme(mini, extra, true);
@@ -261,7 +261,7 @@ function _pdVrcOfficialHtml(u) {
     const frame = (typeof iconFrameHtml === 'function') ? iconFrameHtml(u.iconFrameUrl, true) : '';
     const effect = (typeof profileEffectHtml === 'function') ? profileEffectHtml(u.profileEffectUrl) : '';
     return `<div class="pdo-card" style="${themeVars}">
-        <div class="pdo-banner">${bannerSrc ? `<img src="${esc(bannerSrc)}" alt="" onerror="this.style.display='none'">` : ''}${effect}</div>
+        <div class="pdo-banner"${_mypBannerColor(u) ? ` style="background:${_mypBannerColor(u)};"` : ''}>${bannerSrc ? `<img src="${esc(bannerSrc)}" alt="" onerror="this.style.display='none'">` : ''}${effect}</div>
         <div class="pdo-head">
             <div class="pdo-icon-wrap"><div class="pdo-icon">${icon ? `<img src="${esc(imgThumb(icon, 256))}" alt="" onerror="this.style.display='none'">` : ''}</div>${frame}</div>
             <div class="pdo-status"><span class="pdo-status-ring" style="border-color:${statusColor};"></span><span>${esc(u.statusDescription || getStatusText(u.status, ''))}</span></div>
@@ -362,8 +362,9 @@ function renderMyProfileContent() {
 
     // Banner
     const bannerSrc = _mypBannerSrc(u);
+    const _mypBannerBg = _mypBannerColor(u);
     const _mypEffect = (typeof profileEffectHtml === 'function') ? profileEffectHtml(u.profileEffectUrl) : '';
-    const bannerCompactHtml = `<div class="fd-left-banner" id="myp-banner-slot">${bannerSrc ? `<div class="fd-banner-fade"></div>` : ''}${_mypEffect}<span class="vrcn-keybind" style="position:absolute;top:8px;right:8px;z-index:3;border-radius:5px;">CTRL P</span></div>`;
+    const bannerCompactHtml = `<div class="fd-left-banner" id="myp-banner-slot"${_mypBannerBg ? ` style="background:${_mypBannerBg};"` : ''}>${(bannerSrc || _mypBannerBg) ? `<div class="fd-banner-fade"></div>` : ''}${_mypEffect}<span class="vrcn-keybind" style="position:absolute;top:8px;right:8px;z-index:3;border-radius:5px;">CTRL P</span></div>`;
     const mypHeaderActions = renderModalActions([
         { icon: 'edit', title: changeBannerTitle, onclick: `openImagePicker('profile-banner')` },
         { icon: 'filter_frames', title: t('profiles.deco.title', 'Customize Profile'), onclick: `openProfileDecoPicker()` },
@@ -1418,7 +1419,11 @@ function onProfileBackgroundUpdated(data) {
 
 function onProfileBannerUpdated(data) {
     if (!data?.success) { showToast(false, t('profiles.banner.failed', 'Could not update banner')); return; }
-    if (currentVrcUser) currentVrcUser.bannerUrl = data.bannerUrl || '';
+    if (currentVrcUser) {
+        currentVrcUser.bannerUrl = data.bannerUrl || '';
+        currentVrcUser.bannerType = 'customImage';
+        currentVrcUser.bannerColor = '';
+    }
     showToast(true, t('profiles.banner.updated', 'Banner updated!'));
     if (typeof renderMyProfileContent === 'function') renderMyProfileContent();
 }

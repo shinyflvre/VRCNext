@@ -1102,6 +1102,8 @@ public class UnifiedTimeEngine : IDisposable
         public string ProfileAvatarFileId     { get; set; } = "";
         public string ProfilePicOverride      { get; set; } = "";
         public string ProfileBannerUrl        { get; set; } = "";
+        public string ProfileBannerType       { get; set; } = "";
+        public string ProfileBannerColor      { get; set; } = "";
         public string ProfileTags             { get; set; } = "[]";
         public string ProfileNote             { get; set; } = "";
         public string ProfileFriendKey        { get; set; } = "";
@@ -1165,7 +1167,8 @@ public class UnifiedTimeEngine : IDisposable
                     mutuals, mutuals_cached_at, mutual_groups, mutual_groups_cached_at,
                     profile_current_avatar, profile_icon_frame, profile_nameplate, profile_effect,
                     profile_bg_type, profile_bg_texture, profile_bg_grad_top, profile_bg_grad_bottom,
-                    profile_theme_button, profile_theme_icon, profile_theme_subtext, profile_economy_creator
+                    profile_theme_button, profile_theme_icon, profile_theme_subtext, profile_economy_creator,
+                    profile_banner_type, profile_banner_color
                     FROM user_tracking WHERE user_id=$id";
                 cmd.Parameters.AddWithValue("$id", userId);
                 using var r = cmd.ExecuteReader();
@@ -1199,6 +1202,8 @@ public class UnifiedTimeEngine : IDisposable
                     ProfileAvatarFileId    = S("profile_avatar_file_id"),
                     ProfilePicOverride     = S("profile_pic_override"),
                     ProfileBannerUrl       = S("profile_banner_url"),
+                    ProfileBannerType      = S("profile_banner_type"),
+                    ProfileBannerColor     = S("profile_banner_color"),
                     ProfileTags            = SA("profile_tags", "[]"),
                     ProfileNote            = S("profile_note"),
                     ProfileFriendKey       = S("profile_friend_key"),
@@ -1335,6 +1340,8 @@ public class UnifiedTimeEngine : IDisposable
                     profile_can_request_invite=$cri, profile_can_invite=$ci,
                     profile_current_avatar_id=$caid, profile_avatar_file_id=$afid, profile_pic_override=$po,
                     profile_banner_url=$bnu,
+                    profile_banner_type   = CASE WHEN $btSet = 1 THEN $bt ELSE profile_banner_type   END,
+                    profile_banner_color  = CASE WHEN $bcSet = 1 THEN $bc ELSE profile_banner_color  END,
                     profile_tags=$tags, profile_note=$note, profile_friend_key=$fk, profile_traveling_to=$tt,
                     profile_state=$state, profile_last_platform=$lp, profile_platform=$pl, profile_user_note=$un,
                     profile_in_same_instance=$isi,
@@ -1377,6 +1384,10 @@ public class UnifiedTimeEngine : IDisposable
                 cmd.Parameters.AddWithValue("$afid",  p["avatarFileId"]?.ToString() ?? "");
                 cmd.Parameters.AddWithValue("$po",    p["profilePicOverride"]?.ToString() ?? "");
                 cmd.Parameters.AddWithValue("$bnu",   p["bannerUrl"]?.ToString() ?? "");
+                cmd.Parameters.AddWithValue("$bt",    p["bannerType"]?.ToString() ?? "");
+                cmd.Parameters.AddWithValue("$btSet", p["bannerType"] != null ? 1 : 0);
+                cmd.Parameters.AddWithValue("$bc",    p["bannerColor"]?.ToString() ?? "");
+                cmd.Parameters.AddWithValue("$bcSet", p["bannerColor"] != null ? 1 : 0);
                 cmd.Parameters.AddWithValue("$tags",  p["tags"]?.ToString() ?? "[]");
                 cmd.Parameters.AddWithValue("$note",  p["note"]?.ToString() ?? "");
                 cmd.Parameters.AddWithValue("$fk",    p["friendKey"]?.ToString() ?? "");
@@ -2337,6 +2348,8 @@ public class UnifiedTimeEngine : IDisposable
             "profile_theme_icon          TEXT    NOT NULL DEFAULT ''",
             "profile_theme_subtext       TEXT    NOT NULL DEFAULT ''",
             "profile_economy_creator     INTEGER NOT NULL DEFAULT 0",
+            "profile_banner_type         TEXT    NOT NULL DEFAULT ''",
+            "profile_banner_color        TEXT    NOT NULL DEFAULT ''",
         })
         {
             try
