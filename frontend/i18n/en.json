@@ -268,6 +268,7 @@
   "timeline.filters.online": "Online",
   "timeline.filters.offline": "Offline",
   "timeline.filters.bio": "Bio",
+  "timeline.filters.bio_deprecated": "Deprecated due to VRChat API changes. Bio changes of friends can no longer be tracked, only past entries are shown.",
   "timeline.filters.friended": "Friended",
   "timeline.filters.unfriended": "Unfriended",
   "timeline.empty.initial": "No timeline events yet. VRChat activity will appear here.",

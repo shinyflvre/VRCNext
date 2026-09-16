@@ -273,6 +273,7 @@
   "timeline.filters.online": "Онлайн",
   "timeline.filters.offline": "Офлайн",
   "timeline.filters.bio": "Био",
+  "timeline.filters.bio_deprecated": "Устарело из-за изменений API VRChat. Изменения описания друзей больше не отслеживаются, показываются только прежние записи.",
   "timeline.filters.friended": "Добавлен в друзья",
   "timeline.filters.unfriended": "Удалён из друзей",
   "timeline.empty.initial": "Пока пусто",

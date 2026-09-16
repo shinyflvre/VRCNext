@@ -268,6 +268,7 @@
   "timeline.filters.online": "온라인",
   "timeline.filters.offline": "오프라인",
   "timeline.filters.bio": "자기소개",
+  "timeline.filters.bio_deprecated": "VRChat API 변경으로 더 이상 사용되지 않습니다. 친구의 자기소개 변경은 더 이상 기록할 수 없으며, 이전 항목만 표시됩니다.",
   "timeline.filters.friended": "친구 추가",
   "timeline.filters.unfriended": "친구 삭제",
   "timeline.empty.initial": "아직 타임라인 이벤트가 없습니다. VRChat 활동이 이곳에 표시됩니다.",

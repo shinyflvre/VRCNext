@@ -270,6 +270,7 @@
   "timeline.filters.online": "オンライン",
   "timeline.filters.offline": "オフライン",
   "timeline.filters.bio": "自己紹介",
+  "timeline.filters.bio_deprecated": "VRChat APIの変更により非推奨です。フレンドの自己紹介の変更は記録できなくなりました。過去のエントリのみ表示されます。",
   "timeline.filters.friended": "フレンド追加",
   "timeline.filters.unfriended": "フレンド解除",
   "timeline.empty.initial": "タイムラインイベントはまだありません。VRChatのアクティビティがここに表示されます。",

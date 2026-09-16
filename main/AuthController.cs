@@ -303,7 +303,7 @@ public class AuthController
                     Invoke(() => _core.SendToJS("dbAnalyzeProgress", new { running = true }));
                     try
                     {
-                        var result = SQLiteOptimizing.Analyze();
+                        var result = SQLiteOptimizing.Analyze(_friends.GetStoreSnapshot().Select(f => f["id"]?.ToString() ?? ""));
                         Invoke(() => _core.SendToJS("dbAnalyzeResult", new
                         {
                             totalRows          = result.TotalRows,
@@ -357,7 +357,7 @@ public class AuthController
                     Invoke(() => _core.SendToJS("dbOptimizeProgress", new { phase = "optimize" }));
                     try
                     {
-                        var (userCleaned, feCleaned, notifCleaned, epCleaned) = SQLiteOptimizing.Optimize();
+                        var (userCleaned, feCleaned, notifCleaned, epCleaned) = SQLiteOptimizing.Optimize(_friends.GetStoreSnapshot().Select(f => f["id"]?.ToString() ?? ""));
                         Invoke(() => _core.SendToJS("dbOptimizeProgress", new { phase = "vacuum" }));
                         SQLiteOptimizing.Vacuum();
                         Invoke(() => _core.SendToJS("dbOptimizeDone", new { userCleaned, feCleaned, notifCleaned, epCleaned }));

@@ -270,6 +270,7 @@
   "timeline.filters.online": "Online",
   "timeline.filters.offline": "Offline",
   "timeline.filters.bio": "Bio",
+  "timeline.filters.bio_deprecated": "Veraltet wegen Änderungen an der VRChat API. Bio-Änderungen von Freunden können nicht mehr erfasst werden, es werden nur bisherige Einträge angezeigt.",
   "timeline.filters.friended": "Befreundet",
   "timeline.filters.unfriended": "Entfreundet",
   "timeline.empty.initial": "Noch keine Timeline-Eintraege. Deine VRChat-Aktivitaet erscheint hier.",

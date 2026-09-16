@@ -1,9 +1,4 @@
-﻿# **2026.60.4**
-
-PLEASE READ!!! - TRACKING BIO IS GONE!
-But you can do something to bring it back!
-Upvote my canny here: https://feedback.vrchat.com/open-beta/p/api-bring-back-bio-websocket-events
-Maybe VRChat staff will consider adding back bio events in their websocket to track users bio changes.
+﻿# **2026.60.5**
 
 ### **Changes**
 
@@ -31,6 +26,7 @@ Maybe VRChat staff will consider adding back bio events in their websocket to tr
   * Languages now use VRChat's own language list instead of profile tags.
   * The Json tab in a user profile now shows both responses, the one from `/users/` and the one from `/profile/`, since VRChat split profile data across two endpoints.
   * Group member lists now show icon frames and nameplate effects for people who are not on your friends list. Friends already had them, since those come from the live friends data.
+  * The **Bio** filter in the Friends timeline is now greyed out and explains on hover that it is deprecated due to VRChat API changes. It still shows past entries.
 
 ### **Fixed Bugs**
   * Fixed last login, last activity and bio links staying empty in the People list. VRChat no longer sends these along with the friends list, so they are now filled in from the local profile cache. They also survive a refresh instead of disappearing again right after **Fetch**.
@@ -46,7 +42,7 @@ Maybe VRChat staff will consider adding back bio events in their websocket to tr
   * Fixed the **Creator** badge missing when reopening a profile shortly after viewing it.
   * Fixed your own badges disappearing from My Profile after every profile refresh, and staying gone when loading your profile failed. Your profile is now loaded once per refresh instead of twice.
   * Fixed the friend hover card showing no banner for friends who use a color banner.
-  * Fixed **Optimize Database** erasing the bio links of your friends. Since the VRChat API change they are only kept in the local cache. The bio link count shown before optimizing now matches what actually gets cleaned.
+  * Fixed **Optimize Database** erasing the bio links of your friends. Since the VRChat API change they are only kept in the local cache. The bio link count shown before optimizing now matches what actually gets cleaned. Friends you first met in an instance before adding them are now also kept, instead of losing their bio links, pronouns, last login and last activity.
   * Fixed badges not showing when a profile was opened from the local cache.
   * Fixed the VRChat note of a friend showing as empty, and being cleared from the local cache, after that friend sent a live update.
   * Fixed the friends sidebar requesting group instances over and over when none of your groups had an active instance.

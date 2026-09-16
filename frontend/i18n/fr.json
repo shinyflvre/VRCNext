@@ -270,6 +270,7 @@
   "timeline.filters.online": "En ligne",
   "timeline.filters.offline": "Hors ligne",
   "timeline.filters.bio": "Bio",
+  "timeline.filters.bio_deprecated": "Obsolète en raison de changements de l'API VRChat. Les modifications de biographie des amis ne peuvent plus être suivies, seules les entrées précédentes sont affichées.",
   "timeline.filters.friended": "Ajouté en ami",
   "timeline.filters.unfriended": "Retiré des amis",
   "timeline.empty.initial": "Aucun événement dans la chronologie. L'activité VRChat apparaîtra ici.",

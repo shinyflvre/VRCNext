@@ -270,6 +270,7 @@
   "timeline.filters.online": "在线",
   "timeline.filters.offline": "离线",
   "timeline.filters.bio": "简介",
+  "timeline.filters.bio_deprecated": "由于 VRChat API 变更已弃用。无法再记录好友的个人简介变更，仅显示以往的记录。",
   "timeline.filters.friended": "已添加好友",
   "timeline.filters.unfriended": "已删除好友",
   "timeline.empty.initial": "暂无时间线事件。VRChat 活动将显示在此处。",
