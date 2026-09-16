@@ -155,7 +155,7 @@ function renderVrcFriends(friends, counts) {
     _updateFriendTabCounts();
 
     // Lazy-load group instances once on first render
-    if (_sidebarGroupInstances === null && !window._groupInstInFlight) {
+    if (_sidebarGroupInstances === null && currentVrcUser && !window._groupInstInFlight) {
         window._groupInstInFlight = true;
         sendToCS({ action: 'vrcGetDashGroupInstances' });
     }
@@ -365,7 +365,8 @@ function renderVrcFriends(friends, counts) {
 }
 
 function onSidebarGroupInstances(instances) {
-    _sidebarGroupInstances = instances || [];
+    if (instances && instances.length) _sidebarGroupInstances = instances;
+    else if (_sidebarGroupInstances !== null) _sidebarGroupInstances = [];
     document.getElementById('vrcFriendRefreshBtn')?.classList.remove('spinning');
     _updateFriendTabCounts();
     if (friendsSidebarTab === 'groups' || (vrcFriendsData && vrcFriendsData.length)) renderVrcFriends(vrcFriendsData);

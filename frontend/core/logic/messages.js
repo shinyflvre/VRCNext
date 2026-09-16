@@ -176,6 +176,7 @@ window.external.receiveMessage(rawMsg => {
             case 'regBackupDone':     handleRegBackupDone(payload); break;
             case 'log': addLog(payload.msg, payload.color); break;
             case 'consoleOutput': addLog(payload.text, payload.color); break;
+            case 'vrcMyProfile': handleMyProfileFields(payload); break;
             case 'debugImgCacheState':
                 if (typeof setImgCacheDebug === 'function') setImgCacheDebug(payload.enabled);
                 break;

@@ -140,7 +140,8 @@
 
     function renderPopup(popup, f, extra) {
         const img = f.image || '';
-        const banner = extra?.banner || img;
+        const bannerColor = extra?.bannerColor || '';
+        const banner = bannerColor ? '' : (extra?.banner || '');
         const bio = extra?.bio || '';
 
         const tags = f.tags || [];
@@ -185,7 +186,9 @@
         popup.classList.toggle('deco-self', typeof _decoIsSelf === 'function' && _decoIsSelf(f));
         popup.innerHTML = `
             <div class="fd-banner">
-                ${banner ? `<div class="fp-banner-bg" style="background-image:url('${cssUrl(imgThumb(banner, 256))}')"></div>` : ''}
+                ${bannerColor
+                    ? `<div class="fp-banner-bg" style="background:${bannerColor};"></div>`
+                    : (banner ? `<div class="fp-banner-bg" style="background-image:url('${cssUrl(imgThumb(banner, 256))}')"></div>` : '')}
                 <div class="fd-banner-fade"></div>
                 ${(typeof profileEffectHtml === 'function') ? profileEffectHtml(f.profileEffectUrl) : ''}
             </div>
@@ -262,7 +265,9 @@
         if (!data?.id) return;
         _fpCache[data.id] = {
             bio: data.bio || '',
-            banner: data.bannerUrl || data.profilePicOverride || '',
+            banner: data.bannerUrl || '',
+            bannerColor: (String(data.bannerType || '') === 'color' && data.bannerColor)
+                ? `#${String(data.bannerColor).replace(/^#/, '')}` : '',
             backgroundType:           data.backgroundType || '',
             backgroundTextureId:      data.backgroundTextureId || '',
             backgroundTextureUrl:     data.backgroundTextureUrl || '',
@@ -303,7 +308,9 @@
         window.renderFriendDetail = function (d) {
             if (d?.id) _fpCache[d.id] = {
                 bio: d.bio || '',
-                banner: d.bannerUrl || d.profilePicOverride || '',
+                banner: d.bannerUrl || '',
+                bannerColor: (String(d.bannerType || '') === 'color' && d.bannerColor)
+                    ? `#${String(d.bannerColor).replace(/^#/, '')}` : '',
                 backgroundType:           d.backgroundType || '',
                 backgroundTextureId:      d.backgroundTextureId || '',
                 backgroundTextureUrl:     d.backgroundTextureUrl || '',

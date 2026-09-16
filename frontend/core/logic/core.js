@@ -2775,13 +2775,43 @@ function initVnSelect(el) {
             panel.style.left = 'auto'; panel.style.right = '0';
         }
         vnPanelAnchor(wrap, panel, below);
+        if (!wrap.closest('.tt-scroll') && wrap.closest('.modal-box')) portalOut(below);
         setTimeout(() => document.addEventListener('click', onOutside, { once: true }), 0);
     }
 
-    function close() { wrap.classList.remove('vn-open'); }
+    function portalOut(below) {
+        const doc = wrap.ownerDocument;
+        const win = doc.defaultView || window;
+        const r = wrap.getBoundingClientRect();
+        panel.style.position = 'fixed';
+        panel.style.minWidth = r.width + 'px';
+        panel.style.top    = below ? (r.bottom + 4) + 'px' : 'auto';
+        panel.style.bottom = below ? 'auto' : (win.innerHeight - r.top + 4) + 'px';
+        panel.style.left   = r.left + 'px';
+        panel.style.right  = 'auto';
+        panel.classList.add('vn-select-portal');
+        wrap.classList.add('vn-select-fixed', 'vn-select-portal-src');
+        doc.body.appendChild(panel);
+        const pr = panel.getBoundingClientRect();
+        if (pr.right > win.innerWidth - 8) panel.style.left = Math.max(8, win.innerWidth - 8 - pr.width) + 'px';
+    }
+
+    function portalBack() {
+        if (!panel.classList.contains('vn-select-portal')) return;
+        panel.classList.remove('vn-select-portal');
+        wrap.classList.remove('vn-select-fixed', 'vn-select-portal-src');
+        panel.style.position = '';
+        panel.style.minWidth = '';
+        wrap.insertBefore(panel, el);
+    }
+
+    function close() {
+        wrap.classList.remove('vn-open');
+        portalBack();
+    }
 
     function onOutside(e) {
-        if (wrap.contains(e.target)) document.addEventListener('click', onOutside, { once: true });
+        if (wrap.contains(e.target) || panel.contains(e.target)) document.addEventListener('click', onOutside, { once: true });
         else close();
     }
 

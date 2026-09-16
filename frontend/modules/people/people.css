@@ -215,8 +215,8 @@
     color: var(--tx2);
 }
 .pl-status-txt { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.tl-list-fixed td.pl-langs, .pl-langs { white-space: normal; }
-.pl-langs .vrcn-badge { display: inline-block; margin: 1px 4px 1px 0; white-space: nowrap; }
+.tl-list-fixed td.pl-langs, .pl-langs { white-space: nowrap; }
+.pl-langs .vrcn-badge { display: inline-flex; margin: 1px 4px 1px 0; white-space: nowrap; vertical-align: middle; }
 .pl-bios { white-space: nowrap; }
 .pl-bio-link {
     display: inline-flex;

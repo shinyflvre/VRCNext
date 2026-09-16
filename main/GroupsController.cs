@@ -489,6 +489,8 @@ public class GroupsController
                                     roleIds = (m["roleIds"] as JArray)?.Select(r => r.ToString()).ToArray() ?? Array.Empty<string>(),
                                     joinedAt = m["joinedAt"]?.ToString() ?? "",
                                     currentAvatarThumbnailImageUrl = m["user"]?["currentAvatarThumbnailImageUrl"]?.ToString() ?? "",
+                                    iconFrameUrl = IconFrameHelper.UrlFor(m["user"]?["iconFrame"]?.ToString(), _core.Inventory),
+                                    nameplateUrl = IconFrameHelper.UrlFor(m["user"]?["nameplateEffect"]?.ToString(), _core.Inventory),
                                 }),
                                 rawJson = g,
                             });
@@ -535,6 +537,8 @@ public class GroupsController
                             roleIds = (m["roleIds"] as JArray)?.Select(r => r.ToString()).ToArray() ?? Array.Empty<string>(),
                             joinedAt = m["joinedAt"]?.ToString() ?? "",
                             currentAvatarThumbnailImageUrl = m["user"]?["currentAvatarThumbnailImageUrl"]?.ToString() ?? "",
+                            iconFrameUrl = IconFrameHelper.UrlFor(m["user"]?["iconFrame"]?.ToString(), _core.Inventory),
+                            nameplateUrl = IconFrameHelper.UrlFor(m["user"]?["nameplateEffect"]?.ToString(), _core.Inventory),
                         }).ToList();
                         _core.SendToJS("vrcGroupMembersPage", new {
                             groupId = gmId, offset = gmOffset, members = list,
@@ -564,6 +568,8 @@ public class GroupsController
                             roleIds = (m["roleIds"] as JArray)?.Select(r => r.ToString()).ToArray() ?? Array.Empty<string>(),
                             joinedAt = m["joinedAt"]?.ToString() ?? "",
                             currentAvatarThumbnailImageUrl = m["user"]?["currentAvatarThumbnailImageUrl"]?.ToString() ?? "",
+                            iconFrameUrl = IconFrameHelper.UrlFor(m["user"]?["iconFrame"]?.ToString(), _core.Inventory),
+                            nameplateUrl = IconFrameHelper.UrlFor(m["user"]?["nameplateEffect"]?.ToString(), _core.Inventory),
                         }).ToList();
                         _core.SendToJS("vrcGroupSearchResults", new {
                             groupId = sgmId, query = sgmQuery, members = list,
@@ -589,6 +595,8 @@ public class GroupsController
                             status = m["user"]?["status"]?.ToString() ?? "",
                             statusDescription = m["user"]?["statusDescription"]?.ToString() ?? "",
                             currentAvatarThumbnailImageUrl = m["user"]?["currentAvatarThumbnailImageUrl"]?.ToString() ?? "",
+                            iconFrameUrl = IconFrameHelper.UrlFor(m["user"]?["iconFrame"]?.ToString(), _core.Inventory),
+                            nameplateUrl = IconFrameHelper.UrlFor(m["user"]?["nameplateEffect"]?.ToString(), _core.Inventory),
                             roleIds = (m["roleIds"] as JArray)?.Select(r => r.ToString()).ToArray() ?? Array.Empty<string>(),
                         }).ToList();
                         _core.SendToJS("vrcGroupRoleMembers", new { groupId = grmGroupId, roleId = grmRoleId, members = list });

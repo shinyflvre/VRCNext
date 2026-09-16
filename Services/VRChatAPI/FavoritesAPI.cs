@@ -6,7 +6,22 @@ namespace VRCNext.Services;
 
 public class FavoritesAPI(VRChatApiService ctx)
 {
-    public async Task<List<JObject>> GetFavoriteGroupsAsync()
+    private Task<List<JObject>>? _groupsFetch;
+    private readonly object _groupsFetchLock = new();
+
+    public Task<List<JObject>> GetFavoriteGroupsAsync()
+    {
+        lock (_groupsFetchLock)
+        {
+            if (_groupsFetch != null) return _groupsFetch;
+            var task = FetchFavoriteGroupsAsync();
+            _groupsFetch = task;
+            task.ContinueWith(_ => { lock (_groupsFetchLock) _groupsFetch = null; }, TaskScheduler.Default);
+            return task;
+        }
+    }
+
+    private async Task<List<JObject>> FetchFavoriteGroupsAsync()
     {
         var all = new List<JObject>();
         if (!ctx.IsLoggedIn) { ctx.Log("GetFavoriteGroups: not logged in"); return all; }

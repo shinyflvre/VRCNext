@@ -1147,6 +1147,7 @@ public class AuthController
     private string _selfLastStatusDesc = "";
     private string _selfLastBio        = "";
     private bool   _selfProfileSeeded;
+    private bool   _selfBioSeeded;
 
     public void LogSelfProfileEvent(string subKind, string oldValue, string newValue)
     {
@@ -1176,13 +1177,13 @@ public class AuthController
     {
         var newStatus = user["status"]?.ToString() ?? "";
         var newDesc   = (user["statusDescription"]?.ToString() ?? "").Trim();
-        var newBio    = (user["bio"]?.ToString() ?? "").Trim();
 
         if (!_selfProfileSeeded || loginFlow)
         {
             _selfLastStatus     = newStatus;
             _selfLastStatusDesc = newDesc;
-            _selfLastBio        = newBio;
+            _selfLastBio        = "";
+            _selfBioSeeded      = false;
             _selfProfileSeeded  = true;
             return;
         }
@@ -1194,10 +1195,23 @@ public class AuthController
         if (newDesc != _selfLastStatusDesc && !string.IsNullOrEmpty(_selfLastStatusDesc))
             LogSelfProfileEvent("statusdesc", _selfLastStatusDesc, newDesc);
         _selfLastStatusDesc = newDesc;
+    }
 
-        if (!string.IsNullOrEmpty(newBio) && newBio != _selfLastBio && !string.IsNullOrEmpty(_selfLastBio))
+    private void DetectSelfBioChange(string? profileBio)
+    {
+        var newBio = (profileBio ?? "").Trim();
+        if (string.IsNullOrEmpty(newBio)) return;
+
+        if (!_selfBioSeeded)
+        {
+            _selfLastBio   = newBio;
+            _selfBioSeeded = true;
+            return;
+        }
+
+        if (newBio != _selfLastBio && !string.IsNullOrEmpty(_selfLastBio))
             LogSelfProfileEvent("bio", _selfLastBio, newBio);
-        if (!string.IsNullOrEmpty(newBio)) _selfLastBio = newBio;
+        _selfLastBio = newBio;
     }
 
     public void SendVrcUserDataUnlocked(JObject user, bool loginFlow = false)
@@ -1386,11 +1400,20 @@ public class AuthController
             _ = Task.Run(async () =>
             {
                 JArray? badgesArr = user["badges"] as JArray;
+                var selfProfile = await _core.Users.GetProfileAppearanceAsync(userId, asSelf: true);
                 if (badgesArr == null || badgesArr.Count == 0)
-                {
-                    var fullUser = await _core.Users.GetUserAsync(userId);
-                    badgesArr = fullUser?["badges"] as JArray ?? new JArray();
-                }
+                    badgesArr = selfProfile?["badges"] as JArray ?? new JArray();
+                if (selfProfile != null)
+                    Invoke(() =>
+                    {
+                        DetectSelfBioChange(selfProfile["bio"]?.ToString());
+                        _core.SendToJS("vrcMyProfile", new
+                        {
+                            bio       = selfProfile["bio"]?.ToString() ?? "",
+                            bioLinks  = selfProfile["bioLinks"]?.ToObject<List<string>>()  ?? new List<string>(),
+                            languages = selfProfile["languages"]?.ToObject<List<string>>() ?? new List<string>(),
+                        });
+                    });
                 var badges = new List<object>();
                 foreach (var b in badgesArr)
                 {
