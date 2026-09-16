@@ -1147,7 +1147,7 @@ function tlInstanceListDetail(ev, name) {
 
 function renderTlPhotoBody(ev) {
     const thumb = ev.photoUrl
-        ? `<div class="tl-thumb tl-thumb-photo" style="background-image:url('${cssUrl(ev.photoUrl)}')"></div>`
+        ? `<div class="tl-thumb tl-thumb-photo" style="background-image:url('${cssUrl(mediaThumb(ev.photoUrl))}')"></div>`
         : `<div class="tl-thumb tl-thumb-empty"><span class="msi" style="font-size:18px;color:var(--tx2);">camera</span></div>`;
     const name   = ev.photoPath ? ev.photoPath.split(/[\\/]/).pop() : t('timeline.photo', 'Photo');
     const sub    = ev.worldName ? `<div class="tl-sub-label">${esc(ev.worldName)}</div>` : '';

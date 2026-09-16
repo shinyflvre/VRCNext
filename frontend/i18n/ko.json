@@ -2634,7 +2634,7 @@
   "settings.experimental.multitask.warning": "이는 실험 기능이며, 버그가 있을 수 있습니다.",
   "settings.multitasking.newwindow.label": "새 창에서 열기",
   "settings.multitasking.newwindow.desc": "멀티태스크 모드로 연 창(SHIFT + 왼쪽 클릭)을 앱 내부의 플로팅 창 대신 별도의 데스크톱 창으로 표시합니다. 이 창들은 앱의 단일 브라우저 인스턴스를 공유하므로 추가 WebView가 로드되지 않습니다. Windows 전용. VRCNext를 다시 시작한 후 적용됩니다.",
-  "wm.limit_reached": "최대 12개의 창에 도달했습니다",
+  "wm.limit_reached": "최대 8개의 창에 도달했습니다",
   "wm.already_open": "{name} 창은 이미 열렸습니다",
   "settings.search_debounce.ms_15": "15 ms",
   "settings.search_debounce.ms_50": "30 ms",

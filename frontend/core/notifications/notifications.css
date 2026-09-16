@@ -171,6 +171,8 @@
     gap: 11px;
     box-sizing: border-box;
     transition: border-color .12s;
+    content-visibility: auto;
+    contain-intrinsic-size: auto 72px;
 }
 .notif-item:hover { border-color: color-mix(in srgb, var(--accent) 35%, var(--brd)); }
 

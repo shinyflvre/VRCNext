@@ -166,3 +166,12 @@ div.vn-select {
     z-index: 1199;
 }
 .vn-select.vn-open.vn-select-fixed::after { position: fixed; }
+
+.vn-select-panel.vn-select-portal {
+    display: block;
+    z-index: 10060;
+    border-radius: 8px;
+    clip-path: none;
+    box-shadow: 0 8px 28px rgba(0,0,0,.45);
+}
+.vn-select.vn-open.vn-select-portal-src::after { display: none; }

@@ -48,6 +48,7 @@ public class VRChatApiService
             var status = (int)resp.StatusCode;
             var flag = status >= 400 ? " !!!" : "";
             _log($"[REST] {request.Method} {path} → {status} {resp.StatusCode}{flag}");
+
             return resp;
         }
     }
@@ -118,7 +119,8 @@ public class VRChatApiService
 
     public static string GetUserImage(JObject user)
     {
-        var url = user["userIcon"]?.ToString() is string s1 && !string.IsNullOrEmpty(s1) ? s1 :
+        var url = user["iconUrl"]?.ToString() is string s0 && !string.IsNullOrEmpty(s0) ? s0 :
+                  user["userIcon"]?.ToString() is string s1 && !string.IsNullOrEmpty(s1) ? s1 :
                   user["profilePicOverride"]?.ToString() is string s2 && !string.IsNullOrEmpty(s2) ? s2 :
                   user["currentAvatarImageUrl"]?.ToString() is string s3 && !string.IsNullOrEmpty(s3) ? s3 :
                   user["currentAvatarThumbnailImageUrl"]?.ToString() is string s4 && !string.IsNullOrEmpty(s4) ? s4 : "";

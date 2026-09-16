@@ -343,7 +343,7 @@ const SmartSearch = (() => {
                 if (item.image) {
                     const img = document.createElement('img');
                     img.className = 'vrc-friend-avatar';
-                    img.src = item.image;
+                    img.src = imgThumb(item.image, 64);
                     img.onerror = function() {
                         const ph = document.createElement('div');
                         ph.className = 'vrc-friend-avatar';
@@ -926,7 +926,7 @@ const SmartSearch = (() => {
         } else if (imgInfo.src) {
             const img = document.createElement('img');
             img.className = 'ss-item-img' + circleClass;
-            img.src = imgInfo.src;
+            img.src = imgThumb(imgInfo.src, 64);
             img.onerror = function() {
                 const ph = document.createElement('div');
                 ph.className = 'ss-item-img-placeholder' + circleClass;

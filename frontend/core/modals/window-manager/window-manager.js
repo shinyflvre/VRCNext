@@ -1,4 +1,4 @@
-﻿const WM_MAX = 12;
+﻿const WM_MAX = 8;
 const WM_Z_BASE = 9000;
 const WM_MIN_W = 560;
 const WM_MIN_H = 360;
@@ -783,7 +783,7 @@ function wmOpen(type, id, label, id2) {
 
     if (_wmWindows.length >= WM_MAX) {
         if (typeof showToast === 'function') {
-            showToast(false, _wmT('wm.limit_reached', 'Maximum of 12 windows reached'));
+            showToast(false, _wmT('wm.limit_reached', 'Maximum of 8 windows reached'));
         }
         return true;
     }
@@ -1063,6 +1063,7 @@ function _wmPrepareSurfaceDoc(doc) {
         _wmRootObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
     }
     if (typeof window.VrcnCtxAttach === 'function') window.VrcnCtxAttach(doc);
+    if (typeof vnTooltipAttach === 'function') vnTooltipAttach(doc);
     _wmShareGlobals(doc.defaultView);
     _wmBindSurfaceDoc(doc);
 }
@@ -1108,7 +1109,7 @@ function _wmOverlayHidden(el) {
 
 function _wmMaybePortal(el) {
     if (!el || el.nodeType !== 1 || el.__wmPortal) return;
-    if (el.parentNode !== document.body || !el.classList.contains('modal-overlay')) return;
+    if (el.parentNode !== document.body || !(el.classList.contains('modal-overlay') || el.hasAttribute('data-wm-portal'))) return;
     if (_wmOverlayHidden(el)) return;
     const cur = _wmCurrent();
     if (!cur || !cur.surfaced || !cur.surfaceWin) return;
@@ -1202,6 +1203,17 @@ function _wmHostOf(target) {
 }
 
 function _wmBindSurfaceDoc(doc) {
+    doc.addEventListener('wheel', e => {
+        if (!e.ctrlKey) return;
+        e.preventDefault();
+        if (typeof _stepGuiZoom === 'function') _stepGuiZoom(e.deltaY < 0 ? 1 : -1);
+    }, { passive: false });
+    doc.addEventListener('keydown', e => {
+        if (!e.ctrlKey) return;
+        if (e.key === '0') { e.preventDefault(); if (typeof applyGuiZoom === 'function') applyGuiZoom(1); try { autoSave(); } catch {} }
+        else if (e.key === '+' || e.key === '=') { e.preventDefault(); if (typeof _stepGuiZoom === 'function') _stepGuiZoom(1); }
+        else if (e.key === '-') { e.preventDefault(); if (typeof _stepGuiZoom === 'function') _stepGuiZoom(-1); }
+    });
     doc.addEventListener('pointerdown', e => {
         _wmShift = e.shiftKey;
         const win = _wmHostOf(e.target);

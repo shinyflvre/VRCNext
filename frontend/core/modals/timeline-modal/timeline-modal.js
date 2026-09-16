@@ -127,6 +127,7 @@ function closeTlDetail(fromNav = false) {
     if (ov) ov.style.display = 'none';
     const wasStacked = _tlStacked;
     _tlStacked = false;
+    if (!fromNav && typeof releaseClosedModals === 'function') releaseClosedModals();
     if (wasStacked) return;
     if (!fromNav && typeof navClear === 'function') navClear();
 }
@@ -564,6 +565,7 @@ function _ftGpsShowModal() {
 function closeFtGpsDetail(fromNav = false) {
     document.getElementById('modalFtGpsDetail').style.display = 'none';
     if (!fromNav && typeof navClear === 'function') navClear();
+    if (!fromNav && typeof releaseClosedModals === 'function') releaseClosedModals();
 }
 
 function renderFtGpsDetailModal(ev) {

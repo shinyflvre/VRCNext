@@ -467,20 +467,24 @@ class MutualGraph {
         this.nodes.push(node);
         this.nodeMap[node.id] = idx;
 
-        if (node.image) {
-            const img = new Image();
-            img.src = node.image;
-            img.onload  = () => { node.imgEl = img; this._sprite(node); this._scheduleRender(); };
-            img.onerror = () => {};
-        }
+        this._loadNodeImage(node);
         return idx;
+    }
+
+    _loadNodeImage(nd) {
+        if (!nd.image || nd._imgLoading || this._imagesUnloaded) return;
+        nd._imgLoading = true;
+        const img = new Image();
+        img.src = imgThumb(nd.image, nd.commHub ? 256 : 128);
+        img.onload  = () => { nd._imgLoading = false; nd.imgEl = img; this._sprite(nd); nd.imgEl = null; this._scheduleRender(); };
+        img.onerror = () => { nd._imgLoading = false; };
     }
 
     _sprite(nd) {
         const gray = !!nd.isNonFriend;
         const S    = nd.commHub ? NET_SPRITE_PX_HUB : NET_SPRITE_PX;
         if (nd._spr && nd._sprGray === gray && nd._sprPx === S) return nd._spr;
-        if (!nd.imgEl) return null;
+        if (!nd.imgEl) { this._loadNodeImage(nd); return nd._spr || null; }
 
         const cv = document.createElement('canvas');
         cv.width = S; cv.height = S;
@@ -512,13 +516,7 @@ class MutualGraph {
     reloadImages() {
         if (!this._imagesUnloaded) return;
         this._imagesUnloaded = false;
-        this.nodes.forEach(nd => {
-            if (nd.imgEl || !nd.image) return;
-            const img = new Image();
-            img.src = nd.image;
-            img.onload  = () => { nd.imgEl = img; this._sprite(nd); this._scheduleRender(); };
-            img.onerror = () => {};
-        });
+        this.nodes.forEach(nd => this._loadNodeImage(nd));
     }
 
     _nodeColors(nd) {

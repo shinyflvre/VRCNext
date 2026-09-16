@@ -76,7 +76,7 @@ function _icRender() {
         `<div class="tl-ic-bar" style="left:${b.left}%;width:${b.width}%;background:${b.color};" title="${esc(b.e.worldName || b.e.worldId)} · ${esc(fmtTime(new Date(b.joinMs)))}" onclick="icOpenDetail(${b.i})"></div>`).join('');
 
     const list = bars.map(b => {
-        const thumb = b.e.worldThumb ? `style="background-image:url('${cssUrl(b.e.worldThumb)}')"` : '';
+        const thumb = b.e.worldThumb ? `style="background-image:url('${cssUrl(imgThumb(b.e.worldThumb, 96))}')"` : '';
         const lt = b.e.leftAt ? esc(fmtTime(new Date(b.leaveMs))) : `<span class="tl-ic-live">${esc(t('timeline.instance_chart.ongoing', 'now'))}</span>`;
         const pc = (b.e.players || []).length;
         return `<div class="tl-ic-card" onclick="icOpenDetail(${b.i})">

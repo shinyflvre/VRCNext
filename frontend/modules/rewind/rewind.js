@@ -43,7 +43,7 @@ function handleRewindData(data) {
 
 function _rwAvatar(url, name) {
     return url
-        ? `<div class="rw-av" style="background-image:url('${cssUrl(url)}')"></div>`
+        ? `<div class="rw-av" style="background-image:url('${cssUrl(imgThumb(url, 128))}')"></div>`
         : `<div class="rw-av rw-av-letter">${esc((name || '?')[0].toUpperCase())}</div>`;
 }
 
@@ -83,7 +83,7 @@ function _rwBuildPages(d) {
     if (d.bestFriend) {
         const bf = d.bestFriend;
         const sw = d.sharedWorld ? `<div class="rw-inline-card">
-            ${d.sharedWorld.thumb ? `<div class="rw-mini-thumb" style="background-image:url('${cssUrl(d.sharedWorld.thumb)}')"></div>` : ''}
+            ${d.sharedWorld.thumb ? `<div class="rw-mini-thumb" style="background-image:url('${cssUrl(imgThumb(d.sharedWorld.thumb, 128))}')"></div>` : ''}
             <div><div class="rw-inline-label">${esc(rwT('sharedworld.title', 'Your happy place together'))}</div>
             <div class="rw-inline-name">${esc(d.sharedWorld.name)}</div></div>
         </div>` : '';
@@ -99,7 +99,7 @@ function _rwBuildPages(d) {
     }
 
     if (bfPics.length) {
-        const imgs = bfPics.slice(0, 16).map(p => `<div class="rw-img" style="background-image:url('${cssUrl(p.url)}')"></div>`).join('');
+        const imgs = bfPics.slice(0, 16).map(p => `<div class="rw-img" style="background-image:url('${cssUrl(mediaThumb(p.url))}')"></div>`).join('');
         pages.push(`${_rwHeader('', rwT('bfphotos.title', 'Moments you shared'))}
             <div class="rw-content rw-scroll"><div class="rw-img-grid-4">${imgs}</div></div>`);
     }
@@ -151,7 +151,7 @@ function _rwBuildPages(d) {
 
     if (wPics.length) {
         const cells = wPics.slice(0, 16).map(p => `<figure class="rw-figure">
-            <div class="rw-img" style="background-image:url('${cssUrl(p.url)}')"></div>
+            <div class="rw-img" style="background-image:url('${cssUrl(mediaThumb(p.url))}')"></div>
             ${p.world ? `<figcaption class="rw-figcap">${esc(p.world)}</figcaption>` : ''}
         </figure>`).join('');
         pages.push(`${_rwHeader('', rwT('worldphotos.title', 'So many memories in those worlds'))}
@@ -200,7 +200,7 @@ function openRewindModal(d) {
     const hidden = _rwHidden();
     const slides = (d.slideshow || []).filter(s => !hidden.has(s.path)).slice(0, 14);
     const bgHtml = `<div class="rw-bg" id="rwBg">
-        ${slides.map((s, i) => `<div class="rw-slide${i === 0 ? ' active' : ''}" style="background-image:url('${cssUrl(s.url)}')"></div>`).join('')}
+        ${slides.map((s, i) => `<div class="rw-slide${i === 0 ? ' active' : ''}" style="background-image:url('${cssUrl(mediaThumb(s.url))}')"></div>`).join('')}
         <div class="rw-bg-scrim"></div>
     </div>`;
 

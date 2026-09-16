@@ -919,20 +919,24 @@ public partial class AppShell
                 }
 
                 case "vrcUpdateProfile":
-                    var upBio = msg["bio"] != null ? msg["bio"]!.ToString() : (string?)null;
-                    var upPronouns = msg["pronouns"] != null ? msg["pronouns"]!.ToString() : (string?)null;
-                    var upBioLinks = msg["bioLinks"]?.ToObject<List<string>>();
-                    var upTags = msg["tags"]?.ToObject<List<string>>();
-                    var upUserIcon = msg["userIcon"]           != null ? msg["userIcon"]!.ToString()           : (string?)null;
-                    var upBanner   = msg["profilePicOverride"] != null ? msg["profilePicOverride"]!.ToString() : (string?)null;
+                    var upBio       = msg["bio"] != null ? msg["bio"]!.ToString() : (string?)null;
+                    var upPronouns  = msg["pronouns"] != null ? msg["pronouns"]!.ToString() : (string?)null;
+                    var upBioLinks  = msg["bioLinks"]?.ToObject<List<string>>();
+                    var upLanguages = msg["languages"]?.ToObject<List<string>>();
+                    var upUserIcon  = msg["userIcon"] != null ? msg["userIcon"]!.ToString() : (string?)null;
                     _ = Task.Run(async () =>
                     {
-                        var updUser = await _core.Users.UpdateProfileAsync(upBio, upPronouns, upBioLinks, upTags, upUserIcon, upBanner);
+                        var updOk = true;
+                        if (upBio != null || upBioLinks != null || upLanguages != null || upUserIcon != null)
+                            updOk = await _core.Users.UpdateProfileFieldsAsync(upBio, upBioLinks, upLanguages, upUserIcon);
+                        if (updOk && upPronouns != null)
+                            updOk = await _core.Users.UpdateUserProfileAsync(upPronouns) != null;
+                        var updUser = updOk ? await _core.Auth.RefreshCurrentUserAsync() : null;
                         Invoke(() =>
                         {
-                            if (updUser != null)
+                            if (updOk)
                             {
-                                _authCtrl.SendVrcUserData(updUser);
+                                if (updUser != null) _authCtrl.SendVrcUserData(updUser);
                                 SendToJS("vrcProfileUpdated", new { success = true });
                                 SendToJS("log", new { msg = "VRChat: Profile updated", color = "ok" });
                             }

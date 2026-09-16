@@ -3037,7 +3037,7 @@ function afShowFlowNotificationCard(flowName, text, icon) {
     const card = document.createElement('div');
     card.className = 'nc-card';
     const iconHtml = (icon && icon.url)
-        ? '<img class="nc-icon af-nc-avatar" src="' + afEsc(icon.url) + '" alt="">'
+        ? '<img class="nc-icon af-nc-avatar" src="' + afEsc(imgThumb(icon.url, 64)) + '" alt="">'
         : '<span class="msi nc-icon" style="color:var(--accent);">auto_awesome</span>';
     card.innerHTML =
         '<div class="nc-inner">' +

@@ -2550,7 +2550,7 @@
   "settings.experimental.multitask.warning": "Это экспериментальная функция, возможны ошибки.",
   "settings.multitasking.newwindow.label": "Открывать в новом окне",
   "settings.multitasking.newwindow.desc": "Окна, открытые в многозадачном режиме (SHIFT + левая кнопка мыши), отображаются как отдельные окна рабочего стола, а не как плавающие окна внутри приложения. Они используют единственный экземпляр браузера приложения, дополнительный WebView не загружается. Только Windows. Вступает в силу после перезапуска VRCNext.",
-  "wm.limit_reached": "Достигнут максимум в 12 окон",
+  "wm.limit_reached": "Достигнут максимум в 8 окон",
   "wm.already_open": "{name} уже открыт",
   "settings.search_debounce.ms_15": "15 мс",
   "settings.search_debounce.ms_50": "50 мс",

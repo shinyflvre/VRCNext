@@ -2569,7 +2569,7 @@
   "settings.experimental.multitask.warning": "Il s'agit d'une fonctionnalité expérimentale, attendez-vous à des bugs.",
   "settings.multitasking.newwindow.label": "Ouvrir dans une nouvelle fenêtre",
   "settings.multitasking.newwindow.desc": "Les fenêtres ouvertes en mode multitâche (MAJ + clic gauche) apparaissent comme des fenêtres de bureau distinctes au lieu de fenêtres flottantes dans l'application. Elles partagent l'unique instance de navigateur de l'application, aucun WebView supplémentaire n'est chargé. Windows uniquement. Prend effet après un redémarrage de VRCNext.",
-  "wm.limit_reached": "Maximum de 12 fenêtres atteint",
+  "wm.limit_reached": "Maximum de 8 fenêtres atteint",
   "wm.already_open": "{name} est déjà ouvert",
   "settings.search_debounce.ms_15": "15 ms",
   "settings.search_debounce.ms_50": "50 ms",

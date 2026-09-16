@@ -1,5 +1,6 @@
 /* === User Modal (Friend / Profile Detail) === */
 const _fdRawJsonCache = {};
+const _fdRawProfileJsonCache = {};
 
 let _fdGroupsSortMode = 'alpha';
 let _fdMutualsSortMode = 'alpha';
@@ -204,6 +205,7 @@ function closeFriendDetail(fromNav = false) {
     _fdLastAvatarPayload = null;
     _fdLastAvatarUserId = '';
     if (!fromNav && typeof navClear === 'function') navClear();
+    if (!fromNav && typeof releaseClosedModals === 'function') releaseClosedModals();
 }
 
 
@@ -655,6 +657,7 @@ function renderFriendDetail(d) {
     const _fdPrevTab = document.querySelector('#modalFriendDetail .fd-tab.active')?.dataset.fdtab || '';
     const _fdPrevId  = (typeof currentFriendDetail !== 'undefined' && currentFriendDetail) ? currentFriendDetail.id : '';
     if (d.id && d.rawJson) _fdRawJsonCache[d.id] = d.rawJson;
+    if (d.id && d.rawProfileJson) _fdRawProfileJsonCache[d.id] = d.rawProfileJson;
     currentFriendDetail = d;
     if (typeof vrcnPlusOnProfileOpened === 'function' && d.id) vrcnPlusOnProfileOpened(d.id);
     if (typeof navUpdateLabel === 'function') navUpdateLabel(d.displayName || '');
@@ -672,7 +675,7 @@ function renderFriendDetail(d) {
 
     const img = d.image || '';
     const _fdAvatarInner = img
-        ? `<img class="fd-avatar" src="${img}" onerror="this.style.display='none'">`
+        ? `<img class="fd-avatar" src="${imgThumb(img, 128)}" onerror="this.style.display='none'">`
         : `<div class="fd-avatar" style="display:flex;align-items:center;justify-content:center;font-size:calc(20px + var(--fs-off, 0px));font-weight:700;color:var(--tx0)">${esc((d.displayName || '?')[0])}</div>`;
     const _fdFrame = (typeof iconFrameHtml === 'function') ? iconFrameHtml(d.iconFrameUrl, true) : '';
     const imgTag = _fdFrame ? `<div class="icon-frame-wrap">${_fdAvatarInner}${_fdFrame}</div>` : _fdAvatarInner;
@@ -816,7 +819,9 @@ function renderFriendDetail(d) {
 
     const vrcPlusBadge = (d.tags || []).includes('system_supporter') ? `<span class="vrcn-supporter-badge">VRC+</span>` : '';
     const pronounsHtml = d.pronouns ? `<div class="fd-pronouns">${esc(d.pronouns)}</div>` : '';
-    const langs = getLanguages(d.tags || []);
+    const langs = (Array.isArray(d.languages) && d.languages.length)
+        ? d.languages.map(l => LANG_MAP['language_' + String(l).replace(/^language_/, '')] || String(l).toUpperCase())
+        : getLanguages(d.tags || []);
     const langsHtml = langs.length ? `<div class="fd-lang-tags">${langs.map(l => `<span class="vrcn-badge">${esc(l)}</span>`).join('')}</div>` : '';
 
     const allGroups = d.userGroups || [];
@@ -993,7 +998,9 @@ function renderFriendDetail(d) {
         <div class="fd-hm-grid-wrap" id="fdHmGridWrap"><div style="padding:16px 0;font-size:calc(12px + var(--fs-off, 0px));color:var(--tx3);text-align:center;">${t('profiles.insights.loading', 'Loading...')}</div></div>
         <div class="fd-hm-status-wrap" id="fdHmStatusWrap" style="display:none;"></div>`;
 
-    const bannerSrc = d.bannerUrl || d.profilePicOverride || d.currentAvatarImageUrl || d.image || '';
+    const bannerIsColor  = String(d.bannerType || '') === 'color' && !!d.bannerColor;
+    const bannerColorCss = bannerIsColor ? `#${String(d.bannerColor).replace(/^#/, '')}` : '';
+    const bannerSrc      = bannerIsColor ? '' : (d.bannerUrl || '');
     const fdHeaderActions = renderModalActions(_fdBuildTaskbarActions(d));
 
     const fdLocation = d.location || '';
@@ -1125,7 +1132,7 @@ function renderFriendDetail(d) {
         : `<div class="fd-status-row" style="display:none;"><div class="fd-status" id="fd-live-status"></div></div>`;
 
     {
-        const bannerSlotHtml = `<div class="fd-left-banner" id="fd-banner-slot">${bannerSrc ? '<div class="fd-banner-fade"></div>' : ''}${(typeof profileEffectHtml === 'function') ? profileEffectHtml(d.profileEffectUrl) : ''}</div>`;
+        const bannerSlotHtml = `<div class="fd-left-banner" id="fd-banner-slot"${bannerColorCss ? ` style="background:${bannerColorCss};"` : ''}>${(bannerSrc || bannerColorCss) ? '<div class="fd-banner-fade"></div>' : ''}${(typeof profileEffectHtml === 'function') ? profileEffectHtml(d.profileEffectUrl) : ''}</div>`;
         const _fdLeftHtml = `<div class="fd-left">
             ${bannerSlotHtml}
             <div class="fd-left-body">
@@ -1137,7 +1144,7 @@ function renderFriendDetail(d) {
                 ${_infosCard}
             </div>
         </div>`;
-        const _fdRightHtml = `<div class="fd-right"><div class="fd-right-scroll">${tabsHtml}<div id="fdTabInfo">${infoContent}</div><div id="fdTabGroups" style="display:none;">${groupsContent}</div><div id="fdTabMutuals" style="display:none;">${mutualsContent}</div><div id="fdTabContent" style="display:none;">${contentHtml}</div><div id="fdTabFavs" style="display:none;" data-user-id="${esc(userId)}"></div><div id="fdTabJson" style="display:none;"><div class="json-viewer">${jsonHighlight((d.id && _fdRawJsonCache[d.id]) || {})}</div></div></div></div>`;
+        const _fdRightHtml = `<div class="fd-right"><div class="fd-right-scroll">${tabsHtml}<div id="fdTabInfo">${infoContent}</div><div id="fdTabGroups" style="display:none;">${groupsContent}</div><div id="fdTabMutuals" style="display:none;">${mutualsContent}</div><div id="fdTabContent" style="display:none;">${contentHtml}</div><div id="fdTabFavs" style="display:none;" data-user-id="${esc(userId)}"></div><div id="fdTabJson" style="display:none;"><div class="fd-group-rep-label">GET /api/1/users/{id}</div><div class="json-viewer">${jsonHighlight((d.id && _fdRawJsonCache[d.id]) || {})}</div><div class="fd-group-rep-label" style="margin-top:12px;">GET /api/1/profile/{id}</div><div class="json-viewer">${jsonHighlight((d.id && _fdRawProfileJsonCache[d.id]) || {})}</div></div></div></div>`;
         c.innerHTML = `${fdHeaderActions}<div class="fd-layout">${_fdLeftHtml}${_fdRightHtml}</div>`;
     }
 
@@ -1246,7 +1253,7 @@ function patchFriendDetailLive(f) {
     // avatar image
     if (f.image) {
         const avatarEl = c.querySelector('.fd-avatar');
-        if (avatarEl?.tagName === 'IMG') avatarEl.src = f.image;
+        if (avatarEl?.tagName === 'IMG') avatarEl.src = imgThumb(f.image, 128);
         currentFriendDetail.image = f.image;
     }
 
@@ -1302,12 +1309,17 @@ function patchFriendDetailLive(f) {
     }
 
     // banner (bannerUrl / profilePicOverride / currentAvatarImageUrl)
-    if (f.bannerUrl !== undefined || f.profilePicOverride !== undefined || f.currentAvatarImageUrl !== undefined) {
-        if (f.bannerUrl !== undefined) currentFriendDetail.bannerUrl = f.bannerUrl;
-        if (f.profilePicOverride !== undefined) currentFriendDetail.profilePicOverride = f.profilePicOverride;
-        if (f.currentAvatarImageUrl !== undefined) currentFriendDetail.currentAvatarImageUrl = f.currentAvatarImageUrl;
-        const newSrc = currentFriendDetail.bannerUrl || currentFriendDetail.profilePicOverride || currentFriendDetail.currentAvatarImageUrl || '';
-        if (newSrc) _getFdBannerImg(f.id, newSrc);
+    if (f.bannerUrl !== undefined || f.bannerType !== undefined || f.bannerColor !== undefined) {
+        if (f.bannerUrl) currentFriendDetail.bannerUrl = f.bannerUrl;
+        if (f.bannerType) currentFriendDetail.bannerType = f.bannerType;
+        if (f.bannerColor) currentFriendDetail.bannerColor = f.bannerColor;
+        const isColor = String(currentFriendDetail.bannerType || '') === 'color' && !!currentFriendDetail.bannerColor;
+        const slot = document.getElementById('fd-banner-slot');
+        if (isColor) {
+            if (slot) slot.style.background = `#${String(currentFriendDetail.bannerColor).replace(/^#/, '')}`;
+        } else if (currentFriendDetail.bannerUrl) {
+            _getFdBannerImg(f.id, currentFriendDetail.bannerUrl);
+        }
     }
 
     // VRC badges
@@ -2096,7 +2108,7 @@ function handleUserBasic(payload) {
         const name = decodeURIComponent(wrap.dataset.badgeName || '');
         const desc = decodeURIComponent(wrap.dataset.badgeDesc || '');
         t.innerHTML =
-            `<img class="fd-vrc-badge-tip-img" src="${esc(img)}" alt="">` +
+            `<img class="fd-vrc-badge-tip-img" src="${esc(imgThumb(img, 64))}" alt="">` +
             `<div class="fd-vrc-badge-tip-text">` +
                 `<div class="fd-vrc-badge-tip-name">${esc(name)}</div>` +
                 (desc ? `<div class="fd-vrc-badge-tip-desc">${esc(desc)}</div>` : '') +

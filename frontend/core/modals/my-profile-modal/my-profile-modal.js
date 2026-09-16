@@ -59,6 +59,7 @@ function closeMyProfile(fromNav = false) {
     const m = document.getElementById('modalMyProfile');
     if (m) m.style.display = 'none';
     if (!fromNav && typeof navClear === 'function') navClear();
+    if (!fromNav && typeof releaseClosedModals === 'function') releaseClosedModals();
 }
 
 let _profileDecoData = { iconFrame: [], nameplateEffect: [], profileEffect: [] };
@@ -107,7 +108,7 @@ function renderProfileDecoPicker(loading) {
             const items = _profileDecoData[s.key] || [];
             const noneCell = `<div class="pd-cell${!s.cur ? ' pd-sel' : ''}" onclick="setProfileDeco('${s.key}','')"><div class="pd-none"><span class="msi">block</span></div><div class="pd-name">${t('profiles.deco.none', 'None')}</div></div>`;
             const cells = items.map(it =>
-                `<div class="pd-cell${it.templateId === s.cur ? ' pd-sel' : ''}" onclick="setProfileDeco('${s.key}','${jsq(it.templateId)}')" title="${esc(it.name)}"><img src="${esc(it.imageUrl)}" onerror="this.style.display='none'"><div class="pd-name">${esc(it.name)}</div></div>`
+                `<div class="pd-cell${it.templateId === s.cur ? ' pd-sel' : ''}" onclick="setProfileDeco('${s.key}','${jsq(it.templateId)}')" title="${esc(it.name)}"><img src="${esc(imgThumb(it.imageUrl, 128))}" onerror="this.style.display='none'"><div class="pd-name">${esc(it.name)}</div></div>`
             ).join('');
             const empty = items.length === 0 ? `<div class="pd-empty">${t('profiles.deco.empty', 'You do not own any of these')}</div>` : '';
             return `<div class="pd-section"><div class="pd-section-title">${esc(s.label)}</div><div class="pd-grid">${noneCell}${cells}</div>${empty}</div>`;
@@ -161,8 +162,10 @@ function pdSetPreview(mode, btn) {
 function _pdAfterRender(u) {
     const root = document.getElementById('pdPreviewVrcn');
     if (!root) return;
-    const bannerSrc = u.bannerUrl || u.profilePicOverride || u.currentAvatarImageUrl || u.image || '';
+    const bannerSrc = _mypBannerSrc(u);
     const slot = document.getElementById('pd-banner-slot');
+    const bannerColor = _mypBannerColor(u);
+    if (slot && bannerColor) slot.style.background = bannerColor;
     if (slot && bannerSrc) {
         const img = new Image();
         img.src = bannerSrc;
@@ -197,11 +200,11 @@ function _pdAfterRender(u) {
 }
 
 function _pdVrcnPreviewHtml(u) {
-    const bannerSrc = u.bannerUrl || u.profilePicOverride || u.currentAvatarImageUrl || u.image || '';
+    const bannerSrc = _mypBannerSrc(u);
     const effect = (typeof profileEffectHtml === 'function') ? profileEffectHtml(u.profileEffectUrl) : '';
-    const banner = `<div class="fd-left-banner" id="pd-banner-slot">${bannerSrc ? '<div class="fd-banner-fade"></div>' : ''}${effect}</div>`;
+    const banner = `<div class="fd-left-banner" id="pd-banner-slot">${(bannerSrc || _mypBannerColor(u)) ? '<div class="fd-banner-fade"></div>' : ''}${effect}</div>`;
     const avatarImg = u.image
-        ? `<img class="fd-avatar" src="${esc(u.image)}" onerror="this.style.display='none'">`
+        ? `<img class="fd-avatar" src="${esc(imgThumb(u.image, 128))}" onerror="this.style.display='none'">`
         : `<div class="fd-avatar" style="display:flex;align-items:center;justify-content:center;font-size:calc(20px + var(--fs-off, 0px));font-weight:700;color:var(--tx0)">${esc((u.displayName || '?')[0])}</div>`;
     const frame = (typeof iconFrameHtml === 'function') ? iconFrameHtml(u.iconFrameUrl, true) : '';
     const dotCls = `${u.vrcRunning ? 'vrc-status-dot' : 'vrc-status-ring'} ${statusDotClass(u.status)}`;
@@ -235,8 +238,8 @@ function _pdVrcnPreviewHtml(u) {
 }
 
 function _pdVrcOfficialHtml(u) {
-    const bannerSrc = u.bannerUrl || u.profilePicOverride || u.currentAvatarImageUrl || u.image || '';
-    const icon = u.image || u.currentAvatarImageUrl || '';
+    const bannerSrc = _mypBannerSrc(u);
+    const icon = u.image || '';
     const statusColor = { active: '#2ED319', 'join me': '#42CAFF', 'ask me': '#E8A54B', busy: '#E73A52' }[String(u.status || '').toLowerCase()] || '#6E7681';
     const rank = getTrustRank(u.tags || []);
     const vrcPlus = (u.tags || []).includes('system_supporter') ? '<span class="pdo-plus">VRC+</span>' : '';
@@ -250,7 +253,7 @@ function _pdVrcOfficialHtml(u) {
         let host = l; try { host = new URL(l).hostname.replace(/^www\./, ''); } catch (e) {}
         return `<span class="pdo-link" title="${esc(host)}"><svg viewBox="0 0 64 64" class="pdo-ico-lg"><path fill="currentColor" d="M20.3 25.7c5.1-5.1 13.4-5.1 18.5 0 1.4 1.4 1.4 3.6 0 4.9-1.4 1.4-3.6 1.4-4.9 0-2.4-2.4-6.2-2.4-8.6 0L12.1 43.8c-2.4 2.4-2.4 6.2 0 8.6l2.7 2.7c2.4 2.4 6.2 2.4 8.6 0l9.5-9.5c1.4-1.4 3.6-1.4 4.9 0 1.4 1.4 1.4 3.6 0 4.9l-9.5 9.5c-5.1 5.1-13.4 5.1-18.5 0l-2.7-2.7c-5.1-5.1-5.1-13.4 0-18.5L20.3 25.7ZM37.4 4.4c5.1-5.1 13.4-5.1 18.5 0l2.7 2.7c5.1 5.1 5.1 13.4 0 18.5L45.5 38.7c-5.1 5.1-13.4 5.1-18.5 0-1.4-1.4-1.4-3.6 0-4.9 1.4-1.4 3.6-1.4 4.9 0 2.4 2.4 6.2 2.4 8.6 0l13.1-13.1c2.4-2.4 2.4-6.2 0-8.6l-2.7-2.7c-2.4-2.4-6.2-2.4-8.6 0l-9.5 9.5c-1.4 1.4-3.6 1.4-4.9 0-1.4-1.4-1.4-3.6 0-4.9l9.5-9.5Z"/></svg></span>`;
     }).join('');
-    const langs = (u.tags || []).filter(x => x.startsWith('language_')).map(x => `<span class="pdo-pill">${esc(LANG_MAP[x] || x.replace('language_', '').toUpperCase())}</span>`).join('');
+    const langs = _mypLangKeys(u).map(x => `<span class="pdo-pill">${esc(LANG_MAP[x] || x.replace('language_', '').toUpperCase())}</span>`).join('');
     const bio = u.bio ? `<p class="pdo-bio">${esc(u.bio)}</p><button type="button" class="pdo-readmore" onclick="pdoToggleBio(this)">${t('profiles.deco.vrc_read_more', 'Read More')}</button>` : `<p class="pdo-bio pdo-muted">${t('profiles.my_profile.empty.no_bio', 'No bio written yet')}</p>`;
     const th = (Array.isArray(u.themes) ? u.themes : []).find(x => x.id === u.themeId);
     const pt = th ? { button: ptHex(th.buttonColor, ''), icon: ptHex(th.iconColor, ''), subtext: ptHex(th.subtextColor, '') } : { button: ptHex(u.themeButtonColor, ''), icon: ptHex(u.themeIconColor, ''), subtext: ptHex(u.themeSubtextColor, '') };
@@ -260,7 +263,7 @@ function _pdVrcOfficialHtml(u) {
     return `<div class="pdo-card" style="${themeVars}">
         <div class="pdo-banner">${bannerSrc ? `<img src="${esc(bannerSrc)}" alt="" onerror="this.style.display='none'">` : ''}${effect}</div>
         <div class="pdo-head">
-            <div class="pdo-icon-wrap"><div class="pdo-icon">${icon ? `<img src="${esc(icon)}" alt="" onerror="this.style.display='none'">` : ''}</div>${frame}</div>
+            <div class="pdo-icon-wrap"><div class="pdo-icon">${icon ? `<img src="${esc(imgThumb(icon, 256))}" alt="" onerror="this.style.display='none'">` : ''}</div>${frame}</div>
             <div class="pdo-status"><span class="pdo-status-ring" style="border-color:${statusColor};"></span><span>${esc(u.statusDescription || getStatusText(u.status, ''))}</span></div>
         </div>
         <div class="pdo-body">
@@ -358,7 +361,7 @@ function renderMyProfileContent() {
     const addLanguageLabel  = t('profiles.my_profile.add_language', 'Add language...');
 
     // Banner
-    const bannerSrc = u.bannerUrl || u.profilePicOverride || u.currentAvatarImageUrl || u.image || '';
+    const bannerSrc = _mypBannerSrc(u);
     const _mypEffect = (typeof profileEffectHtml === 'function') ? profileEffectHtml(u.profileEffectUrl) : '';
     const bannerCompactHtml = `<div class="fd-left-banner" id="myp-banner-slot">${bannerSrc ? `<div class="fd-banner-fade"></div>` : ''}${_mypEffect}<span class="vrcn-keybind" style="position:absolute;top:8px;right:8px;z-index:3;border-radius:5px;">CTRL P</span></div>`;
     const mypHeaderActions = renderModalActions([
@@ -370,7 +373,7 @@ function renderMyProfileContent() {
 
     // Avatar with edit overlay
     const avatarImg = u.image
-        ? `<img class="fd-avatar" src="${esc(u.image)}" onerror="this.style.display='none'">`
+        ? `<img class="fd-avatar" src="${esc(imgThumb(u.image, 128))}" onerror="this.style.display='none'">`
         : `<div class="fd-avatar" style="display:flex;align-items:center;justify-content:center;font-size:calc(20px + var(--fs-off, 0px));font-weight:700;color:var(--tx0)">${esc((u.displayName||'?')[0])}</div>`;
     const _mypFrame = (typeof iconFrameHtml === 'function') ? iconFrameHtml(u.iconFrameUrl, true) : '';
     const _editBtnPos = 'bottom:-4px;right:-4px;';
@@ -424,7 +427,7 @@ function renderMyProfileContent() {
     }
 
     // Biography card (left) — bio, links, languages each editable
-    const langTags = (u.tags||[]).filter(t => t.startsWith('language_'));
+    const langTags = _mypLangKeys(u);
     const langsViewHtml = langTags.length
         ? `<div class="fd-lang-tags">${langTags.map(t => `<span class="vrcn-badge">${esc(LANG_MAP[t]||t.replace('language_','').toUpperCase())}</span>`).join('')}</div>`
         : `<div class="myp-empty">${noLanguagesLabel}</div>`;
@@ -793,9 +796,8 @@ function saveMyField(field) {
         sendToCS({ action: 'vrcUpdateProfile', bioLinks });
     } else if (field === 'languages') {
         const chips = document.querySelectorAll('#mypLangsChips [data-lang]');
-        const selectedLangs = Array.from(chips).map(c => c.dataset.lang);
-        const nonLangTags = (u.tags||[]).filter(t => !t.startsWith('language_'));
-        sendToCS({ action: 'vrcUpdateProfile', tags: [...nonLangTags, ...selectedLangs] });
+        const languages = Array.from(chips).map(c => c.dataset.lang.replace(/^language_/, ''));
+        sendToCS({ action: 'vrcUpdateProfile', languages });
     }
 }
 
@@ -811,8 +813,30 @@ function _renderMyLinksInputs() {
     ).join('');
 }
 
+function _mypBannerColor(u) {
+    return (String(u?.bannerType || '') === 'color' && u?.bannerColor)
+        ? `#${String(u.bannerColor).replace(/^#/, '')}` : '';
+}
+
+function _mypBannerSrc(u) {
+    return _mypBannerColor(u) ? '' : (u?.bannerUrl || '');
+}
+
+function _mypLangKeys(u) {
+    if (Array.isArray(u?.languages) && u.languages.length)
+        return u.languages.map(l => 'language_' + String(l).replace(/^language_/, ''));
+    return (u?.tags || []).filter(t => t.startsWith('language_'));
+}
+
+function handleMyProfileFields(p) {
+    if (!p || typeof currentVrcUser === 'undefined' || !currentVrcUser) return;
+    currentVrcUser.bio       = p.bio || '';
+    currentVrcUser.bioLinks  = p.bioLinks || [];
+    currentVrcUser.languages = p.languages || [];
+}
+
 function _renderMyLangsEdit() {
-    const selectedLangs = (currentVrcUser.tags||[]).filter(t => t.startsWith('language_'));
+    const selectedLangs = _mypLangKeys(currentVrcUser);
     _renderMyLangChips(selectedLangs, document.getElementById('mypLangsChips'));
     const sel = document.getElementById('mypLangSelect');
     if (!sel) return;

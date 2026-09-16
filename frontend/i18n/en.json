@@ -2636,7 +2636,7 @@
   "settings.experimental.multitask.warning": "This is an experimental feature, expect bugs.",
   "settings.multitasking.newwindow.label": "Open in new Window",
   "settings.multitasking.newwindow.desc": "Modals opened in Multi-Task mode (SHIFT + Left Mouse) appear as separate desktop windows instead of floating windows inside the app. The windows share the app's single browser instance, so no additional WebView is loaded. Windows only. Takes effect after a restart of VRCNext.",
-  "wm.limit_reached": "Maximum of 12 windows reached",
+  "wm.limit_reached": "Maximum of 8 windows reached",
   "wm.already_open": "{name} is already open",
   "settings.search_debounce.ms_15": "15 ms",
   "settings.search_debounce.ms_50": "50 ms",

@@ -1100,7 +1100,7 @@ function onWorldsResolved(dict) {
         if (info) {
             const thumbEl = btn.querySelector('.lib-world-badge-thumb');
             const textEl  = btn.querySelector('.lib-world-badge-text');
-            if (thumbEl && info.thumbnailImageUrl) thumbEl.style.backgroundImage = `url('${info.thumbnailImageUrl}')`;
+            if (thumbEl && info.thumbnailImageUrl) thumbEl.style.backgroundImage = `url('${imgThumb(info.thumbnailImageUrl, 96)}')`;
             if (textEl) textEl.textContent = info.name || t('library.view_world', 'View World');
         }
     });

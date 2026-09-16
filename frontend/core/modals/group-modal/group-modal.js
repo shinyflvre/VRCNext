@@ -48,6 +48,7 @@ function closeGroupDetail(fromNav = false) {
     document.getElementById('modalDetail').classList.remove('gd-style-compact');
     document.getElementById('modalDetail').style.display = 'none';
     if (!fromNav && typeof navClear === 'function') navClear();
+    if (!fromNav && typeof releaseClosedModals === 'function') releaseClosedModals();
 }
 
 function confirmLeaveGroup(groupId, groupName) {
@@ -108,7 +109,7 @@ function renderGroupDetail(g) {
     // Header
     const iconEditBtn = canEdit ? `<button class="myp-edit-btn" style="position:absolute;bottom:-4px;right:-4px;padding:2px;min-width:0;width:18px;height:18px;display:flex;align-items:center;justify-content:center;" onclick="openImagePicker('group-icon','${gidJs}')" title="${esc(t('groups.images.change_icon', 'Change icon'))}"><span class="msi" style="font-size:11px;">edit</span></button>` : '';
     const iconHtml = g.iconUrl
-        ? `<div style="position:relative;display:inline-block;flex-shrink:0;"><img class="fd-avatar" src="${g.iconUrl}" onerror="this.style.display='none'">${iconEditBtn}</div>`
+        ? `<div style="position:relative;display:inline-block;flex-shrink:0;"><img class="fd-avatar" src="${imgThumb(g.iconUrl, 128)}" onerror="this.style.display='none'">${iconEditBtn}</div>`
         : (canEdit ? `<div style="position:relative;display:inline-block;flex-shrink:0;"><div class="fd-avatar" style="display:flex;align-items:center;justify-content:center;font-size:calc(20px + var(--fs-off, 0px));font-weight:700;color:var(--tx0);">${esc((g.name||'?')[0])}</div>${iconEditBtn}</div>` : '');
     const membersPart = esc(getGroupMembersText(g.memberCount || 0)) + (g.onlineMemberCount > 0 ? ` &middot; ${g.onlineMemberCount} ${esc(t('status.online', 'Online'))}` : '');
     const headerMeta = [g.shortCode ? esc(g.shortCode) : '', membersPart].filter(Boolean).join(' &middot; ');
@@ -173,7 +174,7 @@ function renderGroupDetail(g) {
                     const lpDate = lp.createdAt ? fmtShortDate(new Date(lp.createdAt)) : '';
                     const lpText = lp.text || '';
                     const lpPreview = lpText.length > 80 ? lpText.slice(0, 80) + '...' : lpText;
-                    const lpImg = lp.imageUrl ? `<img src="${lp.imageUrl}" style="width:60px;align-self:stretch;object-fit:cover;border-radius:6px;flex-shrink:0;" onerror="this.style.display='none'">` : '';
+                    const lpImg = lp.imageUrl ? `<img src="${imgThumb(lp.imageUrl, 128)}" style="width:60px;align-self:stretch;object-fit:cover;border-radius:6px;flex-shrink:0;" onerror="this.style.display='none'">` : '';
                     return `<div class="fd-info-card" style="cursor:pointer;" onclick="_switchGdTabByKey('posts')">
                         <div class="fd-group-rep-label">${t('groups.sections.last_post', 'Last Post')}</div>
                         <div style="display:flex;gap:10px;align-items:flex-start;">
@@ -192,7 +193,7 @@ function renderGroupDetail(g) {
                     const leStart = le.startsAt ? new Date(le.startsAt) : null;
                     const leDateStr = leStart && !isNaN(leStart) ? fmtLongDate(leStart) : '';
                     const leTimeStr = leStart && !isNaN(leStart) ? fmtTime(leStart) : '';
-                    const leImg = le.imageUrl ? `<img src="${le.imageUrl}" style="width:60px;align-self:stretch;object-fit:cover;border-radius:6px;flex-shrink:0;" onerror="this.style.display='none'">` : '';
+                    const leImg = le.imageUrl ? `<img src="${imgThumb(le.imageUrl, 128)}" style="width:60px;align-self:stretch;object-fit:cover;border-radius:6px;flex-shrink:0;" onerror="this.style.display='none'">` : '';
                     const leText = le.description || '';
                     const lePrev = leText.length > 80 ? leText.slice(0, 80) + '...' : leText;
                     return `<div class="fd-info-card" style="cursor:pointer;" onclick="_switchGdTabByKey('events')">
@@ -232,7 +233,7 @@ function renderGroupDetail(g) {
                     const insts = g.groupInstances || [];
                     if (!insts.length) return '';
                     const instsHtml = insts.slice(0, 3).map(inst => {
-                        const thumb = inst.worldThumb ? `<img style="width:36px;height:36px;border-radius:6px;object-fit:cover;flex-shrink:0;" src="${inst.worldThumb}" onerror="this.style.display='none'">` : '';
+                        const thumb = inst.worldThumb ? `<img style="width:36px;height:36px;border-radius:6px;object-fit:cover;flex-shrink:0;" src="${imgThumb(inst.worldThumb, 64)}" onerror="this.style.display='none'">` : '';
                         const users = inst.userCount > 0 ? (inst.capacity > 0 ? `${inst.userCount}/${inst.capacity}` : `${inst.userCount}`) : '';
                         return `<div style="display:flex;align-items:center;gap:8px;padding:2px 0;">
                             ${thumb}
@@ -339,7 +340,7 @@ function renderGroupDetail(g) {
     } else {
         posts.forEach((p, i) => {
             const date = p.createdAt ? fmtShortDate(new Date(p.createdAt)) : '';
-            const imgHtml = p.imageUrl ? `<img src="${p.imageUrl}" style="width:120px;align-self:stretch;object-fit:cover;border-radius:6px;flex-shrink:0;" onerror="this.style.display='none'">` : '';
+            const imgHtml = p.imageUrl ? `<img src="${imgThumb(p.imageUrl, 256)}" style="width:120px;align-self:stretch;object-fit:cover;border-radius:6px;flex-shrink:0;" onerror="this.style.display='none'">` : '';
             const fullText = p.text || '';
             const isLong = fullText.length > 120;
             const preview = isLong ? fullText.slice(0, 120) + '...' : fullText;
@@ -380,7 +381,7 @@ function renderGroupDetail(g) {
                 ? fmtTime(startD) + (endD && !isNaN(endD) ? ' – ' + (endDiffDay ? fmtLongDate(endD) + ', ' : '') + fmtTime(endD) : '')
                 : '';
             const dateStr = startD && !isNaN(startD) ? fmtLongDate(startD) : '';
-            const imgHtml = e.imageUrl ? `<img src="${e.imageUrl}" style="width:100%;max-height:120px;object-fit:cover;border-radius:6px;margin-bottom:8px;" onerror="this.style.display='none'">` : '';
+            const imgHtml = e.imageUrl ? `<img src="${imgThumb(e.imageUrl, 256)}" style="width:100%;max-height:120px;object-fit:cover;border-radius:6px;margin-bottom:8px;" onerror="this.style.display='none'">` : '';
             const badge = e.accessType ? `<span style="font-size:calc(9px + var(--fs-off, 0px));padding:1px 6px;border-radius:4px;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent-lt);border:1px solid color-mix(in srgb,var(--accent) 35%,transparent);margin-left:6px;">${esc(e.accessType)}</span>` : '';
             const gid = jsq(e.ownerId || g.id || '');
             const cid = jsq(e.id || '');
@@ -433,7 +434,7 @@ function renderGroupDetail(g) {
     } else {
         galleryTab = '<div class="gd-gallery-grid">';
         gallery.forEach(img => {
-            if (img.imageUrl) galleryTab += `<img class="gd-gallery-img" src="${img.imageUrl}" onclick="openLightbox('${jsq(img.imageUrl)}')" onerror="this.style.display='none'">`;
+            if (img.imageUrl) galleryTab += `<img class="gd-gallery-img" src="${imgThumb(img.imageUrl, 256)}" onclick="openLightbox('${jsq(img.imageUrl)}')" onerror="this.style.display='none'">`;
         });
         galleryTab += '</div>';
     }
