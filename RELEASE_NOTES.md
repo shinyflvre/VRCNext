@@ -1,4 +1,4 @@
-﻿# **2026.60.0**
+﻿# **2026.60.1**
 
 PLEASE READ!!! - TRACKING BIO IS GONE!
 But you can do something to bring it back!
@@ -38,6 +38,8 @@ Maybe VRChat staff will consider adding back bio events in their websocket to tr
   * Fixed changes to your own biography no longer showing up in the timeline. VRChat moved the biography to a different endpoint, so the detection was comparing a field that is always empty now. It reads the new endpoint instead, without any extra requests.
   * The People tab now follows live friend updates in the **Recently Seen** and **Instance** views as well. Until now only the **All** filter reacted to them, and only on its first page.
   * Live friend updates now pass on everything VRChat actually sends over the WebSocket. Banner type, banner color, join date and friend state were arriving but were thrown away before reaching the interface, so an open profile never followed a live banner change and the join date came from the local cache alone.
+  * Fixed the Action Flow conditions **has bio text** and **own bio text** failing although the text matched. Biographies of friends were missing from the friends list, and your own biography was briefly empty after every profile refresh.
+  * Fixed Action Flow instance info webhooks showing your avatar picture instead of your profile icon, or no icon at all for a friend whose picture was not cached yet.
   * Fixed an open profile losing its biography and bio links the moment that person changed their status. Live friend updates no longer carry profile data since the VRChat API change, and the empty fields were overwriting what was already on screen.
   * Fixed group instances staying empty in the sidebar and the Groups tab after a restart until the refresh button was pressed. The list was requested before the VRChat session had finished resuming, and the empty result was then treated as loaded.
   * Fixed the friends list taking a long time to appear after a cold start. VRC+ profile decorations were resolved one after another before the list was handed to the interface. The list now appears right away and the decorations fill in shortly after.

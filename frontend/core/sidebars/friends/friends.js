@@ -121,6 +121,11 @@ function renderVrcProfile(u) {
     if (rs) rs.classList.toggle('logged-out', !u);
     if (!u) { a.innerHTML = ''; currentVrcUser = null; return; }
     if (u.rawJson) _mypRawJson = u.rawJson;
+    if (currentVrcUser && currentVrcUser.id === u.id) {
+        if (!u.bio && currentVrcUser.bio) u.bio = currentVrcUser.bio;
+        if (!(u.bioLinks && u.bioLinks.length) && currentVrcUser.bioLinks) u.bioLinks = currentVrcUser.bioLinks;
+        if (!(u.languages && u.languages.length) && currentVrcUser.languages) u.languages = currentVrcUser.languages;
+    }
     currentVrcUser = u;
     if (!window._rewindChecked) { window._rewindChecked = true; setTimeout(() => sendToCS({ action: 'checkRewind' }), 4000); }
     // If My Profile modal is open, refresh it immediately

@@ -1484,6 +1484,7 @@ public class FriendsController
                     location, platform,
                     presence = isInGame ? "game" : "web",
                     tags = f["tags"]?.ToObject<List<string>>() ?? new(),
+                    bio = PickFact(f, "bio", facts.bio),
                     bioLinks = PickBioLinks(f, facts.bioLinks),
                     lastLogin = PickFact(f, "last_login", facts.lastLogin),
                     lastActivity = PickFact(f, "last_activity", facts.lastActivity),
@@ -1517,6 +1518,7 @@ public class FriendsController
                     platform = f["last_platform"]?.ToString() ?? "",
                     presence = "offline",
                     tags = f["tags"]?.ToObject<List<string>>() ?? new(),
+                    bio = PickFact(f, "bio", offFacts.bio),
                     bioLinks = PickBioLinks(f, offFacts.bioLinks),
                     lastLogin = PickFact(f, "last_login", offFacts.lastLogin),
                     lastActivity = PickFact(f, "last_activity", offFacts.lastActivity),
@@ -1815,7 +1817,7 @@ public class FriendsController
             isEconomyCreator = f["isEconomyCreator"]?.Value<bool>() ?? false,
             ageVerificationStatus = f["ageVerificationStatus"]?.ToString() ?? "",
             avatarFileId = ExtractAvatarFileId(f),
-            bio = PickFact(f, "bio", CachedBio(userId)),
+            bio = PickFact(f, "bio", upFacts.bio),
             pronouns = PickPronouns(f, upFacts.pronouns),
             bioLinks = PickBioLinks(f, upFacts.bioLinks),
             profilePicOverride = f["profilePicOverride"]?.ToString() ?? "",
@@ -1872,6 +1874,7 @@ public class FriendsController
                 isEconomyCreator = f["isEconomyCreator"]?.Value<bool>() ?? false,
                 ageVerificationStatus = f["ageVerificationStatus"]?.ToString() ?? "",
                 avatarFileId = ExtractAvatarFileId(f),
+                bio = PickFact(f, "bio", facts.bio),
                 bioLinks = PickBioLinks(f, facts.bioLinks),
                 lastLogin = PickFact(f, "last_login", facts.lastLogin),
                 lastActivity = PickFact(f, "last_activity", facts.lastActivity),
@@ -2766,21 +2769,21 @@ public class FriendsController
 
     // Join Friend
 
-    private (string dateJoined, string pronouns, int mutualFriends, int mutualGroups, string lastSeen, string lastLogin, string lastActivity, string bioLinks) CachedFacts(string userId)
+    private (string dateJoined, string pronouns, int mutualFriends, int mutualGroups, string lastSeen, string lastLogin, string lastActivity, string bioLinks, string bio) CachedFacts(string userId)
     {
-        if (string.IsNullOrEmpty(userId)) return ("", "", 0, 0, "", "", "", "[]");
+        if (string.IsNullOrEmpty(userId)) return ("", "", 0, 0, "", "", "", "[]", "");
         var lastSeen = LastSeenTogether(userId);
         try
         {
             var c = _core.TimeEngine.GetUserProfileCache(userId);
-            if (c == null) return ("", "", 0, 0, lastSeen, "", "", "[]");
+            if (c == null) return ("", "", 0, 0, lastSeen, "", "", "[]", "");
             return (c.ProfileDateJoined, c.ProfilePronouns, MutualFriendCount(c.MutualsJson), JsonArrayCount(c.MutualGroupsJson), lastSeen,
-                c.ProfileLastLogin, c.ProfileLastActivity, c.ProfileBioLinks);
+                c.ProfileLastLogin, c.ProfileLastActivity, c.ProfileBioLinks, c.ProfileBio);
         }
-        catch { return ("", "", 0, 0, lastSeen, "", "", "[]"); }
+        catch { return ("", "", 0, 0, lastSeen, "", "", "[]", ""); }
     }
 
-    private Dictionary<string, (string dateJoined, string pronouns, int mutualFriends, int mutualGroups, string lastLogin, string lastActivity, string bioLinks)>? PrefetchFacts(IEnumerable<string> userIds)
+    private Dictionary<string, (string dateJoined, string pronouns, int mutualFriends, int mutualGroups, string lastLogin, string lastActivity, string bioLinks, string bio)>? PrefetchFacts(IEnumerable<string> userIds)
     {
         try
         {
@@ -2790,15 +2793,15 @@ public class FriendsController
         catch { return null; }
     }
 
-    private (string dateJoined, string pronouns, int mutualFriends, int mutualGroups, string lastSeen, string lastLogin, string lastActivity, string bioLinks) FactsFrom(
-        Dictionary<string, (string dateJoined, string pronouns, int mutualFriends, int mutualGroups, string lastLogin, string lastActivity, string bioLinks)>? map, string userId)
+    private (string dateJoined, string pronouns, int mutualFriends, int mutualGroups, string lastSeen, string lastLogin, string lastActivity, string bioLinks, string bio) FactsFrom(
+        Dictionary<string, (string dateJoined, string pronouns, int mutualFriends, int mutualGroups, string lastLogin, string lastActivity, string bioLinks, string bio)>? map, string userId)
     {
-        if (string.IsNullOrEmpty(userId)) return ("", "", 0, 0, "", "", "", "[]");
+        if (string.IsNullOrEmpty(userId)) return ("", "", 0, 0, "", "", "", "[]", "");
         if (map == null) return CachedFacts(userId);
         var lastSeen = LastSeenTogether(userId);
         return map.TryGetValue(userId, out var f)
-            ? (f.dateJoined, f.pronouns, f.mutualFriends, f.mutualGroups, lastSeen, f.lastLogin, f.lastActivity, f.bioLinks)
-            : ("", "", 0, 0, lastSeen, "", "", "[]");
+            ? (f.dateJoined, f.pronouns, f.mutualFriends, f.mutualGroups, lastSeen, f.lastLogin, f.lastActivity, f.bioLinks, f.bio)
+            : ("", "", 0, 0, lastSeen, "", "", "[]", "");
     }
 
     private readonly object _lastSeenLock = new();
@@ -2910,13 +2913,6 @@ public class FriendsController
     {
         var live = f["pronouns"]?.ToString() ?? "";
         return string.IsNullOrEmpty(live) ? cached : live;
-    }
-
-    private string CachedBio(string userId)
-    {
-        if (string.IsNullOrEmpty(userId)) return "";
-        try { return _core.TimeEngine.GetUserProfileCache(userId)?.ProfileBio ?? ""; }
-        catch { return ""; }
     }
 
     private static string PickFact(JObject f, string key, string cached)
