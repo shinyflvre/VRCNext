@@ -203,9 +203,6 @@ function openInstanceInfoModal() {
 
     const rightHtml = `<div class="mi-right"><div class="mi-right-scroll" style="overflow:auto;"><div class="mi-instance-list"><div class="mi-instance-card">${cardHeader}${playersHtml}</div></div></div></div>`;
 
-    const prevScroller  = c.querySelector('.mi-right-scroll');
-    const prevScrollTop = prevScroller?.scrollTop || 0;
-
     const leftHidden = _iimLeftHidden();
     c.classList.toggle('iim-no-left', leftHidden);
     const panelAction = {
@@ -220,13 +217,12 @@ function openInstanceInfoModal() {
         title: t('instance.actions.show_more_info', 'Show More Informations'),
         onclick: 'iimOpenInstanceTab()',
     };
-    c.innerHTML = `${renderModalBar(name, [moreAction, panelAction, modalCloseAction('closeInstanceInfoModal()')])}<div class="mi-layout">${leftHtml}${rightHtml}</div>`;
-
-    m.style.display = 'flex';
-    if (prevScrollTop > 0) {
-        const newScroll = c.querySelector('.mi-right-scroll');
-        if (newScroll) newScroll.scrollTop = prevScrollTop;
-    }
+    const render = () => {
+        m.style.display = 'flex';
+        c.innerHTML = `${renderModalBar(name, [moreAction, panelAction, modalCloseAction('closeInstanceInfoModal()')])}<div class="mi-layout">${leftHtml}${rightHtml}</div>`;
+    };
+    if (typeof lvKeepScroll === 'function') lvKeepScroll(c, render);
+    else render();
 }
 
 const IIM_SORT_KEY = 'vrcn_iim_sort';
@@ -365,6 +361,7 @@ function iimSort(id) {
 
 function closeInstanceInfoModal() {
     document.getElementById('modalInstanceInfo').style.display = 'none';
+    if (typeof releaseClosedModals === 'function') releaseClosedModals();
 }
 
 //Avatar Lookup avtrdb context logic

@@ -17,6 +17,12 @@ window.external.receiveMessage(rawMsg => {
                 }
                 break;
             case 'translationData': handleTranslationData(payload); break;
+            case 'wmSurfaceCreated': if (typeof wmOnSurfaceCreated === 'function') wmOnSurfaceCreated(payload); break;
+            case 'wmSurfaceClosed': if (typeof wmOnSurfaceClosed === 'function') wmOnSurfaceClosed(payload); break;
+            case 'smartSearchAnswer':
+                if (window.SmartSearch && typeof SmartSearch.onAnswer === 'function') SmartSearch.onAnswer(payload);
+                break;
+
             case 'loadSettings':
                 loadSettingsToUI(payload);
                 if (typeof requestAccountsList === 'function') requestAccountsList();
@@ -170,6 +176,7 @@ window.external.receiveMessage(rawMsg => {
             case 'regBackupDone':     handleRegBackupDone(payload); break;
             case 'log': addLog(payload.msg, payload.color); break;
             case 'consoleOutput': addLog(payload.text, payload.color); break;
+            case 'vrcMyProfile': handleMyProfileFields(payload); break;
             case 'debugImgCacheState':
                 if (typeof setImgCacheDebug === 'function') setImgCacheDebug(payload.enabled);
                 break;
@@ -579,6 +586,12 @@ window.external.receiveMessage(rawMsg => {
                 break;
             case 'vrcProfileUpdated':
                 if (payload.success) {
+                    if (typeof currentVrcUser !== 'undefined' && currentVrcUser) {
+                        if (payload.bio != null) currentVrcUser.bio = payload.bio;
+                        if (Array.isArray(payload.bioLinks)) currentVrcUser.bioLinks = payload.bioLinks;
+                        if (Array.isArray(payload.languages)) currentVrcUser.languages = payload.languages;
+                        if (payload.pronouns != null) currentVrcUser.pronouns = payload.pronouns;
+                    }
                     renderMyProfileContent();
                     showToast(true, t('profiles.my_profile.saved', 'Saved!'));
                 } else {
@@ -1055,7 +1068,7 @@ case 'vrcNews':
                             const color = oldIcon.style.color;
                             const av = document.createElement('div');
                             av.className = 'nc-avatar';
-                            av.style.backgroundImage = `url('${cssUrl(payload.image)}')`;
+                            av.style.backgroundImage = `url('${cssUrl(imgThumb(payload.image, 64))}')`;
                             av.innerHTML = `<span class="msi nc-avatar-badge" style="color:${color};">${icon}</span>`;
                             oldIcon.replaceWith(av);
                         }

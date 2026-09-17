@@ -87,31 +87,45 @@ public class UsersAPI(VRChatApiService ctx)
         catch (Exception ex) { ctx.Log($"SetHomeWorld exception: {ex.Message}"); return false; }
     }
 
-    public async Task<JObject?> UpdateProfileAsync(string? bio, string? pronouns, List<string>? bioLinks, List<string>? tags, string? userIcon = null, string? profilePicOverride = null)
+    public async Task<bool> UpdateProfileFieldsAsync(string? bio, List<string>? bioLinks, List<string>? languages, string? userIcon)
     {
-        if (!ctx.IsLoggedIn || ctx.CurrentUserId == null) return null;
+        if (!ctx.IsLoggedIn || string.IsNullOrEmpty(ctx.CurrentUserId)) return false;
+        var payload = new JObject();
+        if (bio != null) payload["bio"] = bio;
+        if (bioLinks != null) payload["bioLinks"] = JArray.FromObject(bioLinks);
+        if (languages != null) payload["languages"] = JArray.FromObject(languages);
+        if (userIcon != null) payload["userIcon"] = userIcon;
+        if (!payload.HasValues) return true;
         try
         {
-            var payload = new JObject();
-            if (bio != null) payload["bio"] = bio;
-            if (pronouns != null) payload["pronouns"] = pronouns;
-            if (bioLinks != null) payload["bioLinks"] = JArray.FromObject(bioLinks);
-            if (tags != null) payload["tags"] = JArray.FromObject(tags);
-            if (userIcon != null) payload["userIcon"] = userIcon;
-            if (profilePicOverride != null) payload["profilePicOverride"] = profilePicOverride;
+            var content = new StringContent(payload.ToString(), Encoding.UTF8, "application/json");
+            var resp = await ctx._http.PutAsync($"{VRChatApiService.BASE}/profile/{Uri.EscapeDataString(ctx.CurrentUserId)}", content);
+            var names = string.Join(",", payload.Properties().Select(p => p.Name));
+            ctx.Log($"UpdateProfileFields [{names}]: {(int)resp.StatusCode}");
+            return resp.IsSuccessStatusCode;
+        }
+        catch (Exception ex) { ctx.Log($"UpdateProfileFields exception: {ex.Message}"); return false; }
+    }
+
+    public async Task<JObject?> UpdateUserProfileAsync(string? pronouns)
+    {
+        if (!ctx.IsLoggedIn || ctx.CurrentUserId == null || pronouns == null) return null;
+        try
+        {
+            var payload = new JObject { ["pronouns"] = pronouns };
             var content = new StringContent(payload.ToString(), Encoding.UTF8, "application/json");
             var resp = await ctx._http.PutAsync($"{VRChatApiService.BASE}/users/{ctx.CurrentUserId}", content);
             var body = await resp.Content.ReadAsStringAsync();
-            ctx.Log($"UpdateProfile response: {(int)resp.StatusCode}");
+            ctx.Log($"UpdateUserProfile response: {(int)resp.StatusCode}");
             if (resp.IsSuccessStatusCode)
             {
                 var user = JObject.Parse(body);
                 ctx.CurrentUserRaw = user;
                 return user;
             }
-            ctx.Log($"UpdateProfile error: {body[..Math.Min(200, body.Length)]}");
+            ctx.Log($"UpdateUserProfile error: {body[..Math.Min(200, body.Length)]}");
         }
-        catch (Exception ex) { ctx.Log($"UpdateProfile exception: {ex.Message}"); }
+        catch (Exception ex) { ctx.Log($"UpdateUserProfile exception: {ex.Message}"); }
         return null;
     }
 

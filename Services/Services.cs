@@ -705,6 +705,8 @@ public class AppSettings
 
     public bool MultiTaskMode { get; set; } = false;
 
+    public bool OpenModalsInNewWindow { get; set; } = false;
+
     public bool TilingManager { get; set; } = true;
 
     // Database optimization — load limited entries into RAM at startup
@@ -760,6 +762,7 @@ public class AppSettings
     public bool V8Heap128           { get; set; } = false;
     public bool TwoRenderProcesses  { get; set; } = false;
     public bool EfficiencyMode      { get; set; } = false;
+    public bool ReducedBackgroundUsage { get; set; } = false;
     public bool AnimationsEnabled   { get; set; } = true;
     public bool BlurEnabled         { get; set; } = true;
     public int  SearchDebounceMs    { get; set; } = 500;

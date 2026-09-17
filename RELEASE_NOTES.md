@@ -1,59 +1,66 @@
-﻿**2026.50.0**
+﻿# **2026.60.5**
 
-**Smart Search**
-Smart Search is now much better. Before, you could search for settings, tools, users, groups, events and other content. Now you can also find basically every option inside VRCNext.
-Looking for print and sticker saving but can't find where it is? Smart Search can find it.
-Looking for a specific option but forgot which tool it belongs to? Smart Search can find that too.
+### **Changes**
 
-**Saving Prints and Stickers**
-* New **Instance Stickers** section in the VRChat Config modal, next to Instance Prints. Stickers spawned in your instance are saved once as `player_date_stickerId.png` to a folder you choose.
+* **Performance**:
+  * Significantly reduced memory usage across VRCNext.
+  * Notification sounds now use much less memory and only load when needed.
+  * Modals now properly release images and content after being closed.
+  * **Image Memory Optimize** now uses smaller thumbnails across more parts of the app.
+  * Improved JavaScript memory handling during large friend list updates.
+  * Large lists now only render nearby content, improving performance and reducing memory usage.
+  * Profile decorations of other people now come from a single cosmetics list instead of one request per decoration. This mainly shortens the cold start, where every unknown icon frame or nameplate used to cost its own request.
+  * Added **Reduced Background Usage** under Settings > Performance. When enabled, VRCNext pauses rendering and releases GPU memory while minimized or hidden in the tray. Background features continue running normally. Windows only and requires a restart.
 
-**Responsive Changes**
-* All tabs: the gap between the center content and the sidebars, taskbar and window bottom has been reduced from 28px to 14px.
-* Media Library, Worlds, People, Groups, Avatars, Calendar and Inventory: the toolbar now stays in one row, with filter buttons scrolling horizontally on narrow windows.
-* Scrollable filter rows now fade at both edges.
-* Filter buttons now show their count as a badge, like the People tab:
+* **Multi-Task Mode**:
+  * Added **Open in new Window** under Settings > Multi-Tasking.
+  * SHIFT + Left Click can now open Profiles, Groups, Worlds, Avatars, Events and Instances in separate desktop windows.
+  * Detached windows share the existing WebView, so they do not create additional browser instances.
+  * Windows only and requires a restart.
+  * The maximum number of open Multi-Task windows is now 8 instead of 12.
 
-  * **Inventory**: per category. The count next to the Upload button is gone. Unloaded categories show **X**.
-  * **Avatars**: My Avatars, Favorites, Recently Used.
-  * **Worlds**: Favorites, Recently Visited, My Worlds.
-  * **People**: Favorites, All Friends, Instance, Recently Seen, Blocked, Muted, plus the All, In-Game, Active and Offline filters.
-  * **Groups**: filters renamed to **Joined**, **Instances**, **My Groups** and **Moderate**.
+* **VRChat API Update**:
+  * VRChat moved profile data to a new endpoint. Profile pictures, biographies, bio links, badges and languages work again.
+  * Profile pictures now use VRChat's new icon field. This restores images in the sidebar, dashboard, friends list, group members, ban lists, group logs and user search.
+  * Editing your biography, bio links, languages and profile icon now saves to the new endpoint.
+  * Languages now use VRChat's own language list instead of profile tags.
+  * The Json tab in a user profile now shows both responses, the one from `/users/` and the one from `/profile/`, since VRChat split profile data across two endpoints.
+  * Group member lists now show icon frames and nameplate effects for people who are not on your friends list. Friends already had them, since those come from the live friends data.
+  * The **Bio** filter in the Friends timeline is now greyed out and explains on hover that it is deprecated due to VRChat API changes. It still shows past entries.
 
-**Context Menu**
-* Context Menu v2: user, world, instance, group, avatar and media library menus now open with an icon toolbar for common actions like Favorite, Boop, Join, Set as Home, Represent, Copy, Pin, Hide and Reveal.
-* **Share** is now a **Copy** submenu with **Copy ID** and **Copy Link**. Clicking Copy copies the link directly, while hovering shows both options.
-* Right-click now opens the matching menu on the **by username** badge in Group, World and Avatar modals, the **Organizer** in the Event modal, and entries in Most Visited Worlds and Interacted The Most With.
-
-**Custom Chatbox**
-* Custom text lines can now be reordered with drag and drop, just like modules.
-* System stats now show VRAM as used/total, for example **VRAM 3.7/8GB**.
-
-**Timeline**
-* List view: user names in the **User** column open the profile, and avatar names in the **Detail** column open the avatar.
-* Group notifications like announcements, events, invites and other group entries now show the group as a link in the **User** column. The detail popup also has a **View Group** button. New notification events store the sender user or group ID directly, while older entries still resolve the group from the cached icon.
-* Edit mode uses the same bottom bar as People, Groups and Avatars, with the selection count, **Select All** and **Delete**.
-
-**User & World Modals**
-* Timeline, Last Activity and Instance History now use the Timeline page list design, with **Show more** opening the Timeline already filtered for that user or world.
-
-**Changes**
-* People tab: **Blocked** and **Muted** moved into a new **Moderated** filter, shown as sub-filters with their own counts.
-* People > All Friends > In-Game: friends are now grouped with separators.
-* Dashboard > Friends Activity: friends are now grouped by shared instances.
-* People > Instance: the instance info is now shown as a compact card next to the search box, with the world name, an #id badge, type badge and player count.
-* Smart Search (`Ctrl K`) now searches all tools, including options, sliders, dropdowns and section headers from every tool page and the VRChat Config, Launch Options, Message Templates and Log Viewer modals. Selecting a result opens the tool or modal and highlights the option, just like Settings results.
-* Text now uses ClearType subpixel antialiasing instead of grayscale.
-* Updated some badge colors.
-* Removed the glow from VRC+ and local group badges.
-
-**Bug Fixes**
-* Context menus no longer flicker when opening.
-* People lists: the Language column now shows every language as a badge with its full name and wraps instead of cutting off after the first one. Instance, All Friends, Favorites and the other lists now use the same badges.
-* Dashboard: Friends Activity and Group Activity now keep their scroll position when the list updates instead of jumping back to the top.
-* Context menus now use the configured badge base color.
-* Context menu icons for red actions like Unfriend or Block now stay red on hover instead of turning gray.
-* Taskbar: the clock and date are no longer cut off when menu labels are longer, for example in French. The menu area now grows with its content.
-* Kikitan XD: Kawai mode with Local Models now keeps the spoken or translated sentence and adds a mood-matching kaomoji. Small local models previously sometimes answered with just `^-^`.
-* Timeline: instance events no longer show a few minutes of Time Spent for players who stayed for the whole session. Leave times now come from the VRChat log, so restarting mid-instance no longer creates a bogus second leave. Existing affected entries are repaired on the next start.
-* Profile and group icons in compact modals are now 64px instead of 61px for pixel-sharp rendering at 100% scale.
+### **Fixed Bugs**
+  * Fixed last login, last activity and bio links staying empty in the People list. VRChat no longer sends these along with the friends list, so they are now filled in from the local profile cache. They also survive a refresh instead of disappearing again right after **Fetch**.
+  * Fixed the language column in the People list putting every language on its own line. The column is wider now and the text inside the badges is centered again.
+  * Fixed changes to your own biography no longer showing up in the timeline. VRChat moved the biography to a different endpoint, so the detection was comparing a field that is always empty now. It reads the new endpoint instead, without any extra requests.
+  * The People tab now follows live friend updates in the **Recently Seen** and **Instance** views as well. Until now only the **All** filter reacted to them, and only on its first page.
+  * Live friend updates now pass on everything VRChat actually sends over the WebSocket. Banner type, banner color, join date and friend state were arriving but were thrown away before reaching the interface, so an open profile never followed a live banner change and the join date came from the local cache alone.
+  * Fixed the player list in the instance modal jumping back to the start every time a player joined or left. Only the vertical position was kept, the horizontal one was reset.
+  * Fixed the horizontal scrollbar of list views not following the mouse and making the table jump while being dragged. The scrollbar and the table kept resetting each other to outdated positions.
+  * Fixed bio links missing for players in your instance. VRChat no longer includes them in the player data, so they are now loaded from the profile when someone joins.
+  * Fixed saved biographies, bio links and badges being erased whenever you joined an instance with that person, or when loading their profile failed. This left profiles, the People list and live updates without this information.
+  * Fixed the **18+** and **Age Verified** badges disappearing from an open profile when that friend traveled or went offline, from the friend preview after a refresh, and from saved profiles when loading a profile failed.
+  * Fixed the **Creator** badge missing when reopening a profile shortly after viewing it.
+  * Fixed your own badges disappearing from My Profile after every profile refresh, and staying gone when loading your profile failed. Your profile is now loaded once per refresh instead of twice.
+  * Fixed the friend hover card showing no banner for friends who use a color banner.
+  * Fixed **Optimize Database** erasing the bio links of your friends. Since the VRChat API change they are only kept in the local cache. The bio link count shown before optimizing now matches what actually gets cleaned. Friends you first met in an instance before adding them are now also kept, instead of losing their bio links, pronouns, last login and last activity.
+  * Fixed badges not showing when a profile was opened from the local cache.
+  * Fixed the VRChat note of a friend showing as empty, and being cleared from the local cache, after that friend sent a live update.
+  * Fixed the friends sidebar requesting group instances over and over when none of your groups had an active instance.
+  * Fixed your own color banner not showing in My Profile and the Customize Profile previews.
+  * Fixed color banners missing when a profile was opened from the local cache.
+  * Fixed a deleted biography, bio links or languages briefly reappearing in My Profile right after saving.
+  * Fixed the Action Flow conditions **has bio text** and **own bio text** failing although the text matched. Biographies of friends were missing from the friends list, and your own biography was briefly empty after every profile refresh.
+  * Fixed Action Flow instance info webhooks showing your avatar picture instead of your profile icon, or no icon at all for a friend whose picture was not cached yet.
+  * Fixed an open profile losing its biography and bio links the moment that person changed their status. Live friend updates no longer carry profile data since the VRChat API change, and the empty fields were overwriting what was already on screen.
+  * Fixed group instances staying empty in the sidebar and the Groups tab after a restart until the refresh button was pressed. The list was requested before the VRChat session had finished resuming, and the empty result was then treated as loaded.
+  * Fixed the friends list taking a long time to appear after a cold start. VRC+ profile decorations were resolved one after another before the list was handed to the interface. The list now appears right away and the decorations fill in shortly after.
+  * Fixed scaling and zooming in detached windows.
+  * Fixed detached windows briefly showing the desktop while resizing.
+  * Fixed detached windows showing the plain browser tooltip instead of the VRCNext tooltip when hovering elements.
+  * Fixed the image picker for profile icons and banners opening in the main window when triggered from a detached window.
+  * Fixed the content of detached windows shifting for a moment while the main window or another detached window is resized.
+  * Detached windows no longer stay blank after a browser process failure. The page is reloaded or the windows are reattached automatically.
+  * Fixed detached windows turning black once about ten windows were open or a window was made very wide. The shared drawing surface hit the GPU texture limit, windows are now arranged in rows below that limit.
+  * Fixed duplicate **Restart VRCNext** buttons appearing under Performance.
+  * Fixed the Change Status modal becoming scrollable when the status dropdown is opened. Dropdown lists inside modals now float above the modal instead of extending its content.
+  * Fixed some badges appearing taller than others.

@@ -345,8 +345,13 @@ function applyFriendFacts(u) {
     const f = vrcFriendsData.find(x => x.id === u.id);
     if (!f) return;
     let changed = false;
-    ['dateJoined', 'pronouns'].forEach(k => {
-        if (u[k] && f[k] !== u[k]) { f[k] = u[k]; changed = true; }
+    _PL_PROFILE_FACTS.forEach(k => {
+        const v = u[k];
+        const hasValue = Array.isArray(v) ? v.length > 0 : !!v;
+        if (!hasValue) return;
+        if (JSON.stringify(f[k]) === JSON.stringify(v)) return;
+        f[k] = v;
+        changed = true;
     });
     ['mutualFriends', 'mutualGroups'].forEach(k => {
         if (typeof u[k] === 'number' && f[k] !== u[k]) { f[k] = u[k]; changed = true; }
@@ -716,20 +721,24 @@ function peopleFavGoPage(page) {
 const ALL_FRIENDS_LIVE_MS = 400;
 let _allFriendsLiveTimer = null;
 
+function _plLiveFilterOk() {
+    const tab = document.getElementById('tab3');
+    if (!tab || !tab.classList.contains('active')) return false;
+    if (peopleFilter === 'instance' || peopleFilter === 'recentseen') return true;
+    if (peopleFilter !== 'all') return false;
+    if (_peopleAllPage !== 0) return false;
+    return !(document.getElementById('allFriendSearchInput')?.value || '').trim();
+}
+
 function filterAllFriendsIfLive() {
     _pplUpdateCounts();
-    const tab = document.getElementById('tab3');
-    if (!tab || !tab.classList.contains('active')) return;
-    if (peopleFilter !== 'all') return;
-    if (_peopleAllPage !== 0) return;
-    if ((document.getElementById('allFriendSearchInput')?.value || '').trim()) return;
+    if (!_plLiveFilterOk()) return;
     if (_allFriendsLiveTimer) return;
     _allFriendsLiveTimer = setTimeout(() => {
         _allFriendsLiveTimer = null;
-        const t3 = document.getElementById('tab3');
-        if (!t3 || !t3.classList.contains('active')) return;
-        if (peopleFilter !== 'all' || _peopleAllPage !== 0) return;
-        if ((document.getElementById('allFriendSearchInput')?.value || '').trim()) return;
+        if (!_plLiveFilterOk()) return;
+        if (peopleFilter === 'instance') { renderInstancePlayers(); return; }
+        if (peopleFilter === 'recentseen') { _plKeepScroll('recentSeenGrid', filterRecentSeen); return; }
         _plKeepScroll('allFriendsGrid', filterAllFriends);
     }, ALL_FRIENDS_LIVE_MS);
 }

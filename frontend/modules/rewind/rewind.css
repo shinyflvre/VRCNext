@@ -230,7 +230,7 @@
 .rw-box .ts-item:hover { background: color-mix(in srgb, var(--bg-hover) 50%, transparent); }
 .rw-box .vrcn-button { background: color-mix(in srgb, var(--bg-btn) 50%, transparent); }
 .rw-box .vrcn-button:hover { background: color-mix(in srgb, var(--bg-btn-h) 50%, transparent); }
-.rw-box .vrcn-button.vrcn-btn-primary { background: color-mix(in srgb, var(--accent) 50%, transparent); }
+.rw-box .vrcn-button.vrcn-btn-primary { background: color-mix(in srgb, var(--accent) 50%, transparent); border-color: color-mix(in srgb, var(--accent) 65%, transparent); }
 .rw-box .vrcn-button.vrcn-btn-primary:hover { background: color-mix(in srgb, var(--accent) 65%, transparent); }
 .rw-box .vrcn-button-round { background: color-mix(in srgb, var(--bg-hover) 50%, transparent); }
 .rw-box .vrcn-button-round:hover { background: color-mix(in srgb, var(--accent-lt) 50%, transparent); }

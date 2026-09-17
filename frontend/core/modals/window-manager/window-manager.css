@@ -1,4 +1,4 @@
-#wmLayer {
+﻿#wmLayer {
     position: fixed;
     top: var(--tb-h);
     left: 0;
@@ -184,3 +184,15 @@
 }
 .wm-dock-close:hover { background: var(--err); color: #fff; }
 .wm-dock-close .msi { font-size: 13px; color: inherit; }
+
+.wm-window.wm-surfaced {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    pointer-events: auto;
+}
+.wm-window.wm-surfaced > .modal-overlay > .modal-box { border-radius: 0 !important; }
+.wm-window.wm-surfaced > .modal-overlay::after { display: none; }
+.wm-window.wm-surfaced .wm-resize { display: none; }

@@ -27,7 +27,7 @@
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    border: 2.5px solid var(--bg-card);
+    border: 2.5px solid var(--tab-card-bg, var(--bg-input));
     position: absolute;
     bottom: -3px;
     right: -3px;

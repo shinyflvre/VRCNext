@@ -139,11 +139,12 @@ class MeetGraph {
     }
 
     _loadImage(nd) {
-        if (!nd.image) return;
+        if (!nd.image || nd._imgLoading || this._imagesUnloaded) return;
+        nd._imgLoading = true;
         const img = new Image();
-        img.src = nd.image;
-        img.onload  = () => { nd.imgEl = img; this._scheduleRender(); };
-        img.onerror = () => {};
+        img.src = imgThumb(nd.image, 128);
+        img.onload  = () => { nd._imgLoading = false; nd.imgEl = img; this._sprite(nd); nd.imgEl = null; this._scheduleRender(); };
+        img.onerror = () => { nd._imgLoading = false; };
     }
 
     unloadImages() {
@@ -163,13 +164,13 @@ class MeetGraph {
     reloadImages() {
         if (!this._imagesUnloaded) return;
         this._imagesUnloaded = false;
-        this.nodes.forEach(nd => { if (!nd.imgEl) this._loadImage(nd); });
-        this.worlds.forEach(w => { if (!w.imgEl) this._loadImage(w); });
+        this.nodes.forEach(nd => { if (!nd._spr) this._loadImage(nd); });
+        this.worlds.forEach(w => { if (!w._spr) this._loadImage(w); });
     }
 
     _sprite(nd) {
         if (nd._spr) return nd._spr;
-        if (!nd.imgEl) return null;
+        if (!nd.imgEl) { this._loadImage(nd); return null; }
         const S  = MNET_SPRITE_PX;
         const cv = document.createElement('canvas');
         cv.width = S; cv.height = S;

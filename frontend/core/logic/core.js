@@ -580,19 +580,20 @@ function emptyStateHtml(icon, title, desc) {
 }
 
 const THEMES = {
-    vrcn:       { label: 'VRCN', dot: '#8E8EA7', c: { 'bg-base': '#0A0A0A', 'bg-side': '#101011', 'bg-taskbar': '#101011', 'bg-card': '#0F0F0F', 'bg-hover': '#1C1C1F', 'bg-input': '#121212', 'tab-card-bg': '#0D0D0D', 'ui-input-bg': '#161618', 'ui-input-hover-bg': '#1C1C1F', 'ui-input-active-bg': '#1F2024', 'badge-bg': '#2B2C30', 'badge-tx': '#C4C4D1', 'accent': '#8E8EA7', 'accent-lt': '#A5A5AC', 'dropdown-active': '#FFFFFF', 'cyan': '#8CA5FF', 'ok': '#2DD48C', 'warn': '#FFBA37', 'err': '#FF4B55', 'tx0': '#FFFFFF', 'tx1': '#C4C4D1', 'tx2': '#C4C4D1', 'tx3': '#8A8A9B', 'brd': '#1C1C1F', 'brd-lt': '#1C1C1F', 'bdg-user-pc': '#989DAF', 'bdg-user-quest': '#989DAF', 'bdg-user-web': '#989DAF', 'bdg-user-friend': '#2DD48C', 'bdg-rank-visitor': '#CCCCCC', 'bdg-rank-new': '#1778FF', 'bdg-rank-user': '#2BCF5C', 'bdg-rank-known': '#FF7B42', 'bdg-rank-trusted': '#8143E6' } },
-    blood:     { label: 'Blood',     dot: '#DF2A4E', c: { 'bg-base': '#0B0611', 'bg-side': '#10091A', 'bg-taskbar': '#10091A', 'bg-card': '#190F26', 'bg-hover': '#251936', 'bg-input': '#1C1229', 'tab-card-bg': '#170D24', 'accent': '#DF2A4E', 'accent-lt': '#E16B82', 'dropdown-active': '#DF2A4E', 'cyan': '#DC7A56', 'ok': '#2DD48C', 'warn': '#FFBA37', 'err': '#FF4B55', 'tx0': '#F2EFF5', 'tx1': '#D2CCDB', 'tx2': '#D2CCDB', 'tx3': '#D2CCDB', 'brd': '#291B3C', 'brd-lt': '#38284D' } },
-    halloween: { label: 'Halloween', dot: '#DF462A', c: { 'bg-base': '#0B091A', 'bg-side': '#0B091A', 'bg-taskbar': '#0B091A', 'bg-card': '#110F26', 'bg-hover': '#1B1936', 'bg-input': '#141229', 'tab-card-bg': '#0F0D24', 'accent': '#DF462A', 'accent-lt': '#E17D6B', 'dropdown-active': '#DF462A', 'cyan': '#DCA956', 'ok': '#2DD48C', 'warn': '#FFBA37', 'err': '#FF4B55', 'tx0': '#F0EFF5', 'tx1': '#F0EFF5', 'tx2': '#F0EFF5', 'tx3': '#F0EFF5', 'brd': '#1E1B3C', 'brd-lt': '#2B284D' } },
-    miku:      { label: 'Miku',      dot: '#66B4D2', c: { 'bg-base': '#080D14', 'bg-side': '#080D14', 'bg-taskbar': '#080D14', 'bg-card': '#080D14', 'bg-hover': '#17262C', 'bg-input': '#0B1017', 'tab-card-bg': '#060B12', 'accent': '#66B4D2', 'accent-lt': '#66B4D2', 'dropdown-active': '#66B4D2', 'cyan': '#66B4D2', 'ok': '#2DD48C', 'warn': '#FFBA37', 'err': '#FF4B55', 'tx0': '#FFFFFF', 'tx1': '#FFFFFF', 'tx2': '#FFFFFF', 'tx3': '#FFFFFF', 'brd': '#13223F', 'brd-lt': '#13223F' } },
-    vrchat:    { label: 'VRChat',    dot: '#0B748E', c: { 'bg-base': '#0E1013', 'bg-side': '#0E1013', 'bg-taskbar': '#0E1013', 'bg-card': '#181B1F', 'bg-hover': '#042E39', 'bg-input': '#1B1E22', 'tab-card-bg': '#16191D', 'accent': '#0B748E', 'accent-lt': '#53C0D5', 'dropdown-active': '#0B748E', 'cyan': '#53C0D5', 'ok': '#18A86A', 'warn': '#D4860A', 'err': '#D93040', 'tx0': '#FFFFFF', 'tx1': '#FFFFFF', 'tx2': '#FFFFFF', 'tx3': '#FFFFFF', 'brd': '#042E39', 'brd-lt': '#BEC8DA' } },
-    copper:     { label: 'Copper',    dot: '#D08A4F', c: { 'bg-base': '#0B0B0C', 'bg-side': '#101012', 'bg-taskbar': '#101012', 'bg-card': '#151517', 'bg-hover': '#232326', 'bg-input': '#111113', 'tab-card-bg': '#131315', 'ui-input-bg': '#1C1C1F', 'ui-input-hover-bg': '#262629', 'ui-input-active-bg': '#B8703C', 'badge-bg': '#24282E', 'badge-tx': '#ABA49D', 'accent': '#D08A4F', 'accent-lt': '#E6AC78', 'dropdown-active': '#D08A4F', 'cyan': '#8FB4D9', 'ok': '#46C88C', 'warn': '#E0A43C', 'err': '#E05555', 'tx0': '#F4F1EE', 'tx1': '#E4DFDA', 'tx2': '#ABA49D', 'tx3': '#7C7670', 'brd': '#232326', 'brd-lt': '#303034', 'bdg-user-pc': '#8FB4D9', 'bdg-user-quest': '#46C88C', 'bdg-user-web': '#E0A43C', 'bdg-user-friend': '#46C88C', 'bdg-rank-visitor': '#CCCCCC', 'bdg-rank-new': '#1778FF', 'bdg-rank-user': '#2BCF5C', 'bdg-rank-known': '#FF7B42', 'bdg-rank-trusted': '#8143E6' } },
-    nature:     { label: 'Nature',      dot: '#8DBF63', c: { 'bg-base': '#0B0C0A', 'bg-side': '#0F110D', 'bg-taskbar': '#0F110D', 'bg-card': '#151714', 'bg-hover': '#232620', 'bg-input': '#111310', 'tab-card-bg': '#131512', 'ui-input-bg': '#1B1E19', 'ui-input-hover-bg': '#262A23', 'ui-input-active-bg': '#4F8A3A', 'badge-bg': '#2A2620', 'badge-tx': '#A6AC9E', 'accent': '#8DBF63', 'accent-lt': '#B4D98F', 'dropdown-active': '#8DBF63', 'cyan': '#D8926A', 'ok': '#6ECB86', 'warn': '#D9A441', 'err': '#E05C5C', 'tx0': '#F2F4EE', 'tx1': '#E0E4DA', 'tx2': '#A6AC9E', 'tx3': '#767C6F', 'brd': '#232620', 'brd-lt': '#313529', 'bdg-user-pc': '#86B8D8', 'bdg-user-quest': '#8DBF63', 'bdg-user-web': '#D8926A', 'bdg-user-friend': '#6ECB86', 'bdg-rank-visitor': '#CCCCCC', 'bdg-rank-new': '#1778FF', 'bdg-rank-user': '#2BCF5C', 'bdg-rank-known': '#FF7B42', 'bdg-rank-trusted': '#8143E6' } },
-    flippernano: { label: 'Flipper Nano', dot: '#FF896F', c: { 'bg-base': '#E5E8F6', 'bg-side': '#EEF1FF', 'bg-taskbar': '#EEF1FF', 'bg-card': '#E7EAF8', 'bg-hover': '#FF896F', 'bg-input': '#EAEDFB', 'tab-card-bg': '#E0E3F3', 'ui-input-bg': '#D7DAEB', 'ui-input-hover-bg': '#FF896F', 'ui-input-active-bg': '#FF896F', 'badge-bg': '#FFBAAB', 'badge-tx': '#FFFFFF', 'accent': '#FF896F', 'accent-lt': '#FF896F', 'dropdown-active': '#FF896F', 'cyan': '#FF896F', 'ok': '#2BFF00', 'warn': '#FF7455', 'err': '#FF2E00', 'tx0': '#FFFFFF', 'tx1': '#FFFFFF', 'tx2': '#FFFFFF', 'tx3': '#FFFFFF', 'brd': '#D3D6E6', 'brd-lt': '#D3D6E6', 'bdg-user-pc': '#64AAFF', 'bdg-user-quest': '#38DC78', 'bdg-user-web': '#FFA726', 'bdg-user-friend': '#2DD48C', 'bdg-rank-visitor': '#CCCCCC', 'bdg-rank-new': '#1778FF', 'bdg-rank-user': '#2BCF5C', 'bdg-rank-known': '#FF7B42', 'bdg-rank-trusted': '#8143E6' }, light: true, cLight: { 'bg-base': '#E5E8F6', 'tx0': '#000000', 'tx1': '#494949', 'tx2': '#494949', 'tx3': '#494949', 'accent': '#FF896F' } },
-    spaceout:   { label: 'Spaceout',     dot: '#FF9F60', c: { 'bg-base': '#05040C', 'bg-side': '#05040C', 'bg-taskbar': '#05040C', 'bg-card': '#0A0714', 'bg-hover': '#191327', 'bg-input': '#110D1B', 'tab-card-bg': '#110D1B', 'ui-input-bg': '#110D1B', 'ui-input-hover-bg': '#191327', 'ui-input-active-bg': '#FF9F60', 'badge-bg': '#4D455F', 'badge-tx': '#B7B7C3', 'accent': '#FF9F60', 'accent-lt': '#9797B1', 'dropdown-active': '#FF9F60', 'cyan': '#8CA5FF', 'ok': '#2DD48C', 'warn': '#FFBA37', 'err': '#FF4B55', 'tx0': '#EBEBFF', 'tx1': '#EBEBFF', 'tx2': '#B7B7C3', 'tx3': '#FFFFFF', 'brd': '#1C162C', 'brd-lt': '#1C162C', 'bdg-user-pc': '#FF9F60', 'bdg-user-quest': '#FF9F60', 'bdg-user-web': '#FF9F60', 'bdg-user-friend': '#FF9F60', 'bdg-rank-visitor': '#CCCCCC', 'bdg-rank-new': '#1778FF', 'bdg-rank-user': '#2BCF5C', 'bdg-rank-known': '#FF7B42', 'bdg-rank-trusted': '#8143E6' } },
-    fluffy:     { label: 'Fluffy',       dot: '#DFBFFF', c: { 'bg-base': '#EEF1FF', 'bg-side': '#EEF1FF', 'bg-taskbar': '#EEF1FF', 'bg-card': '#FAE8FF', 'bg-hover': '#FFCCE9', 'bg-input': '#FBF1FF', 'tab-card-bg': '#FBF1FF', 'ui-input-bg': '#EEDCF5', 'ui-input-hover-bg': '#FFCCE9', 'ui-input-active-bg': '#F8C5E2', 'badge-bg': '#FFD5EE', 'badge-tx': '#FFFFFF', 'accent': '#DFBFFF', 'accent-lt': '#D1A8FF', 'dropdown-active': '#DFBFFF', 'cyan': '#DCAFFF', 'ok': '#2BFF00', 'warn': '#FF7455', 'err': '#FF2E00', 'tx0': '#FFFFFF', 'tx1': '#FFFFFF', 'tx2': '#FFFFFF', 'tx3': '#FFFFFF', 'brd': '#E5D3E6', 'brd-lt': '#D3D6E6', 'bdg-user-pc': '#64AAFF', 'bdg-user-quest': '#38DC78', 'bdg-user-web': '#FFA726', 'bdg-user-friend': '#2DD48C', 'bdg-rank-visitor': '#CCCCCC', 'bdg-rank-new': '#1778FF', 'bdg-rank-user': '#2BCF5C', 'bdg-rank-known': '#FF7B42', 'bdg-rank-trusted': '#8143E6' }, light: true, cLight: { 'bg-base': '#EEF1FF', 'tx0': '#0B050E', 'tx1': '#49414E', 'tx2': '#3D3547', 'tx3': '#3B3441', 'accent': '#DFBFFF' } },
-    ender:      { label: 'Ender',        dot: '#CC60FF', c: { 'bg-base': '#05040C', 'bg-side': '#05040C', 'bg-taskbar': '#05040C', 'bg-card': '#0A0714', 'bg-hover': '#191327', 'bg-input': '#110D1B', 'tab-card-bg': '#151120', 'ui-input-bg': '#110D1B', 'ui-input-hover-bg': '#191327', 'ui-input-active-bg': '#B960FF', 'badge-bg': '#4D3666', 'badge-tx': '#B7B7C3', 'accent': '#CC60FF', 'accent-lt': '#9797B1', 'dropdown-active': '#CC60FF', 'cyan': '#8CA5FF', 'ok': '#2DD48C', 'warn': '#FFBA37', 'err': '#FF4B55', 'tx0': '#EBEBFF', 'tx1': '#EBEBFF', 'tx2': '#B7B7C3', 'tx3': '#FFFFFF', 'brd': '#1C162C', 'brd-lt': '#1C162C', 'bdg-user-pc': '#E7B5FF', 'bdg-user-quest': '#E7B5FF', 'bdg-user-web': '#E7B5FF', 'bdg-user-friend': '#E7B5FF', 'bdg-rank-visitor': '#CCCCCC', 'bdg-rank-new': '#1778FF', 'bdg-rank-user': '#2BCF5C', 'bdg-rank-known': '#FF7B42', 'bdg-rank-trusted': '#8143E6' } },
-    redruby:    { label: 'Red Ruby', dot: '#D04F4F', c: { 'bg-base': '#0B0B0C', 'bg-side': '#101012', 'bg-taskbar': '#101012', 'bg-card': '#151517', 'bg-hover': '#232326', 'bg-input': '#111113', 'tab-card-bg': '#131315', 'ui-input-bg': '#1C1C1F', 'ui-input-hover-bg': '#262629', 'ui-input-active-bg': '#B83C3C', 'badge-bg': '#24282E', 'badge-tx': '#AB9D9D', 'accent': '#D04F4F', 'accent-lt': '#E67878', 'dropdown-active': '#D04F4F', 'cyan': '#D9A58F', 'ok': '#46C88C', 'warn': '#E0A43C', 'err': '#E05555', 'tx0': '#F4EEEE', 'tx1': '#E4DADA', 'tx2': '#AB9D9D', 'tx3': '#7C7070', 'brd': '#232326', 'brd-lt': '#303034', 'bdg-user-pc': '#D98F8F', 'bdg-user-quest': '#D98F8F', 'bdg-user-web': '#D98F8F', 'bdg-user-friend': '#D98F8F', 'bdg-rank-visitor': '#CCCCCC', 'bdg-rank-new': '#1778FF', 'bdg-rank-user': '#2BCF5C', 'bdg-rank-known': '#FF7B42', 'bdg-rank-trusted': '#8143E6' } },
-    mates:      { label: 'Mates', dot: '#4F50D0', c: { 'bg-base': '#0B0B0C', 'bg-side': '#101012', 'bg-taskbar': '#101012', 'bg-card': '#151517', 'bg-hover': '#232326', 'bg-input': '#111113', 'tab-card-bg': '#131315', 'ui-input-bg': '#1C1C1F', 'ui-input-hover-bg': '#262629', 'ui-input-active-bg': '#595AD6', 'badge-bg': '#24252E', 'badge-tx': '#9D9EAB', 'accent': '#4F50D0', 'accent-lt': '#7E78E6', 'dropdown-active': '#4F50D0', 'cyan': '#9E8FD9', 'ok': '#46C88C', 'warn': '#E0A43C', 'err': '#E05555', 'tx0': '#EEEFF4', 'tx1': '#DADCE4', 'tx2': '#9D9EAB', 'tx3': '#70727C', 'brd': '#232326', 'brd-lt': '#303034', 'bdg-user-pc': '#8F99D9', 'bdg-user-quest': '#8F99D9', 'bdg-user-web': '#8F99D9', 'bdg-user-friend': '#8F99D9', 'bdg-rank-visitor': '#CCCCCC', 'bdg-rank-new': '#1778FF', 'bdg-rank-user': '#2BCF5C', 'bdg-rank-known': '#FF7B42', 'bdg-rank-trusted': '#8143E6' } },
+    vrcn:       { label: 'VRCN', dot: '#8E8EA7', c: { 'bg-base': '#0A0A0A', 'bg-side': '#101011', 'bg-taskbar': '#101011', 'bg-card': '#0F0F0F', 'bg-hover': '#1C1C1F', 'bg-input': '#121212', 'tab-card-bg': '#0D0D0D', 'modal-bg': '#0F0F0F', 'modal-card': '#121212', 'ui-input-bg': '#161618', 'ui-input-hover-bg': '#1C1C1F', 'ui-input-active-bg': '#1F2024', 'badge-bg': '#2B2C30', 'badge-tx': '#C4C4D1', 'accent': '#8E8EA7', 'accent-lt': '#A5A5AC', 'dropdown-active': '#FFFFFF', 'cyan': '#8CA5FF', 'ok': '#2DD48C', 'warn': '#FFBA37', 'err': '#FF4B55', 'tx0': '#FFFFFF', 'tx1': '#C4C4D1', 'tx2': '#C4C4D1', 'tx3': '#8A8A9B', 'brd': '#1C1C1F', 'brd-lt': '#1C1C1F', 'bdg-user-pc': '#989DAF', 'bdg-user-quest': '#989DAF', 'bdg-user-web': '#989DAF', 'bdg-user-friend': '#2DD48C', 'bdg-rank-visitor': '#CCCCCC', 'bdg-rank-new': '#1778FF', 'bdg-rank-user': '#2BCF5C', 'bdg-rank-known': '#FF7B42', 'bdg-rank-trusted': '#8143E6' } },
+    blood:     { label: 'Blood',     dot: '#DF2A4E', c: { 'bg-base': '#0B0611', 'bg-side': '#10091A', 'bg-taskbar': '#10091A', 'bg-card': '#190F26', 'bg-hover': '#251936', 'bg-input': '#1C1229', 'tab-card-bg': '#170D24', 'modal-bg': '#190F26', 'modal-card': '#1C1229', 'accent': '#DF2A4E', 'accent-lt': '#E16B82', 'dropdown-active': '#DF2A4E', 'cyan': '#DC7A56', 'ok': '#2DD48C', 'warn': '#FFBA37', 'err': '#FF4B55', 'tx0': '#F2EFF5', 'tx1': '#D2CCDB', 'tx2': '#D2CCDB', 'tx3': '#D2CCDB', 'brd': '#291B3C', 'brd-lt': '#38284D' } },
+    halloween: { label: 'Halloween', dot: '#DF462A', c: { 'bg-base': '#0B091A', 'bg-side': '#0B091A', 'bg-taskbar': '#0B091A', 'bg-card': '#110F26', 'bg-hover': '#1B1936', 'bg-input': '#141229', 'tab-card-bg': '#0F0D24', 'modal-bg': '#110F26', 'modal-card': '#141229', 'accent': '#DF462A', 'accent-lt': '#E17D6B', 'dropdown-active': '#DF462A', 'cyan': '#DCA956', 'ok': '#2DD48C', 'warn': '#FFBA37', 'err': '#FF4B55', 'tx0': '#F0EFF5', 'tx1': '#F0EFF5', 'tx2': '#F0EFF5', 'tx3': '#F0EFF5', 'brd': '#1E1B3C', 'brd-lt': '#2B284D' } },
+    miku:      { label: 'Miku',      dot: '#66B4D2', c: { 'bg-base': '#080D14', 'bg-side': '#080D14', 'bg-taskbar': '#080D14', 'bg-card': '#080D14', 'bg-hover': '#17262C', 'bg-input': '#0B1017', 'tab-card-bg': '#060B12', 'modal-bg': '#080D14', 'modal-card': '#0B1017', 'accent': '#66B4D2', 'accent-lt': '#66B4D2', 'dropdown-active': '#66B4D2', 'cyan': '#66B4D2', 'ok': '#2DD48C', 'warn': '#FFBA37', 'err': '#FF4B55', 'tx0': '#FFFFFF', 'tx1': '#FFFFFF', 'tx2': '#FFFFFF', 'tx3': '#FFFFFF', 'brd': '#13223F', 'brd-lt': '#13223F' } },
+    vrchat:    { label: 'VRChat',    dot: '#0B748E', c: { 'bg-base': '#0E1013', 'bg-side': '#0E1013', 'bg-taskbar': '#0E1013', 'bg-card': '#181B1F', 'bg-hover': '#042E39', 'bg-input': '#1B1E22', 'tab-card-bg': '#16191D', 'modal-bg': '#181B1F', 'modal-card': '#1B1E22', 'accent': '#0B748E', 'accent-lt': '#53C0D5', 'dropdown-active': '#0B748E', 'cyan': '#53C0D5', 'ok': '#18A86A', 'warn': '#D4860A', 'err': '#D93040', 'tx0': '#FFFFFF', 'tx1': '#FFFFFF', 'tx2': '#FFFFFF', 'tx3': '#FFFFFF', 'brd': '#042E39', 'brd-lt': '#BEC8DA' } },
+    copper:     { label: 'Copper',    dot: '#D08A4F', c: { 'bg-base': '#0B0B0C', 'bg-side': '#101012', 'bg-taskbar': '#101012', 'bg-card': '#151517', 'bg-hover': '#232326', 'bg-input': '#111113', 'tab-card-bg': '#131315', 'modal-bg': '#151517', 'modal-card': '#111113', 'ui-input-bg': '#1C1C1F', 'ui-input-hover-bg': '#262629', 'ui-input-active-bg': '#B8703C', 'badge-bg': '#24282E', 'badge-tx': '#ABA49D', 'accent': '#D08A4F', 'accent-lt': '#E6AC78', 'dropdown-active': '#D08A4F', 'cyan': '#8FB4D9', 'ok': '#46C88C', 'warn': '#E0A43C', 'err': '#E05555', 'tx0': '#F4F1EE', 'tx1': '#E4DFDA', 'tx2': '#ABA49D', 'tx3': '#7C7670', 'brd': '#232326', 'brd-lt': '#303034', 'bdg-user-pc': '#8FB4D9', 'bdg-user-quest': '#46C88C', 'bdg-user-web': '#E0A43C', 'bdg-user-friend': '#46C88C', 'bdg-rank-visitor': '#CCCCCC', 'bdg-rank-new': '#1778FF', 'bdg-rank-user': '#2BCF5C', 'bdg-rank-known': '#FF7B42', 'bdg-rank-trusted': '#8143E6' } },
+    nature:     { label: 'Nature',      dot: '#8DBF63', c: { 'bg-base': '#0B0C0A', 'bg-side': '#0F110D', 'bg-taskbar': '#0F110D', 'bg-card': '#151714', 'bg-hover': '#232620', 'bg-input': '#111310', 'tab-card-bg': '#131512', 'modal-bg': '#151714', 'modal-card': '#111310', 'ui-input-bg': '#1B1E19', 'ui-input-hover-bg': '#262A23', 'ui-input-active-bg': '#4F8A3A', 'badge-bg': '#2A2620', 'badge-tx': '#A6AC9E', 'accent': '#8DBF63', 'accent-lt': '#B4D98F', 'dropdown-active': '#8DBF63', 'cyan': '#D8926A', 'ok': '#6ECB86', 'warn': '#D9A441', 'err': '#E05C5C', 'tx0': '#F2F4EE', 'tx1': '#E0E4DA', 'tx2': '#A6AC9E', 'tx3': '#767C6F', 'brd': '#232620', 'brd-lt': '#313529', 'bdg-user-pc': '#86B8D8', 'bdg-user-quest': '#8DBF63', 'bdg-user-web': '#D8926A', 'bdg-user-friend': '#6ECB86', 'bdg-rank-visitor': '#CCCCCC', 'bdg-rank-new': '#1778FF', 'bdg-rank-user': '#2BCF5C', 'bdg-rank-known': '#FF7B42', 'bdg-rank-trusted': '#8143E6' } },
+    flippernano: { label: 'Flipper Nano', dot: '#FF896F', c: { 'bg-base': '#E5E8F6', 'bg-side': '#EEF1FF', 'bg-taskbar': '#EEF1FF', 'bg-card': '#E7EAF8', 'bg-hover': '#FF896F', 'bg-input': '#EAEDFB', 'tab-card-bg': '#E0E3F3', 'modal-bg': '#E7EAF8', 'modal-card': '#EAEDFB', 'ui-input-bg': '#D7DAEB', 'ui-input-hover-bg': '#FF896F', 'ui-input-active-bg': '#FF896F', 'badge-bg': '#FFBAAB', 'badge-tx': '#FFFFFF', 'accent': '#FF896F', 'accent-lt': '#FF896F', 'dropdown-active': '#FF896F', 'cyan': '#FF896F', 'ok': '#2BFF00', 'warn': '#FF7455', 'err': '#FF2E00', 'tx0': '#FFFFFF', 'tx1': '#FFFFFF', 'tx2': '#FFFFFF', 'tx3': '#FFFFFF', 'brd': '#D3D6E6', 'brd-lt': '#D3D6E6', 'bdg-user-pc': '#64AAFF', 'bdg-user-quest': '#38DC78', 'bdg-user-web': '#FFA726', 'bdg-user-friend': '#2DD48C', 'bdg-rank-visitor': '#CCCCCC', 'bdg-rank-new': '#1778FF', 'bdg-rank-user': '#2BCF5C', 'bdg-rank-known': '#FF7B42', 'bdg-rank-trusted': '#8143E6' }, light: true, cLight: { 'bg-base': '#E5E8F6', 'tx0': '#000000', 'tx1': '#494949', 'tx2': '#494949', 'tx3': '#494949', 'accent': '#FF896F' } },
+    spaceout:   { label: 'Spaceout',     dot: '#FF9F60', c: { 'bg-base': '#05040C', 'bg-side': '#05040C', 'bg-taskbar': '#05040C', 'bg-card': '#0A0714', 'bg-hover': '#191327', 'bg-input': '#110D1B', 'tab-card-bg': '#110D1B', 'modal-bg': '#0A0714', 'modal-card': '#110D1B', 'ui-input-bg': '#110D1B', 'ui-input-hover-bg': '#191327', 'ui-input-active-bg': '#FF9F60', 'badge-bg': '#4D455F', 'badge-tx': '#B7B7C3', 'accent': '#FF9F60', 'accent-lt': '#9797B1', 'dropdown-active': '#FF9F60', 'cyan': '#8CA5FF', 'ok': '#2DD48C', 'warn': '#FFBA37', 'err': '#FF4B55', 'tx0': '#EBEBFF', 'tx1': '#EBEBFF', 'tx2': '#B7B7C3', 'tx3': '#FFFFFF', 'brd': '#1C162C', 'brd-lt': '#1C162C', 'bdg-user-pc': '#FF9F60', 'bdg-user-quest': '#FF9F60', 'bdg-user-web': '#FF9F60', 'bdg-user-friend': '#FF9F60', 'bdg-rank-visitor': '#CCCCCC', 'bdg-rank-new': '#1778FF', 'bdg-rank-user': '#2BCF5C', 'bdg-rank-known': '#FF7B42', 'bdg-rank-trusted': '#8143E6' } },
+    fluffy:     { label: 'Fluffy',       dot: '#DFBFFF', c: { 'bg-base': '#EEF1FF', 'bg-side': '#EEF1FF', 'bg-taskbar': '#EEF1FF', 'bg-card': '#FAE8FF', 'bg-hover': '#FFCCE9', 'bg-input': '#FBF1FF', 'tab-card-bg': '#FBF1FF', 'modal-bg': '#FAE8FF', 'modal-card': '#FBF1FF', 'ui-input-bg': '#EEDCF5', 'ui-input-hover-bg': '#FFCCE9', 'ui-input-active-bg': '#F8C5E2', 'badge-bg': '#FFD5EE', 'badge-tx': '#FFFFFF', 'accent': '#DFBFFF', 'accent-lt': '#D1A8FF', 'dropdown-active': '#DFBFFF', 'cyan': '#DCAFFF', 'ok': '#2BFF00', 'warn': '#FF7455', 'err': '#FF2E00', 'tx0': '#FFFFFF', 'tx1': '#FFFFFF', 'tx2': '#FFFFFF', 'tx3': '#FFFFFF', 'brd': '#E5D3E6', 'brd-lt': '#D3D6E6', 'bdg-user-pc': '#64AAFF', 'bdg-user-quest': '#38DC78', 'bdg-user-web': '#FFA726', 'bdg-user-friend': '#2DD48C', 'bdg-rank-visitor': '#CCCCCC', 'bdg-rank-new': '#1778FF', 'bdg-rank-user': '#2BCF5C', 'bdg-rank-known': '#FF7B42', 'bdg-rank-trusted': '#8143E6' }, light: true, cLight: { 'bg-base': '#EEF1FF', 'tx0': '#0B050E', 'tx1': '#49414E', 'tx2': '#3D3547', 'tx3': '#3B3441', 'accent': '#DFBFFF' } },
+    ender:      { label: 'Ender',        dot: '#CC60FF', c: { 'bg-base': '#05040C', 'bg-side': '#05040C', 'bg-taskbar': '#05040C', 'bg-card': '#0A0714', 'bg-hover': '#191327', 'bg-input': '#110D1B', 'tab-card-bg': '#151120', 'modal-bg': '#0A0714', 'modal-card': '#110D1B', 'ui-input-bg': '#110D1B', 'ui-input-hover-bg': '#191327', 'ui-input-active-bg': '#B960FF', 'badge-bg': '#4D3666', 'badge-tx': '#B7B7C3', 'accent': '#CC60FF', 'accent-lt': '#9797B1', 'dropdown-active': '#CC60FF', 'cyan': '#8CA5FF', 'ok': '#2DD48C', 'warn': '#FFBA37', 'err': '#FF4B55', 'tx0': '#EBEBFF', 'tx1': '#EBEBFF', 'tx2': '#B7B7C3', 'tx3': '#FFFFFF', 'brd': '#1C162C', 'brd-lt': '#1C162C', 'bdg-user-pc': '#E7B5FF', 'bdg-user-quest': '#E7B5FF', 'bdg-user-web': '#E7B5FF', 'bdg-user-friend': '#E7B5FF', 'bdg-rank-visitor': '#CCCCCC', 'bdg-rank-new': '#1778FF', 'bdg-rank-user': '#2BCF5C', 'bdg-rank-known': '#FF7B42', 'bdg-rank-trusted': '#8143E6' } },
+    redruby:    { label: 'Red Ruby', dot: '#D04F4F', c: { 'bg-base': '#0B0B0C', 'bg-side': '#101012', 'bg-taskbar': '#101012', 'bg-card': '#151517', 'bg-hover': '#232326', 'bg-input': '#111113', 'tab-card-bg': '#131315', 'modal-bg': '#151517', 'modal-card': '#111113', 'ui-input-bg': '#1C1C1F', 'ui-input-hover-bg': '#262629', 'ui-input-active-bg': '#B83C3C', 'badge-bg': '#24282E', 'badge-tx': '#AB9D9D', 'accent': '#D04F4F', 'accent-lt': '#E67878', 'dropdown-active': '#D04F4F', 'cyan': '#D9A58F', 'ok': '#46C88C', 'warn': '#E0A43C', 'err': '#E05555', 'tx0': '#F4EEEE', 'tx1': '#E4DADA', 'tx2': '#AB9D9D', 'tx3': '#7C7070', 'brd': '#232326', 'brd-lt': '#303034', 'bdg-user-pc': '#D98F8F', 'bdg-user-quest': '#D98F8F', 'bdg-user-web': '#D98F8F', 'bdg-user-friend': '#D98F8F', 'bdg-rank-visitor': '#CCCCCC', 'bdg-rank-new': '#1778FF', 'bdg-rank-user': '#2BCF5C', 'bdg-rank-known': '#FF7B42', 'bdg-rank-trusted': '#8143E6' } },
+    mates:      { label: 'Mates', dot: '#4F50D0', c: { 'bg-base': '#0B0B0C', 'bg-side': '#101012', 'bg-taskbar': '#101012', 'bg-card': '#151517', 'bg-hover': '#232326', 'bg-input': '#111113', 'tab-card-bg': '#131315', 'modal-bg': '#151517', 'modal-card': '#111113', 'ui-input-bg': '#1C1C1F', 'ui-input-hover-bg': '#262629', 'ui-input-active-bg': '#595AD6', 'badge-bg': '#24252E', 'badge-tx': '#9D9EAB', 'accent': '#4F50D0', 'accent-lt': '#7E78E6', 'dropdown-active': '#4F50D0', 'cyan': '#9E8FD9', 'ok': '#46C88C', 'warn': '#E0A43C', 'err': '#E05555', 'tx0': '#EEEFF4', 'tx1': '#DADCE4', 'tx2': '#9D9EAB', 'tx3': '#70727C', 'brd': '#232326', 'brd-lt': '#303034', 'bdg-user-pc': '#8F99D9', 'bdg-user-quest': '#8F99D9', 'bdg-user-web': '#8F99D9', 'bdg-user-friend': '#8F99D9', 'bdg-rank-visitor': '#CCCCCC', 'bdg-rank-new': '#1778FF', 'bdg-rank-user': '#2BCF5C', 'bdg-rank-known': '#FF7B42', 'bdg-rank-trusted': '#8143E6' } },
+    frostbite:  { label: 'Frostbite', dot: '#6C7C92', c: { 'bg-base': '#08090B', 'bg-side': '#0D0F12', 'bg-taskbar': '#0D0F12', 'bg-card': '#0B0D10', 'bg-hover': '#191C1F', 'bg-input': '#101216', 'tab-card-bg': '#0B0D10', 'modal-bg': '#0B0D10', 'modal-card': '#101216', 'ui-input-bg': '#181B20', 'ui-input-hover-bg': '#1F2328', 'ui-input-active-bg': '#262B32', 'badge-bg': '#6C7C92', 'badge-tx': '#DBE6F5', 'accent': '#6C7C92', 'accent-lt': '#6C7C92', 'dropdown-active': '#FFFFFF', 'cyan': '#8CA5FF', 'ok': '#5FB2FF', 'warn': '#FFBA37', 'err': '#FF4B55', 'tx0': '#FFFFFF', 'tx1': '#B2BCCC', 'tx2': '#B2BCCC', 'tx3': '#788392', 'brd': '#1A1B20', 'brd-lt': '#22242A', 'bdg-user-pc': '#8195B0', 'bdg-user-quest': '#8195B0', 'bdg-user-web': '#8195B0', 'bdg-user-friend': '#2DD48C', 'bdg-rank-visitor': '#ADBED5', 'bdg-rank-new': '#1778FF', 'bdg-rank-user': '#2BCF5C', 'bdg-rank-known': '#FF7B42', 'bdg-rank-trusted': '#8143E6' } },
 };
 
 const _LIGHT_VARS = ['bg-base', 'tx0', 'tx1', 'tx2', 'tx3', 'accent'];
@@ -612,6 +613,8 @@ function applyColors(c, light) {
     if (c['bg-card']) document.documentElement.style.setProperty('--bg-btn', c['bg-card']);
     if (c['bg-hover']) document.documentElement.style.setProperty('--bg-btn-h', c['bg-hover']);
     if (!c['tab-card-bg'] && c['bg-input']) document.documentElement.style.setProperty('--tab-card-bg', c['bg-input']);
+    if (!c['modal-bg'] && c['bg-card']) document.documentElement.style.setProperty('--modal-bg', c['bg-card']);
+    if (!c['modal-card'] && c['bg-input']) document.documentElement.style.setProperty('--modal-card', c['bg-input']);
     _applyLightBase();
     const logoEl = document.getElementById('logoIcon');
     if (logoEl && logoEl._repaintLogo) logoEl._repaintLogo();
@@ -730,6 +733,9 @@ document.documentElement.addEventListener('tabchange', function () {
 const _TE_GROUPS = [
     { title: 'Main Colors', vars: [
         ['bg-base', 'Base BG'], ['bg-side', 'Sidebar BG'], ['bg-taskbar', 'Taskbar BG'],
+    ]},
+    { title: 'Modals', vars: [
+        ['modal-bg', 'Modal BG'], ['modal-card', 'Modal Card'],
     ]},
     { title: 'Accent Colors', vars: [
         ['bg-card', 'Card BG'], ['bg-hover', 'Hover BG'], ['bg-input', 'Input BG'], ['tab-card-bg', 'Tab Card BG'],
@@ -1411,7 +1417,7 @@ function deleteCustomTheme(key) {
 
 function addCustomThemeFromAuto() {
     const style = getComputedStyle(document.documentElement);
-    const colorKeys = ['bg-base','bg-side','bg-taskbar','bg-card','bg-hover','bg-input','ui-input-bg','ui-input-hover-bg','ui-input-active-bg','badge-bg','badge-tx','accent','accent-lt','dropdown-active','cyan','ok','warn','err','tx0','tx1','tx2','tx3','brd','brd-lt'];
+    const colorKeys = ['bg-base','bg-side','bg-taskbar','bg-card','bg-hover','bg-input','modal-bg','modal-card','ui-input-bg','ui-input-hover-bg','ui-input-active-bg','badge-bg','badge-tx','accent','accent-lt','dropdown-active','cyan','ok','warn','err','tx0','tx1','tx2','tx3','brd','brd-lt'];
     const c = {};
     colorKeys.forEach(k => { c[k] = style.getPropertyValue('--' + k).trim(); });
     const dot = c['accent'] || '#3884FF';
@@ -1509,6 +1515,8 @@ function _buildAutoTheme(bgHue, accentHue, accentLit, imgSat) {
         'bg-card':   _hslToHex(bgHue, bs*0.78, 10.5 * lMult),
         'bg-hover':  _hslToHex(bgHue, bs*0.68, 15.5 * lMult),
         'bg-input':  _hslToHex(bgHue, bs*0.78, 10.5 * lMult), 'tab-card-bg': _hslToHex(bgHue, bs*0.78, 10.5 * lMult),
+        'modal-bg':  _hslToHex(bgHue, bs*0.78, 10.5 * lMult),
+        'modal-card': _hslToHex(bgHue, bs*0.78, 10.5 * lMult),
         'accent':    _hslToHex(accentHue, 74, al),
         'accent-lt': _hslToHex(accentHue, 66, al + 13),
         'dropdown-active': _hslToHex(accentHue, 74, al),
@@ -1741,21 +1749,25 @@ function tryLoadLogo() {
 }
 
 const SOUND_LIBRARY = [
-    'Amogus.wav', 'Bing.wav', 'Clicker.wav', 'Cryo.wav', 'Food Finished.wav',
-    'Fooley.wav', 'Insert Disk.wav', 'Kalimba Bell.wav', 'Karambola.wav', 'Ladida.wav',
-    'Plug.wav', 'Soft Lace.wav', 'Solana.wav', 'Sweep.wav', 'Waum.wav',
+    'Amogus.ogg', 'Bing.ogg', 'Clicker.ogg', 'Cryo.ogg', 'Food Finished.ogg',
+    'Fooley.ogg', 'Insert Disk.ogg', 'Kalimba Bell.ogg', 'Karambola.ogg', 'Ladida.ogg',
+    'Plug.ogg', 'Soft Lace.ogg', 'Solana.ogg', 'Sweep.ogg', 'Waum.ogg',
 ];
 
 const SOUND_SLOTS = {
-    notify:       { def: 'Notification.wav', fileKey: 'notifySoundFile',       volKey: 'notifySoundVolume' },
-    message:      { def: 'Message.wav',      fileKey: 'messageSoundFile',      volKey: 'messageSoundVolume' },
-    mediaRelay:   { def: 'MediaRelay.wav',   fileKey: 'mediaRelaySoundFile',   volKey: 'mediaRelaySoundVolume' },
-    steamOverlay: { def: 'SteamOverlay.wav', fileKey: 'steamOverlaySoundFile', volKey: 'steamOverlaySoundVolume' },
+    notify:       { def: 'Notification.ogg', fileKey: 'notifySoundFile',       volKey: 'notifySoundVolume' },
+    message:      { def: 'Message.ogg',      fileKey: 'messageSoundFile',      volKey: 'messageSoundVolume' },
+    mediaRelay:   { def: 'MediaRelay.ogg',   fileKey: 'mediaRelaySoundFile',   volKey: 'mediaRelaySoundVolume' },
+    steamOverlay: { def: 'SteamOverlay.ogg', fileKey: 'steamOverlaySoundFile', volKey: 'steamOverlaySoundVolume' },
 };
+
+function normalizeSoundFile(file) {
+    return String(file || '').replace(/\.wav$/i, '.ogg');
+}
 
 function soundFileUrl(file, defaultFile) {
     if (!file) return 'sounds/notifications/' + encodeURIComponent(defaultFile);
-    return 'sounds/notifications/Notificationsv2/' + encodeURIComponent(file);
+    return 'sounds/notifications/Notificationsv2/' + encodeURIComponent(normalizeSoundFile(file));
 }
 
 function soundSlotVolume(slot) {
@@ -1765,13 +1777,25 @@ function soundSlotVolume(slot) {
 }
 
 function _initAudio(path, volume) {
-    const a = new Audio(path);
+    const a = new Audio();
+    a.preload = 'none';
     a.volume = typeof volume === 'number' ? volume : 0.5;
-    a._ready = false;
-    a.addEventListener('canplaythrough', () => { a._ready = true; }, { once: true });
-    a.addEventListener('error', () => { a._ready = false; });
-    a.load();
+    a.addEventListener('error', () => { a._failed = true; });
+    a.src = path;
     return a;
+}
+
+function _releaseAudio(a) {
+    if (!a) return;
+    try { a.pause(); } catch {}
+    a.removeAttribute('src');
+    try { a.load(); } catch {}
+}
+
+function _playAudio(a) {
+    if (!a || a._failed) return;
+    if (a.readyState > 0) a.currentTime = 0;
+    a.play().catch(() => {});
 }
 
 function _initSlotAudio(slot) {
@@ -1784,10 +1808,11 @@ function tryInitNotifySound() {
     messageAudio = _initSlotAudio('message');
     mediaRelayAudio = _initSlotAudio('mediaRelay');
     steamOverlayAudio = _initSlotAudio('steamOverlay');
-    waterAudio = _initAudio('sounds/notifications/water.wav');
+    waterAudio = _initAudio('sounds/notifications/water.ogg');
 }
 
 function applySoundSettings() {
+    [notifyAudio, messageAudio, mediaRelayAudio, steamOverlayAudio].forEach(_releaseAudio);
     notifyAudio = _initSlotAudio('notify');
     messageAudio = _initSlotAudio('message');
     mediaRelayAudio = _initSlotAudio('mediaRelay');
@@ -1806,34 +1831,30 @@ function previewSound(slot, file) {
 }
 
 function playNotificationSound() {
-    if (notifyAudio?._ready && settings.notifySoundEnabled) {
+    if (notifyAudio && settings.notifySoundEnabled) {
         notifyAudio.volume = soundSlotVolume('notify');
-        notifyAudio.currentTime = 0;
-        notifyAudio.play().catch(() => {});
+        _playAudio(notifyAudio);
     }
 }
 
 function playMessageSound() {
-    if (messageAudio?._ready && settings.messageSoundEnabled) {
+    if (messageAudio && settings.messageSoundEnabled) {
         messageAudio.volume = soundSlotVolume('message');
-        messageAudio.currentTime = 0;
-        messageAudio.play().catch(() => {});
+        _playAudio(messageAudio);
     }
 }
 
 function playMediaRelaySound() {
-    if (mediaRelayAudio?._ready && settings.mediaRelaySoundEnabled) {
+    if (mediaRelayAudio && settings.mediaRelaySoundEnabled) {
         mediaRelayAudio.volume = soundSlotVolume('mediaRelay');
-        mediaRelayAudio.currentTime = 0;
-        mediaRelayAudio.play().catch(() => {});
+        _playAudio(mediaRelayAudio);
     }
 }
 
 function playSteamOverlaySound() {
-    if (steamOverlayAudio?._ready && settings.steamOverlaySoundEnabled) {
+    if (steamOverlayAudio && settings.steamOverlaySoundEnabled) {
         steamOverlayAudio.volume = soundSlotVolume('steamOverlay');
-        steamOverlayAudio.currentTime = 0;
-        steamOverlayAudio.play().catch(() => {});
+        _playAudio(steamOverlayAudio);
     }
 }
 
@@ -2473,6 +2494,12 @@ function imgThumb(url, size = 64) {
     return _thumbUrl(url, size);
 }
 
+function mediaThumb(url) {
+    if (!imgThumbsEnabled || !url || url.indexOf('thumb=') !== -1) return url;
+    if (!/^https?:\/\/localhost:\d+\/media/i.test(url)) return url;
+    return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'thumb=1';
+}
+
 function imgOriginal(url) {
     if (!url || url.indexOf('thumb=') === -1) return url;
     return url.replace(/([?&])thumb=\d+(&|$)/, (m, p1, p2) => p2 === '&' ? p1 : '').replace(/[?&]$/, '');
@@ -2748,13 +2775,43 @@ function initVnSelect(el) {
             panel.style.left = 'auto'; panel.style.right = '0';
         }
         vnPanelAnchor(wrap, panel, below);
+        if (!wrap.closest('.tt-scroll') && wrap.closest('.modal-box')) portalOut(below);
         setTimeout(() => document.addEventListener('click', onOutside, { once: true }), 0);
     }
 
-    function close() { wrap.classList.remove('vn-open'); }
+    function portalOut(below) {
+        const doc = wrap.ownerDocument;
+        const win = doc.defaultView || window;
+        const r = wrap.getBoundingClientRect();
+        panel.style.position = 'fixed';
+        panel.style.minWidth = r.width + 'px';
+        panel.style.top    = below ? (r.bottom + 4) + 'px' : 'auto';
+        panel.style.bottom = below ? 'auto' : (win.innerHeight - r.top + 4) + 'px';
+        panel.style.left   = r.left + 'px';
+        panel.style.right  = 'auto';
+        panel.classList.add('vn-select-portal');
+        wrap.classList.add('vn-select-fixed', 'vn-select-portal-src');
+        doc.body.appendChild(panel);
+        const pr = panel.getBoundingClientRect();
+        if (pr.right > win.innerWidth - 8) panel.style.left = Math.max(8, win.innerWidth - 8 - pr.width) + 'px';
+    }
+
+    function portalBack() {
+        if (!panel.classList.contains('vn-select-portal')) return;
+        panel.classList.remove('vn-select-portal');
+        wrap.classList.remove('vn-select-fixed', 'vn-select-portal-src');
+        panel.style.position = '';
+        panel.style.minWidth = '';
+        wrap.insertBefore(panel, el);
+    }
+
+    function close() {
+        wrap.classList.remove('vn-open');
+        portalBack();
+    }
 
     function onOutside(e) {
-        if (wrap.contains(e.target)) document.addEventListener('click', onOutside, { once: true });
+        if (wrap.contains(e.target) || panel.contains(e.target)) document.addEventListener('click', onOutside, { once: true });
         else close();
     }
 

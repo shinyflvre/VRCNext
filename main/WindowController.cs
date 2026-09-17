@@ -300,6 +300,86 @@ public class WindowController
 #endif
     }
 
+#if WINDOWS
+    private readonly Dictionary<int, Photino.NET.PhotinoSurface> _wmSurfaces = new();
+
+    private void HandleSurfaceMessage(string action, JObject msg, Photino.NET.PhotinoWindow window)
+    {
+        int wmId = (int?)msg["wmId"] ?? 0;
+        if (action == "wmSurfaceOpen")
+        {
+            if (!window.CompositionHosting)
+            {
+                _core.SendToJS("wmSurfaceCreated", new { wmId, surfaceId = 0 });
+                return;
+            }
+            try
+            {
+                int width  = Math.Clamp((int?)msg["width"]  ?? 760, 560, 2400);
+                int height = Math.Clamp((int?)msg["height"] ?? 600, 360, 1600);
+                var mainPos = window.Location;
+                int offset = 60 + (_wmSurfaces.Count % 6) * 28;
+                int nearWmId = (int?)msg["nearWmId"] ?? 0;
+                if (nearWmId != 0 && _wmSurfaces.TryGetValue(nearWmId, out var near) && !near.IsClosed)
+                {
+                    mainPos = near.Location;
+                    offset = 40;
+                }
+                var surface = window.CreateSurface(new Photino.NET.PhotinoSurfaceOptions
+                {
+                    Title = msg["title"]?.ToString() ?? "VRCNext",
+                    Width = width,
+                    Height = height,
+                    MinWidth = 560,
+                    MinHeight = 360,
+                    Location = new System.Drawing.Point(mainPos.X + offset, mainPos.Y + offset),
+                    Chromeless = true,
+                    Resizable = true,
+                    Owned = false,
+                    SharedFocus = true,
+                    FollowOwnerVisibility = true,
+                    Visible = false,
+                });
+                _wmSurfaces[wmId] = surface;
+                surface.Closed += (_, _) =>
+                {
+                    _wmSurfaces.Remove(wmId);
+                    _core.SendToJS("wmSurfaceClosed", new { wmId });
+                };
+                _core.SendToJS("wmSurfaceCreated", new { wmId, surfaceId = surface.Id });
+            }
+            catch (Exception ex)
+            {
+                VRCNext.Services.CrashHandler.WriteEntry("wmSurfaceOpen", ex);
+                _core.SendToJS("wmSurfaceCreated", new { wmId, surfaceId = 0 });
+            }
+            return;
+        }
+
+        if (!_wmSurfaces.TryGetValue(wmId, out var s) || s.IsClosed) return;
+        switch (action)
+        {
+            case "wmSurfaceClose":
+                s.Close();
+                break;
+            case "wmSurfaceVisible":
+                s.Visible = msg["visible"]?.Value<bool>() ?? true;
+                if (s.Visible) s.Activate();
+                break;
+            case "wmSurfaceDrag":
+                ReleaseCapture();
+                SendMessage(s.Handle, 0x00A1, 2, 0);
+                break;
+            case "wmSurfaceTitle":
+                s.Title = msg["title"]?.ToString() ?? s.Title;
+                break;
+            case "wmSurfaceActivate":
+                s.Activate();
+                break;
+        }
+    }
+#endif
+
     // Message Handler
 
     public void HandleMessage(string action, JObject msg)
@@ -341,6 +421,33 @@ public class WindowController
                 else
 #endif
                     window.Close();
+                break;
+            case "wmSurfaceOpen":
+            case "wmSurfaceClose":
+            case "wmSurfaceVisible":
+            case "wmSurfaceDrag":
+            case "wmSurfaceTitle":
+            case "wmSurfaceActivate":
+#if WINDOWS
+                HandleSurfaceMessage(action, msg, window);
+#else
+                if (action == "wmSurfaceOpen") _core.SendToJS("wmSurfaceCreated", new { wmId = (int?)msg["wmId"] ?? 0, surfaceId = 0 });
+#endif
+                break;
+            case "windowBackground":
+#if WINDOWS
+                try
+                {
+                    var hex = (msg["color"]?.ToString() ?? "").Trim();
+                    if (hex.StartsWith("#") && (hex.Length == 7 || hex.Length == 4))
+                    {
+                        if (hex.Length == 4) hex = "#" + hex[1] + hex[1] + hex[2] + hex[2] + hex[3] + hex[3];
+                        var c = System.Drawing.Color.FromArgb(255, Convert.ToInt32(hex.Substring(1, 2), 16), Convert.ToInt32(hex.Substring(3, 2), 16), Convert.ToInt32(hex.Substring(5, 2), 16));
+                        window.SetBackgroundColor(c);
+                    }
+                }
+                catch { }
+#endif
                 break;
             case "windowDragStart":
 #if WINDOWS

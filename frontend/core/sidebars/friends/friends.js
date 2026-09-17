@@ -1,4 +1,5 @@
 ﻿let _sidebarGroupInstances = null;
+let _sidebarGroupInstRetried = false;
 
 const RVF_THROTTLE_MS = 300;
 let _rvfTimer = null;
@@ -121,6 +122,13 @@ function renderVrcProfile(u) {
     if (rs) rs.classList.toggle('logged-out', !u);
     if (!u) { a.innerHTML = ''; currentVrcUser = null; return; }
     if (u.rawJson) _mypRawJson = u.rawJson;
+    if (currentVrcUser && currentVrcUser.id === u.id) {
+        if (!u.bio && currentVrcUser.bio) u.bio = currentVrcUser.bio;
+        if (!(u.bioLinks && u.bioLinks.length) && currentVrcUser.bioLinks) u.bioLinks = currentVrcUser.bioLinks;
+        if (!(u.languages && u.languages.length) && currentVrcUser.languages) u.languages = currentVrcUser.languages;
+        if (!(u.badges && u.badges.length) && currentVrcUser.badges) u.badges = currentVrcUser.badges;
+        if (!u.bannerColor && currentVrcUser.bannerColor && String(u.bannerType || '') === 'color') u.bannerColor = currentVrcUser.bannerColor;
+    }
     currentVrcUser = u;
     if (!window._rewindChecked) { window._rewindChecked = true; setTimeout(() => sendToCS({ action: 'checkRewind' }), 4000); }
     // If My Profile modal is open, refresh it immediately
@@ -128,7 +136,7 @@ function renderVrcProfile(u) {
     if (_myp && _myp.style.display !== 'none') renderMyProfileContent();
     const img = u.image || '';
     const imgTag = img
-        ? `<img class="vrc-avatar" src="${img}" onerror="this.style.display='none'">`
+        ? `<img class="vrc-avatar" src="${imgThumb(img, 96)}" onerror="this.style.display='none'">`
         : `<div class="vrc-avatar" style="display:flex;align-items:center;justify-content:center;font-size:calc(13px + var(--fs-off, 0px));font-weight:700;color:var(--tx0)">${esc((u.displayName || '?')[0])}</div>`;
     const ownStatusCls = statusDotClass(u.status);
     const ownDotShape = u.vrcRunning ? 'vrc-status-dot' : 'vrc-status-ring';
@@ -155,7 +163,7 @@ function renderVrcFriends(friends, counts) {
     _updateFriendTabCounts();
 
     // Lazy-load group instances once on first render
-    if (_sidebarGroupInstances === null && !window._groupInstInFlight) {
+    if (_sidebarGroupInstances === null && currentVrcUser && !window._groupInstInFlight) {
         window._groupInstInFlight = true;
         sendToCS({ action: 'vrcGetDashGroupInstances' });
     }
@@ -163,8 +171,10 @@ function renderVrcFriends(friends, counts) {
     if (currentFriendDetail && friends) {
         const lf = friends.find(f => f.id === currentFriendDetail.id);
         if (lf) {
+            const keepOfflineDesc = lf.presence === 'offline' && !lf.statusDescription && !!currentFriendDetail.statusDescription;
+            const liveDesc = keepOfflineDesc ? currentFriendDetail.statusDescription : lf.statusDescription;
             currentFriendDetail.status = lf.status;
-            currentFriendDetail.statusDescription = lf.statusDescription;
+            currentFriendDetail.statusDescription = liveDesc;
             currentFriendDetail.location = lf.location;
             currentFriendDetail.presence = lf.presence;
             const detailStatusEl = document.getElementById('fd-live-status');
@@ -172,9 +182,9 @@ function renderVrcFriends(friends, counts) {
                 const isWeb = lf.presence === 'web';
                 const isOff = lf.presence === 'offline';
                 // Status text is just the description; dot lives on the avatar.
-                detailStatusEl.innerHTML = lf.statusDescription ? esc(lf.statusDescription) : '';
+                detailStatusEl.innerHTML = liveDesc ? esc(liveDesc) : '';
                 const statusRow = detailStatusEl.closest('.fd-status-row');
-                if (statusRow) statusRow.style.display = lf.statusDescription ? '' : 'none';
+                if (statusRow) statusRow.style.display = liveDesc ? '' : 'none';
                 const detailDotEl = document.getElementById('fd-live-dot');
                 if (detailDotEl) {
                     const dotClass = isWeb ? 'vrc-status-ring' : 'vrc-status-dot';
@@ -363,7 +373,18 @@ function renderVrcFriends(friends, counts) {
 }
 
 function onSidebarGroupInstances(instances) {
-    _sidebarGroupInstances = instances || [];
+    if (instances && instances.length) _sidebarGroupInstances = instances;
+    else {
+        _sidebarGroupInstances = [];
+        if (!_sidebarGroupInstRetried) {
+            _sidebarGroupInstRetried = true;
+            setTimeout(() => {
+                if (!currentVrcUser || window._groupInstInFlight) return;
+                window._groupInstInFlight = true;
+                sendToCS({ action: 'vrcGetDashGroupInstances' });
+            }, 10000);
+        }
+    }
     document.getElementById('vrcFriendRefreshBtn')?.classList.remove('spinning');
     _updateFriendTabCounts();
     if (friendsSidebarTab === 'groups' || (vrcFriendsData && vrcFriendsData.length)) renderVrcFriends(vrcFriendsData);
@@ -428,3 +449,10 @@ function filterFriendsList() {
     h += `</div>`;
     setHtmlIfChanged(el, h);
 }
+
+(function () {
+    const panel = document.getElementById('vrcPanel');
+    const area = document.getElementById('vrcProfileArea');
+    if (!panel || !area) return;
+    panel.addEventListener('scroll', () => area.classList.toggle('scrolled', panel.scrollTop > 0), { passive: true });
+})();

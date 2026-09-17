@@ -58,14 +58,36 @@ public static class SQLiteOptimizing
         public long InstancePlayersCount   { get; set; }
     }
 
-    public static AnalysisResult Analyze()
+    private static void LoadCurrentFriends(SqliteConnection db, IEnumerable<string> friendIds)
+    {
+        using (var cmd = db.CreateCommand())
+        {
+            cmd.CommandText = "CREATE TEMP TABLE IF NOT EXISTS opt_friends (user_id TEXT PRIMARY KEY); DELETE FROM temp.opt_friends;";
+            cmd.ExecuteNonQuery();
+        }
+        using var tx = db.BeginTransaction();
+        using var ins = db.CreateCommand();
+        ins.Transaction = tx;
+        ins.CommandText = "INSERT OR IGNORE INTO temp.opt_friends (user_id) VALUES ($id)";
+        var pId = ins.Parameters.Add("$id", SqliteType.Text);
+        foreach (var id in friendIds)
+        {
+            if (string.IsNullOrEmpty(id)) continue;
+            pId.Value = id;
+            ins.ExecuteNonQuery();
+        }
+        tx.Commit();
+    }
+
+    public static AnalysisResult Analyze(IEnumerable<string> friendIds)
     {
         var result = new AnalysisResult();
         using var db = Database.OpenConnection();
+        LoadCurrentFriends(db, friendIds);
 
         using (var cmd = db.CreateCommand())
         {
-            cmd.CommandText = "SELECT COUNT(*), COALESCE(SUM(CASE WHEN profile_is_friend=1 THEN 1 ELSE 0 END),0) FROM user_tracking";
+            cmd.CommandText = "SELECT COUNT(*), COALESCE(SUM(CASE WHEN profile_is_friend=1 OR user_id IN (SELECT user_id FROM temp.opt_friends) THEN 1 ELSE 0 END),0) FROM user_tracking";
             using var r = cmd.ExecuteReader();
             if (r.Read())
             {
@@ -82,7 +104,7 @@ public static class SQLiteOptimizing
 
         using (var cmd = db.CreateCommand())
         {
-            cmd.CommandText = $"SELECT {string.Join(",", selects)} FROM user_tracking WHERE (profile_is_friend IS NULL OR profile_is_friend!=1)";
+            cmd.CommandText = $"SELECT {string.Join(",", selects)} FROM user_tracking WHERE (profile_is_friend IS NULL OR profile_is_friend!=1) AND user_id NOT IN (SELECT user_id FROM temp.opt_friends)";
             using var r = cmd.ExecuteReader();
             if (r.Read())
             {
@@ -93,7 +115,7 @@ public static class SQLiteOptimizing
 
         using (var cmd = db.CreateCommand())
         {
-            cmd.CommandText = "SELECT COALESCE(SUM(CASE WHEN profile_bio_links<>'' AND profile_bio_links<>'[]' THEN 1 ELSE 0 END),0) FROM user_tracking";
+            cmd.CommandText = "SELECT COALESCE(SUM(CASE WHEN profile_bio_links<>'' AND profile_bio_links<>'[]' THEN 1 ELSE 0 END),0) FROM user_tracking WHERE (profile_is_friend IS NULL OR profile_is_friend!=1) AND user_id NOT IN (SELECT user_id FROM temp.opt_friends)";
             var bioCount = Convert.ToInt64(cmd.ExecuteScalar() ?? 0L);
             var idx = result.Counts.FindIndex(x => x.Label == "Bio Links");
             if (idx >= 0) result.Counts[idx] = ("Bio Links", bioCount);
@@ -152,9 +174,10 @@ public static class SQLiteOptimizing
         return result;
     }
 
-    public static (int UserTrackingCleaned, int FriendEventsCleaned, int NotificationsCleaned, int InstancePlayersCleaned) Optimize()
+    public static (int UserTrackingCleaned, int FriendEventsCleaned, int NotificationsCleaned, int InstancePlayersCleaned) Optimize(IEnumerable<string> friendIds)
     {
         using var db = Database.OpenConnection();
+        LoadCurrentFriends(db, friendIds);
 
         int userCleaned;
         using (var cmd = db.CreateCommand())
@@ -167,23 +190,18 @@ public static class SQLiteOptimizing
                 profile_world_name='', profile_world_thumb='', profile_instance_type='',
                 profile_user_count=0, profile_world_capacity=0,
                 profile_can_join=0, profile_can_request_invite=0, profile_can_invite=0,
-                profile_current_avatar_id='', profile_avatar_file_id='', profile_pic_override='', profile_banner_url='',
+                profile_current_avatar_id='', profile_avatar_file_id='', profile_pic_override='', profile_banner_url='', profile_banner_type='', profile_banner_color='',
                 profile_tags='[]', profile_note='', profile_friend_key='', profile_traveling_to='',
                 profile_state='', profile_last_platform='', profile_platform='', profile_user_note='',
                 profile_in_same_instance=0, profile_pronouns='', profile_age_verification='',
-                profile_age_verified=0, profile_bio_links='[]', profile_is_favorited=0,
+                profile_age_verified=0, profile_economy_creator=0, profile_bio_links='[]', profile_is_favorited=0,
                 profile_fav_friend_id='', profile_badges='[]',
                 groups='', groups_cached_at='', content='', content_cached_at='',
                 mutuals='', mutuals_cached_at='', mutual_groups='', mutual_groups_cached_at=''
-                WHERE (profile_is_friend IS NULL OR profile_is_friend!=1)";
+                WHERE (profile_is_friend IS NULL OR profile_is_friend!=1) AND user_id NOT IN (SELECT user_id FROM temp.opt_friends)";
             userCleaned = cmd.ExecuteNonQuery();
         }
 
-        using (var cmd = db.CreateCommand())
-        {
-            cmd.CommandText = "UPDATE user_tracking SET profile_bio_links='[]' WHERE profile_bio_links<>'' AND profile_bio_links<>'[]'";
-            userCleaned += cmd.ExecuteNonQuery();
-        }
 
         const int keepRecent = 100;
 

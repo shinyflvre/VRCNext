@@ -75,7 +75,7 @@
     flex: 1;
     padding: 9px 10px 9px 32px;
     background: var(--ui-input-bg);
-    border: 1px solid transparent;
+    border: 1px solid var(--brd);
     border-radius: 9px;
     color: var(--tx1);
     font-size: calc(13px + var(--fs-off, 0px));
@@ -102,7 +102,7 @@
     height: 32px;
     padding: 0 10px;
     background: var(--bg-input);
-    border: none;
+    border: 1px solid var(--brd);
     border-radius: 7px;
     color: var(--tx1);
     font-size: calc(12px + var(--fs-off, 0px));

@@ -31,7 +31,7 @@
     <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="VRChat.OSCQuery" Version="0.0.7" />
-    <PackageReference Include="Photino.NET" Version="4.0.16" />
+    <ProjectReference Include="external\photino.NET\Photino.NET\Photino.NET.csproj" />
     <PackageReference Include="NativeFileDialogSharp" Version="0.5.0" />
     <PackageReference Include="Rsync.Delta" Version="1.0.1" />
     <PackageReference Include="System.Drawing.Common" Version="9.0.0" />
@@ -58,6 +58,10 @@
     <Content Remove="REFS\**" />
     <EmbeddedResource Remove="REFS\**" />
     <None Remove="REFS\**" />
+    <Compile Remove="external\**" />
+    <Content Remove="external\**" />
+    <EmbeddedResource Remove="external\**" />
+    <None Remove="external\**" />
     <Compile Remove="translations\**" />
     <Content Remove="translations\**" />
     <EmbeddedResource Remove="translations\**" />

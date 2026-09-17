@@ -34,6 +34,7 @@ function closeAvatarDetail(fromNav = false) {
     document.getElementById('modalAvatarDetail').style.display = 'none';
     _avDetailData = null;
     if (!fromNav && typeof navClear === 'function') navClear();
+    if (!fromNav && typeof releaseClosedModals === 'function') releaseClosedModals();
 }
 
 const _avFieldIds = {

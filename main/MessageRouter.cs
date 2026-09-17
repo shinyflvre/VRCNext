@@ -546,6 +546,13 @@ public partial class AppShell
                 case "windowDragStart":
                 case "windowResizeStart":
                 case "setGuiZoom":
+                case "wmSurfaceOpen":
+                case "wmSurfaceClose":
+                case "wmSurfaceVisible":
+                case "wmSurfaceDrag":
+                case "wmSurfaceTitle":
+                case "wmSurfaceActivate":
+                case "windowBackground":
                     _windowCtrl.HandleMessage(action, msg);
                     break;
 
@@ -912,21 +919,25 @@ public partial class AppShell
                 }
 
                 case "vrcUpdateProfile":
-                    var upBio = msg["bio"] != null ? msg["bio"]!.ToString() : (string?)null;
-                    var upPronouns = msg["pronouns"] != null ? msg["pronouns"]!.ToString() : (string?)null;
-                    var upBioLinks = msg["bioLinks"]?.ToObject<List<string>>();
-                    var upTags = msg["tags"]?.ToObject<List<string>>();
-                    var upUserIcon = msg["userIcon"]           != null ? msg["userIcon"]!.ToString()           : (string?)null;
-                    var upBanner   = msg["profilePicOverride"] != null ? msg["profilePicOverride"]!.ToString() : (string?)null;
+                    var upBio       = msg["bio"] != null ? msg["bio"]!.ToString() : (string?)null;
+                    var upPronouns  = msg["pronouns"] != null ? msg["pronouns"]!.ToString() : (string?)null;
+                    var upBioLinks  = msg["bioLinks"]?.ToObject<List<string>>();
+                    var upLanguages = msg["languages"]?.ToObject<List<string>>();
+                    var upUserIcon  = msg["userIcon"] != null ? msg["userIcon"]!.ToString() : (string?)null;
                     _ = Task.Run(async () =>
                     {
-                        var updUser = await _core.Users.UpdateProfileAsync(upBio, upPronouns, upBioLinks, upTags, upUserIcon, upBanner);
+                        var updOk = true;
+                        if (upBio != null || upBioLinks != null || upLanguages != null || upUserIcon != null)
+                            updOk = await _core.Users.UpdateProfileFieldsAsync(upBio, upBioLinks, upLanguages, upUserIcon);
+                        if (updOk && upPronouns != null)
+                            updOk = await _core.Users.UpdateUserProfileAsync(upPronouns) != null;
+                        var updUser = updOk ? await _core.Auth.RefreshCurrentUserAsync() : null;
                         Invoke(() =>
                         {
-                            if (updUser != null)
+                            if (updOk)
                             {
-                                _authCtrl.SendVrcUserData(updUser);
-                                SendToJS("vrcProfileUpdated", new { success = true });
+                                SendToJS("vrcProfileUpdated", new { success = true, bio = upBio, bioLinks = upBioLinks, languages = upLanguages, pronouns = upPronouns });
+                                if (updUser != null) _authCtrl.SendVrcUserData(updUser);
                                 SendToJS("log", new { msg = "VRChat: Profile updated", color = "ok" });
                             }
                             else
@@ -3881,6 +3892,18 @@ public partial class AppShell
                 case "getApiHealth":
                     _ = Task.Run(() => FetchApiHealthAsync());
                     break;
+
+                case "smartSearchAsk":
+                {
+                    var question = msg["question"]?.ToString() ?? "";
+                    var reqId = msg["reqId"]?.ToString() ?? "";
+                    _ = Task.Run(async () =>
+                    {
+                        var r = await VRCNext.Services.SmartSearch.SmartSearchService.LookupAsync(question);
+                        Invoke(() => SendToJS("smartSearchAnswer", new { reqId, ok = r.ok, answer = r.answer, title = r.title, slug = r.slug, alternatives = r.alternatives }));
+                    });
+                    break;
+                }
 
                 case "getApiHealthDetail":
                     _ = Task.Run(() => SendApiHealthDetailAsync());

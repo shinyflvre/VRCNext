@@ -1,4 +1,4 @@
-const WM_MAX = 12;
+﻿const WM_MAX = 8;
 const WM_Z_BASE = 9000;
 const WM_MIN_W = 560;
 const WM_MIN_H = 360;
@@ -64,6 +64,10 @@ let _wmZTop      = WM_Z_BASE;
 let _wmShift     = false;
 let _wmInternal  = false;
 let _wmEnabled   = false;
+let _wmSurfaced  = false;
+const _wmSurfaceWindows = {};
+const _wmSurfaceDocs = [];
+const _wmPortals = [];
 const _wmTemplates = {};
 
 function wmEnabled() {
@@ -140,6 +144,7 @@ document.getElementById = function (id) {
             if (scoped) return scoped;
         }
         const native = _wmRawGetById.call(document, id);
+        if (native == null && _wmPortals.length) return _wmPortalQuery(sel, false);
         if (!_wmOwned(native)) return native;
         return root ? null : _wmOutsideWindows(sel, native);
     } finally {
@@ -159,6 +164,7 @@ document.querySelector = function (sel) {
         }
         let native = null;
         try { native = _wmDocQS.call(document, sel); } catch (e) { return null; }
+        if (native == null && _wmPortals.length) return _wmPortalQuery(sel, false);
         if (!_wmOwned(native)) return native;
         return root ? null : _wmOutsideWindows(sel, native);
     } finally {
@@ -375,7 +381,7 @@ function _wmTileAnimStop(win) {
 }
 
 function wmTile(win, dir, animate) {
-    if (!win || !win.el || win.minimized) return false;
+    if (!win || !win.el || win.minimized || win.surfaced) return false;
     const box = _wmLayerBox();
     if (!box) return false;
     const rect = _wmTileRect(dir, box);
@@ -406,6 +412,7 @@ function _wmSizeOf(win) {
 }
 
 function _wmClampInto(win, box) {
+    if (win.surfaced) return;
     box = box || _wmLayerBox();
     if (!box || !win.el) return;
     let { w, h } = _wmSizeOf(win);
@@ -427,7 +434,7 @@ function _wmCenter(win) {
 }
 
 function _wmRecenter(win) {
-    if (win && win.el && !win.userPlaced) _wmCenter(win);
+    if (win && win.el && !win.userPlaced && !win.surfaced) _wmCenter(win);
 }
 
 function _wmCreate(type) {
@@ -442,6 +449,7 @@ function _wmCreate(type) {
 
     el.style.left = '0px';
     el.style.top  = '0px';
+    if (_wmSurfaceWanted()) el.style.visibility = 'hidden';
 
     const win = {
         id: ++_wmSeq, type, el, body,
@@ -476,7 +484,10 @@ function _wmCreate(type) {
 }
 
 function _wmDestroy(win) {
+    if (win.surfaceTimer) { clearTimeout(win.surfaceTimer); win.surfaceTimer = null; }
+    win.surfaceDeferred = false;
     if (win.observer) { win.observer.disconnect(); win.observer = null; }
+    if (win.rebindObserver) { win.rebindObserver.disconnect(); win.rebindObserver = null; }
     if (win.sizeObserver) { win.sizeObserver.disconnect(); win.sizeObserver = null; }
     if (win.el && win.el.parentNode) win.el.parentNode.removeChild(win.el);
     win.el = null;
@@ -490,6 +501,7 @@ function wmClose(win) {
     if (i >= 0) _wmWindows.splice(i, 1);
     if (_wmFocused === win) _wmFocused = null;
     if (_wmScope === win) _wmScope = null;
+    _wmSurfaceRelease(win);
     _wmDestroy(win);
     _wmSyncDock();
 }
@@ -499,6 +511,7 @@ function wmMinimize(win) {
     if (_wmFocused === win) { _wmSaveState(win); _wmFocused = null; }
     win.minimized = true;
     win.el.classList.add('wm-minimized');
+    if (win.surfaceId) sendToCS({ action: 'wmSurfaceVisible', wmId: win.id, visible: false });
     _wmSyncDock();
 }
 
@@ -506,7 +519,8 @@ function wmRestore(win) {
     if (!win || !win.el) return;
     win.minimized = false;
     win.el.classList.remove('wm-minimized');
-    if (win.tile) wmTile(win, win.tile, false);
+    if (win.surfaceId) sendToCS({ action: 'wmSurfaceVisible', wmId: win.id, visible: true });
+    else if (win.tile) wmTile(win, win.tile, false);
     else _wmClampInto(win);
     _wmSyncDock();
     wmFocus(win);
@@ -521,6 +535,7 @@ function wmFocus(win) {
     if (_wmFocused) _wmSaveState(_wmFocused);
     _wmFocused = win;
     _wmLoadState(win);
+    if (win.surfaced) sendToCS({ action: 'wmSurfaceActivate', wmId: win.id });
 }
 
 let _wmDrag = null;
@@ -593,6 +608,11 @@ function _wmDragStart(win, e) {
     if (e.button !== 0) return;
     if (!e.target.closest || !e.target.closest('.fd-modal-bar')) return;
     if (e.target.closest('button, input, a, select, textarea, .tb-crumb, .vn-select')) return;
+    if (win.surfaced) {
+        e.preventDefault();
+        sendToCS({ action: 'wmSurfaceDrag', wmId: win.id });
+        return;
+    }
 
     const layer = _wmRawGetById.call(document, 'wmLayer');
     _wmDrag = {
@@ -741,10 +761,12 @@ function wmSetLabel(win, label) {
     if (win.stack[win.idx]) win.stack[win.idx].label = label;
     _wmRenderCrumbs(win);
     _wmSyncDock();
+    if (win.surfaceId) sendToCS({ action: 'wmSurfaceTitle', wmId: win.id, title: label });
 }
 
 function wmOpen(type, id, label, id2) {
     if (!_wmEnabled || !WM_TYPES[type]) return false;
+    const origin = _wmCurrent();
 
     const existing = _wmFindByEntity(type, id, id2);
     if (existing) {
@@ -761,7 +783,7 @@ function wmOpen(type, id, label, id2) {
 
     if (_wmWindows.length >= WM_MAX) {
         if (typeof showToast === 'function') {
-            showToast(false, _wmT('wm.limit_reached', 'Maximum of 12 windows reached'));
+            showToast(false, _wmT('wm.limit_reached', 'Maximum of 8 windows reached'));
         }
         return true;
     }
@@ -770,6 +792,20 @@ function wmOpen(type, id, label, id2) {
     wmFocus(win);
     if (!wmNavPush(win, type, id, label, id2)) { wmClose(win); return false; }
     _wmCenter(win);
+    if (_wmSurfaceWanted()) {
+        win.surfaceOrigin = origin;
+        if (WM_TYPES[type].render) {
+            win.surfaceDeferred = true;
+            win.el.style.visibility = 'hidden';
+            win.surfaceTimer = setTimeout(() => {
+                if (!win.surfaceDeferred || !win.el) return;
+                win.surfaceDeferred = false;
+                _wmSurfaceRequest(win, origin);
+            }, 3000);
+        } else {
+            _wmSurfaceRequest(win, origin);
+        }
+    }
     return true;
 }
 
@@ -887,6 +923,11 @@ function _wmWrapRender(type) {
             wmSetLabel(win, payload.displayName || payload.name || payload.title || '');
             _wmApplyChrome(win);
             _wmRecenter(win);
+            if (win.surfaceDeferred) {
+                win.surfaceDeferred = false;
+                clearTimeout(win.surfaceTimer);
+                _wmSurfaceRequest(win, win.surfaceOrigin);
+            }
             return r;
         });
     };
@@ -935,3 +976,354 @@ function _wmWrapNav() {
     });
     _wmWrapNav();
 })();
+
+function wmSetSurfaced(on) {
+    _wmSurfaced = !!on;
+}
+
+function wmSurfacedAvailable() {
+    return !!(window.photino && window.photino.isHost === false && typeof window.photino.surfaceWindow === 'function');
+}
+
+function _wmSurfaceWanted() {
+    return _wmSurfaced && wmSurfacedAvailable() && typeof sendToCS === 'function';
+}
+
+function _wmSurfaceRequest(win, origin) {
+    const { w, h } = _wmSizeOf(win);
+    win.surfacePending = true;
+    win.el.style.visibility = 'hidden';
+    sendToCS({
+        action: 'wmSurfaceOpen',
+        wmId: win.id,
+        nearWmId: origin && origin.surfaceId ? origin.id : 0,
+        title: win.label || WM_TYPES[win.type].label(),
+        width: Math.max(WM_MIN_W, Math.round(w || 0)),
+        height: Math.max(WM_MIN_H, Math.round(h || 0)),
+    });
+}
+
+function wmOnSurfaceCreated(payload) {
+    const wmId = payload && payload.wmId;
+    const surfaceId = (payload && payload.surfaceId) || 0;
+    const win = _wmWindows.find(w => w.id === wmId);
+    if (!win || !win.el) {
+        if (surfaceId) sendToCS({ action: 'wmSurfaceClose', wmId });
+        return;
+    }
+    win.surfacePending = false;
+    if (!surfaceId) { win.el.style.visibility = ''; return; }
+    win.surfaceId = surfaceId;
+    const sw = _wmSurfaceWindows[surfaceId];
+    if (sw) _wmAdopt(win, sw);
+}
+
+function wmOnSurfaceClosed(payload) {
+    const win = _wmWindows.find(w => w.id === (payload && payload.wmId));
+    if (!win) return;
+    win.surfaceClosedByNative = true;
+    wmClose(win);
+}
+
+function _wmSurfaceRelease(win) {
+    if (win.surfaced) _wmUnportalAll(win);
+    if (win.surfaceId && !win.surfaceClosedByNative) sendToCS({ action: 'wmSurfaceClose', wmId: win.id });
+    win.surfaceId = 0;
+    win.surfaced = false;
+    win.surfaceWin = null;
+}
+
+function _wmMirrorRoot() {
+    const src = document.documentElement;
+    for (const doc of _wmSurfaceDocs) {
+        const dst = doc.documentElement;
+        if (!dst) continue;
+        for (const a of Array.from(dst.attributes)) if (!src.hasAttribute(a.name)) dst.removeAttribute(a.name);
+        for (const a of Array.from(src.attributes)) if (dst.getAttribute(a.name) !== a.value) dst.setAttribute(a.name, a.value);
+        if (doc.body && doc.body.className !== document.body.className) doc.body.className = document.body.className;
+    }
+}
+
+let _wmRootObserver = null;
+
+function _wmPrepareSurfaceDoc(doc) {
+    if (_wmSurfaceDocs.includes(doc)) return;
+    _wmSurfaceDocs.push(doc);
+    const head = doc.head;
+    head.innerHTML = '';
+    const meta = doc.createElement('meta');
+    meta.setAttribute('charset', 'utf-8');
+    head.appendChild(meta);
+    _wmDocQSA.call(document, 'head link[rel="stylesheet"], head style').forEach(n => head.appendChild(doc.importNode(n, true)));
+    doc.body.setAttribute('style', 'margin:0;overflow:hidden;background:var(--bg,#111);');
+    _wmMirrorRoot();
+    if (!_wmRootObserver) {
+        _wmRootObserver = new MutationObserver(_wmMirrorRoot);
+        _wmRootObserver.observe(document.documentElement, { attributes: true });
+        _wmRootObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    }
+    if (typeof window.VrcnCtxAttach === 'function') window.VrcnCtxAttach(doc);
+    if (typeof vnTooltipAttach === 'function') vnTooltipAttach(doc);
+    _wmShareGlobals(doc.defaultView);
+    _wmBindSurfaceDoc(doc);
+}
+
+function _wmShareGlobals(sw) {
+    if (!sw) return;
+    for (const k of Object.getOwnPropertyNames(window)) {
+        if (k in sw) continue;
+        let v;
+        try { v = window[k]; } catch (e) { continue; }
+        if (typeof v === 'function') { try { sw[k] = v; } catch (e) { } }
+    }
+}
+
+function _wmRebindInline(root, shallow) {
+    if (!root || root.nodeType !== 1) return;
+    const nodes = shallow ? [root] : [root, ..._wmRawQSA.call(root, '*')];
+    for (const el of nodes) {
+        if (!el.attributes) continue;
+        for (const a of Array.from(el.attributes)) {
+            if (!/^on[a-z]+$/i.test(a.name)) continue;
+            const code = a.value;
+            const type = a.name.slice(2).toLowerCase();
+            const bound = el.__wmBound || (el.__wmBound = {});
+            if (bound[type] && bound[type].code === code) { el[a.name] = null; continue; }
+            let fn;
+            try { fn = new Function('event', code); } catch (e) { continue; }
+            if (bound[type]) el.removeEventListener(type, bound[type].listener);
+            const listener = function (ev) { return fn.call(this, ev); };
+            bound[type] = { code, listener };
+            el[a.name] = null;
+            el.addEventListener(type, listener);
+        }
+    }
+}
+
+
+function _wmOverlayHidden(el) {
+    if (el.style.display === 'none') return true;
+    if (el.style.display) return false;
+    try { return el.ownerDocument.defaultView.getComputedStyle(el).display === 'none'; } catch (e) { return false; }
+}
+
+function _wmMaybePortal(el) {
+    if (!el || el.nodeType !== 1 || el.__wmPortal) return;
+    if (el.parentNode !== document.body || !(el.classList.contains('modal-overlay') || el.hasAttribute('data-wm-portal'))) return;
+    if (_wmOverlayHidden(el)) return;
+    const cur = _wmCurrent();
+    if (!cur || !cur.surfaced || !cur.surfaceWin) return;
+    _wmPortalOverlay(el, cur);
+}
+
+function _wmPortalOverlay(el, win) {
+    let doc;
+    try { doc = win.surfaceWin.document; } catch (e) { return; }
+    if (!doc || !doc.body) return;
+    const placeholder = document.createComment('wm-portal');
+    el.parentNode.insertBefore(placeholder, el);
+    doc.body.appendChild(doc.adoptNode(el));
+    _wmRebindInline(el, false);
+    const observer = new MutationObserver(muts => {
+        for (const m of muts) {
+            if (m.type === 'childList') {
+                m.addedNodes.forEach(n => _wmRebindInline(n, false));
+            } else if (m.type === 'attributes') {
+                if (/^on[a-z]+$/i.test(m.attributeName)) _wmRebindInline(m.target, true);
+                else if (m.target === el && (m.attributeName === 'style' || m.attributeName === 'class') && _wmOverlayHidden(el)) _wmUnportal(el);
+            }
+        }
+    });
+    observer.observe(el, { childList: true, subtree: true, attributes: true });
+    el.__wmPortal = { placeholder, win, observer };
+    _wmPortals.push(el);
+}
+
+function _wmUnportal(el) {
+    const p = el.__wmPortal;
+    if (!p) return;
+    p.observer.disconnect();
+    delete el.__wmPortal;
+    const i = _wmPortals.indexOf(el);
+    if (i >= 0) _wmPortals.splice(i, 1);
+    if (!el.parentNode) { if (p.placeholder.parentNode) p.placeholder.remove(); return; }
+    const moved = document.adoptNode(el);
+    if (p.placeholder.parentNode) { p.placeholder.parentNode.insertBefore(moved, p.placeholder); p.placeholder.remove(); }
+    else document.body.appendChild(moved);
+}
+
+function _wmUnportalAll(win) {
+    [..._wmPortals].forEach(el => { if (!win || (el.__wmPortal && el.__wmPortal.win === win)) _wmUnportal(el); });
+}
+
+function _wmPortalQuery(sel, all) {
+    const out = [];
+    for (const el of _wmPortals) {
+        try {
+            if (el.matches(sel)) { if (!all) return el; out.push(el); }
+            const inner = all ? _wmRawQSA.call(el, sel) : _wmRawQS.call(el, sel);
+            if (!all) { if (inner) return inner; }
+            else out.push(...inner);
+        } catch (e) { }
+    }
+    return all ? out : null;
+}
+
+function _wmWatchOverlays() {
+    if (!document.body) { document.addEventListener('DOMContentLoaded', _wmWatchOverlays, { once: true }); return; }
+    const obs = new MutationObserver(muts => {
+        if (!_wmWindows.some(w => w.surfaced)) return;
+        for (const m of muts) {
+            if (m.type === 'childList') m.addedNodes.forEach(_wmMaybePortal);
+            else _wmMaybePortal(m.target);
+        }
+    });
+    obs.observe(document.body, { childList: true, attributes: true, attributeFilter: ['style', 'class'], subtree: true });
+}
+_wmWatchOverlays();
+
+function _wmWatchInline(win) {
+    if (win.rebindObserver) return;
+    win.rebindObserver = new MutationObserver(muts => {
+        for (const m of muts) {
+            if (m.type === 'childList') {
+                m.addedNodes.forEach(n => _wmRebindInline(n, false));
+            } else if (m.type === 'attributes' && /^on[a-z]+$/i.test(m.attributeName) && m.target.getAttribute(m.attributeName) != null) {
+                _wmRebindInline(m.target, true);
+            }
+        }
+    });
+    win.rebindObserver.observe(win.el, { childList: true, subtree: true, attributes: true });
+}
+
+function _wmHostOf(target) {
+    const el = target && target.closest ? target : (target && target.parentElement) || null;
+    const host = el && el.closest ? el.closest('.wm-window') : null;
+    return host && host._wmWin ? host._wmWin : null;
+}
+
+function _wmBindSurfaceDoc(doc) {
+    doc.addEventListener('wheel', e => {
+        if (!e.ctrlKey) return;
+        e.preventDefault();
+        if (typeof _stepGuiZoom === 'function') _stepGuiZoom(e.deltaY < 0 ? 1 : -1);
+    }, { passive: false });
+    doc.addEventListener('keydown', e => {
+        if (!e.ctrlKey) return;
+        if (e.key === '0') { e.preventDefault(); if (typeof applyGuiZoom === 'function') applyGuiZoom(1); try { autoSave(); } catch {} }
+        else if (e.key === '+' || e.key === '=') { e.preventDefault(); if (typeof _stepGuiZoom === 'function') _stepGuiZoom(1); }
+        else if (e.key === '-') { e.preventDefault(); if (typeof _stepGuiZoom === 'function') _stepGuiZoom(-1); }
+    });
+    doc.addEventListener('pointerdown', e => {
+        _wmShift = e.shiftKey;
+        const win = _wmHostOf(e.target);
+        if (win) wmFocus(win);
+    }, true);
+    doc.addEventListener('keydown', e => {
+        _wmShift = e.shiftKey;
+        if (e.key === 'Escape') {
+            const portal = _wmPortals.filter(p => p.ownerDocument === doc && !_wmOverlayHidden(p)).pop();
+            if (portal) {
+                e.stopPropagation();
+                const closeBtn = _wmRawQS.call(portal, '.launch-close');
+                if (closeBtn) closeBtn.click();
+                else portal.style.display = 'none';
+                return;
+            }
+            const win = _wmHostOf(e.target) || _wmHostOf(doc.activeElement) || _wmWindows.find(w => w.surfaceWin === doc.defaultView);
+            if (win && !_wmIsTypingTarget(e.target)) { e.stopPropagation(); wmClose(win); }
+        }
+    }, true);
+    new MutationObserver(muts => {
+        for (const m of muts) m.removedNodes.forEach(n => { if (n.__wmPortal && !n.parentNode) _wmUnportal(n); });
+    }).observe(doc.body, { childList: true });
+    doc.addEventListener('keyup', e => { _wmShift = e.shiftKey; }, true);
+    doc.addEventListener('focusin', e => {
+        const win = _wmHostOf(e.target);
+        if (win) wmFocus(win);
+    }, true);
+}
+
+function _wmAdopt(win, sw) {
+    if (!win.el || win.surfaced) return;
+    let doc;
+    try { doc = sw.document; } catch (e) { return; }
+    if (!doc || !doc.body) return;
+    _wmPrepareSurfaceDoc(doc);
+    doc.body.appendChild(doc.adoptNode(win.el));
+    _wmRebindInline(win.el, false);
+    _wmWatchInline(win);
+    win.surfaced = true;
+    win.surfacePending = false;
+    win.surfaceWin = sw;
+    win.userPlaced = true;
+    win.tile = null;
+    win.el.classList.add('wm-surfaced', 'wm-sized');
+    win.el.classList.remove('wm-minimized');
+    win.el.style.visibility = '';
+    win.el.style.left = '0px';
+    win.el.style.top = '0px';
+    win.el.style.width = '100%';
+    win.el.style.height = '100%';
+    const narrow = () => { if (win.el) win.el.classList.toggle('wm-narrow', sw.innerWidth < WM_NARROW_W); };
+    narrow();
+    sw.addEventListener('resize', narrow);
+    wmFocus(win);
+    _wmRevealSurface(win, sw);
+}
+
+function _wmStylesReady(doc) {
+    const links = Array.from(_wmRawQSA.call(doc.head, 'link[rel="stylesheet"]'));
+    const pending = links.filter(l => !l.sheet).map(l => new Promise(res => {
+        l.addEventListener('load', res, { once: true });
+        l.addEventListener('error', res, { once: true });
+    }));
+    const fonts = doc.fonts && doc.fonts.ready ? doc.fonts.ready.catch(() => {}) : Promise.resolve();
+    const timeout = new Promise(res => setTimeout(res, 2000));
+    return Promise.race([Promise.all([...pending, fonts]), timeout]);
+}
+
+function _wmRevealSurface(win, sw) {
+    _wmStylesReady(sw.document).then(() => new Promise(res => sw.requestAnimationFrame(() => sw.requestAnimationFrame(res)))).then(() => {
+        if (!win.el || !win.surfaceId || win.minimized) return;
+        sendToCS({ action: 'wmSurfaceVisible', wmId: win.id, visible: true });
+    });
+}
+
+window.addEventListener('photinosurface', e => {
+    const d = e.detail || {};
+    if (d.type === 'ready') {
+        _wmSurfaceWindows[d.id] = d.window;
+        const win = _wmWindows.find(w => w.surfaceId === d.id && !w.surfaced);
+        if (win) _wmAdopt(win, d.window);
+    } else if (d.type === 'removed') {
+        delete _wmSurfaceWindows[d.id];
+    }
+});
+
+function _wmParseColor(value) {
+    const v = String(value || '').trim();
+    if (/^#[0-9a-f]{3}$/i.test(v) || /^#[0-9a-f]{6}$/i.test(v)) return v;
+    const m = v.match(/^rgba?\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+    if (!m) return '';
+    return '#' + [m[1], m[2], m[3]].map(n => Math.max(0, Math.min(255, +n)).toString(16).padStart(2, '0')).join('');
+}
+
+let _wmLastWindowBackground = '';
+
+function _wmSyncWindowBackground() {
+    if (!wmSurfacedAvailable() || typeof sendToCS !== 'function') return;
+    let color = '';
+    try { color = _wmParseColor(getComputedStyle(document.body).backgroundColor); } catch (e) { }
+    if (!color || color === '#000000') {
+        try { color = _wmParseColor(getComputedStyle(document.documentElement).getPropertyValue('--bg')) || color; } catch (e) { }
+    }
+    if (!color) return;
+    try { window.top.document.documentElement.style.background = color; } catch (e) { }
+    if (color === _wmLastWindowBackground) return;
+    _wmLastWindowBackground = color;
+    sendToCS({ action: 'windowBackground', color });
+}
+
+document.documentElement.addEventListener('themechange', _wmSyncWindowBackground);
+window.addEventListener('load', () => setTimeout(_wmSyncWindowBackground, 500));

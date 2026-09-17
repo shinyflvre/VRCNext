@@ -343,7 +343,7 @@ const SmartSearch = (() => {
                 if (item.image) {
                     const img = document.createElement('img');
                     img.className = 'vrc-friend-avatar';
-                    img.src = item.image;
+                    img.src = imgThumb(item.image, 64);
                     img.onerror = function() {
                         const ph = document.createElement('div');
                         ph.className = 'vrc-friend-avatar';
@@ -689,6 +689,200 @@ const SmartSearch = (() => {
     let _debouncedRender = null;
     let _focusedIdx = -1;
     let _focusedChipIdx = -1;
+    let _aiPendingReqId = null;
+    let _aiReqSeq = 0;
+
+    function _aiSafeUrl(u) {
+        u = (u || '').trim();
+        return /^https?:\/\//i.test(u) ? u : '';
+    }
+
+    function _aiRenderInline(text, parent) {
+        const rx = /!\[([^\]]*)\]\(([^)]+)\)|\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*|\*([^*]+)\*|`([^`]+)`/g;
+        let last = 0, m;
+        while ((m = rx.exec(text)) !== null) {
+            if (m.index > last) parent.appendChild(document.createTextNode(text.slice(last, m.index)));
+            if (m[0][0] === '!') {
+                const url = _aiSafeUrl(m[2]);
+                if (url) { const img = document.createElement('img'); img.className = 'ss-ai-img'; img.src = url; img.alt = m[1] || ''; parent.appendChild(img); }
+                else parent.appendChild(document.createTextNode(m[1] || ''));
+            } else if (m[3] !== undefined) {
+                const url = _aiSafeUrl(m[4]);
+                if (url) { const a = document.createElement('a'); a.textContent = m[3]; a.href = '#'; a.addEventListener('click', (e) => { e.preventDefault(); if (typeof sendToCS === 'function') sendToCS({ action: 'openUrl', url }); }); parent.appendChild(a); }
+                else parent.appendChild(document.createTextNode(m[3]));
+            } else if (m[5] !== undefined) { const b = document.createElement('strong'); b.textContent = m[5]; parent.appendChild(b); }
+            else if (m[6] !== undefined) { const i = document.createElement('em'); i.textContent = m[6]; parent.appendChild(i); }
+            else if (m[7] !== undefined) { const c = document.createElement('code'); c.textContent = m[7]; parent.appendChild(c); }
+            last = rx.lastIndex;
+        }
+        if (last < text.length) parent.appendChild(document.createTextNode(text.slice(last)));
+    }
+
+    function _aiRenderMarkdown(md) {
+        const root = document.createElement('div');
+        root.className = 'ss-ai-md';
+        const lines = (md || '').replace(/\r/g, '').split('\n');
+        let i = 0, list = null, listType = '';
+        const flushList = () => { if (list) { root.appendChild(list); list = null; listType = ''; } };
+        while (i < lines.length) {
+            const line = lines[i];
+            if (/^```/.test(line.trim())) {
+                flushList();
+                const pre = document.createElement('pre'), code = document.createElement('code');
+                i++;
+                const buf = [];
+                while (i < lines.length && !/^```/.test(lines[i].trim())) { buf.push(lines[i]); i++; }
+                code.textContent = buf.join('\n'); pre.appendChild(code); root.appendChild(pre); i++;
+                continue;
+            }
+            const h = line.match(/^(#{1,6})\s+(.*)$/);
+            if (h) { flushList(); const el = document.createElement('h' + Math.min(6, h[1].length + 3)); el.className = 'ss-ai-h'; _aiRenderInline(h[2], el); root.appendChild(el); i++; continue; }
+            const ul = line.match(/^\s*[-*]\s+(.*)$/);
+            const ol = line.match(/^\s*\d+\.\s+(.*)$/);
+            if (ul || ol) {
+                const type = ul ? 'ul' : 'ol';
+                if (!list || listType !== type) { flushList(); list = document.createElement(type); listType = type; }
+                const li = document.createElement('li'); _aiRenderInline(ul ? ul[1] : ol[1], li); list.appendChild(li); i++; continue;
+            }
+            if (/^\s*>\s?/.test(line)) { flushList(); const bq = document.createElement('blockquote'); _aiRenderInline(line.replace(/^\s*>\s?/, ''), bq); root.appendChild(bq); i++; continue; }
+            if (line.trim() === '') { flushList(); i++; continue; }
+            flushList();
+            const p = document.createElement('p');
+            const para = [line]; i++;
+            while (i < lines.length && lines[i].trim() !== '' && !/^```|^#{1,6}\s|^\s*[-*]\s|^\s*\d+\.\s|^\s*>/.test(lines[i])) { para.push(lines[i]); i++; }
+            _aiRenderInline(para.join(' '), p); root.appendChild(p);
+        }
+        flushList();
+        return root;
+    }
+
+    function _aiRenderChat(question) {
+        _dropdown.innerHTML = '';
+        const chat = document.createElement('div');
+        chat.className = 'ss-ai-chat';
+
+        const userRow = document.createElement('div');
+        userRow.className = 'ss-ai-row ss-ai-row-user';
+        const userBubble = document.createElement('div');
+        userBubble.className = 'ss-ai-bubble ss-ai-bubble-user';
+        userBubble.textContent = question;
+        userRow.appendChild(userBubble);
+        chat.appendChild(userRow);
+
+        const botRow = document.createElement('div');
+        botRow.className = 'ss-ai-row ss-ai-row-bot';
+        const botBubble = document.createElement('div');
+        botBubble.className = 'ss-ai-bubble ss-ai-bubble-bot';
+        botBubble.id = 'ssAiAnswer';
+        const loading = document.createElement('div');
+        loading.className = 'ss-ai-loading';
+        loading.innerHTML = '<span class="ss-ai-dot"></span><span class="ss-ai-dot"></span><span class="ss-ai-dot"></span>';
+        botBubble.appendChild(loading);
+        botRow.appendChild(botBubble);
+        chat.appendChild(botRow);
+
+        _dropdown.appendChild(chat);
+        _showDropdown();
+    }
+
+    function _askAi(question) {
+        question = (question || '').trim();
+        if (!question) return;
+        _hideDebAnim('ssInput');
+        _aiRenderChat(question);
+        _aiReqSeq++;
+        _aiPendingReqId = 'ss-' + _aiReqSeq;
+        if (typeof sendToCS === 'function') sendToCS({ action: 'smartSearchAsk', question, reqId: _aiPendingReqId });
+    }
+
+    function _aiRenderAnswerInto(a, res) {
+        if (res.title) {
+            const src = document.createElement('a');
+            src.className = 'ss-ai-source';
+            const icon = document.createElement('span'); icon.className = 'msi'; icon.textContent = 'open_in_new';
+            const label = document.createElement('span');
+            label.textContent = ((typeof t === 'function') ? t('search.wiki.source', 'From the wiki') : 'From the wiki') + ': ' + res.title;
+            src.appendChild(icon); src.appendChild(label);
+            if (res.slug) {
+                src.href = '#';
+                src.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (typeof sendToCS === 'function') sendToCS({ action: 'openUrl', url: 'https://wiki.vrcnext.com/#page/' + res.slug });
+                });
+            }
+            a.appendChild(src);
+        }
+        a.appendChild(_aiRenderMarkdown(res.answer || ''));
+    }
+
+    function _aiAppendBubble(kind) {
+        const chat = _dropdown ? _dropdown.querySelector('.ss-ai-chat') : null;
+        if (!chat) return null;
+        const row = document.createElement('div');
+        row.className = 'ss-ai-row ' + (kind === 'user' ? 'ss-ai-row-user' : 'ss-ai-row-bot');
+        const bubble = document.createElement('div');
+        bubble.className = 'ss-ai-bubble ' + (kind === 'user' ? 'ss-ai-bubble-user' : 'ss-ai-bubble-bot');
+        row.appendChild(bubble);
+        chat.appendChild(row);
+        return bubble;
+    }
+
+    function _aiRenderAlternatives(alts) {
+        const bubble = _aiAppendBubble('bot');
+        if (!bubble) return;
+        bubble.classList.add('ss-ai-bubble-alts');
+        const label = document.createElement('div');
+        label.className = 'ss-ai-alts-label';
+        label.textContent = (typeof t === 'function') ? t('search.wiki.alternatives', 'Or were you looking for:') : 'Or were you looking for:';
+        bubble.appendChild(label);
+        const list = document.createElement('div');
+        list.className = 'ss-ai-alts';
+        alts.forEach(alt => {
+            if (!alt || !alt.answer) return;
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'ss-ai-alt';
+            const title = document.createElement('span');
+            title.className = 'ss-ai-alt-title';
+            title.textContent = alt.title || alt.slug || '';
+            btn.appendChild(title);
+            if (alt.heading) {
+                const sub = document.createElement('span');
+                sub.className = 'ss-ai-alt-sub';
+                sub.textContent = alt.heading;
+                btn.appendChild(sub);
+            }
+            btn.addEventListener('click', () => {
+                const u = _aiAppendBubble('user');
+                if (u) u.textContent = alt.heading ? (alt.title + ' · ' + alt.heading) : (alt.title || alt.slug || '');
+                const b = _aiAppendBubble('bot');
+                if (!b) return;
+                _aiRenderAnswerInto(b, alt);
+                b.scrollIntoView({ block: 'nearest' });
+            });
+            list.appendChild(btn);
+        });
+        bubble.appendChild(list);
+        bubble.scrollIntoView({ block: 'nearest' });
+    }
+
+    function onAnswer(payload) {
+        if (!payload || payload.reqId !== _aiPendingReqId) return;
+        const a = document.getElementById('ssAiAnswer');
+        if (!a) return;
+        a.innerHTML = '';
+        if (payload.ok && payload.answer) {
+            _aiRenderAnswerInto(a, payload);
+            if (Array.isArray(payload.alternatives) && payload.alternatives.length) _aiRenderAlternatives(payload.alternatives);
+        } else {
+            const err = document.createElement('div');
+            err.className = 'ss-ai-error';
+            err.textContent = (typeof t === 'function')
+                ? t('search.wiki.error', 'Nothing found in the VRCNext wiki for this.')
+                : 'Nothing found in the VRCNext wiki for this.';
+            a.appendChild(err);
+        }
+    }
 
     function _getNavItems() { return _dropdown ? [..._dropdown.querySelectorAll('.ss-item')] : []; }
     function _getNavChips() { return _dropdown ? [..._dropdown.querySelectorAll('.ss-search-in-actions .vrcn-button')] : []; }
@@ -732,7 +926,7 @@ const SmartSearch = (() => {
         } else if (imgInfo.src) {
             const img = document.createElement('img');
             img.className = 'ss-item-img' + circleClass;
-            img.src = imgInfo.src;
+            img.src = imgThumb(imgInfo.src, 64);
             img.onerror = function() {
                 const ph = document.createElement('div');
                 ph.className = 'ss-item-img-placeholder' + circleClass;
@@ -777,19 +971,61 @@ const SmartSearch = (() => {
         return row;
     }
 
+    function _renderAiSuggestion(query) {
+        const row = document.createElement('div');
+        row.className = 'ss-item ss-ai-suggest';
+
+        const ph = document.createElement('div');
+        ph.className = 'ss-item-img-placeholder';
+        ph.style.borderRadius = '8px';
+        const icon = document.createElement('span');
+        icon.className = 'msi';
+        icon.style.cssText = 'font-size:16px;color:var(--accent);';
+        icon.textContent = 'smart_toy';
+        ph.appendChild(icon);
+        row.appendChild(ph);
+
+        const info = document.createElement('div');
+        info.className = 'ss-item-info';
+        const name = document.createElement('div');
+        name.className = 'ss-item-name';
+        name.textContent = (typeof t === 'function') ? t('search.wiki.ask', 'Search the wiki') : 'Search the wiki';
+        const sub = document.createElement('div');
+        sub.className = 'ss-item-sub';
+        sub.textContent = query;
+        info.appendChild(name);
+        info.appendChild(sub);
+        row.appendChild(info);
+
+        const kb = document.createElement('span');
+        kb.className = 'vrcn-keybind';
+        kb.textContent = 'ENTER';
+        row.appendChild(kb);
+
+        row._ssActivate = () => { _askAi(query); };
+        row.addEventListener('mousedown', (e) => { e.preventDefault(); row._ssActivate(); });
+        return row;
+    }
+
     function _renderResults(results) {
         _focusedIdx = -1;
         _focusedChipIdx = -1;
         _dropdown.innerHTML = '';
         const query = _input.value.trim();
+        const showWiki = !!query && (query.endsWith('?') || results.length === 0);
+        if (showWiki) {
+            _dropdown.appendChild(_renderAiSuggestion(query));
+        }
         if (query) {
             _dropdown.appendChild(_renderRemoteSearchActions(query));
         }
         if (results.length === 0) {
-            const el = document.createElement('div');
-            el.className = 'ss-empty';
-            el.textContent = (typeof t === 'function') ? t('search.no_results', 'No results') : 'No results';
-            _dropdown.appendChild(el);
+            if (!showWiki) {
+                const el = document.createElement('div');
+                el.className = 'ss-empty';
+                el.textContent = (typeof t === 'function') ? t('search.no_results', 'No results') : 'No results';
+                _dropdown.appendChild(el);
+            }
         } else {
             for (const { section, hits } of results) {
                 const hdr = document.createElement('div');
@@ -815,7 +1051,7 @@ const SmartSearch = (() => {
         const hint = document.createElement('div');
         hint.className = 'ss-hint';
         hint.innerHTML = '<span class="msi">search</span>';
-        hint.appendChild(document.createTextNode((typeof t === 'function') ? t('search.hint', 'Search friends, worlds, groups, avatars…') : 'Search friends, worlds, groups, avatars…'));
+        hint.appendChild(document.createTextNode((typeof t === 'function') ? t('search.hint', 'Search friends, worlds, groups, avatars, tools, settings and the wiki…') : 'Search friends, worlds, groups, avatars, tools, settings and the wiki…'));
         _dropdown.innerHTML = '';
         _dropdown.appendChild(hint);
         _showDropdown();
@@ -969,6 +1205,9 @@ const SmartSearch = (() => {
                     chips[_focusedChipIdx].click();
                 } else if (_focusedIdx >= 0 && items[_focusedIdx]?._ssActivate) {
                     items[_focusedIdx]._ssActivate();
+                } else {
+                    const qv = _input.value.trim();
+                    if (qv && (qv.endsWith('?') || _query(qv).length === 0)) _askAi(qv);
                 }
             }
         });
@@ -992,7 +1231,7 @@ const SmartSearch = (() => {
         );
     }
 
-    return { init, open: _open_ui, close: _close, rebuildDebouncer };
+    return { init, open: _open_ui, close: _close, rebuildDebouncer, onAnswer };
 })();
 
 window.SmartSearch = SmartSearch;

@@ -534,6 +534,11 @@ public partial class AppShell
             .SetZoom(Math.Clamp(_settings.GuiZoom, 50, 200))
 #if WINDOWS
             .SetBrowserControlInitParameters(BuildChromiumFlags(_settings))
+            .SetCompositionHosting(_settings.MultiTaskMode && _settings.OpenModalsInNewWindow)
+            .SetBackgroundTimerThrottling(false)
+            .SetAutoSuspendOnMinimize(_settings.ReducedBackgroundUsage
+                ? Photino.NET.PhotinoSuspendableResources.Rendering | Photino.NET.PhotinoSuspendableResources.Gpu
+                : Photino.NET.PhotinoSuspendableResources.None)
 #endif
             .RegisterWindowCreatedHandler((_, _) => _windowReady.TrySetResult())
             .RegisterWebMessageReceivedHandler((_, message) => { _ = OnWebMessage(message); });
@@ -589,7 +594,7 @@ public partial class AppShell
         var flags = new System.Text.StringBuilder();
         if (!s.GpuAcceleration)    flags.Append("--disable-gpu ");
         if (!s.GpuShaderCache)     flags.Append("--disable-gpu-shader-disk-cache ");
-        flags.Append(s.V8Heap128 ? "--js-flags=--max-old-space-size=128 " : "--js-flags=--max-old-space-size=64 ");
+        flags.Append(s.V8Heap128 ? "--js-flags=\"--max-old-space-size=128 --max-semi-space-size=2\" " : "--js-flags=\"--max-old-space-size=64 --max-semi-space-size=2\" ");
         flags.Append(s.TwoRenderProcesses ? "--renderer-process-limit=2 " : "--renderer-process-limit=1 ");
         flags.Append("--disable-background-networking --disable-sync --no-first-run");
         return flags.ToString();

@@ -60,7 +60,7 @@
 .ts-sk-stat {
     height: 64px;
     border-radius: 10px;
-    background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-hover) 50%, var(--bg-card) 75%);
+    background: linear-gradient(90deg, var(--tab-card-bg, var(--bg-input)) 25%, var(--bg-hover) 50%, var(--tab-card-bg, var(--bg-input)) 75%);
     background-size: 200% 100%;
     animation: sk-shimmer 1.4s linear infinite;
 }
@@ -155,7 +155,7 @@
     height: 56px;
     margin-bottom: 6px;
     border-radius: 8px;
-    background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-hover) 50%, var(--bg-card) 75%);
+    background: linear-gradient(90deg, var(--tab-card-bg, var(--bg-input)) 25%, var(--bg-hover) 50%, var(--tab-card-bg, var(--bg-input)) 75%);
     background-size: 200% 100%;
     animation: sk-shimmer 1.4s linear infinite;
 }

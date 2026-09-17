@@ -320,6 +320,7 @@ function saveSettings() {
             memoryTrimEnabled: document.getElementById('setMemoryTrimEnabled').checked,
             mediaFixEnabled: document.getElementById('setMediaFixEnabled')?.checked ?? true,
             multiTaskMode: document.getElementById('setMultiTaskMode')?.checked ?? false,
+            openModalsInNewWindow: document.getElementById('setOpenModalsInWindow')?.checked ?? false,
             tilingManager: document.getElementById('setTilingManager')?.checked ?? true,
             dbOptimize: document.getElementById('setDbOptimize').checked,
             dbOptimizeMaxEntries: Math.max(500, Math.min(250000, parseInt(document.getElementById('setDbOptimizeMaxEntries').value) || 500)),
@@ -341,6 +342,7 @@ function saveSettings() {
             animationsEnabled:  document.getElementById('setPerfAnimations')?.checked   ?? true,
             blurEnabled:        document.getElementById('setPerfBlur')?.checked         ?? true,
             efficiencyMode:     document.getElementById('setPerfEfficiency')?.checked   ?? false,
+            reducedBackgroundUsage: document.getElementById('setReducedBackgroundUsage')?.checked ?? false,
             avtrdbReportDeleted: document.getElementById('setAvtrdbReport').checked,
             avtrdbSubmitAvatars: document.getElementById('setAvtrdbSubmit').checked,
             avtrIcuReportDeleted: document.getElementById('setAvtrIcuReport').checked,
@@ -461,7 +463,7 @@ function sndPopulateSelects() {
         for (const file of lib) {
             const o = document.createElement('option');
             o.value = file;
-            o.textContent = file.replace(/\.wav$/i, '');
+            o.textContent = file.replace(/\.(wav|ogg)$/i, '');
             el.appendChild(o);
         }
         el.value = prev;
@@ -619,7 +621,7 @@ function loadSettingsToUI(s) {
     for (const [slot, id] of Object.entries(SND_SLOT_IDS)) {
         const cfg = SOUND_SLOTS[slot];
         const key = cfg.fileKey.charAt(0).toUpperCase() + cfg.fileKey.slice(1);
-        const file = s[key] ?? s[cfg.fileKey] ?? '';
+        const file = normalizeSoundFile(s[key] ?? s[cfg.fileKey] ?? '');
         settings[cfg.fileKey] = file;
         const el = document.getElementById(id);
         if (el) { el.value = file; el._vnRefresh?.(); }
@@ -1056,6 +1058,10 @@ function loadSettingsToUI(s) {
     { const _mtEl = document.getElementById('setMultiTaskMode'); if (_mtEl) _mtEl.checked = multiTaskMode; }
     if (typeof wmSetEnabled === 'function') wmSetEnabled(multiTaskMode);
 
+    const openModalsInNewWindow = s.OpenModalsInNewWindow ?? s.openModalsInNewWindow ?? false;
+    { const _owEl = document.getElementById('setOpenModalsInWindow'); if (_owEl) _owEl.checked = openModalsInNewWindow; }
+    if (typeof wmSetSurfaced === 'function') wmSetSurfaced(openModalsInNewWindow);
+
     const tilingManager = s.TilingManager ?? s.tilingManager ?? true;
     { const _tmEl = document.getElementById('setTilingManager'); if (_tmEl) _tmEl.checked = tilingManager; }
     if (typeof wmSetTiling === 'function') wmSetTiling(tilingManager);
@@ -1106,6 +1112,7 @@ function loadSettingsToUI(s) {
     _perfSet('setPerfV8Heap',      s.V8Heap128          ?? s.v8Heap128          ?? false);
     _perfSet('setPerfRenderProc',  s.TwoRenderProcesses ?? s.twoRenderProcesses ?? false);
     _perfSet('setPerfEfficiency',  s.EfficiencyMode     ?? s.efficiencyMode     ?? false);
+    _perfSet('setReducedBackgroundUsage', s.ReducedBackgroundUsage ?? s.reducedBackgroundUsage ?? false);
     const animationsEnabled = s.AnimationsEnabled ?? s.animationsEnabled ?? true;
     const blurEnabled       = s.BlurEnabled       ?? s.blurEnabled       ?? true;
     _perfSet('setPerfAnimations', animationsEnabled);
@@ -1245,16 +1252,22 @@ function handleImgCacheOptimizeProgress(data) {
 
 function onPerfSettingChange() {
     autoSave();
+    const isLinux = !!window._isLinuxUi;
     const hint = document.getElementById('perfRestartHint');
-    if (hint) hint.style.display = '';
+    if (hint) hint.style.display = isLinux ? 'none' : '';
     const linuxHint = document.getElementById('linuxPerfRestartHint');
-    if (linuxHint) linuxHint.style.display = '';
+    if (linuxHint) linuxHint.style.display = isLinux ? '' : 'none';
 }
 
 function onMultiTaskModeChange(el) {
     if (typeof wmSetEnabled === 'function') wmSetEnabled(!!el.checked);
     autoSave();
     updateTilingManagerToggle();
+}
+
+function onOpenModalsInWindowChange(el) {
+    if (typeof wmSetSurfaced === 'function') wmSetSurfaced(!!el.checked);
+    autoSave();
 }
 
 function onTilingManagerChange(el) {
@@ -1268,6 +1281,10 @@ function updateTilingManagerToggle() {
     const desc = document.getElementById('tilingManagerDesc');
     if (row)  row.classList.toggle('disabled', !enabled);
     if (desc) desc.classList.toggle('disabled', !enabled);
+    const owRow  = document.getElementById('openModalsInWindowRow');
+    const owDesc = document.getElementById('openModalsInWindowDesc');
+    if (owRow)  owRow.classList.toggle('disabled', !enabled);
+    if (owDesc) owDesc.classList.toggle('disabled', !enabled);
 }
 
 function onSearchDebounceMsChange() {

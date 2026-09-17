@@ -17,6 +17,7 @@ function openImagePicker(type, targetId) {
 
     overlay = document.createElement('div');
     overlay.id = 'imagePickerOverlay';
+    overlay.setAttribute('data-wm-portal', '');
     overlay.style.cssText = 'position:fixed;inset:0;z-index:10003;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;animation:fadeIn .12s ease;backdrop-filter:blur(4px);';
     overlay.innerHTML = `
         <div class="gp-modal" style="width:460px;max-height:80vh;display:flex;flex-direction:column;">

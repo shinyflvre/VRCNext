@@ -303,7 +303,7 @@ public class AuthController
                     Invoke(() => _core.SendToJS("dbAnalyzeProgress", new { running = true }));
                     try
                     {
-                        var result = SQLiteOptimizing.Analyze();
+                        var result = SQLiteOptimizing.Analyze(_friends.GetStoreSnapshot().Select(f => f["id"]?.ToString() ?? ""));
                         Invoke(() => _core.SendToJS("dbAnalyzeResult", new
                         {
                             totalRows          = result.TotalRows,
@@ -357,7 +357,7 @@ public class AuthController
                     Invoke(() => _core.SendToJS("dbOptimizeProgress", new { phase = "optimize" }));
                     try
                     {
-                        var (userCleaned, feCleaned, notifCleaned, epCleaned) = SQLiteOptimizing.Optimize();
+                        var (userCleaned, feCleaned, notifCleaned, epCleaned) = SQLiteOptimizing.Optimize(_friends.GetStoreSnapshot().Select(f => f["id"]?.ToString() ?? ""));
                         Invoke(() => _core.SendToJS("dbOptimizeProgress", new { phase = "vacuum" }));
                         SQLiteOptimizing.Vacuum();
                         Invoke(() => _core.SendToJS("dbOptimizeDone", new { userCleaned, feCleaned, notifCleaned, epCleaned }));
@@ -1147,6 +1147,7 @@ public class AuthController
     private string _selfLastStatusDesc = "";
     private string _selfLastBio        = "";
     private bool   _selfProfileSeeded;
+    private bool   _selfBioSeeded;
 
     public void LogSelfProfileEvent(string subKind, string oldValue, string newValue)
     {
@@ -1176,13 +1177,13 @@ public class AuthController
     {
         var newStatus = user["status"]?.ToString() ?? "";
         var newDesc   = (user["statusDescription"]?.ToString() ?? "").Trim();
-        var newBio    = (user["bio"]?.ToString() ?? "").Trim();
 
         if (!_selfProfileSeeded || loginFlow)
         {
             _selfLastStatus     = newStatus;
             _selfLastStatusDesc = newDesc;
-            _selfLastBio        = newBio;
+            _selfLastBio        = "";
+            _selfBioSeeded      = false;
             _selfProfileSeeded  = true;
             return;
         }
@@ -1194,10 +1195,23 @@ public class AuthController
         if (newDesc != _selfLastStatusDesc && !string.IsNullOrEmpty(_selfLastStatusDesc))
             LogSelfProfileEvent("statusdesc", _selfLastStatusDesc, newDesc);
         _selfLastStatusDesc = newDesc;
+    }
 
-        if (!string.IsNullOrEmpty(newBio) && newBio != _selfLastBio && !string.IsNullOrEmpty(_selfLastBio))
+    private void DetectSelfBioChange(string? profileBio)
+    {
+        var newBio = (profileBio ?? "").Trim();
+        if (string.IsNullOrEmpty(newBio)) return;
+
+        if (!_selfBioSeeded)
+        {
+            _selfLastBio   = newBio;
+            _selfBioSeeded = true;
+            return;
+        }
+
+        if (newBio != _selfLastBio && !string.IsNullOrEmpty(_selfLastBio))
             LogSelfProfileEvent("bio", _selfLastBio, newBio);
-        if (!string.IsNullOrEmpty(newBio)) _selfLastBio = newBio;
+        _selfLastBio = newBio;
     }
 
     public void SendVrcUserDataUnlocked(JObject user, bool loginFlow = false)
@@ -1359,6 +1373,7 @@ public class AuthController
             tags = user["tags"]?.ToObject<List<string>>() ?? new List<string>(),
             bannerUrl             = ImageCacheHelper.GetUserBannerUrl(user["id"]?.ToString(), user["bannerUrl"]?.ToString()),
             bannerType            = user["bannerType"]?.ToString() ?? "",
+            bannerColor           = user["bannerColor"]?.ToString() ?? "",
             profilePicOverride    = ImageCacheHelper.GetUserPicOverrideUrl(user["id"]?.ToString(), user["profilePicOverride"]?.ToString()),
             currentAvatarImageUrl = ImageCacheHelper.GetAvatarUrl(user["currentAvatar"]?.ToString(), user["currentAvatarImageUrl"]?.ToString()),
             dateJoined        = user["date_joined"]?.ToString() ?? "",
@@ -1385,14 +1400,33 @@ public class AuthController
         {
             _ = Task.Run(async () =>
             {
-                JArray? badgesArr = user["badges"] as JArray;
-                if (badgesArr == null || badgesArr.Count == 0)
+                var selfProfile = await _core.Users.GetProfileAppearanceAsync(userId, asSelf: true);
+                if (selfProfile == null) return;
+                Invoke(() =>
                 {
-                    var fullUser = await _core.Users.GetUserAsync(userId);
-                    badgesArr = fullUser?["badges"] as JArray ?? new JArray();
-                }
+                    DetectSelfBioChange(selfProfile["bio"]?.ToString());
+                    _core.SendToJS("vrcMyProfile", new
+                    {
+                        bio       = selfProfile["bio"]?.ToString() ?? "",
+                        bioLinks  = selfProfile["bioLinks"]?.ToObject<List<string>>()  ?? new List<string>(),
+                        languages = selfProfile["languages"]?.ToObject<List<string>>() ?? new List<string>(),
+                    });
+                });
+                var texId = selfProfile["backgroundTextureId"]?.ToString() ?? "";
+                Invoke(() => _core.SendToJS("vrcSelfAppearance", new
+                {
+                    themeId                  = selfProfile["themeId"]?.ToString() ?? "",
+                    themes                   = selfProfile["themes"] as JArray ?? new JArray(),
+                    backgroundType           = selfProfile["backgroundType"]?.ToString() ?? "",
+                    backgroundTextureId      = texId,
+                    backgroundTextureUrl     = ProfileBackgroundHelper.UrlFor(texId),
+                    backgroundGradientTop    = selfProfile["backgroundGradientTop"]?.ToString() ?? "",
+                    backgroundGradientBottom = selfProfile["backgroundGradientBottom"]?.ToString() ?? "",
+                    bannerType               = selfProfile["bannerType"]?.ToString() ?? "",
+                    bannerColor              = selfProfile["bannerColor"]?.ToString() ?? "",
+                }));
                 var badges = new List<object>();
-                foreach (var b in badgesArr)
+                foreach (var b in selfProfile["badges"] as JArray ?? new JArray())
                 {
                     if (b is not JObject bObj) continue;
                     var imageUrl = bObj["badgeImageUrl"]?.ToString() ?? "";
@@ -1419,28 +1453,6 @@ public class AuthController
             });
         }
 
-        // The profile background sits on its own endpoint and this method is sync, so it
-        // is fetched afterwards and patched onto the already-sent user payload.
-        var selfId = user["id"]?.ToString();
-        if (!string.IsNullOrEmpty(selfId))
-        {
-            _ = Task.Run(async () =>
-            {
-                var appearance = await _core.Users.GetProfileAppearanceAsync(selfId, asSelf: true);
-                if (appearance == null) return;
-                var texId = appearance["backgroundTextureId"]?.ToString() ?? "";
-                Invoke(() => _core.SendToJS("vrcSelfAppearance", new
-                {
-                    themeId                  = appearance["themeId"]?.ToString() ?? "",
-                    themes                   = appearance["themes"] as JArray ?? new JArray(),
-                    backgroundType           = appearance["backgroundType"]?.ToString() ?? "",
-                    backgroundTextureId      = texId,
-                    backgroundTextureUrl     = ProfileBackgroundHelper.UrlFor(texId),
-                    backgroundGradientTop    = appearance["backgroundGradientTop"]?.ToString() ?? "",
-                    backgroundGradientBottom = appearance["backgroundGradientBottom"]?.ToString() ?? "",
-                }));
-            });
-        }
     }
 
     private void ReconcilePlayerSessionsFromLog(TimelineService.TimelineEvent lastJoin)
@@ -2290,6 +2302,7 @@ public class AuthController
             VRCNext.Services.WindowsFixes.SetEnabled(_core.Settings.MediaFixEnabled);
 
             _core.Settings.MultiTaskMode = data["multiTaskMode"]?.Value<bool>() ?? false;
+            _core.Settings.OpenModalsInNewWindow = data["openModalsInNewWindow"]?.Value<bool>() ?? false;
             _core.Settings.TilingManager = data["tilingManager"]?.Value<bool>() ?? true;
 
             // Database optimization (requires restart to take effect)
@@ -2322,6 +2335,22 @@ public class AuthController
             _core.Settings.GpuShaderCache     = data["gpuShaderCache"]?.Value<bool>()     ?? false;
             _core.Settings.V8Heap128          = data["v8Heap128"]?.Value<bool>()          ?? false;
             _core.Settings.TwoRenderProcesses = data["twoRenderProcesses"]?.Value<bool>() ?? false;
+            var _newReducedBg = data["reducedBackgroundUsage"]?.Value<bool>() ?? _core.Settings.ReducedBackgroundUsage;
+            if (_newReducedBg != _core.Settings.ReducedBackgroundUsage)
+            {
+                _core.Settings.ReducedBackgroundUsage = _newReducedBg;
+#if WINDOWS
+                try
+                {
+                    if (_core.Window != null)
+                        _core.Window.AutoSuspendOnMinimize = _newReducedBg
+                            ? Photino.NET.PhotinoSuspendableResources.Rendering | Photino.NET.PhotinoSuspendableResources.Gpu
+                            : Photino.NET.PhotinoSuspendableResources.None;
+                }
+                catch (Exception ex) { VRCNext.Services.CrashHandler.WriteEntry("ReducedBackgroundUsage", ex); }
+#endif
+            }
+
             var _newEffMode = data["efficiencyMode"]?.Value<bool>() ?? _core.Settings.EfficiencyMode;
             if (_newEffMode != _core.Settings.EfficiencyMode || _newEffMode)
             {

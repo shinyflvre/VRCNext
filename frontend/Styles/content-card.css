@@ -60,6 +60,8 @@
     overflow: hidden;
     cursor: pointer;
     min-height: 200px;
+    content-visibility: auto;
+    contain-intrinsic-size: auto 200px;
     transition: transform .3s cubic-bezier(.22,1,.36,1), box-shadow .3s;
 }
 .vrcn-content-card:hover {
@@ -312,9 +314,9 @@
 }
 
 .vrcn-panel-card {
-    background: var(--bg-card);
-    border: none;
-    border-radius: 10px;
+    background: var(--tab-card-bg, var(--bg-input));
+    border: 1px solid var(--brd);
+    border-radius: 12px;
     padding: 14px 16px;
     min-width: 0;
 }

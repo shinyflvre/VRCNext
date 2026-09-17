@@ -6,6 +6,8 @@
     --bg-card:    var(--pt-bg-card) !important;
     --bg-hover:   var(--pt-bg-hover) !important;
     --bg-input:   var(--pt-bg-input) !important;
+    --modal-bg:   var(--pt-bg-card) !important;
+    --modal-card: var(--pt-bg-input) !important;
     --bg-btn:     var(--pt-bg-btn) !important;
     --bg-btn-h:   var(--pt-bg-btn-h) !important;
     --brd:        var(--pt-brd) !important;

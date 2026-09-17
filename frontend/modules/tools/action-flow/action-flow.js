@@ -2561,7 +2561,7 @@ function afExecAction(flow, block) {
             const advanced = block.type === 'af_send_own_advanced_instance_info';
             const me = (typeof currentVrcUser !== 'undefined' && currentVrcUser) ? currentVrcUser : null;
             const meRaw = (me && me.rawJson) ? me.rawJson : (me || {});
-            const meIcon = meRaw.userIcon || meRaw.profilePicOverride
+            const meIcon = meRaw.iconUrl || meRaw.userIcon || meRaw.profilePicOverride
                 || meRaw.currentAvatarThumbnailImageUrl || meRaw.currentAvatarImageUrl || '';
             if (typeof sendToCS === 'function') sendToCS({
                 action: 'afInstanceWebhook', url, scope: 'own', advanced,
@@ -2589,7 +2589,7 @@ function afExecAction(flow, block) {
                 instanceTypeLabel: info.typeLabel,
                 authorName: info.friendName,
                 authorUserId: (friend && friend.id) || '',
-                authorIconUrl: (friend && (friend.userIcon || friend.currentAvatarThumbnailImageUrl || friend.profilePicOverride)) || '',
+                authorIconUrl: (friend && (friend.image || friend._friendImage)) || '',
             });
             afLog('ok', '[' + flow.name + '] ' + aftf('log.sent_friend_instance_info', { friend: info.friendName }, 'sent friend instance info (' + info.friendName + ')'));
             break;
@@ -3037,7 +3037,7 @@ function afShowFlowNotificationCard(flowName, text, icon) {
     const card = document.createElement('div');
     card.className = 'nc-card';
     const iconHtml = (icon && icon.url)
-        ? '<img class="nc-icon af-nc-avatar" src="' + afEsc(icon.url) + '" alt="">'
+        ? '<img class="nc-icon af-nc-avatar" src="' + afEsc(imgThumb(icon.url, 64)) + '" alt="">'
         : '<span class="msi nc-icon" style="color:var(--accent);">auto_awesome</span>';
     card.innerHTML =
         '<div class="nc-inner">' +

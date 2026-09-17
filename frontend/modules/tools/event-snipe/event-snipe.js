@@ -50,7 +50,7 @@ function snipeSelectGroup(id, name, iconUrl) {
     if (hint)   hint.style.display = 'none';
     if (iconEl) {
         if (iconUrl) {
-            iconEl.innerHTML = `<img src="${esc(iconUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:9px;" onerror="this.parentElement.textContent='${esc(name?.[0]?.toUpperCase()||'?')}'">`;
+            iconEl.innerHTML = `<img src="${esc(imgThumb(iconUrl, 96))}" style="width:100%;height:100%;object-fit:cover;border-radius:9px;" onerror="this.parentElement.textContent='${esc(name?.[0]?.toUpperCase()||'?')}'">`;
         } else {
             iconEl.textContent = name?.[0]?.toUpperCase() || '?';
         }

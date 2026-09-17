@@ -13,6 +13,10 @@ public class InventoryAPI(VRChatApiService ctx)
 
     private static readonly HashSet<string> DecorationSlots = new() { "iconFrame", "nameplateEffect", "profileEffect" };
 
+    private static readonly ConcurrentDictionary<string, JObject> _cosmeticIndex = new();
+    private static readonly object _cosmeticIndexLock = new();
+    private static Task? _cosmeticIndexLoad;
+
     private static string? ClassifyDecorationSlot(JObject item)
     {
         var type = item["itemType"]?.ToString() ?? "";
@@ -83,6 +87,39 @@ public class InventoryAPI(VRChatApiService ctx)
         return tpl["imageUrl"]?.ToString();
     }
 
+    private Task EnsureCosmeticIndexAsync()
+    {
+        if (!ctx.IsLoggedIn) return Task.CompletedTask;
+        lock (_cosmeticIndexLock)
+        {
+            _cosmeticIndexLoad ??= LoadCosmeticIndexAsync();
+            return _cosmeticIndexLoad;
+        }
+    }
+
+    private async Task LoadCosmeticIndexAsync()
+    {
+        foreach (var itemType in DecorationSlots)
+        {
+            try
+            {
+                var resp = await ctx._http.GetAsync($"{VRChatApiService.BASE}/cosmetics/index/{itemType}");
+                var body = await resp.Content.ReadAsStringAsync();
+                ctx.Log($"CosmeticIndex [{itemType}]: {(int)resp.StatusCode} len={body.Length}");
+                if (!resp.IsSuccessStatusCode || JToken.Parse(body) is not JArray arr) continue;
+                foreach (var entry in arr.OfType<JObject>())
+                {
+                    var id = entry["id"]?.ToString();
+                    if (!string.IsNullOrEmpty(id)) _cosmeticIndex[id] = entry;
+                }
+            }
+            catch (Exception ex) { ctx.Log($"CosmeticIndex [{itemType}] exception: {ex.Message}"); }
+        }
+        ctx.Log($"CosmeticIndex: {_cosmeticIndex.Count} entries cached");
+        if (_cosmeticIndex.IsEmpty)
+            lock (_cosmeticIndexLock) _cosmeticIndexLoad = null;
+    }
+
     public Task ResolveDecorationAsync(string? templateId)
     {
         if (string.IsNullOrEmpty(templateId)) return Task.CompletedTask;
@@ -95,7 +132,10 @@ public class InventoryAPI(VRChatApiService ctx)
     {
         try
         {
-            var tpl = await GetInventoryTemplateAsync(templateId);
+            await EnsureCosmeticIndexAsync();
+            var tpl = _cosmeticIndex.TryGetValue(templateId, out var indexed)
+                ? indexed
+                : await GetInventoryTemplateAsync(templateId);
             var url = ExtractDecorationAssetUrl(tpl);
             if (!string.IsNullOrEmpty(url))
             {

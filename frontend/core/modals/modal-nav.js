@@ -238,6 +238,39 @@ function navClear() {
     _navRender();
 }
 
+const _MODAL_RELEASE_TARGETS = [
+    ['modalFriendDetail', 'friendDetailContent'],
+    ['modalWorldDetail',  'worldDetailContent'],
+    ['modalDetail',       'detailModalContent'],
+    ['modalDetail2',      'detailModalContent2'],
+    ['modalAvatarDetail', 'avatarDetailContent'],
+    ['modalInstanceInfo', 'instanceInfoContent'],
+    ['modalMyInstance',   'myInstanceContent'],
+    ['modalFtGpsDetail',  'ftGpsDetailContent'],
+    ['modalMyProfile',    'myProfileContent'],
+];
+
+function releaseModalContent(overlayId, contentId) {
+    const ov = document.getElementById(overlayId);
+    if (!ov || ov.style.display !== 'none') return false;
+    ov.querySelectorAll('img').forEach(img => { img.src = PLACEHOLDER; });
+    ov.querySelectorAll('video').forEach(v => { try { v.pause(); } catch {} v.removeAttribute('src'); try { v.load(); } catch {} });
+    ov.querySelectorAll('[style*="background"]').forEach(el => { el.style.backgroundImage = ''; });
+    const c = document.getElementById(contentId);
+    if (c) c.innerHTML = '';
+    return true;
+}
+
+function releaseClosedModals() {
+    for (const [ov, c] of _MODAL_RELEASE_TARGETS) releaseModalContent(ov, c);
+    [typeof _fdBannerImgs !== 'undefined' ? _fdBannerImgs : null,
+     typeof _worldBannerImgs !== 'undefined' ? _worldBannerImgs : null,
+     typeof _miBannerImgs !== 'undefined' ? _miBannerImgs : null].forEach(cache => {
+        if (!cache) return;
+        for (const k of Object.keys(cache)) delete cache[k];
+    });
+}
+
 function navUpdateLabel(label) {
     if (_navCurrentEntry) _navCurrentEntry.label = label;
     if (_navIdx >= 0 && _navStack[_navIdx]) _navStack[_navIdx].label = label;

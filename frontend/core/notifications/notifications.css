@@ -5,7 +5,7 @@
     gap: 3px;
     padding: 4px 10px;
     border-radius: 20px;
-    border: none;
+    border: 1px solid var(--brd);
     font-size: calc(11px + var(--fs-off, 0px));
     font-weight: 600;
     font-family: inherit;
@@ -18,7 +18,7 @@
 .vrcn-notify-button .msi { font-size: 13px; line-height: 1; }
 .vrcn-notify-button:hover { background: var(--brd); color: var(--tx0); }
 .vrcn-notify-button:disabled { opacity: .45; cursor: not-allowed; }
-.vrcn-notify-button.primary { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); }
+.vrcn-notify-button.primary { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
 .vrcn-notify-button.primary:hover { background: var(--accent); color: #fff; }
 .vrcn-notify-button.danger { background: none; border: 1px solid var(--brd); color: var(--tx1); }
 .vrcn-notify-button.danger:hover { background: rgba(255,75,85,.15); color: var(--err); border-color: var(--err); }
@@ -171,6 +171,8 @@
     gap: 11px;
     box-sizing: border-box;
     transition: border-color .12s;
+    content-visibility: auto;
+    contain-intrinsic-size: auto 72px;
 }
 .notif-item:hover { border-color: color-mix(in srgb, var(--accent) 35%, var(--brd)); }
 

@@ -128,6 +128,14 @@
                                 </label>
                             </div>
                             <div class="set-desc" data-i18n="settings.perf.efficiency.desc">Runs the VRCNext process and its WebView processes in Windows Efficiency Mode (EcoQoS). Lowers power usage and background CPU impact; the leaf icon appears in Task Manager. May slightly reduce responsiveness. Applies immediately, no restart needed.</div>
+                            <div class="sf-toggle-row" style="margin-top:14px;">
+                                <span data-i18n="settings.perf.reduced_background.label">Reduced Background Usage</span>
+                                <label class="toggle">
+                                    <input type="checkbox" id="setReducedBackgroundUsage" onchange="autoSave()">
+                                    <div class="toggle-track"><div class="toggle-knob"></div></div>
+                                </label>
+                            </div>
+                            <div class="set-desc" data-i18n="settings.perf.reduced_background.desc">Pauses rendering and releases GPU memory while VRCNext is minimized or hidden in the tray. Notifications, the friends list and all background features keep running at full speed. Rendering resumes instantly when the window is shown again. Applies immediately, no restart needed.</div>
                         </div>
                         <div data-linux-only style="display:none;">
                             <div class="sf-toggle-row">
@@ -659,6 +667,11 @@
                         </div>
                         <div class="set-desc" data-i18n="settings.experimental.multitask.desc">When enabled you can open up to 12 Group, Profile, Event, World, Avatar or Instance modals at the same time. Press SHIFT + Left Mouse on anything that opens a modal to open it in Multi-Task mode. You can drag a window by its title bar, resize it at the corners and minimize it into the dock at the bottom. It is recommended to only use this while the app is maximized, since navigating gets very hard in a small window.</div>
                         <div class="set-desc" style="color:var(--warn,#e8a020);" data-i18n="settings.experimental.multitask.warning">This is an experimental feature, expect bugs.</div>
+                        <div class="sf-toggle-row" style="margin-top:14px;" id="openModalsInWindowRow" data-windows-only>
+                            <span data-i18n="settings.multitasking.newwindow.label">Open in new Window</span>
+                            <label class="toggle"><input type="checkbox" id="setOpenModalsInWindow" onchange="onOpenModalsInWindowChange(this)"><div class="toggle-track"><div class="toggle-knob"></div></div></label>
+                        </div>
+                        <div class="set-desc" id="openModalsInWindowDesc" data-windows-only data-i18n="settings.multitasking.newwindow.desc">Modals opened in Multi-Task mode (SHIFT + Left Mouse) appear as separate desktop windows instead of floating windows inside the app. The windows share the app's single browser instance, so no additional WebView is loaded. Windows only. Takes effect after a restart of VRCNext.</div>
                         <div class="sf-toggle-row" style="margin-top:14px;" id="tilingManagerRow">
                             <span data-i18n="settings.multitasking.tiling.label">Tiling Manager</span>
                             <label class="toggle"><input type="checkbox" id="setTilingManager" onchange="onTilingManagerChange(this)"><div class="toggle-track"><div class="toggle-knob"></div></div></label>
