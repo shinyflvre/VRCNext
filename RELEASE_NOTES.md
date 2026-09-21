@@ -1,7 +1,8 @@
-﻿# **2026.60.8**
+﻿# **2026.60.9**
 
 **Changes**
 * Changes on the avtrdb/vrcndb/cuteavisearch consent modal.
+* Changed default state of avatar submit toggles.
 
 **Fixed Bugs**
 * Fixed avatars in the Instance list and **People > Instance** not updating when someone changed avatars. Avatar changes now update immediately from the game log.

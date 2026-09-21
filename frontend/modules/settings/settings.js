@@ -1567,13 +1567,13 @@ function renderVrcndbReports() {
 }
 
 const _VRCNDB_CONSENT_GROUPS = [
-    { id: 'vrcndbConsentSubmit', members: [
+    { id: 'vrcndbConsentSubmit', first: false, members: [
         ['setVrcndbSubmit', 'submit'], ['setVrcndbReport', 'report'],
         ['setAvtrdbSubmit', 'avtrdbSubmit'], ['setAvtrdbReport', 'avtrdbReport'],
         ['setAvtrIcuSubmit', 'icuSubmit'], ['setAvtrIcuReport', 'icuReport'],
     ] },
-    { id: 'vrcndbConsentSync', members: [['setVrcndbSyncLikes', 'syncLikes'], ['setVrcndbSyncWears', 'syncWears']] },
-    { id: 'vrcndbConsentComments', members: [['setCommentsOnWorlds', 'comments']] },
+    { id: 'vrcndbConsentSync', first: false, members: [['setVrcndbSyncLikes', 'syncLikes'], ['setVrcndbSyncWears', 'syncWears']] },
+    { id: 'vrcndbConsentComments', first: true, members: [['setCommentsOnWorlds', 'comments']] },
 ];
 let _vrcndbConsentInitial = {};
 let _vrcndbConsentFirstRun = false;
@@ -1583,7 +1583,7 @@ function showVrcndbConsent(firstRun) {
     _vrcndbConsentFirstRun = !!firstRun;
     _vrcndbConsentInitial = {};
     _VRCNDB_CONSENT_GROUPS.forEach(g => {
-        _vrcndbConsentInitial[g.id] = firstRun || g.members.some(([set]) => {
+        _vrcndbConsentInitial[g.id] = firstRun ? g.first : g.members.some(([set]) => {
             const el = document.getElementById(set);
             return !el || el.checked;
         });
