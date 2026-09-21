@@ -1172,7 +1172,7 @@ public class InstanceController
             _instAvatarBatchLoc = loc;
             _instAvatarBatchAt  = DateTime.UtcNow;
 
-            var cachedCount = fileIds.Count(f => AvtrdbCacheHelper.GetFileAvatar(f) != null);
+            var cachedCount = fileIds.Count(f => AvtrdbCacheHelper.GetFileAvatar(f) is { } e && !AvtrdbCacheHelper.NeedsRetry(e));
             var queryCount  = fileIds.Count - cachedCount;
             if (queryCount == 0)
             {

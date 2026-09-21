@@ -17,6 +17,8 @@ public sealed class VrcndbResolver
     private readonly Queue<string> _order = new();
     private readonly Dictionary<string, JObject?> _cache = new();
     private readonly Queue<string> _cacheOrder = new();
+    private readonly Dictionary<string, DateTime> _missAt = new();
+    private static readonly TimeSpan MissRetry = TimeSpan.FromHours(1);
     private readonly Action<string>? _log;
     public static Action<string>? Log;
 
@@ -35,7 +37,12 @@ public sealed class VrcndbResolver
         lock (_lock)
         {
             if (_cache.TryGetValue(fileId, out var hit))
-                return Task.FromResult(hit);
+            {
+                if (hit != null || !_missAt.TryGetValue(fileId, out var missAt) || DateTime.UtcNow - missAt < MissRetry)
+                    return Task.FromResult(hit);
+                _cache.Remove(fileId);
+                _missAt.Remove(fileId);
+            }
 
             if (_waiting.TryGetValue(fileId, out var list)) list.Add(tcs);
             else { _waiting[fileId] = new List<TaskCompletionSource<JObject?>> { tcs }; _order.Enqueue(fileId); }
@@ -105,9 +112,13 @@ public sealed class VrcndbResolver
     {
         if (_cache.ContainsKey(fileId)) return;
         _cache[fileId] = data;
+        if (data == null) _missAt[fileId] = DateTime.UtcNow;
         _cacheOrder.Enqueue(fileId);
         while (_cacheOrder.Count > CacheLimit && _cacheOrder.TryDequeue(out var old))
+        {
             _cache.Remove(old);
+            _missAt.Remove(old);
+        }
     }
 
     private async Task<Dictionary<string, JObject?>> PostBatchAsync(List<string> fileIds)

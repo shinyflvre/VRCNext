@@ -494,7 +494,86 @@ public class AvatarsAPI(VRChatApiService ctx)
         catch (Exception ex) { ctx.Log($"[FILE] {fileId} exception: {ex.Message}"); return (null, null); }
     }
 
-    public async Task<(string? id, JObject? data)> GetAvatarIdByFileIdAsync(string fileId)
+    private async Task<JArray> SearchAvatarsAvtrdbVrcxAsync(string query, int n = 50)
+    {
+        var url = $"https://api.avtrdb.com/v3/avatar/search/vrcx?search={Uri.EscapeDataString(query)}&n={n}";
+        using var client = new HttpClient();
+        client.Timeout = TimeSpan.FromSeconds(15);
+        client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", UA);
+        client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
+        try
+        {
+            ctx.Log($"SearchAvatarsAvtrdbVrcx: {url}");
+            var resp = await client.GetAsync(url);
+            var body = await resp.Content.ReadAsStringAsync();
+            if (!resp.IsSuccessStatusCode || string.IsNullOrWhiteSpace(body)) return new JArray();
+            if (JToken.Parse(body) is JArray arr) return arr;
+        }
+        catch (Exception ex) { ctx.Log($"SearchAvatarsAvtrdbVrcx exception: {ex.Message}"); }
+        return new JArray();
+    }
+
+    private async Task<(string? id, JObject? data, string source)> ResolveByNameSearchAsync(string fileId, string name)
+    {
+        if (string.IsNullOrWhiteSpace(name) || string.IsNullOrEmpty(fileId)) return (null, null, "");
+        var tDb  = SearchAvatarsAvtrdbVrcxAsync(name, 50);
+        var tIcu = SearchAvatarsAvtrIcuAsync(name, 50);
+        var tVn  = SearchAvatarsVrcnAsync(name, 50);
+        try { await Task.WhenAll(tDb, tIcu, tVn); } catch { }
+
+        var found = new Dictionary<string, (JObject data, string source)>();
+        void Take(Task<JArray> task, string source,
+            Func<JObject, (string id, string name, string authorId, string authorName, string image)> map)
+        {
+            if (!task.IsCompletedSuccessfully) return;
+            foreach (var a in task.Result.OfType<JObject>())
+            {
+                var c = map(a);
+                if (string.IsNullOrEmpty(c.id) || !c.id.StartsWith("avtr_") || found.ContainsKey(c.id)) continue;
+                if (!a.ToString(Formatting.None).Contains(fileId, StringComparison.OrdinalIgnoreCase)) continue;
+                found[c.id] = (new JObject
+                {
+                    ["id"]         = c.id,
+                    ["name"]       = c.name,
+                    ["imageUrl"]   = c.image,
+                    ["authorName"] = c.authorName,
+                    ["authorId"]   = c.authorId,
+                }, source);
+            }
+        }
+        Take(tDb, "avtrdb", a => (
+            a["id"]?.ToString() ?? "",
+            a["name"]?.ToString() ?? "",
+            a["authorId"]?.ToString() ?? "",
+            a["authorName"]?.ToString() ?? "",
+            a["imageUrl"]?.ToString() ?? a["thumbnailImageUrl"]?.ToString() ?? ""));
+        Take(tIcu, "icu", a => (
+            a["id"]?.ToString() ?? "",
+            a["name"]?.ToString() ?? "",
+            a["authorId"]?.ToString() ?? "",
+            a["authorName"]?.ToString() ?? "",
+            a["imageUrl"]?.ToString() ?? a["thumbnailImageUrl"]?.ToString() ?? ""));
+        Take(tVn, "vrcndb", a =>
+        {
+            var thumb = a["thumbnail"]?.ToString() ?? "";
+            if (thumb.Length > 0 && !thumb.StartsWith("http")) thumb = "https://db.vrcnext.com" + thumb;
+            return (a["id"]?.ToString() ?? "", a["name"]?.ToString() ?? "",
+                a["author_id"]?.ToString() ?? "", a["author_name"]?.ToString() ?? "", thumb);
+        });
+
+        if (found.Count != 1)
+        {
+            ctx.Log(found.Count == 0
+                ? $"[FILE] {fileId} name search '{name}' -> no verified match"
+                : $"[FILE] {fileId} name search '{name}' -> {found.Count} matches, not picking one");
+            return (null, null, "");
+        }
+        var hit = found.First();
+        ctx.Log($"[FILE] {fileId} name search '{name}' -> {hit.Key} ({hit.Value.source})");
+        return (hit.Key, hit.Value.data, hit.Value.source);
+    }
+
+    public async Task<(string? id, JObject? data)> GetAvatarIdByFileIdAsync(string fileId, bool force = false)
     {
         if (AvtrdbResolver.IsPlaceholderFileId(fileId))
         {
@@ -502,13 +581,14 @@ public class AvatarsAPI(VRChatApiService ctx)
             return (null, null);
         }
         var cached = Helpers.AvtrdbCacheHelper.GetFileAvatar(fileId);
-        if (cached != null) return FromFileCache(cached);
+        if (cached != null && (!string.IsNullOrEmpty(cached.AvtrId) || (!force && !Helpers.AvtrdbCacheHelper.NeedsRetry(cached))))
+            return FromFileCache(cached);
         try
         {
-            var res = MapResolved(await _avtrdbResolver.ResolveAsync(fileId));
+            var res = MapResolved(force ? await _avtrdbResolver.ResolveDirectAsync(fileId) : await _avtrdbResolver.ResolveAsync(fileId));
             if (res.id != null) { RememberFile(fileId, "avtrdb", res); return res; }
 
-            var icu = MapResolvedIcu(await _icuResolver.ResolveAsync(fileId));
+            var icu = MapResolvedIcu(force ? await _icuResolver.ResolveDirectAsync(fileId) : await _icuResolver.ResolveAsync(fileId));
             if (icu.id != null)
             {
                 ctx.Log($"icu fallback resolved {fileId} -> {icu.id}");
@@ -516,7 +596,7 @@ public class AvatarsAPI(VRChatApiService ctx)
                 return icu;
             }
 
-            var fb = MapResolved(await _vrcndbResolver.ResolveAsync(fileId));
+            var fb = MapResolved(force ? await _vrcndbResolver.ResolveDirectAsync(fileId) : await _vrcndbResolver.ResolveAsync(fileId));
             if (fb.id != null)
             {
                 ctx.Log($"vrcndb fallback resolved {fileId} -> {fb.id}");
@@ -524,8 +604,23 @@ public class AvatarsAPI(VRChatApiService ctx)
                 return fb;
             }
 
-            ctx.Log($"[FILE] {fileId} unknown to avtrdb, avtr.icu and vrcndb, asking VRChat");
-            var file = await ResolveByVrcFileAsync(fileId);
+            (string? id, JObject? data) file;
+            if (cached != null && !string.IsNullOrEmpty(cached.Name))
+                file = FromFileCache(cached);
+            else
+            {
+                ctx.Log($"[FILE] {fileId} unknown to avtrdb, avtr.icu and vrcndb, asking VRChat");
+                file = await ResolveByVrcFileAsync(fileId);
+            }
+            if (file.data != null)
+            {
+                var byName = await ResolveByNameSearchAsync(fileId, file.data["name"]?.ToString() ?? "");
+                if (byName.id != null)
+                {
+                    RememberFile(fileId, byName.source, (byName.id, byName.data));
+                    return (byName.id, byName.data);
+                }
+            }
             RememberFile(fileId, file.data != null ? "vrcfile" : "none", file);
             return file;
         }
@@ -557,12 +652,17 @@ public class AvatarsAPI(VRChatApiService ctx)
         try
         {
             var pending = new List<string>();
+            var prior   = new Dictionary<string, Helpers.AvtrdbCacheHelper.FileAvatarEntry>();
             foreach (var f in fileIds.Where(f => !string.IsNullOrWhiteSpace(f)).Distinct())
             {
                 if (AvtrdbResolver.IsPlaceholderFileId(f)) continue;
                 var hit = Helpers.AvtrdbCacheHelper.GetFileAvatar(f);
-                if (hit != null) result[f] = FromFileCache(hit);
-                else pending.Add(f);
+                if (hit != null && !Helpers.AvtrdbCacheHelper.NeedsRetry(hit)) result[f] = FromFileCache(hit);
+                else
+                {
+                    if (hit != null) prior[f] = hit;
+                    pending.Add(f);
+                }
             }
             if (pending.Count == 0) return result;
 
@@ -602,8 +702,23 @@ public class AvatarsAPI(VRChatApiService ctx)
                 }
             }
 
-            foreach (var f in pending.Where(f => result[f].id == null))
+            foreach (var f in pending.Where(f => result[f].id == null).ToList())
+            {
+                if (prior.TryGetValue(f, out var old) && !string.IsNullOrEmpty(old.Name))
+                {
+                    var byName = await ResolveByNameSearchAsync(f, old.Name);
+                    if (byName.id != null)
+                    {
+                        result[f] = (byName.id, byName.data);
+                        RememberFile(f, byName.source, (byName.id, byName.data));
+                        continue;
+                    }
+                    result[f] = FromFileCache(old);
+                    RememberFile(f, "vrcfile", result[f]);
+                    continue;
+                }
                 RememberFile(f, "none", (null, null));
+            }
         }
         catch (Exception ex) { ctx.Log($"GetAvatarIdsByFileIds exception: {ex.Message}"); }
         return result;

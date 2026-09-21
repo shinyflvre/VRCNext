@@ -542,7 +542,7 @@ public class FriendsController
                     if (!string.IsNullOrEmpty(fileId))
                     {
                         var resolved = string.IsNullOrEmpty(source)
-                            ? await _core.Avatars.GetAvatarIdByFileIdAsync(fileId)
+                            ? await _core.Avatars.GetAvatarIdByFileIdAsync(fileId, openModal)
                             : await _core.Avatars.ResolveByFileIdSourceAsync(source, fileId);
                         avtrId = resolved.id;
                         avtrData = resolved.data;
@@ -653,7 +653,7 @@ public class FriendsController
                                 if (!string.IsNullOrEmpty(fileId))
                                 {
                                     var found = string.IsNullOrEmpty(source)
-                                        ? await _core.Avatars.GetAvatarIdByFileIdAsync(fileId)
+                                        ? await _core.Avatars.GetAvatarIdByFileIdAsync(fileId, true)
                                         : await _core.Avatars.ResolveByFileIdSourceAsync(source, fileId);
                                     avtrId   = found.id ?? "";
                                     avtrName = found.data?["name"]?.ToString() ?? "";

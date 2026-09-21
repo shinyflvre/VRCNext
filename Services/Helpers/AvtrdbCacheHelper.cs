@@ -6,6 +6,7 @@ namespace VRCNext.Services.Helpers;
 public static class AvtrdbCacheHelper
 {
     private const long TTLSeconds = 30 * 86400L; 
+    private const long UnresolvedRetrySeconds = 3600L;
 
     private static readonly string _dbPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -104,7 +105,10 @@ public static class AvtrdbCacheHelper
 
     public sealed record FileAvatarEntry(
         string FileId, string AvtrId, string Name,
-        string AuthorName, string AuthorId, string ImageUrl, string Source);
+        string AuthorName, string AuthorId, string ImageUrl, string Source, long ResolvedAt = 0);
+
+    public static bool NeedsRetry(FileAvatarEntry e)
+        => string.IsNullOrEmpty(e.AvtrId) && Now() - e.ResolvedAt >= UnresolvedRetrySeconds;
 
     public static FileAvatarEntry? GetFileAvatar(string fileId)
     {
@@ -115,7 +119,7 @@ public static class AvtrdbCacheHelper
             {
                 using var cmd = Conn().CreateCommand();
                 cmd.CommandText = """
-                    SELECT Avtr_ID, Name, Author_Name, Author_ID, Image_URL, DB_Source
+                    SELECT Avtr_ID, Name, Author_Name, Author_ID, Image_URL, DB_Source, Resolved_At
                     FROM Avatar_File_Cache WHERE File_ID = @id AND Resolved_At >= @cutoff
                     """;
                 cmd.Parameters.AddWithValue("@id",     fileId);
@@ -123,7 +127,7 @@ public static class AvtrdbCacheHelper
                 using var r = cmd.ExecuteReader();
                 if (!r.Read()) return null;
                 return new FileAvatarEntry(fileId, r.GetString(0), r.GetString(1),
-                    r.GetString(2), r.GetString(3), r.GetString(4), r.GetString(5));
+                    r.GetString(2), r.GetString(3), r.GetString(4), r.GetString(5), r.GetInt64(6));
             }
             catch { return null; }
         }
