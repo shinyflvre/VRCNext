@@ -3866,6 +3866,7 @@
   "avatars.upload.reqs.gallery": "PNG/JPG, 최대 3 MB, 최대 2000x2000",
   "avatars.upload.reqs.image": "PNG/JPG, 최대 3 MB, 최대 2000x2000",
   "context_menu.avatar_not_found": "공개 아바타를 찾을 수 없습니다",
+  "context_menu.avatar_not_public": "{name}은(는) 공개 아바타 데이터베이스에 없습니다",
   "dashboard.favavaatars.empty": "아직 즐겨찾기 아바타가 없습니다",
   "dashboard.news.loading": "뉴스 불러오는 중...",
   "dashboard.ownavatars.empty": "아바타를 찾을 수 없습니다",

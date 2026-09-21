@@ -366,10 +366,16 @@ function closeInstanceInfoModal() {
 
 //Avatar Lookup avtrdb context logic
 function handleInstanceAvatarFound(payload) {
-    const { userId, avatarId } = payload;
+    const { userId, avatarId, avatarName } = payload;
     if (!userId) return;
     if (avatarId) openAvatarDetail(avatarId);
-    else showToast(false, t('context_menu.avatar_not_found', 'No public avatar found'));
+    else showToast(false, avatarNotFoundToastText(avatarName));
+}
+
+function avatarNotFoundToastText(avatarName) {
+    return avatarName
+        ? tf('context_menu.avatar_not_public', { name: avatarName }, '{name} is not in any public avatar database')
+        : t('context_menu.avatar_not_found', 'No public avatar found');
 }
 
 function ctxCheckAvatar(userId) {

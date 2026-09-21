@@ -3865,6 +3865,7 @@
   "avatars.upload.reqs.gallery": "PNG/JPG、最大 3 MB、最大 2000x2000",
   "avatars.upload.reqs.image": "PNG/JPG、最大 3 MB、最大 2000x2000",
   "context_menu.avatar_not_found": "公開アバターが見つかりません",
+  "context_menu.avatar_not_public": "{name} は公開アバターデータベースに登録されていません",
   "dashboard.favavaatars.empty": "お気に入りアバターはまだありません",
   "dashboard.news.loading": "ニュースを読み込み中...",
   "dashboard.ownavatars.empty": "アバターが見つかりません",

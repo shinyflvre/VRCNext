@@ -1124,12 +1124,47 @@ public class InstanceController
             var loc = _cachedInstLocation;
             if (string.IsNullOrEmpty(loc) || !_core.VrcApi.IsLoggedIn) return;
 
-            var fileIds = new HashSet<string>();
-            foreach (var p in _core.LogWatcher.GetCurrentPlayers())
+            var players = _core.LogWatcher.GetCurrentPlayers()
+                .Where(p => !string.IsNullOrEmpty(p.UserId) && p.UserId.StartsWith("usr_")).ToList();
+            var selfId = _core.VrcApi.CurrentUserRaw?["id"]?.ToString() ?? "";
+
+            var changed = new List<VRChatLogWatcher.PlayerInfo>();
+            foreach (var p in players)
             {
-                if (string.IsNullOrEmpty(p.UserId) || !p.UserId.StartsWith("usr_")) continue;
+                if (p.UserId == selfId) continue;
                 if (!_core.PlayerProfileCache.TryGetValue(p.UserId, out var prof)) continue;
+                var worn = _core.LogWatcher.GetWornAvatarName(p.DisplayName ?? "");
+                if (string.IsNullOrEmpty(worn)) continue;
                 var fid = FriendsController.ExtractAvatarFileId(prof);
+                if (string.IsNullOrEmpty(fid)) continue;
+                var known = AvtrdbCacheHelper.GetFileAvatar(fid);
+                if (known == null || string.IsNullOrEmpty(known.Name)) continue;
+                if (!string.Equals(known.Name, worn, StringComparison.OrdinalIgnoreCase)) changed.Add(p);
+            }
+
+            if (changed.Count > 0)
+            {
+                var refreshSem = new SemaphoreSlim(5);
+                await Task.WhenAll(changed.Select(async p =>
+                {
+                    await refreshSem.WaitAsync();
+                    try
+                    {
+                        var fresh = await _core.Users.GetUserAsync(p.UserId);
+                        if (fresh != null) _core.StorePlayerProfile(p.UserId, fresh);
+                    }
+                    catch { }
+                    finally { refreshSem.Release(); }
+                }));
+            }
+
+            var fileIds = new HashSet<string>();
+            foreach (var p in players)
+            {
+                var src = p.UserId == selfId ? _core.VrcApi.CurrentUserRaw : null;
+                if (src == null && !_core.PlayerProfileCache.TryGetValue(p.UserId, out src)) continue;
+                if (src == null) continue;
+                var fid = FriendsController.ExtractAvatarFileId(src);
                 if (!string.IsNullOrEmpty(fid)) fileIds.Add(fid);
             }
             if (fileIds.Count == 0) return;
@@ -1139,7 +1174,11 @@ public class InstanceController
 
             var cachedCount = fileIds.Count(f => AvtrdbCacheHelper.GetFileAvatar(f) != null);
             var queryCount  = fileIds.Count - cachedCount;
-            if (queryCount == 0) return;
+            if (queryCount == 0)
+            {
+                if (changed.Count > 0) Invoke(PushCurrentInstanceFromCache);
+                return;
+            }
             var res = await _core.Avatars.GetAvatarIdsByFileIdsAsync(fileIds);
             var resolved = res.Count(kv => kv.Value.id != null);
             Invoke(() => _core.SendToJS("log", new
@@ -1147,6 +1186,7 @@ public class InstanceController
                 msg = $"[Avatars] Instance batch: {fileIds.Count} avatar(s): {cachedCount} cached, {queryCount} queried, {resolved} known",
                 color = "sec",
             }));
+            Invoke(PushCurrentInstanceFromCache);
         }
         catch (Exception ex) { CrashHandler.WriteEntry("InstanceAvatarBatch", ex); }
     }
@@ -1777,23 +1817,45 @@ public class InstanceController
             ["lastLogin"] = prof?["last_login"]?.ToString() ?? "",
             ["lastActivity"] = prof?["last_activity"]?.ToString() ?? "",
         };
-        var avFileId = prof != null ? FriendsController.ExtractAvatarFileId(prof) : "";
+        var selfId   = _core.VrcApi.CurrentUserRaw?["id"]?.ToString() ?? "";
+        var isSelf   = !string.IsNullOrEmpty(selfId) && selfId == (userId ?? "");
+        var avSource = isSelf ? _core.VrcApi.CurrentUserRaw : prof;
+        var avFileId = avSource != null ? FriendsController.ExtractAvatarFileId(avSource) : "";
         var avTried  = VRCNext.Services.AvtrdbResolver.IsPlaceholderFileId(avFileId);
+        var avKnown  = false;
         if (!string.IsNullOrEmpty(avFileId) && !avTried)
         {
             var av = AvtrdbCacheHelper.GetFileAvatar(avFileId);
             if (av != null)
             {
                 avTried = true;
+                avKnown = !string.IsNullOrEmpty(av.Name);
                 o["avatarId"]     = av.AvtrId;
                 o["avatarName"]   = av.Name;
                 o["avatarAuthor"] = av.AuthorName;
             }
         }
-        if (string.IsNullOrEmpty(o["avatarName"]?.ToString()))
+        var worn    = _core.LogWatcher.GetWornAvatarName(displayName ?? "");
+        var wornWon = !string.IsNullOrEmpty(worn)
+            && !string.Equals(o["avatarName"]?.ToString() ?? "", worn, StringComparison.OrdinalIgnoreCase);
+        if (wornWon)
         {
-            var worn = _core.LogWatcher.GetWornAvatarName(displayName ?? "");
-            if (!string.IsNullOrEmpty(worn)) o["avatarName"] = worn;
+            o["avatarName"] = worn;
+            if (avKnown)
+            {
+                o["avatarId"]     = "";
+                o["avatarAuthor"] = "";
+                avTried = false;
+            }
+        }
+        if (isSelf && !wornWon)
+        {
+            var selfAvatarId = _core.VrcApi.CurrentAvatarId ?? "";
+            if (!string.IsNullOrEmpty(selfAvatarId))
+            {
+                o["avatarId"] = selfAvatarId;
+                avTried = true;
+            }
         }
         if (string.IsNullOrEmpty(o["avatarId"]?.ToString())) o["avatarUnresolved"] = !avTried;
         _friends.EnrichFromProfileCache(o, userId ?? "", true);

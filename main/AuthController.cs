@@ -789,6 +789,7 @@ public class AuthController
                     {
                         await Task.Delay(2000);
                         await _core.Auth.GetCurrentUserLocationAsync();
+                        try { _instance.PushCurrentInstanceFromCache(); } catch { }
                         var avatarId = _core.VrcApi.CurrentAvatarId ?? "";
                         string avatarThumb = "";
                         JObject? av = null;

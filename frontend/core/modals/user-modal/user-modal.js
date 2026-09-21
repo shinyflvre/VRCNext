@@ -261,7 +261,7 @@ function handleAvatarByFileId(payload) {
         _applyAvatarSection(payload);
     }
     if (!payload.avatarId) {
-        if (payload.openModal) showToast(false, t('context_menu.avatar_not_found', 'No public avatar found'));
+        if (payload.openModal) showToast(false, avatarNotFoundToastText(payload.avatarName));
         return;
     }
     if (payload.openModal) navOpenModal('avatar', payload.avatarId, payload.avatarName || '');
@@ -728,7 +728,7 @@ function renderFriendDetail(d) {
 
     const avatarId = d.currentAvatarId || '';
     const avatarFileId = d.avatarFileId || '';
-    const avatarRowHtml = (avatarId.startsWith('avtr_') || avatarFileId)
+    const avatarRowHtml = (avatarId.startsWith('avtr_') || avatarFileId || d.id)
         ? `<div id="fdAvatarSection" class="fd-info-card" style="display:none;"></div>`
         : '';
 

@@ -3831,6 +3831,7 @@
   "avatars.upload.reqs.gallery": "PNG/JPG, max. 3 MB, max. 2000x2000",
   "avatars.upload.reqs.image": "PNG/JPG, max. 3 MB, max. 2000x2000",
   "context_menu.avatar_not_found": "Kein öffentlicher Avatar gefunden",
+  "context_menu.avatar_not_public": "{name} ist in keiner öffentlichen Avatar-Datenbank",
   "dashboard.favavaatars.empty": "Noch keine Favoriten-Avatare",
   "dashboard.news.loading": "News werden geladen...",
   "dashboard.ownavatars.empty": "Keine Avatare gefunden",

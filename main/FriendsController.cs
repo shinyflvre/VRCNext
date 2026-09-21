@@ -555,36 +555,18 @@ public class FriendsController
                             : new { msg = $"[{label}] {fileId} -> {avtrId}", color = "ok" });
                     }
 
-                    var knownAvatarJson = string.IsNullOrEmpty(forUserId)
-                        ? "" : _core.TimeEngine.GetUserProfileCache(forUserId)?.ProfileCurrentAvatar ?? "";
-                    var knownAvatarName = TryParseJObject(knownAvatarJson)?["name"]?.ToString() ?? "";
-
-                    if (avtrData == null && !string.IsNullOrEmpty(forUserId))
+                    if (!string.IsNullOrEmpty(forUserId))
                     {
-                        var wornName = GetStoreValue(forUserId)?["displayName"]?.ToString() ?? "";
-                        if (string.IsNullOrEmpty(wornName))
-                            wornName = _core.LogWatcher.GetCurrentPlayers()
-                                .FirstOrDefault(p => p.UserId == forUserId)?.DisplayName ?? "";
+                        var wornName = _core.LogWatcher.GetCurrentPlayers()
+                            .FirstOrDefault(p => p.UserId == forUserId)?.DisplayName ?? "";
                         var worn = _core.LogWatcher.GetWornAvatarName(wornName);
-                        if (!string.IsNullOrEmpty(worn) && worn != knownAvatarName)
+                        var resolvedName = avtrData?["name"]?.ToString() ?? "";
+                        if (!string.IsNullOrEmpty(worn) && !string.Equals(worn, resolvedName, StringComparison.OrdinalIgnoreCase))
                         {
+                            avtrId   = "";
                             avtrData = new JObject { ["id"] = "", ["name"] = worn, ["imageUrl"] = "", ["authorName"] = "", ["authorId"] = "" };
                             _core.SendToJS("log", new { msg = $"[FILE] {wornName} wears '{worn}' according to the game log", color = "ok" });
                         }
-                    }
-
-                    if (avtrData == null && !string.IsNullOrEmpty(knownAvatarName))
-                    {
-                        var known = TryParseJObject(knownAvatarJson);
-                        avtrId   = known?["avatarId"]?.ToString() ?? "";
-                        avtrData = new JObject
-                        {
-                            ["id"]         = avtrId,
-                            ["name"]       = knownAvatarName,
-                            ["imageUrl"]   = known?["imageUrl"]?.ToString() ?? "",
-                            ["authorName"] = known?["authorName"]?.ToString() ?? "",
-                            ["authorId"]   = "",
-                        };
                     }
 
                     string avatarName = "", avatarImage = "", avatarAuthor = "";
@@ -667,10 +649,21 @@ public class FriendsController
                                 }
 
                                 string avtrId = "";
+                                string avtrName = "";
                                 if (!string.IsNullOrEmpty(fileId))
-                                    avtrId = (string.IsNullOrEmpty(source)
+                                {
+                                    var found = string.IsNullOrEmpty(source)
                                         ? await _core.Avatars.GetAvatarIdByFileIdAsync(fileId)
-                                        : await _core.Avatars.ResolveByFileIdSourceAsync(source, fileId)).id ?? "";
+                                        : await _core.Avatars.ResolveByFileIdSourceAsync(source, fileId);
+                                    avtrId   = found.id ?? "";
+                                    avtrName = found.data?["name"]?.ToString() ?? "";
+                                }
+                                if (string.IsNullOrEmpty(avtrId))
+                                {
+                                    var inst = _core.LogWatcher.GetCurrentPlayers().FirstOrDefault(p => p.UserId == uid);
+                                    var worn = inst != null ? _core.LogWatcher.GetWornAvatarName(inst.DisplayName) : "";
+                                    if (!string.IsNullOrEmpty(worn)) avtrName = worn;
+                                }
                                 if (!string.IsNullOrEmpty(source))
                                 {
                                     var label = source switch { "avtrdb" => "Avtrdb", "icu" => "ICU", "vrcndb" => "VRCNDb", _ => source };
@@ -679,7 +672,7 @@ public class FriendsController
                                         ? new { msg = $"[{label}] no match for {what}", color = "warn" }
                                         : new { msg = $"[{label}] {what} -> {avtrId}", color = "ok" });
                                 }
-                                _core.SendToJS("vrcInstanceAvatarFound", new { userId = uid, avatarId = avtrId });
+                                _core.SendToJS("vrcInstanceAvatarFound", new { userId = uid, avatarId = avtrId, avatarName = avtrName });
                             }
                             catch
                             {
@@ -2087,10 +2080,9 @@ public class FriendsController
                 lock (_core.VrWorldCache) _core.VrWorldCache.TryGetValue(liveWid, out liveWorld);
             bool liveIsInWorld = !string.IsNullOrEmpty(liveLoc) && liveLoc != "offline" && liveLoc != "private" && liveLoc != "traveling";
             bool liveInGame    = !string.IsNullOrEmpty(liveLoc) && liveLoc != "offline";
-            var liveAvatarId   = live?["currentAvatar"]?.ToString() ?? cachedEntry.ProfileCurrentAvatarId;
+            var liveAvatarId   = live?["currentAvatar"]?.ToString() ?? "";
             if (liveAvatarId == RobotAvatarId) liveAvatarId = "";
             var liveFileId     = live != null ? ExtractAvatarFileId(live) : "";
-            if (string.IsNullOrEmpty(liveFileId)) liveFileId = cachedEntry.ProfileAvatarFileId;
             var isCoPresent    = (_core.IsVrcRunning?.Invoke() ?? false) && _core.LogWatcher.GetCurrentPlayers().Any(p => p.UserId == userId);
             var (totalSecs, _) = _core.TimeEngine.GetUserStats(userId, isCoPresent);
 
@@ -2122,7 +2114,7 @@ public class FriendsController
                 ["canJoin"]               = liveIsInWorld && liveInstType is "public" or "friends" or "friends+" or "hidden" or "group-public" or "group-plus" or "group-members" or "group",
                 ["canRequestInvite"]      = liveInstType is "private" or "invite_plus",
                 ["canInvite"]             = true,
-                ["currentAvatarImageUrl"] = !string.IsNullOrEmpty(liveAvatarImg) ? ImageCacheHelper.GetAvatarUrl(liveAvatarId, liveAvatarImg) : cachedEntry.ProfileAvatarImg,
+                ["currentAvatarImageUrl"] = !string.IsNullOrEmpty(liveAvatarImg) ? ImageCacheHelper.GetAvatarUrl(liveAvatarId, liveAvatarImg) : "",
                 ["currentAvatarId"]       = liveAvatarId,
                 ["avatarFileId"]          = liveFileId,
                 ["profilePicOverride"]    = !string.IsNullOrEmpty(livePicOverride) ? ImageCacheHelper.GetUserPicOverrideUrl(userId, livePicOverride) : cachedEntry.ProfilePicOverride,

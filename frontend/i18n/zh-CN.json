@@ -3866,6 +3866,7 @@
   "avatars.upload.reqs.gallery": "PNG/JPG，最大 3 MB，最大 2000x2000",
   "avatars.upload.reqs.image": "PNG/JPG，最大 3 MB，最大 2000x2000",
   "context_menu.avatar_not_found": "未找到公开模型",
+  "context_menu.avatar_not_public": "{name} 不在任何公开模型数据库中",
   "dashboard.favavaatars.empty": "还没有收藏的模型",
   "dashboard.news.loading": "正在加载新闻...",
   "dashboard.ownavatars.empty": "未找到模型",

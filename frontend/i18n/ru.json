@@ -3870,6 +3870,7 @@
   "avatars.upload.reqs.gallery": "PNG/JPG, макс. 3 МБ, макс. 2000x2000",
   "avatars.upload.reqs.image": "PNG/JPG, макс. 3 МБ, макс. 2000x2000",
   "context_menu.avatar_not_found": "Публичный аватар не найден",
+  "context_menu.avatar_not_public": "{name} нет ни в одной публичной базе аватаров",
   "dashboard.favavaatars.empty": "Избранных аватаров пока нет",
   "dashboard.news.loading": "Загрузка новостей...",
   "dashboard.ownavatars.empty": "Аватары не найдены",
