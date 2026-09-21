@@ -207,6 +207,11 @@ public class AuthController
                 _core.Settings.VrcndbSubmitAvatars = msg["submit"]?.Value<bool>() ?? true;
                 _core.Settings.VrcndbReportDeleted = msg["report"]?.Value<bool>() ?? true;
                 _core.Settings.VrcndbSyncLikes     = msg["syncLikes"]?.Value<bool>() ?? _core.Settings.VrcndbSyncLikes;
+                _core.Settings.VrcndbSyncWears     = msg["syncWears"]?.Value<bool>() ?? _core.Settings.VrcndbSyncWears;
+                _core.Settings.AvtrdbSubmitAvatars = msg["avtrdbSubmit"]?.Value<bool>() ?? _core.Settings.AvtrdbSubmitAvatars;
+                _core.Settings.AvtrdbReportDeleted = msg["avtrdbReport"]?.Value<bool>() ?? _core.Settings.AvtrdbReportDeleted;
+                _core.Settings.AvtrIcuSubmitAvatars = msg["icuSubmit"]?.Value<bool>() ?? _core.Settings.AvtrIcuSubmitAvatars;
+                _core.Settings.AvtrIcuReportDeleted = msg["icuReport"]?.Value<bool>() ?? _core.Settings.AvtrIcuReportDeleted;
                 _core.Settings.CommentsOnWorldsEnabled = msg["comments"]?.Value<bool>() ?? _core.Settings.CommentsOnWorldsEnabled;
                 _core.Settings.VrcndbConsentShown  = true;
                 _core.Settings.Save();

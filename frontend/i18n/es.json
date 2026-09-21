@@ -1367,6 +1367,8 @@
   "settings.vrcndb.consent.title": "Apoya la base de datos comunitaria VRCNDb",
   "settings.vrcndb.consent.body": "Cuando te unes a instancias, VRCNext recopila los IDs de los avatares públicos a tu alrededor y los envía a la base de datos comunitaria VRCNDb (db.vrcnext.com). Solo se envía el ID, el servidor verifica cada avatar por sí mismo, almacena solo avatares públicos y descarga la imagen por su cuenta. Así se construye la búsqueda de avatares de la comunidad.",
   "settings.vrcndb.consent.turn_off": "Si no quieres esto, desactiva estos dos interruptores.",
+  "settings.vrcndb.consent.turn_off_all": "Todo lo de abajo es opcional. Desactiva lo que no quieras. Puedes cambiarlo todo más tarde en Ajustes.",
+  "settings.vrcndb.consent.section_comments": "Comentarios de mundos",
   "settings.vrcndb.consent.submit_toggle": "Enviar avatares a VRCNDb",
   "settings.vrcndb.consent.report_toggle": "Reportar avatares eliminados a VRCNDb",
   "settings.vrcndb.consent.comments_toggle": "Mostrar comentarios",

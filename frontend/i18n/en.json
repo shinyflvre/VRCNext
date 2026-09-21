@@ -1419,6 +1419,8 @@
   "settings.vrcndb.consent.title": "Support the VRCNDb Community Database",
   "settings.vrcndb.consent.body": "When you join instances, VRCNext collects the avatar IDs of public avatars around you and submits them to the VRCNDb community database (db.vrcnext.com). Only the ID is sent, the server verifies each avatar itself, stores only public avatars and downloads the image on its own. This builds the community avatar search.",
   "settings.vrcndb.consent.turn_off": "If you dont want this please turn off these two sliders.",
+  "settings.vrcndb.consent.turn_off_all": "Everything below is optional. Turn off anything you do not want. You can change all of it later in Settings.",
+  "settings.vrcndb.consent.section_comments": "World Comments",
   "settings.vrcndb.consent.submit_toggle": "Submit avatars to VRCNDb",
   "settings.vrcndb.consent.report_toggle": "Report deleted avatars to VRCNDb",
   "settings.vrcndb.consent.comments_toggle": "Show Comments",

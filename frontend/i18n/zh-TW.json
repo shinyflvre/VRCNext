@@ -1402,6 +1402,8 @@
   "settings.vrcndb.consent.title": "支援 VRCNDB 社群資料庫",
   "settings.vrcndb.consent.body": "當你加入房間時，VRCNext 會收集你周圍公開角色的角色 ID，並將其提交到 VRCNDB 社群資料庫 (db.vrcnext.com)。僅傳送 ID，伺服器會自行驗證每個角色，只儲存公開角色，並自行下載影象。這將構建社群角色搜尋。",
   "settings.vrcndb.consent.turn_off": "如果你不希望這樣，請關閉這兩個開關。",
+  "settings.vrcndb.consent.turn_off_all": "以下所有選項皆為可選。關閉你不需要的項目。之後可以隨時在設定中更改。",
+  "settings.vrcndb.consent.section_comments": "世界評論",
   "settings.vrcndb.consent.submit_toggle": "向 VRCNDB 提交角色",
   "settings.vrcndb.consent.report_toggle": "向 VRCNDB 報告已刪除的角色",
   "settings.vrcndb.consent.comments_toggle": "顯示留言",

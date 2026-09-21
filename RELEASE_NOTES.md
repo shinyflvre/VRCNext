@@ -1,4 +1,7 @@
-﻿# **2026.60.6**
+﻿# **2026.60.7**
+
+**Changes**
+* Changes on the avtrdb/vrcndb/cuteavisearch consent modal.
 
 **Fixed Bugs**
 * Fixed avatars in the Instance list and **People > Instance** not updating when someone changed avatars. Avatar changes now update immediately from the game log.

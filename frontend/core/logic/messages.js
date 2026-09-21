@@ -30,7 +30,7 @@ window.external.receiveMessage(rawMsg => {
                 if (!window.__vrcndbConsentChecked) {
                     window.__vrcndbConsentChecked = true;
                     const shown = payload.VrcndbConsentShown ?? payload.vrcndbConsentShown ?? false;
-                    if (!shown && typeof showVrcndbConsent === 'function') showVrcndbConsent();
+                    if (!shown && typeof showVrcndbConsent === 'function') showVrcndbConsent(true);
                 }
                 break;
             // Multi-Account events.

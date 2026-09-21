@@ -1367,6 +1367,8 @@
   "settings.vrcndb.consent.title": "VRCNDb コミュニティデータベースをサポート",
   "settings.vrcndb.consent.body": "インスタンスに参加すると、VRCNext は周囲のパブリックアバターのアバター ID を収集し、VRCNDb コミュニティデータベース (db.vrcnext.com) に送信します。送信されるのは ID のみで、サーバーが各アバターを自ら検証し、パブリックアバターのみを保存し、画像も自身でダウンロードします。これによりコミュニティのアバター検索が構築されます。",
   "settings.vrcndb.consent.turn_off": "これを希望しない場合は、この 2 つのスイッチをオフにしてください。",
+  "settings.vrcndb.consent.turn_off_all": "以下はすべて任意です。不要なものはオフにしてください。後から設定でいつでも変更できます。",
+  "settings.vrcndb.consent.section_comments": "ワールドコメント",
   "settings.vrcndb.consent.submit_toggle": "アバターを VRCNDb に送信",
   "settings.vrcndb.consent.report_toggle": "削除されたアバターを VRCNDb に報告",
   "settings.vrcndb.consent.comments_toggle": "コメントを表示",

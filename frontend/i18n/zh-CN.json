@@ -1367,6 +1367,8 @@
   "settings.vrcndb.consent.title": "支持 VRCNDb 社区数据库",
   "settings.vrcndb.consent.body": "当你加入实例时，VRCNext 会收集你周围公开模型的模型 ID，并将其提交到 VRCNDb 社区数据库 (db.vrcnext.com)。仅发送 ID，服务器会自行验证每个模型，只存储公开模型，并自行下载图像。这将构建社区模型搜索。",
   "settings.vrcndb.consent.turn_off": "如果你不希望这样，请关闭这两个开关。",
+  "settings.vrcndb.consent.turn_off_all": "以下所有选项均为可选。关闭你不需要的项目。之后可以随时在设置中更改。",
+  "settings.vrcndb.consent.section_comments": "世界评论",
   "settings.vrcndb.consent.submit_toggle": "向 VRCNDb 提交模型",
   "settings.vrcndb.consent.report_toggle": "向 VRCNDb 报告已删除的模型",
   "settings.vrcndb.consent.comments_toggle": "显示评论",

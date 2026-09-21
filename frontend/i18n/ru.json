@@ -1369,6 +1369,8 @@
   "settings.vrcndb.consent.title": "Поддержите общественную базу данных VRCNDb",
   "settings.vrcndb.consent.body": "Когда вы присоединяетесь к инстансам, VRCNext собирает идентификаторы публичных аватаров вокруг вас и отправляет их в общественную базу данных VRCNDb (db.vrcnext.com). Отправляется только идентификатор, сервер сам проверяет каждый аватар, сохраняет только публичные аватары и загружает изображение самостоятельно. Это формирует общественный поиск аватаров.",
   "settings.vrcndb.consent.turn_off": "Если вы этого не хотите, отключите эти два переключателя.",
+  "settings.vrcndb.consent.turn_off_all": "Всё ниже необязательно. Отключите то, что вам не нужно. Всё это можно изменить позже в настройках.",
+  "settings.vrcndb.consent.section_comments": "Комментарии к мирам",
   "settings.vrcndb.consent.submit_toggle": "Отправлять аватары в VRCNDb",
   "settings.vrcndb.consent.report_toggle": "Сообщать об удалённых аватарах в VRCNDb",
   "settings.vrcndb.consent.comments_toggle": "Показывать комментарии",

@@ -1367,6 +1367,8 @@
   "settings.vrcndb.consent.title": "Soutenez la base de données communautaire VRCNDb",
   "settings.vrcndb.consent.body": "Lorsque vous rejoignez des instances, VRCNext collecte les identifiants des avatars publics autour de vous et les envoie à la base de données communautaire VRCNDb (db.vrcnext.com). Seul l'identifiant est envoyé, le serveur vérifie lui-même chaque avatar, ne stocke que les avatars publics et télécharge l'image de son côté. Cela alimente la recherche d'avatars de la communauté.",
   "settings.vrcndb.consent.turn_off": "Si vous ne le souhaitez pas, désactivez ces deux curseurs.",
+  "settings.vrcndb.consent.turn_off_all": "Tout ce qui suit est facultatif. Désactive ce que tu ne veux pas. Tu peux tout modifier plus tard dans les paramètres.",
+  "settings.vrcndb.consent.section_comments": "Commentaires des mondes",
   "settings.vrcndb.consent.submit_toggle": "Envoyer les avatars à VRCNDb",
   "settings.vrcndb.consent.report_toggle": "Signaler les avatars supprimés à VRCNDb",
   "settings.vrcndb.consent.comments_toggle": "Afficher les commentaires",

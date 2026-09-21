@@ -1395,6 +1395,8 @@
   "settings.vrcndb.consent.title": "Unterstütze die VRCNDb Community-Datenbank",
   "settings.vrcndb.consent.body": "Wenn du Instanzen beitrittst, sammelt VRCNext die Avatar-IDs der öffentlichen Avatare um dich herum und übermittelt sie an die VRCNDb Community-Datenbank (db.vrcnext.com). Es wird nur die ID gesendet, der Server verifiziert jeden Avatar selbst, speichert nur öffentliche Avatare und lädt das Bild selbst herunter. So entsteht die Community-Avatarsuche.",
   "settings.vrcndb.consent.turn_off": "Wenn du das nicht möchtest, schalte bitte diese beiden Schalter aus.",
+  "settings.vrcndb.consent.turn_off_all": "Alles hier ist freiwillig. Schalte aus, was du nicht möchtest. Du kannst alles später in den Einstellungen ändern.",
+  "settings.vrcndb.consent.section_comments": "Welt-Kommentare",
   "settings.vrcndb.consent.submit_toggle": "Avatare an VRCNDb senden",
   "settings.vrcndb.consent.report_toggle": "Gelöschte Avatare an VRCNDb melden",
   "settings.vrcndb.consent.comments_toggle": "Kommentare anzeigen",
