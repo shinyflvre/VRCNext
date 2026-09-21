@@ -1,4 +1,4 @@
-﻿# **2026.60.7**
+﻿# **2026.60.8**
 
 **Changes**
 * Changes on the avtrdb/vrcndb/cuteavisearch consent modal.

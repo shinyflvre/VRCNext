@@ -1566,54 +1566,50 @@ function renderVrcndbReports() {
     }).join('');
 }
 
-const _VRCNDB_CONSENT_TOGGLES = [
-    { id: 'vrcndbConsentSubmit',    set: 'setVrcndbSubmit',     key: 'submit',       first: true },
-    { id: 'vrcndbConsentReport',    set: 'setVrcndbReport',     key: 'report',       first: true },
-    { id: 'vrcndbConsentLikes',     set: 'setVrcndbSyncLikes',  key: 'syncLikes',    first: true },
-    { id: 'vrcndbConsentWears',     set: 'setVrcndbSyncWears',  key: 'syncWears',    first: true },
-    { id: 'vrcndbConsentAvtrdbSub', set: 'setAvtrdbSubmit',     key: 'avtrdbSubmit', first: true },
-    { id: 'vrcndbConsentAvtrdbRep', set: 'setAvtrdbReport',     key: 'avtrdbReport', first: true },
-    { id: 'vrcndbConsentIcuSub',    set: 'setAvtrIcuSubmit',    key: 'icuSubmit',    first: true },
-    { id: 'vrcndbConsentIcuRep',    set: 'setAvtrIcuReport',    key: 'icuReport',    first: true },
-    { id: 'vrcndbConsentComments',  set: 'setCommentsOnWorlds', key: 'comments',     first: true },
+const _VRCNDB_CONSENT_GROUPS = [
+    { id: 'vrcndbConsentSubmit', members: [
+        ['setVrcndbSubmit', 'submit'], ['setVrcndbReport', 'report'],
+        ['setAvtrdbSubmit', 'avtrdbSubmit'], ['setAvtrdbReport', 'avtrdbReport'],
+        ['setAvtrIcuSubmit', 'icuSubmit'], ['setAvtrIcuReport', 'icuReport'],
+    ] },
+    { id: 'vrcndbConsentSync', members: [['setVrcndbSyncLikes', 'syncLikes'], ['setVrcndbSyncWears', 'syncWears']] },
+    { id: 'vrcndbConsentComments', members: [['setCommentsOnWorlds', 'comments']] },
 ];
+let _vrcndbConsentInitial = {};
+let _vrcndbConsentFirstRun = false;
 
 function showVrcndbConsent(firstRun) {
     if (document.getElementById('vrcndbConsentModal')) return;
-    const initial = {};
-    _VRCNDB_CONSENT_TOGGLES.forEach(tg => {
-        const el = document.getElementById(tg.set);
-        initial[tg.id] = firstRun || !el ? tg.first : el.checked;
+    _vrcndbConsentFirstRun = !!firstRun;
+    _vrcndbConsentInitial = {};
+    _VRCNDB_CONSENT_GROUPS.forEach(g => {
+        _vrcndbConsentInitial[g.id] = firstRun || g.members.some(([set]) => {
+            const el = document.getElementById(set);
+            return !el || el.checked;
+        });
     });
     const row = (id, label, desc) => `
-        <div class="sf-toggle-row">
+        <div class="sf-toggle-row" style="margin-top:14px;">
             <span>${esc(label)}</span>
-            <label class="toggle"><input type="checkbox" id="${id}"${initial[id] ? ' checked' : ''}><div class="toggle-track"><div class="toggle-knob"></div></div></label>
-        </div>${desc ? `<div class="set-desc" style="margin:2px 0 10px;">${esc(desc)}</div>` : ''}`;
-    const head = (icon, label) => `<div class="vrcn-panel-card-header" style="margin:18px 0 8px;"><span class="msi">${icon}</span> <span>${esc(label)}</span></div>`;
+            <label class="toggle"><input type="checkbox" id="${id}"${_vrcndbConsentInitial[id] ? ' checked' : ''}><div class="toggle-track"><div class="toggle-knob"></div></div></label>
+        </div>
+        <div class="set-desc" style="margin-top:4px;">${esc(desc)}</div>`;
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.id = 'vrcndbConsentModal';
     overlay.style.zIndex = '10030';
-    overlay.innerHTML = `<div class="modal-box" style="width:680px;">
+    overlay.innerHTML = `<div class="modal-box" style="width:620px;">
         <div class="modal-icon" style="background:rgba(45,212,140,.12);color:var(--ok);"><span class="msi" style="font-size:22px;">hub</span></div>
-        <div class="modal-title">${esc(t('settings.vrcndb.consent.title', 'Support the VRCNDb Community Database'))}</div>
-        <div class="modal-msg" style="word-break:normal;">${esc(t('settings.vrcndb.consent.body', 'When you join instances, VRCNext collects the avatar IDs of public avatars around you and submits them to the VRCNDb community database (db.vrcnext.com). Only the ID is sent, the server verifies each avatar itself, stores only public avatars and downloads the image on its own. This builds the community avatar search.'))}</div>
-        <div class="set-desc">${esc(t('settings.vrcndb.consent.turn_off_all', 'Everything below is optional. Turn off anything you do not want. You can change all of it later in Settings.'))}</div>
-        ${head('hub', t('settings.vrcndb.title', 'VRCNDb Community Database'))}
-        ${row('vrcndbConsentSubmit', t('settings.vrcndb.consent.submit_toggle', 'Submit avatars to VRCNDb'))}
-        ${row('vrcndbConsentReport', t('settings.vrcndb.consent.report_toggle', 'Report deleted avatars to VRCNDb'), t('settings.vrcndb.deleted_desc', 'Report avatars that appear to be deleted so VRCNDb re-verifies them. An avatar is only removed from the database if VRChat itself confirms it no longer exists.'))}
-        ${row('vrcndbConsentLikes', t('settings.vrcndb.synclikes_toggle', 'Sync favorite likes to VRCNDb'), t('settings.vrcndb.synclikes_desc', 'When enabled, your favorited avatars count as a "like" on VRCNDb. This is completely anonymous and is an opt-out setting. It simply helps show which avatars are trendy. Syncs on every start and whenever you add a new favorite.'))}
-        ${row('vrcndbConsentWears', t('settings.vrcndb.syncwears_toggle', 'Sync worn avatars to VRCNDb'), t('settings.vrcndb.syncwears_desc', 'When enabled, wearing an avatar counts toward its "wear" count on VRCNDb. This is completely anonymous and is an opt-out setting. It helps show which avatars are actually worn and trending.'))}
-        ${head('database', t('settings.avtrdb.title', 'Avatar Avtrdb and Avtr.icu Community Support'))}
-        <div class="set-desc" style="margin-bottom:8px;">${esc(t('settings.avtrdb.support.submit_desc', "Submit new public avatars you encounter in-game to the avatar databases. When you switch to an avatar that isn't indexed yet, VRCNext will automatically submit it. This helps expand the databases and makes more avatars discoverable for everyone."))}</div>
-        ${row('vrcndbConsentAvtrdbSub', t('settings.avtrdb.support.submit_toggle', 'Submit new avatars to Avtrdb'))}
-        ${row('vrcndbConsentIcuSub', t('settings.avtrdb.support.submit_toggle_icu', 'Submit new avatars to Avtr.icu'))}
-        <div class="set-desc" style="margin:10px 0 8px;">${esc(t('settings.avtrdb.support.deleted_desc', "Help improve the avatar databases by reporting deleted avatars. When enabled, VRCNext will notify the respective database whenever you encounter a deleted or DMCA'd avatar, but only if that avatar exists in that database."))}</div>
-        ${row('vrcndbConsentAvtrdbRep', t('settings.avtrdb.support.deleted_toggle', 'Report deleted avatars to Avtrdb'))}
-        ${row('vrcndbConsentIcuRep', t('settings.avtrdb.support.deleted_toggle_icu', 'Report deleted avatars to Avtr.icu'))}
-        ${head('forum', t('settings.vrcndb.consent.section_comments', 'World Comments'))}
-        ${row('vrcndbConsentComments', t('settings.vrcndb.consent.comments_toggle', 'Show Comments'), t('settings.vrcndb.consent.comments_desc', 'Show comments in world modals. If you do not want to see user comments, disable this.'))}
+        <div class="modal-title">${esc(t('settings.vrcndb.consent.title_support', 'Avatar Database Support'))}</div>
+        ${row('vrcndbConsentSubmit',
+            t('settings.vrcndb.consent.submit_all_toggle', 'Submit avatars to VRCNDb, Avtrdb and Cute Avatar Search'),
+            t('settings.vrcndb.consent.submit_all_desc', 'When enabled, VRCNext reads the avatars in your current instance from the VRChat SDK logs and your avatar cache and sends them to the avatar database providers to help with avatar indexing. Deleted avatars are reported as well. This is optional.'))}
+        ${row('vrcndbConsentSync',
+            t('settings.vrcndb.consent.sync_toggle', 'Sync favorite likes and worn avatars to VRCNDb'),
+            t('settings.vrcndb.consent.sync_desc', 'When enabled, your favorited avatars count as a like and the avatars you wear count as worn on VRCNDb. This is anonymous and helps show which avatars are popular.'))}
+        ${row('vrcndbConsentComments',
+            t('settings.vrcndb.consent.section_comments', 'World Comments'),
+            t('settings.vrcndb.consent.comments_desc', 'Show comments in world modals. If you do not want to see user comments, disable this.'))}
         <div class="modal-btns" style="margin-top:22px;">
             <button class="vrcn-button-round vrcn-btn-accent" onclick="confirmVrcndbConsent()">${esc(t('settings.vrcndb.consent.confirm', 'Got it'))}</button>
         </div>
@@ -1623,13 +1619,16 @@ function showVrcndbConsent(firstRun) {
 
 function confirmVrcndbConsent() {
     const msg = { action: 'saveVrcndbConsent' };
-    _VRCNDB_CONSENT_TOGGLES.forEach(tg => {
-        const val = document.getElementById(tg.id)?.checked ?? tg.first;
-        msg[tg.key] = val;
-        const el = document.getElementById(tg.set);
-        if (el) el.checked = val;
+    _VRCNDB_CONSENT_GROUPS.forEach(g => {
+        const val = document.getElementById(g.id)?.checked ?? true;
+        if (!_vrcndbConsentFirstRun && val === _vrcndbConsentInitial[g.id]) return;
+        g.members.forEach(([set, key]) => {
+            msg[key] = val;
+            const el = document.getElementById(set);
+            if (el) el.checked = val;
+        });
     });
-    if (typeof settings !== 'undefined') settings.commentsOnWorldsEnabled = msg.comments;
+    if (typeof msg.comments === 'boolean' && typeof settings !== 'undefined') settings.commentsOnWorldsEnabled = msg.comments;
     sendToCS(msg);
     if (typeof applyWorldCommentsEnabled === 'function') applyWorldCommentsEnabled();
     const m = document.getElementById('vrcndbConsentModal');
