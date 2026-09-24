@@ -10,13 +10,6 @@ let _mypAvatarsLoaded = false;
 let _mypAvatarInfo = null;
 let _mypLoadedAvatarKey = '';
 
-function _mypTrustUser() {
-    const u = (typeof currentVrcUser !== 'undefined' && currentVrcUser) ? currentVrcUser : {};
-    const groups = (typeof myGroups !== 'undefined' && Array.isArray(myGroups)) ? myGroups : [];
-    const rep = (typeof myRepresentedGroup !== 'undefined' && myRepresentedGroup)
-        || groups.find(g => g.isRepresenting === true) || null;
-    return Object.assign({}, u, { userGroups: groups, representedGroup: rep });
-}
 let _mypFavsRequested = false;
 let _mypHeatmapDays = 30;
 let _mypHeatmapView = 'online';
@@ -217,7 +210,7 @@ function _pdVrcnPreviewHtml(u) {
     const infos = [
         row(t('profiles.meta.joined', 'Joined'), u.dateJoined ? fmtShortDate(new Date(u.dateJoined + 'T00:00:00')) : '—'),
         row(t('profiles.meta.last_login', 'Last Login'), u.lastLogin ? fmtShortDate(new Date(u.lastLogin)) : '—'),
-        row(t('profiles.meta.platform', 'Platform'), esc(u.platform || u.lastPlatform || '—')),
+        row(t('profiles.meta.platform', 'Platform'), esc(getPlatformLabel(u.platform || u.lastPlatform) || '—')),
         row(t('profiles.meta.age_verified', 'Age Verified'), u.ageVerified ? t('common.yes', 'Yes') : t('common.no', 'No')),
     ].join('');
     const infosCard = `<div class="fd-info-card"><div class="fd-group-rep-label">${t('profiles.meta.infos_title', 'Infos')}</div><div style="display:grid;gap:6px;">${infos}</div></div>`;
@@ -329,6 +322,13 @@ function _mypUpdateAvatarCard() {
     const inner = _mypAvatarCardInner();
     section.innerHTML = inner;
     section.style.display = inner ? '' : 'none';
+    const cols = document.getElementById('mypInfoCols');
+    if (!cols) return;
+    const left  = cols.querySelector('.fd-info-left');
+    const right = cols.querySelector('.fd-info-right');
+    const hasRep = !!right?.firstElementChild;
+    if (left) left.style.display = inner ? '' : 'none';
+    cols.classList.toggle('fd-info-cols-single', !!inner !== hasRep);
 }
 
 function onMypAvatarInfo(payload) {
@@ -368,7 +368,7 @@ function renderMyProfileContent() {
     const mypHeaderActions = renderModalActions([
         { icon: 'edit', title: changeBannerTitle, onclick: `openImagePicker('profile-banner')` },
         { icon: 'filter_frames', title: t('profiles.deco.title', 'Customize Profile'), onclick: `openProfileDecoPicker()` },
-        { icon: 'link_2', title: t('common.share', 'Share'), onclick: `navigator.clipboard.writeText('https://vrchat.com/home/user/${esc(u.id)}').then(()=>showToast(true,t('common.link_copied','Link copied!')))` },
+        modalShareAction('friend', u.id || ''),
         { icon: 'close', title: t('common.close', 'Close'), onclick: `closeMyProfile()` },
     ]);
 
@@ -450,32 +450,39 @@ function renderMyProfileContent() {
                 <button class="vrcn-button vrcn-btn-primary" onclick="saveMyField('bio')">${t('common.save', 'Save')}</button>
             </div>
         </div>
-        <div class="myp-section-header" style="margin-top:10px;">
-            <span class="myp-section-title">${t('profiles.my_profile.sections.links', 'Links')}</span>
-            <button class="myp-edit-btn" onclick="editMyField('links')"><span class="msi" style="font-size:14px;">edit</span></button>
-        </div>
-        <div id="mypLinksView">${bioLinksViewHtml}</div>
-        <div id="mypLinksEdit" style="display:none;">
-            <div id="mypLinksInputs"></div>
-            <div class="myp-edit-actions">
-                <button class="vrcn-button" onclick="cancelMyField('links')">${t('common.cancel', 'Cancel')}</button>
-                <button class="vrcn-button vrcn-btn-primary" onclick="saveMyField('links')">${t('common.save', 'Save')}</button>
+        <div class="myp-bio-split">
+            <div class="myp-bio-split-col">
+                <div class="myp-section-header">
+                    <span class="myp-section-title">${t('profiles.my_profile.sections.links', 'Links')}</span>
+                    <button class="myp-edit-btn" onclick="editMyField('links')"><span class="msi" style="font-size:14px;">edit</span></button>
+                </div>
+                <div id="mypLinksView">${bioLinksViewHtml}</div>
+                <div id="mypLinksEdit" style="display:none;">
+                    <div id="mypLinksInputs"></div>
+                    <div class="myp-edit-actions">
+                        <button class="vrcn-button" onclick="cancelMyField('links')">${t('common.cancel', 'Cancel')}</button>
+                        <button class="vrcn-button vrcn-btn-primary" onclick="saveMyField('links')">${t('common.save', 'Save')}</button>
+                    </div>
+                </div>
             </div>
-        </div>
-        <div class="myp-section-header" style="margin-top:10px;">
-            <span class="myp-section-title">${t('profiles.my_profile.sections.languages', 'Languages')}</span>
-            <button class="myp-edit-btn" onclick="editMyField('languages')"><span class="msi" style="font-size:14px;">edit</span></button>
-        </div>
-        <div id="mypLangsView">${langsViewHtml}</div>
-        <div id="mypLangsEdit" style="display:none;">
-            <div id="mypLangsChips" class="myp-lang-chips"></div>
-            <div class="myp-lang-add-row">
-                <select id="mypLangSelect" class="myp-lang-select"><option value="">${addLanguageLabel}</option></select>
-                <button class="myp-add-lang-btn" onclick="addMyLanguage()"><span class="msi" style="font-size:15px;">add</span></button>
-            </div>
-            <div class="myp-edit-actions">
-                <button class="vrcn-button" onclick="cancelMyField('languages')">${t('common.cancel', 'Cancel')}</button>
-                <button class="vrcn-button vrcn-btn-primary" onclick="saveMyField('languages')">${t('common.save', 'Save')}</button>
+            <div class="myp-bio-split-col">
+                <div class="myp-section-header">
+                    <span class="myp-section-title">${t('profiles.my_profile.sections.languages', 'Languages')}</span>
+                    <button class="myp-edit-btn" onclick="editMyField('languages')"><span class="msi" style="font-size:14px;">edit</span></button>
+                </div>
+                <div id="mypLangsView">${langsViewHtml}</div>
+                <div id="mypLangsEdit" style="display:none;">
+                    <div id="mypLangsChips" class="myp-lang-chips"></div>
+                    <div id="mypLangsMax" class="myp-empty" style="display:none;">${t('profiles.my_profile.languages_max', 'You can add up to 3 languages.')}</div>
+                    <div class="myp-lang-add-row" id="mypLangAddRow">
+                        <select id="mypLangSelect" class="myp-lang-select"><option value="">${addLanguageLabel}</option></select>
+                        <button class="myp-add-lang-btn" onclick="addMyLanguage()"><span class="msi" style="font-size:15px;">add</span></button>
+                    </div>
+                    <div class="myp-edit-actions">
+                        <button class="vrcn-button" onclick="cancelMyField('languages')">${t('common.cancel', 'Cancel')}</button>
+                        <button class="vrcn-button vrcn-btn-primary" onclick="saveMyField('languages')">${t('common.save', 'Save')}</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>`;
@@ -486,8 +493,8 @@ function renderMyProfileContent() {
     const _infosRows = [
         _mr(t('profiles.meta.joined',        'Joined'),         u.dateJoined  ? fmtShortDate(new Date(u.dateJoined + 'T00:00:00')) : '—'),
         _mr(t('profiles.meta.last_login',    'Last Login'),     u.lastLogin   ? fmtShortDate(new Date(u.lastLogin)) : '—'),
-        _mr(t('profiles.meta.platform',      'Platform'),       esc(u.platform || u.lastPlatform || '—')),
-        _mr(t('profiles.meta.last_platform', 'Last Platform'),  esc(u.lastPlatform || '—')),
+        _mr(t('profiles.meta.platform',      'Platform'),       esc(getPlatformLabel(u.platform || u.lastPlatform) || '—')),
+        _mr(t('profiles.meta.last_platform', 'Last Platform'),  esc(getPlatformLabel(u.lastPlatform) || '—')),
         _mr(t('profiles.meta.age_verified',  'Age Verified'),   u.ageVerified       ? t('common.yes','Yes') : t('common.no','No')),
         _mr(t('profiles.meta.avatar_cloning','Avatar Cloning'), u.allowAvatarCopying ? t('common.on','On')  : t('common.off','Off')),
         _mr(t('profiles.meta.booping',       'Booping'),        u.isBoopingEnabled   ? t('common.on','On')  : t('common.off','Off')),
@@ -511,16 +518,6 @@ function renderMyProfileContent() {
     </div>`;
 
     const _pronounsCard = `<div class="fd-info-card">${_pronounsSection}</div>`;
-
-    // Trust & Safety card (right)
-    const _trustBadgesRow = (rank || creatorBadge)
-        ? `<div class="fd-badges-row" style="margin-bottom:0;">${rank ? `<span class="vrcn-badge ${rank.cls}">${esc(rank.label)}</span>` : ''}${creatorBadge}</div>`
-        : '';
-    const _trustCard = `<div class="fd-info-card">
-        <div class="fd-group-rep-label">${t('profiles.trust.title', 'Trust &amp; Safety')}</div>
-        ${_trustBadgesRow}
-        <div id="mypTrustBarSlot">${getTrustBarHtml(_mypTrustUser(), _mypAllAvatars.length, _mypAvatarsLoaded)}</div>
-    </div>`;
 
     const pronounsHtml = u.pronouns ? `<div class="fd-pronouns">${esc(u.pronouns)}</div>` : '';
 
@@ -580,11 +577,14 @@ function renderMyProfileContent() {
     const _mypAvatarInner = _mypAvatarCardInner();
     const _mypAvatarCard = `<div id="mypAvatarSection" class="fd-info-card"${_mypAvatarInner ? '' : ' style="display:none;"'}>${_mypAvatarInner}</div>`;
 
+    const _mypHasAv  = !!_mypAvatarInner;
+    const _mypHasRep = !!repGroupCardHtml;
     const infoContent = `<div class="fd-info-wrap">
-            <div class="fd-info-cols">
-                <div class="fd-info-left">${_mypAvatarCard}${_bioCard}</div>
-                <div class="fd-info-right">${repGroupCardHtml}${_pronounsCard}${_trustCard}</div>
+            <div id="mypInfoCols" class="fd-info-cols fd-info-cols-even${_mypHasAv !== _mypHasRep ? ' fd-info-cols-single' : ''}">
+                <div class="fd-info-left"${_mypHasAv ? '' : ' style="display:none;"'}>${_mypAvatarCard}</div>
+                <div class="fd-info-right"${_mypHasRep ? '' : ' style="display:none;"'}>${repGroupCardHtml}</div>
             </div>
+            ${_bioCard}
             ${_mypTlCard}
             ${_mypInsightsCard}
             ${_mypHeatmapCard}
@@ -663,6 +663,7 @@ function renderMyProfileContent() {
                         </div>
                     </div>
                     ${_badgesCard}
+                    ${_pronounsCard}
                     ${_infosCard}
                 </div>
             </div>
@@ -676,7 +677,7 @@ function renderMyProfileContent() {
         if (bannerSlot && bannerImg) bannerSlot.insertBefore(bannerImg, bannerSlot.firstChild);
     }
 
-    ['mypHmView', 'mypHmPeriod', 'mypGroupsSort'].forEach(id => {
+    ['mypHmView', 'mypHmPeriod', 'mypGroupsSort', 'mypLangSelect'].forEach(id => {
         const sel = document.getElementById(id);
         if (sel && typeof initVnSelect === 'function') initVnSelect(sel);
     });
@@ -797,7 +798,7 @@ function saveMyField(field) {
         sendToCS({ action: 'vrcUpdateProfile', bioLinks });
     } else if (field === 'languages') {
         const chips = document.querySelectorAll('#mypLangsChips [data-lang]');
-        const languages = Array.from(chips).map(c => c.dataset.lang.replace(/^language_/, ''));
+        const languages = Array.from(chips).map(c => c.dataset.lang.replace(/^language_/, '')).slice(0, MYP_MAX_LANGS);
         sendToCS({ action: 'vrcUpdateProfile', languages });
     }
 }
@@ -846,13 +847,22 @@ function _renderMyLangsEdit() {
         if (!selectedLangs.includes(key))
             sel.insertAdjacentHTML('beforeend', `<option value="${key}">${esc(name)}</option>`);
     });
+    if (!sel._vnSelect && typeof initVnSelect === 'function') initVnSelect(sel);
+    sel._vnRefresh?.();
 }
+
+const MYP_MAX_LANGS = 3;
 
 function _renderMyLangChips(langs, el) {
     if (!el) return;
     el.innerHTML = langs.map(tag =>
         `<span class="myp-lang-chip" data-lang="${tag}">${esc(LANG_MAP[tag]||tag.replace('language_','').toUpperCase())}<button class="myp-lang-remove" onclick="removeMyLanguage('${tag}')"><span class="msi" style="font-size:11px;">close</span></button></span>`
     ).join('');
+    const full = langs.length >= MYP_MAX_LANGS;
+    const row = document.getElementById('mypLangAddRow');
+    const max = document.getElementById('mypLangsMax');
+    if (row) row.style.display = full ? 'none' : '';
+    if (max) max.style.display = full ? '' : 'none';
 }
 
 function addMyLanguage() {
@@ -860,19 +870,23 @@ function addMyLanguage() {
     const key = sel?.value;
     if (!key) return;
     const chips = Array.from(document.querySelectorAll('#mypLangsChips [data-lang]')).map(c => c.dataset.lang);
-    if (chips.includes(key)) return;
+    if (chips.includes(key) || chips.length >= MYP_MAX_LANGS) return;
     chips.push(key);
     _renderMyLangChips(chips, document.getElementById('mypLangsChips'));
     const opt = sel.querySelector(`option[value="${key}"]`);
     if (opt) opt.remove();
     sel.value = '';
+    sel._vnRefresh?.();
 }
 
 function removeMyLanguage(tag) {
     const chips = Array.from(document.querySelectorAll('#mypLangsChips [data-lang]')).map(c => c.dataset.lang).filter(t => t !== tag);
     _renderMyLangChips(chips, document.getElementById('mypLangsChips'));
     const sel = document.getElementById('mypLangSelect');
-    if (sel) sel.insertAdjacentHTML('beforeend', `<option value="${tag}">${esc(LANG_MAP[tag]||tag.replace('language_','').toUpperCase())}</option>`);
+    if (sel) {
+        sel.insertAdjacentHTML('beforeend', `<option value="${tag}">${esc(LANG_MAP[tag]||tag.replace('language_','').toUpperCase())}</option>`);
+        sel._vnRefresh?.();
+    }
 }
 
 
@@ -884,7 +898,8 @@ function switchMypTab(tab, btn) {
             const el = document.getElementById('mypTab' + name.charAt(0).toUpperCase() + name.slice(1));
             if (el) el.style.display = tab === name ? '' : 'none';
         });
-        document.querySelectorAll('#mypBox .fd-tab').forEach(t => t.classList.remove('active'));
+        const tabRow = btn?.closest('.fd-tabs');
+        (tabRow ? tabRow.querySelectorAll('.fd-tab') : document.querySelectorAll('#mypBox .fd-tab[data-myptab]')).forEach(t => t.classList.remove('active'));
         if (btn) btn.classList.add('active');
     };
     if (typeof animateModalBox === 'function') animateModalBox(box, apply);
@@ -1070,7 +1085,6 @@ function onMypUserAvatars(payload) {
     if (!_mypIsSelf(payload.userId)) return;
     _mypAllAvatars = payload.avatars || [];
     _mypAvatarsLoaded = true;
-    updateTrustBar('mypTrustBarSlot', _mypTrustUser(), _mypAllAvatars.length);
     _mypUpdateAvatarCard();
     _mypUpdateContentCounts();
     renderMypAvatarsPage(0);

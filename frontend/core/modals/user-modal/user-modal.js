@@ -414,7 +414,8 @@ function switchFdTab(tab, btn) {
         if (favsEl) favsEl.style.display = tab === 'favs' ? '' : 'none';
         const jsonEl = document.getElementById('fdTabJson');
         if (jsonEl) jsonEl.style.display = tab === 'json' ? '' : 'none';
-        document.querySelectorAll('.fd-tab').forEach(t => t.classList.remove('active'));
+        const tabRow = btn?.closest('.fd-tabs');
+        (tabRow ? tabRow.querySelectorAll('.fd-tab') : document.querySelectorAll('.fd-tab[data-fdtab]')).forEach(t => t.classList.remove('active'));
         if (btn) btn.classList.add('active');
     });
     if (tab === 'favs') {
@@ -532,7 +533,6 @@ function renderFdUserAvatars(payload) {
 
     window._fdAllAvatars = avatars;
     window._fdAvatarsPage = 0;
-    updateTrustBar('fdTrustBarSlot', currentFriendDetail, avatars.length);
     renderFdAvatarsPage(0);
 }
 
@@ -747,27 +747,33 @@ function renderFriendDetail(d) {
         </div>`;
 
     const _aboutRows = [
-        _mr(t('profiles.meta.platform',       'Platform'),       esc(d.platform || d.lastPlatform || '—')),
-        _mr(t('profiles.meta.last_platform',  'Last Platform'),  esc(d.lastPlatform || '—')),
-        _mr(t('profiles.meta.joined',         'Joined'),         d.dateJoined ? fmtShortDate(new Date(d.dateJoined + 'T00:00:00')) : '—'),
-        _mr(t('profiles.meta.last_seen',      'Last Seen'),      esc(lastSeenStr   || '—')),
-        _mr(t('profiles.meta.last_active',    'Last Active'),    esc(lastActiveStr || '—')),
+        _mr(t('profiles.meta.platform',       'Platform'),       esc(getPlatformLabel(d.platform || d.lastPlatform) || '—')),
+        _mr(t('profiles.meta.last_platform',  'Last Platform'),  esc(getPlatformLabel(d.lastPlatform) || '—')),
         _mr(t('profiles.meta.age_verified',   'Age Verified'),   d.ageVerified        ? t('common.yes','Yes') : t('common.no','No')),
         _mr(t('profiles.meta.avatar_cloning', 'Avatar Cloning'), d.allowAvatarCopying ? t('common.on','On')   : t('common.off','Off')),
     ];
+
+    const _activityRows = [];
     if (!isSelf) {
-        _aboutRows.push(_mr(t('profiles.meta.meets', 'Meets'),
-            fdMeetCnt > 0 ? String(fdMeetCnt) : '—'));
-        _aboutRows.push(_mr(t('profiles.meta.time_together', 'Time Together'),
+        _activityRows.push(_mr(t('profiles.meta.time_together', 'Time Together'),
             (d.totalTimeSeconds > 0 || d.inSameInstance)
                 ? `<span id="fdTimeTogether">${formatDuration(d.totalTimeSeconds)}</span>`
                 : `<span style="color:var(--tx3);">${t('profiles.meta.not_tracked', 'Not tracked yet')}</span>`));
-        _aboutRows.push(_mr(t('profiles.meta.status_mostly', 'Status Mostly'),
-            `<span id="fdInfoStatusMostly" style="color:var(--tx2);">—</span>`));
+        _activityRows.push(_mr(t('profiles.meta.meets', 'Meets'),
+            fdMeetCnt > 0 ? String(fdMeetCnt) : '—'));
     }
+    _activityRows.push(_mr(t('profiles.meta.last_seen',   'Last Seen'),   esc(lastSeenStr   || '—')));
+    _activityRows.push(_mr(t('profiles.meta.last_active', 'Last Active'), esc(lastActiveStr || '—')));
+    if (!isSelf) {
+        _activityRows.push(_mr(t('profiles.meta.status_mostly', 'Status Mostly'),
+            `<span id="fdInfoStatusMostly">—</span>`));
+    }
+    _activityRows.push(_mr(t('profiles.meta.joined', 'Joined'), d.dateJoined ? fmtShortDate(new Date(d.dateJoined + 'T00:00:00')) : '—'));
 
     const _aboutRowsHtml = `<div class="fd-group-rep-label">${t('profiles.meta.infos_title', 'Infos')}</div>
         <div style="display:grid;gap:6px;">${_aboutRows.join('')}</div>`;
+    const _activityHtml = `<div class="fd-group-rep-label">${t('profiles.meta.activity_summary', 'Activity Summary')}</div>
+        <div style="display:grid;gap:6px;">${_activityRows.join('')}</div>`;
 
     const vrcNoteHtml = `<div class="myp-section-header">
             <span class="myp-section-title">${t('profiles.notes.vrc_note', 'VRC Note')}</span>
@@ -797,7 +803,7 @@ function renderFriendDetail(d) {
     } else {
         actionsHtml += `<button class="vrcn-button-round vrcn-btn-primary" id="fdAddFriend" onclick="sendToCS({action:'vrcSendFriendRequest',userId:'${uid}'});this.disabled=true;this.textContent='${esc(t('profiles.actions.request_sent', 'Request Sent'))}';">${t('profiles.actions.add_friend', 'Add Friend')}</button>`;
     }
-    if (d.isFriend) actionsHtml += `<button class="vrcn-button-round vrcn-btn-danger" id="fdUnfriend" onclick="confirmUnfriend('${uid}','${esc(d.displayName).replace(/'/g, "\\'")}') " title="${t('profiles.actions.unfriend', 'Unfriend')}"><span class="msi" style="font-size:16px;">person_remove</span></button>`;
+    actionsHtml += _fdMoreButtonHtml();
     actionsHtml += '</div>';
     const favPickerHtml = d.isFriend
         ? `<div id="fdFavPicker" style="display:none;margin-bottom:14px;">
@@ -1010,13 +1016,6 @@ function renderFriendDetail(d) {
     const fdDotClass = fdIsWeb ? 'vrc-status-ring' : 'vrc-status-dot';
     const fdStatusDotCls = fdIsOffline ? 's-offline' : statusDotClass(d.status);
 
-    const trustCreatorBadge = getCreatorBadgeHtml(d);
-    const trustBadgesRow = (rank || trustCreatorBadge)
-        ? `<div class="fd-badges-row" style="margin-bottom:0;">${rank ? `<span class="vrcn-badge ${rank.cls}">${esc(rank.label)}</span>` : ''}${trustCreatorBadge}</div>`
-        : '';
-    const trustSideHtml = `<div class="fd-group-rep-label">${t('profiles.trust.title', 'Trust &amp; Safety')}</div>
-        ${trustBadgesRow}
-        <div id="fdTrustBarSlot">${getTrustBarHtml(d, 0, false)}</div>`;
 
     const _fdInstFriends = (_worldPartHtml && d.location && d.location !== 'private' && d.location !== 'traveling')
         ? (typeof getInstanceMembers === 'function' ? getInstanceMembers(d.location) : []).filter(m => m.id !== d.id)
@@ -1067,7 +1066,7 @@ function renderFriendDetail(d) {
     const _insightsCard = `<div class="fd-info-card">${insightsHtml}</div>`;
     const _heatmapCard = `<div class="fd-info-card">${heatmapHtml}</div>`;
     const _infosCard = `<div class="fd-info-card">${_aboutRowsHtml}</div>`;
-    const _trustCard = trustSideHtml ? `<div class="fd-info-card">${trustSideHtml}</div>` : '';
+    const _activityCard = `<div class="fd-info-card">${_activityHtml}</div>`;
     const _repCard = repGroupInfoHtml ? `<div class="fd-info-card">${repGroupInfoHtml}</div>` : '';
     const _modCard = `<div class="fd-info-card" id="fdModerationCard">${_buildModCardInner(d.id)}</div>`;
     const _fdBadgesCard = vrcBadgesRowHtml ? `<div class="fd-info-card"><div class="fd-group-rep-label">${t('profiles.badges.badges', 'Badges')}</div>${vrcBadgesRowHtml}</div>` : '';
@@ -1078,7 +1077,7 @@ function renderFriendDetail(d) {
                     ${_currentWorldCard}${avatarRowHtml}${_bioCard}${_noteCard}
                 </div>
                 <div class="fd-info-right">
-                    ${_ownerCard}${_repCard}${_trustCard}${_modCard}
+                    ${_ownerCard}${_repCard}${_activityCard}${_modCard}
                 </div>
             </div>
             ${_tlCard}
@@ -1747,13 +1746,7 @@ function drawStatusHeatmap(payload, ids, view) {
     if (mostlyEl && payload.days === 30) {
         let topKey = '', topSec = 0;
         for (const k of Object.keys(META)) { if (k === 'unknown') continue; const s = totals[k] || 0; if (s > topSec) { topSec = s; topKey = k; } }
-        if (topKey) {
-            mostlyEl.textContent = META[topKey].label;
-            mostlyEl.style.color = META[topKey].color;
-        } else {
-            mostlyEl.textContent = '—';
-            mostlyEl.style.color = 'var(--tx3)';
-        }
+        mostlyEl.textContent = topKey ? META[topKey].label : '—';
     }
 
     if (view === 'online') return;
@@ -1837,22 +1830,18 @@ function friendAction(action, location, userId) {
 }
 
 function confirmUnfriend(userId, displayName) {
-    const btn = document.getElementById('fdUnfriend');
-    if (!btn) return;
-    if (btn.dataset.confirm) {
-        btn.disabled = true;
-        btn.innerHTML = '<span class="msi" style="font-size:14px;">hourglass_empty</span>';
-        sendToCS({ action: 'vrcUnfriend', userId: userId });
-    } else {
-        btn.dataset.confirm = '1';
-        btn.innerHTML = `<span style="font-size:calc(11px + var(--fs-off, 0px));font-weight:600;">${t('profiles.actions.confirm', 'Confirm?')}</span>`;
-        setTimeout(() => {
-            if (btn && !btn.disabled) {
-                delete btn.dataset.confirm;
-                btn.innerHTML = '<span class="msi" style="font-size:16px;">person_remove</span>';
-            }
-        }, 4000);
-    }
+    if (!userId) return;
+    const name = displayName
+        || (typeof vrcFriendsData !== 'undefined' ? vrcFriendsData.find(f => f.id === userId)?.displayName : '')
+        || userId;
+    vrcnConfirmDelete({
+        id: 'unfriendConfirmModal',
+        title: t('profiles.actions.unfriend', 'Unfriend'),
+        icon: 'person_remove',
+        message: tf('profiles.actions.unfriend_confirm', { name }, 'Remove {name} from your friends? This cannot be undone.'),
+        confirmLabel: t('profiles.actions.unfriend', 'Unfriend'),
+        onConfirm: () => sendToCS({ action: 'vrcUnfriend', userId }),
+    });
 }
 
 function toggleFriendFavPicker(userId) {
@@ -2028,33 +2017,37 @@ function copyProfileThemeFromDetail() {
     openProfileThemeEditor('', { button: c.button, icon: c.icon, subtext: c.subtext, name: d.displayName || '' });
 }
 
+function _fdMoreButtonHtml() {
+    return `<button class="vrcn-button-round" title="${esc(t('common.more', 'More'))}" onclick="openFdMoreMenu(this,event)"><span class="msi" style="font-size:16px;">more_horiz</span></button>`;
+}
+
+let _fdMoreOpener = null;
+
+function openFdMoreMenu(btn, ev) {
+    if (ev) ev.stopPropagation();
+    if (_fdMoreOpener === btn && typeof window.VrcnContextMenuOpen === 'function' && window.VrcnContextMenuOpen()) {
+        _fdMoreOpener = null;
+        window.VrcnHideContextMenu();
+        return;
+    }
+    const d = currentFriendDetail;
+    if (!d?.id || typeof window.VrcnFriendMenuItems !== 'function') return;
+    _fdMoreOpener = btn;
+    const items = window.VrcnFriendMenuItems(d.id, null, { inProfile: true });
+    if (_fdCopyableThemeColors(d)) {
+        items.push('sep', { icon: 'palette', label: t('context_menu.copy_theme', 'Copy Theme'), action: () => copyProfileThemeFromDetail() });
+    }
+    const r = btn.getBoundingClientRect();
+    window.VrcnShowContextMenu(r.left, r.bottom + 4, items, btn.ownerDocument);
+}
+
 function _fdBuildTaskbarActions(d) {
     const _fid  = jsq(d.id || '');
-    const _mBlk = Array.isArray(blockedData)      && blockedData.some(x => x.targetUserId === d.id);
-    const _mMut = Array.isArray(mutedData)        && mutedData.some(x => x.targetUserId === d.id);
-    const _mCht = Array.isArray(muteChatData)     && muteChatData.some(x => x.targetUserId === d.id);
-    const _mAvt = Array.isArray(hiddenAvatarData) && hiddenAvatarData.some(x => x.targetUserId === d.id);
-    const _mInt = Array.isArray(interactOffData)  && interactOffData.some(x => x.targetUserId === d.id);
-    const _invG = (typeof myGroups !== 'undefined') ? myGroups.filter(g => g.canInvite === true) : [];
-    const _moreItems = [
-        d.isFriend ? { icon: 'waving_hand', label: t('context_menu.friend.boop', 'Boop!'), onclick: `openBoopModal('${_fid}','${jsq(d.displayName || _fid)}')` } : null,
-        (d.isFriend && _invG.length) ? { icon: 'group_add', label: t('context_menu.friend.invite_group', 'Invite to Group'), submenu: _invG.map(g => ({ icon: 'group', label: g.name || g.id, onclick: `sendToCS({action:'vrcInviteToGroup',groupId:'${jsq(g.id)}',userIds:['${_fid}']});showToast(true,t('context_menu.friend.invite_group_sent','Invite sent!'))` })) } : null,
-        { icon: 'shield_person', label: t('context_menu.friend.moderate', 'Moderate'), submenu: [
-            { icon: _mBlk ? 'lock_open' : 'block',           label: _mBlk ? t('context_menu.friend.unblock', 'Unblock')                  : t('context_menu.friend.block', 'Block'),                       onclick: `sendToCS({action:'${_mBlk ? 'vrcUnblock' : 'vrcBlock'}',userId:'${_fid}'})` },
-            { icon: _mMut ? 'mic' : 'mic_off',               label: _mMut ? t('context_menu.friend.unmute', 'Unmute')                    : t('context_menu.friend.mute', 'Mute'),                         onclick: `sendToCS({action:'${_mMut ? 'vrcUnmute' : 'vrcMute'}',userId:'${_fid}'})` },
-            { icon: _mCht ? 'chat' : 'comments_disabled',    label: _mCht ? t('context_menu.friend.unmute_chat', 'Unmute Chat')           : t('context_menu.friend.mute_chat', 'Mute Chat'),               onclick: `sendToCS({action:'${_mCht ? 'vrcUnmuteChat' : 'vrcMuteChat'}',userId:'${_fid}'})` },
-            { icon: _mAvt ? 'visibility' : 'visibility_off', label: _mAvt ? t('context_menu.friend.show_avatar', 'Show Avatar')           : t('context_menu.friend.hide_avatar', 'Hide Avatar'),           onclick: `sendToCS({action:'${_mAvt ? 'vrcShowAvatar' : 'vrcHideAvatar'}',userId:'${_fid}'})` },
-            { icon: _mInt ? 'touch_app' : 'do_not_touch',    label: _mInt ? t('context_menu.friend.interact_on', 'Turn On Interactions') : t('context_menu.friend.interact_off', 'Turn Off Interactions'), onclick: `sendToCS({action:'${_mInt ? 'vrcInteractOn' : 'vrcInteractOff'}',userId:'${_fid}'})` },
-        ] },
-        _fdCopyableThemeColors(d) ? { icon: 'palette', label: t('context_menu.copy_theme', 'Copy Theme'), onclick: `copyProfileThemeFromDetail()` } : null,
-    ].filter(Boolean);
-    const out = [
+    return [
         { icon: 'refresh', iconClass: _fdRefreshing ? 'fd-action-spin' : '', title: t('common.refresh', 'Refresh'), label: t('common.refresh', 'Refresh'), onclick: `refreshFriendDetailModal('${_fid}')` },
-        { icon: 'link_2', title: t('common.share', 'Share'), label: t('common.share_profile', 'Share Profile'), onclick: `navigator.clipboard.writeText('https://vrchat.com/home/user/${esc(d.id)}').then(()=>showToast(true,t('common.link_copied','Link copied!')))` },
+        modalShareAction('friend', d.id || '', t('common.share_profile', 'Share Profile')),
+        { icon: 'close', title: t('common.close', 'Close'), label: t('common.close', 'Close'), onclick: `closeFriendDetail()` },
     ];
-    if (_moreItems.length) out.push({ label: t('common.more', 'More'), dropdown: _moreItems });
-    out.push({ icon: 'close', title: t('common.close', 'Close'), label: t('common.close', 'Close'), onclick: `closeFriendDetail()` });
-    return out;
 }
 
 function refreshFdTaskbarActions() {

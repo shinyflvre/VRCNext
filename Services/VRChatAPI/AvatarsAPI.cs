@@ -227,7 +227,7 @@ public class AvatarsAPI(VRChatApiService ctx)
         if (ft)                              qs.Add("ft=1");
 
         var url = "https://db.vrcnext.com/api/search.php?" + string.Join("&", qs);
-        using var client = new HttpClient();
+        using var client = new HttpClient(new VrcndbSigningHandler());
         client.DefaultRequestVersion = System.Net.HttpVersion.Version20;
         client.DefaultVersionPolicy = System.Net.Http.HttpVersionPolicy.RequestVersionOrLower;
         client.Timeout = TimeSpan.FromSeconds(15);
@@ -251,7 +251,7 @@ public class AvatarsAPI(VRChatApiService ctx)
     public async Task<JArray> GetAvatarVrcnByIdAsync(string avatarId)
     {
         var url = $"https://db.vrcnext.com/api/avatar.php?id={Uri.EscapeDataString(avatarId)}";
-        using var client = new HttpClient();
+        using var client = new HttpClient(new VrcndbSigningHandler());
         client.DefaultRequestVersion = System.Net.HttpVersion.Version20;
         client.DefaultVersionPolicy = System.Net.Http.HttpVersionPolicy.RequestVersionOrLower;
         client.Timeout = TimeSpan.FromSeconds(15);

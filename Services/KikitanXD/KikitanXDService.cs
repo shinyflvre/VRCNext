@@ -408,6 +408,35 @@ public sealed class KikitanXDService : IKikitanSpeechService
         ["hi"] = "Hindi"
     };
 
+    private const string GroqPrimaryModel  = "qwen/qwen3.8-27b";
+    private const string GroqFallbackModel = "openai/gpt-oss-20b";
+
+    private static async Task<(string content, int status, string model)> GroqChatAsync(string apiKey, JObject body)
+    {
+        int status = 0;
+        foreach (var model in new[] { GroqPrimaryModel, GroqFallbackModel })
+        {
+            body["model"] = model;
+            body["reasoning_effort"] = model == GroqPrimaryModel ? "none" : "low";
+            using var req = new HttpRequestMessage(HttpMethod.Post,
+                "https://api.groq.com/openai/v1/chat/completions");
+            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+            req.Content = new StringContent(body.ToString(), System.Text.Encoding.UTF8, "application/json");
+            HttpResponseMessage resp;
+            try { resp = await _http.SendAsync(req); }
+            catch { status = -1; continue; }
+            using (resp)
+            {
+                status = (int)resp.StatusCode;
+                if (!resp.IsSuccessStatusCode) continue;
+                var json = JObject.Parse(await resp.Content.ReadAsStringAsync());
+                var content = json["choices"]?[0]?["message"]?["content"]?.ToString()?.Trim() ?? "";
+                if (content.Length > 0) return (content, status, model);
+            }
+        }
+        return ("", status, GroqFallbackModel);
+    }
+
     public static async Task<string> TranslateStandaloneAsync(string apiKey, string text, string sourceLang, string targetLang)
     {
         if (string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(text) || string.IsNullOrWhiteSpace(targetLang))
@@ -423,8 +452,6 @@ public sealed class KikitanXDService : IKikitanSpeechService
 
         var body = new JObject
         {
-            ["model"] = "qwen/qwen3.6-27b",
-            ["reasoning_effort"] = "none",
             ["reasoning_format"] = "hidden",
             ["temperature"] = 0.2,
             ["max_completion_tokens"] = 1024,
@@ -435,15 +462,8 @@ public sealed class KikitanXDService : IKikitanSpeechService
             }
         };
 
-        using var req = new HttpRequestMessage(HttpMethod.Post,
-            "https://api.groq.com/openai/v1/chat/completions");
-        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-        req.Content = new StringContent(body.ToString(), System.Text.Encoding.UTF8, "application/json");
-
-        var resp = await _http.SendAsync(req);
-        if (!resp.IsSuccessStatusCode) return "";
-        var json = JObject.Parse(await resp.Content.ReadAsStringAsync());
-        return json["choices"]?[0]?["message"]?["content"]?.ToString()?.Trim() ?? "";
+        var (content, _, _) = await GroqChatAsync(apiKey, body);
+        return content;
     }
 
     private const string KaomojiOnlySystemPrompt =
@@ -463,8 +483,6 @@ public sealed class KikitanXDService : IKikitanSpeechService
     {
         var body = new JObject
         {
-            ["model"] = "qwen/qwen3.6-27b",
-            ["reasoning_effort"] = "none",
             ["reasoning_format"] = "hidden",
             ["temperature"] = 0.5,
             ["max_completion_tokens"] = 256,
@@ -475,27 +493,20 @@ public sealed class KikitanXDService : IKikitanSpeechService
             }
         };
 
-        using var req = new HttpRequestMessage(HttpMethod.Post,
-            "https://api.groq.com/openai/v1/chat/completions");
-        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
-        req.Content = new StringContent(body.ToString(), System.Text.Encoding.UTF8, "application/json");
-
-        var resp = await _http.SendAsync(req);
-        if (!resp.IsSuccessStatusCode)
+        var (content, status, model) = await GroqChatAsync(_apiKey, body);
+        if (content.Length == 0)
         {
-            Log($"Kikitan XD: kaomoji error {(int)resp.StatusCode}");
+            Log($"Kikitan XD: kaomoji error {status}");
             return "";
         }
-        var json = JObject.Parse(await resp.Content.ReadAsStringAsync());
-        return json["choices"]?[0]?["message"]?["content"]?.ToString()?.Trim() ?? "";
+        if (model == GroqFallbackModel) Log($"Kikitan XD: kaomoji via fallback model {model}");
+        return content;
     }
 
     private async Task<string> TranslateAsync(string text, string source, string target)
     {
         var body = new JObject
         {
-            ["model"] = "qwen/qwen3.6-27b",
-            ["reasoning_effort"] = "none",
             ["reasoning_format"] = "hidden",
             ["temperature"] = 1,
             ["max_completion_tokens"] = 512,
@@ -506,19 +517,14 @@ public sealed class KikitanXDService : IKikitanSpeechService
             }
         };
 
-        using var req = new HttpRequestMessage(HttpMethod.Post,
-            "https://api.groq.com/openai/v1/chat/completions");
-        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
-        req.Content = new StringContent(body.ToString(), System.Text.Encoding.UTF8, "application/json");
-
-        var resp = await _http.SendAsync(req);
-        if (!resp.IsSuccessStatusCode)
+        var (content, status, model) = await GroqChatAsync(_apiKey, body);
+        if (content.Length == 0)
         {
-            Log($"Kikitan XD: translate error {(int)resp.StatusCode}");
+            Log($"Kikitan XD: translate error {status}");
             return "";
         }
-        var json = JObject.Parse(await resp.Content.ReadAsStringAsync());
-        return json["choices"]?[0]?["message"]?["content"]?.ToString()?.Trim() ?? "";
+        if (model == GroqFallbackModel) Log($"Kikitan XD: translate via fallback model {model}");
+        return content;
     }
 
     private static void SendChatbox(string text, bool notify)

@@ -7,7 +7,7 @@ function setGroupVisibility(groupId, visibility) {
         if (!btn) return;
         const isActive = v === visibility;
         const icons = { visible: 'public', friends: 'people', hidden: 'visibility_off' };
-        btn.classList.toggle('vrcn-btn-primary', isActive);
+        btn.classList.toggle('active', isActive);
         btn.querySelector('.msi').textContent = isActive ? 'check_circle' : icons[v];
     });
     // Update myGroups cache so context menu reflects new value
@@ -132,7 +132,7 @@ function renderGroupDetail(g) {
         _gdMoreDropdown(g, gidJs),
         isGroupOwner ? { icon: 'delete', title: t('groups.actions.delete_group', 'Delete Group'), onclick: `confirmDeleteGroup('${gidJs}','${jsq(g.name || '')}')`, dangerSolid: true } : null,
         { icon: 'refresh', iconClass: 'fd-refresh-spin', title: t('common.refresh', 'Refresh'), onclick: `triggerModalRefresh({action:'vrcGetGroup',groupId:'${gidJs}',force:true})` },
-        { icon: 'link_2', title: t('common.share', 'Share'), onclick: `navigator.clipboard.writeText('https://vrchat.com/home/group/${esc(g.id)}').then(()=>showToast(true,t('common.link_copied','Link copied!')))` },
+        modalShareAction('group', g.id || ''),
         { icon: 'close', title: t('common.close', 'Close'), onclick: `closeGroupDetail()` },
     ]);
 
@@ -323,8 +323,11 @@ function renderGroupDetail(g) {
                     { val: 'friends', icon: 'people',         key: 'groups.visibility.friends', fb: 'Visible for Friends'  },
                     { val: 'hidden',  icon: 'visibility_off', key: 'groups.visibility.hidden',  fb: 'Visible for None'     },
                 ].map(opt => {
-                    const active = (g.visibility || 'visible') === opt.val;
-                    return `<button class="vrcn-button${active ? ' vrcn-btn-primary' : ''}" id="ggrpVis_${opt.val}" onclick="setGroupVisibility('${gid_e}','${opt.val}')" style="flex:1;justify-content:center;min-width:0;font-size:calc(11px + var(--fs-off, 0px));">
+                    const curVis = g.visibility
+                        || ((typeof myGroups !== 'undefined') ? myGroups.find(x => x.id === g.id)?.visibility : '')
+                        || 'visible';
+                    const active = curVis === opt.val;
+                    return `<button class="vrcn-button${active ? ' active' : ''}" id="ggrpVis_${opt.val}" onclick="setGroupVisibility('${gid_e}','${opt.val}')" style="flex:1;justify-content:center;min-width:0;font-size:calc(11px + var(--fs-off, 0px));">
                         <span class="msi" style="font-size:13px;">${active ? 'check_circle' : opt.icon}</span>
                         ${esc(t(opt.key, opt.fb))}
                     </button>`;

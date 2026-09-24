@@ -218,6 +218,8 @@
 
 .lv-row-check { display: inline-flex; align-items: center; margin-right: 8px; vertical-align: middle; }
 .lv-row-check .msi { font-size: calc(18px + var(--fs-off, 0px)); }
+.lv-row-check + .lv-icon,
+.lv-row-check + .pl-av { vertical-align: middle; }
 .lv-row-check-on { color: var(--accent); }
 .lv-row-check-off { color: var(--tx3); }
 .lv-edit tr.tl-list-row { cursor: pointer; user-select: none; }

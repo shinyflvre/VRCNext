@@ -232,7 +232,7 @@ function renderAvatarDetail(a) {
         { icon: 'checkroom', title: t('avatars.detail.actions.use_avatar', 'Use Avatar'), onclick: `selectAvatar('${aid}');closeAvatarDetail()` },
         { icon: _avIsFav ? 'favorite' : 'favorite_border', iconClass: _avIsFav ? 'fd-action-fav' : '', title: avatarFavoriteActionLabel(_avIsFav), onclick: `openAvFavPicker('${aid}',this)` },
         { icon: 'refresh', iconClass: 'fd-refresh-spin', title: t('common.refresh', 'Refresh'), onclick: `triggerModalRefresh({action:'vrcGetAvatarDetail',avatarId:'${aid}',force:true})` },
-        { icon: 'link_2', title: t('common.share', 'Share'), onclick: `navigator.clipboard.writeText('https://vrchat.com/home/avatar/${esc(a.id)}').then(()=>showToast(true,t('common.link_copied','Link copied!')))` },
+        modalShareAction('avatar', a.id || ''),
         isOwn ? { icon: 'delete', title: t('avatars.detail.actions.delete', 'Delete Avatar'), onclick: `confirmDeleteAvatar('${aid}','${jsq(a.name || '')}')`, dangerSolid: true } : null,
         { icon: 'close', title: t('common.close', 'Close'), onclick: `closeAvatarDetail()` },
     ]);

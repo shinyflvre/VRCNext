@@ -44,7 +44,6 @@
     align-items: stretch;
 }
 
-
 .fd-info-top-row .inst-item,
 .fd-info-top-row .vrcn-user-item {
     background: transparent;
@@ -374,6 +373,15 @@
 #modalMyProfile.fd-style-compact .fd-info-cols,
 .pd-preview-vrcn.fd-style-compact .fd-info-cols {
     grid-template-columns: minmax(0, 1fr) 244px;
+}
+
+#modalMyProfile .fd-info-cols.fd-info-cols-even,
+.pd-preview-vrcn .fd-info-cols.fd-info-cols-even {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+#modalMyProfile .fd-info-cols.fd-info-cols-even.fd-info-cols-single {
+    grid-template-columns: minmax(0, 1fr);
 }
 
 #modalFriendDetail.fd-style-compact .fd-info-card .fd-group-card.fd-group-rep,

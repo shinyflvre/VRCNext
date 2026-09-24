@@ -449,6 +449,14 @@ window.external.receiveMessage(rawMsg => {
                     }
                     break;
                 }
+                if (payload.action === 'unfriend') {
+                    if (!payload.success) {
+                        showToast(false, t('profiles.actions.unfriend_failed', 'Failed to unfriend'));
+                    } else if (typeof _friendBulkUnfriendPending === 'undefined' || _friendBulkUnfriendPending <= 0) {
+                        showToast(true, t('profiles.actions.unfriend_done', 'Unfriended'));
+                    }
+                    break;
+                }
                 if (payload.action === 'createInstance') {
                     showToast(payload.success, payload.message);
                     if (payload.success) {
@@ -820,22 +828,35 @@ window.external.receiveMessage(rawMsg => {
                 renderGroupDetail(data);
                 break;
             }
-            case 'groupVisibilityUpdated':
+            case 'groupVisibilityUpdated': {
+                const bulkVis = typeof groupBulkVisibilityConsume === 'function' && groupBulkVisibilityConsume(!!payload.success);
+                if (!bulkVis && typeof showToast === 'function') {
+                    showToast(!!payload.success, payload.success
+                        ? t('groups.visibility.updated', 'Visibility updated')
+                        : t('groups.visibility.update_failed', 'Could not update visibility'));
+                }
                 if (payload.success) {
                     const icons = { visible: 'public', friends: 'people', hidden: 'visibility_off' };
                     ['visible','friends','hidden'].forEach(v => {
                         const btn = document.getElementById('ggrpVis_' + v);
                         if (!btn) return;
                         const isActive = v === payload.visibility;
-                        btn.classList.toggle('vrcn-btn-primary', isActive);
+                        btn.classList.toggle('active', isActive);
                         btn.querySelector('.msi').textContent = isActive ? 'check_circle' : icons[v];
                     });
                     if (typeof myGroups !== 'undefined') {
                         const entry = myGroups.find(g => g.id === payload.groupId);
                         if (entry) entry.visibility = payload.visibility;
                     }
+                    if (typeof _groupDetailCache !== 'undefined' && _groupDetailCache[payload.groupId]) {
+                        _groupDetailCache[payload.groupId].visibility = payload.visibility;
+                    }
+                    if (typeof lvViewMode === 'function' && lvViewMode('groups') === 'list' && typeof filterMyGroups === 'function') {
+                        lvKeepScroll(document.getElementById('myGroupsGrid'), () => filterMyGroups());
+                    }
                 }
                 break;
+            }
             case 'vrcGroupBans':
                 renderGroupBans(payload.groupId, payload.bans);
                 break;
@@ -914,6 +935,7 @@ window.external.receiveMessage(rawMsg => {
                 if (typeof onAvatarImageResult === 'function') onAvatarImageResult(payload);
                 break;
             case 'vrcAvatarUpdateResult':
+                if (typeof avBulkUpdateConsume === 'function' && avBulkUpdateConsume(payload)) break;
                 onAvatarUpdateResult(payload);
                 break;
             case 'vrcWorldUpdateResult':

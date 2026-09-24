@@ -59,6 +59,13 @@
     justify-content: space-between;
     margin-bottom: 8px;
 }
+.myp-bio-split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 16px;
+    margin-top: 10px;
+}
+.myp-bio-split-col { min-width: 0; }
 .myp-section-title {
     font-size: calc(10px + var(--fs-off, 0px));
     font-weight: 700;
@@ -135,8 +142,8 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    background: rgba(56,132,255,.15);
-    color: var(--accent);
+    background: var(--badge-bg);
+    color: var(--badge-tx);
     border-radius: 20px;
     padding: 3px 8px 3px 10px;
     font-size: calc(12px + var(--fs-off, 0px));
@@ -151,6 +158,9 @@
 }
 .myp-lang-select {
     flex: 1;
+    min-width: 0;
+}
+select.myp-lang-select {
     background: var(--bg-input);
     border: 1.5px solid rgba(255,255,255,.1);
     border-radius: 8px;
@@ -162,14 +172,18 @@
     cursor: pointer;
 }
 .myp-add-lang-btn {
+    height: 32px;
+    min-width: 32px;
+    box-sizing: border-box;
     background: var(--bg-input);
     border: 1.5px solid rgba(255,255,255,.1);
     border-radius: 8px;
     color: var(--tx1);
-    padding: 6px 10px;
+    padding: 0 8px;
     cursor: pointer;
     display: flex;
     align-items: center;
+    justify-content: center;
     font-family: inherit;
     transition: background .15s;
 }

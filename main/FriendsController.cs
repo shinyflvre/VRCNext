@@ -333,7 +333,7 @@ public class FriendsController
                 JToken? caData = null;
                 try
                 {
-                    using var caHttp = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
+                    using var caHttp = new HttpClient(new VrcndbSigningHandler()) { Timeout = TimeSpan.FromSeconds(15) };
                     caHttp.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", AppInfo.UserAgent);
                     HttpResponseMessage caResp;
                     if (caMethod == "POST")

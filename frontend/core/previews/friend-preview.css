@@ -104,18 +104,6 @@
     min-width: 0;
 }
 
-.fp-stats-row {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: calc(10px + var(--fs-off, 0px));
-    color: var(--tx2);
-    white-space: nowrap;
-    margin-top: 1px;
-}
-.fp-stats-row .msi { font-size: 12px; color: var(--tx2); }
-.fp-stats-dot { color: var(--tx3); margin: 0 1px; }
-
 .fp-section {
     padding-top: 6px;
     display: flex;
@@ -158,9 +146,30 @@
     border: 1px solid var(--brd);
 }
 
-.fp-preview .fd-group-card-meta {
-    margin-top: 4px;
+.fp-preview .fd-group-card-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
 }
+.fp-preview .fd-group-card-name {
+    line-height: 16px;
+}
+.fp-preview .fd-group-card-meta {
+    margin-top: 0;
+}
+
+.fp-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    row-gap: 4px;
+    font-size: calc(12px + var(--fs-off, 0px));
+    line-height: 16px;
+    color: var(--tx2);
+}
+.fp-meta-rank { font-weight: 600; }
+.fp-meta .fp-sep { margin: 0 6px; }
 
 /* Bio in preview: no scroll, no max-height, slightly smaller */
 .fp-preview .fd-bio {
@@ -168,6 +177,40 @@
     max-height: none;
     overflow-y: visible;
     font-size: calc(11px + var(--fs-off, 0px));
+}
+
+/* Detail rows: time together, languages */
+.fp-rows {
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid var(--brd);
+    padding-top: 4px;
+}
+.fp-row {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: 8px 0;
+    font-size: calc(11px + var(--fs-off, 0px));
+    line-height: 16px;
+}
+.fp-row:last-child { padding-bottom: 0; }
+.fp-row + .fp-row { border-top: 1px solid color-mix(in srgb, var(--brd) 60%, transparent); }
+.fp-row-label {
+    flex: 0 0 96px;
+    color: var(--tx2);
+}
+.fp-row-value {
+    flex: 1;
+    min-width: 0;
+    color: var(--tx0);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.fp-sep {
+    margin: 0 4px;
+    color: var(--tx3);
 }
 
 /* Friends in same instance strip */

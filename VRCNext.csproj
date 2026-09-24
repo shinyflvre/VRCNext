@@ -96,7 +96,7 @@
 
   <!-- Inject webhook key from build environment into a generated file -->
   <Target Name="GenerateWhKeySecret" BeforeTargets="CoreCompile">
-    <WriteLinesToFile File="$(MSBuildProjectDirectory)\BuildSecrets.cs" Lines="namespace VRCNext%3B internal static class BuildSecrets { internal const string WhKey = %22$(VRCNextWhKey)%22%3B internal const string VrcnPlusAdminToken = %22$(VRCNextVrcnPlusAdminToken)%22%3B internal const string HypeRateApiKey = %22$(VRCNextHypeRateApiKey)%22%3B }" Overwrite="true" />
+    <WriteLinesToFile File="$(MSBuildProjectDirectory)\BuildSecrets.cs" Lines="namespace VRCNext%3B internal static class BuildSecrets { internal const string WhKey = %22$(VRCNextWhKey)%22%3B internal const string VrcnPlusAdminToken = %22$(VRCNextVrcnPlusAdminToken)%22%3B internal const string HypeRateApiKey = %22$(VRCNextHypeRateApiKey)%22%3B internal const string VrcndbKey = %22$(VRCNextVrcndbKey)%22%3B }" Overwrite="true" />
     <ItemGroup>
       <Compile Include="$(MSBuildProjectDirectory)\BuildSecrets.cs" />
     </ItemGroup>

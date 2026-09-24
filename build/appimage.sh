@@ -65,6 +65,7 @@ rm -rf "$STAGE"
     -c Release -r linux-x64 --self-contained true \
     -o "$STAGE" \
     -p:VRCNextWhKey="${VRCNEXT_WH_KEY:-}" \
+    -p:VRCNextVrcndbKey="${VRCNEXT_VRCNDB_KEY:-}" \
     -p:VRCNextVrcnPlusAdminToken="${VRCNEXT_VRCN_PLUS_ADMIN_TOKEN:-}" \
     -p:VRCNextHypeRateApiKey="${VRCNEXT_HYPERATE_API_KEY:-}"
 

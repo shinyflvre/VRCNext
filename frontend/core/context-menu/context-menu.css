@@ -45,8 +45,7 @@
 .vn-ctx-tools {
     display: flex; gap: 2px; padding: 5px;
     background: var(--ui-input-bg); border-bottom: 1px solid var(--brd);
-}
-.vn-ctx-tool {
+}.vn-ctx-tool {
     position: relative; flex: 1; display: flex; align-items: center; justify-content: center;
     height: 26px; min-width: 30px; border: 0; background: transparent; border-radius: 6px;
     color: var(--tx2); cursor: pointer; font-family: inherit;

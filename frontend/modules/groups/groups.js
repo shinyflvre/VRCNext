@@ -317,10 +317,22 @@ function _glValue(g, field) {
         case 'name':    return (g.name || '').toLowerCase();
         case 'short':   return (g.shortCode || '').toLowerCase();
         case 'members': return g.memberCount || 0;
+        case 'visible': return ({ visible: 3, friends: 2, hidden: 1 })[g.visibility] || 0;
         case 'joined':  return Date.parse(g.joinedAt || '') || 0;
         case 'created': return Date.parse(g.createdAt || '') || 0;
         default:        return (g.name || '').toLowerCase();
     }
+}
+
+const _GROUP_VISIBLE_TO = {
+    visible: ['groups.list.visible_to.everyone', 'Everyone'],
+    friends: ['groups.list.visible_to.friends',  'Friends'],
+    hidden:  ['groups.list.visible_to.none',     'No one'],
+};
+
+function _glVisibleTo(g) {
+    const e = _GROUP_VISIBLE_TO[g.visibility];
+    return e ? t(e[0], e[1]) : '';
 }
 
 function buildGroupsListHtml(groups, staticHeader) {
@@ -332,6 +344,7 @@ function buildGroupsListHtml(groups, staticHeader) {
             name:    `<td class="lv-name">${esc(g.name || '')}</td>`,
             short:   `<td class="lv-sub">${esc(g.shortCode || '')}</td>`,
             members: `<td class="lv-num">${esc((g.memberCount || 0).toLocaleString())}</td>`,
+            visible: `<td class="lv-sub">${esc(_glVisibleTo(g))}</td>`,
             joined:  `<td class="lv-sub">${esc(_glDate(g.joinedAt))}</td>`,
             created: `<td class="lv-sub">${esc(_glDate(g.createdAt))}</td>`,
         });
@@ -559,6 +572,41 @@ function groupBulkDeleteConsume(success) {
     if (_groupBulkDeletePending === 0) {
         showToast(_groupBulkDeleteOk > 0, tf('groups.edit.bulk_delete_done', { count: _groupBulkDeleteOk }, 'Deleted {count} groups'));
         if (typeof loadMyGroups === 'function') loadMyGroups();
+    }
+    return true;
+}
+
+let _groupBulkVisPending = 0;
+let _groupBulkVisOk = 0;
+
+function groupEditVisibilityMenu(btn, ev) {
+    if (ev) ev.stopPropagation();
+    if (!_groupEditSelected.size || typeof window.VrcnShowContextMenu !== 'function') return;
+    const opts = [
+        { val: 'visible', icon: 'public',         key: 'groups.visibility.visible', fb: 'Visible for Everyone' },
+        { val: 'friends', icon: 'people',         key: 'groups.visibility.friends', fb: 'Visible for Friends'  },
+        { val: 'hidden',  icon: 'visibility_off', key: 'groups.visibility.hidden',  fb: 'Visible for None'     },
+    ];
+    const items = opts.map(o => ({ icon: o.icon, label: t(o.key, o.fb), action: () => groupEditSetVisibility(o.val) }));
+    const r = btn.getBoundingClientRect();
+    window.VrcnShowContextMenu(r.left, r.bottom + 4, items, btn.ownerDocument);
+}
+
+function groupEditSetVisibility(visibility) {
+    const ids = [..._groupEditSelected].filter(id => myGroups.some(g => g.id === id));
+    if (!ids.length) return;
+    _groupBulkVisPending = ids.length;
+    _groupBulkVisOk = 0;
+    ids.forEach(groupId => sendToCS({ action: 'vrcSetGroupVisibility', groupId, visibility }));
+    exitGroupEditMode();
+}
+
+function groupBulkVisibilityConsume(success) {
+    if (_groupBulkVisPending <= 0) return false;
+    _groupBulkVisPending--;
+    if (success) _groupBulkVisOk++;
+    if (_groupBulkVisPending === 0) {
+        showToast(_groupBulkVisOk > 0, tf('groups.edit.bulk_visibility_done', { count: _groupBulkVisOk }, 'Updated visibility for {count} groups'));
     }
     return true;
 }

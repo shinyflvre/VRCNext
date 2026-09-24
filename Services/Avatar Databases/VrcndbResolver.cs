@@ -126,7 +126,7 @@ public sealed class VrcndbResolver
         _lastBatchSize = fileIds.Count;
         var payload = JsonConvert.SerializeObject(new { file_ids = fileIds });
 
-        using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(25) };
+        using var client = new HttpClient(new VrcndbSigningHandler()) { Timeout = TimeSpan.FromSeconds(25) };
         client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", AppInfo.UserAgent);
         client.DefaultRequestHeaders.TryAddWithoutValidation("Referer", $"https://{AppInfo.Website}");
         client.DefaultRequestHeaders.Accept.ParseAdd("application/json");

@@ -129,5 +129,19 @@
                             </div>
                         </div>
                     </div>
+                    <div style="position:relative;" id="avatarEditStatusWrap">
+                        <button class="vrcn-button av-edit-action" disabled onclick="avEditShowStatusMenu(this)"><span class="msi" style="font-size:14px;">public</span> <span data-i18n="avatars.edit.bulk_status">Bulk Status</span></button>
+                        <div id="avatarEditStatusPicker" class="vn-select-panel" style="display:none;min-width:160px;z-index:1200;"></div>
+                    </div>
+                    <div style="position:relative;" id="avatarEditTagWrap">
+                        <button class="vrcn-button av-edit-action" disabled onclick="avEditShowTagPanel(this)"><span class="msi" style="font-size:14px;">sell</span> <span data-i18n="avatars.edit.bulk_tag_add">Bulk Tag Add</span></button>
+                        <div id="avatarEditTagPanel" class="vn-select-panel" style="display:none;min-width:220px;z-index:1200;padding:8px;">
+                            <input type="text" id="avatarEditTagInput" class="vrcn-input" maxlength="64" placeholder="Add tag..." data-i18n-placeholder="avatars.detail.add_tag_placeholder" style="width:100%;margin-bottom:6px;" onkeydown="if(event.key==='Enter')avEditAddTagSelected()">
+                            <div style="display:flex;gap:6px;justify-content:flex-end;">
+                                <button class="vrcn-button" onclick="avEditCloseTagPanel()" data-i18n="common.cancel">Cancel</button>
+                                <button class="vrcn-button vrcn-btn-primary" onclick="avEditAddTagSelected()" data-i18n="avatars.edit.add_tag">Add</button>
+                            </div>
+                        </div>
+                    </div>
                     <button id="avatarEditDeleteBtn" class="vrcn-button vrcn-btn-danger av-edit-action" disabled onclick="avEditDeleteSelected()"><span class="msi" style="font-size:14px;">delete</span> <span data-i18n="avatars.edit.bulk_delete">Bulk Delete</span></button>
                 </div>
