@@ -1,10 +1,11 @@
-﻿# **2026.60.9**
+﻿# **2026.60.11**
 
 **Changes**
-* Changes on the avtrdb/vrcndb/cuteavisearch consent modal.
-* Changed default state of avatar submit toggles.
+* **Kikitan XD**: If the main Groq translation model fails or is rate limited, translations and kaomojis now fall back to `openai/gpt-oss-20b` instead of failing.
 
 **Fixed Bugs**
+* Fixed translation not working in kikitanxd live translator.
+* Fixed translation in bios/groups when using kikitanxd
 * Fixed avatars in the Instance list and **People > Instance** not updating when someone changed avatars. Avatar changes now update immediately from the game log.
 * Fixed profiles sometimes showing outdated avatars after the VRChat API changes. Profiles now only show avatars that can be matched to the current profile picture or detected from the game log.
 * **Check for Avatar** now shows the avatar name when known, even if the avatar is not available in a public avatar database.

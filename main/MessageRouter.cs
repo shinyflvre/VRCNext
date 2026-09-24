@@ -424,7 +424,7 @@ public partial class AppShell
     {
         try
         {
-            using var client = new HttpClient();
+            using var client = new HttpClient(new VrcndbSigningHandler());
             client.DefaultRequestVersion = System.Net.HttpVersion.Version20;
             client.DefaultVersionPolicy = System.Net.Http.HttpVersionPolicy.RequestVersionOrLower;
             client.Timeout = TimeSpan.FromSeconds(15);
