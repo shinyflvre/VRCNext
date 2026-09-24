@@ -1892,6 +1892,7 @@ public partial class AppShell
                             {
                                 ok,
                                 error,
+                                avatarId      = avId,
                                 name          = ok ? avName   : (string?)null,
                                 description   = ok ? avDesc   : (string?)null,
                                 releaseStatus = ok ? avStatus : (string?)null,

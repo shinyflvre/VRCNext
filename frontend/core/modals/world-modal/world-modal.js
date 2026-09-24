@@ -280,7 +280,7 @@ function renderWorldSearchDetail(w) {
 
     const wdHeaderActions = renderModalActions([
         { icon: 'refresh', iconClass: 'fd-refresh-spin', title: t('common.refresh', 'Refresh'), onclick: `triggerModalRefresh({action:'vrcGetWorldDetail',worldId:'${jsq(wid)}',force:true})` },
-        { icon: 'link_2', title: t('common.share', 'Share'), onclick: `navigator.clipboard.writeText('https://vrchat.com/home/world/${esc(wid)}').then(()=>showToast(true,t('common.link_copied','Link copied!')))` },
+        modalShareAction('world', wid || ''),
         isOwnWorld ? { icon: 'delete', title: t('worlds.detail.actions.delete', 'Delete World'), onclick: `confirmDeleteWorld('${jsq(wid)}','${jsq(w.name || '')}')`, dangerSolid: true } : null,
         { icon: 'close', title: t('common.close', 'Close'), onclick: `closeWorldSearchDetail()` },
     ]);

@@ -123,9 +123,13 @@
         },
     };
 
-    window.VrcnShowContextMenu = (x, y, items) => {
-        if (items && items.length) showMenu(x, y, items);
+    window.VrcnShowContextMenu = (x, y, items, doc) => {
+        if (!items || !items.length) return;
+        if (doc && menu.ownerDocument !== doc) { hideMenu(); ensureMenuDoc(doc); }
+        showMenu(x, y, items);
     };
+    window.VrcnFriendMenuItems = (id, sourceEl, opts) => buildFriendItems(id, sourceEl, opts);
+    window.VrcnContextMenuOpen = () => menu.style.display !== 'none';
     window.VrcnHideContextMenu = () => hideMenu();
 
     /* Main listener */
@@ -1629,7 +1633,7 @@
         return [{ toolbar: tools }, ...items];
     }
 
-    function buildFriendItems(id, sourceEl) {
+    function buildFriendItems(id, sourceEl, opts) {
         if (typeof _favFriendEditMode !== 'undefined' && _favFriendEditMode) {
             if (!_favFriendEditSelected.has(id)) {
                 _favFriendEditSelected.add(id);
@@ -1644,7 +1648,7 @@
 
         const f = (typeof vrcFriendsData !== 'undefined') && vrcFriendsData.find(x => x.id === id);
         const tools = [];
-        const items = [
+        const items = opts?.inProfile ? [] : [
             { icon: 'person', label: cm('friend.view_profile', 'View Profile'), action: () => navOpenModal('friend', id, f?.displayName || '') },
         ];
         if (f) {
@@ -1697,7 +1701,7 @@
             items.push('sep');
             if (settings?.friendOnlineToastEnabled) items.push({ icon: 'notifications', label: cm('friend.toast', 'Toast'), submenuFn: btn => showToastAlertSubmenu(id, btn) });
             items.push({ icon: 'shield_person', label: cm('friend.moderate', 'Moderate'), submenuFn: btn => showModerateSubmenu(id, btn) });
-            items.push({ icon: 'person_remove', label: cm('friend.unfriend', 'Unfriend'), action: () => sendToCS({ action: 'vrcUnfriend', userId: id }), danger: true, confirm: true });
+            items.push({ icon: 'person_remove', label: cm('friend.unfriend', 'Unfriend'), action: () => confirmUnfriend(id, f.displayName || ''), danger: true });
         } else {
             items.push('sep');
             items.push({ icon: 'person_add', label: cm('friend.send_request', 'Send Friend Request'), action: () => sendToCS({ action: 'vrcSendFriendRequest', userId: id }) });

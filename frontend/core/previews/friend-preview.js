@@ -116,12 +116,10 @@
             return `<div class="fd-group-card" ${onclick}>
                 ${thumbHtml}
                 <div class="fd-group-card-info">
-                    <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0;">
-                        <div class="fd-group-card-name" style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(worldName)}</div>
-                        ${friendsHtml}
-                    </div>
+                    <div class="fd-group-card-name">${esc(worldName)}</div>
                     ${metaHtml}
                 </div>
+                ${friendsHtml}
             </div>`;
         }
 
@@ -129,12 +127,10 @@
         return `<div class="fd-group-card" ${onclick}>
             <div class="fd-group-icon fd-group-icon-empty"><span class="msi" style="font-size:16px;">travel_explore</span></div>
             <div class="fd-group-card-info">
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0;">
-                    <div class="fd-group-card-name" style="color:var(--tx0);font-size:calc(11px + var(--fs-off, 0px));min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${typeof t === 'function' ? t('profiles.meta.in_game','In Game') : 'In Game'}</div>
-                    ${friendsHtml}
-                </div>
+                <div class="fd-group-card-name">${typeof t === 'function' ? t('profiles.meta.in_game','In Game') : 'In Game'}</div>
                 ${metaHtml}
             </div>
+            ${friendsHtml}
         </div>`;
     }
 
@@ -157,28 +153,25 @@
         const langs = tags.filter(tag => tag.startsWith('language_'))
             .map(tag => (typeof LANG_MAP !== 'undefined' && LANG_MAP[tag]) || tag.replace('language_', '').toUpperCase());
 
-        const rankBadge = rank
-            ? `<span class="vrcn-badge ${rank.cls}">${esc(rank.label)}</span>`
-            : '';
-        const ageBadge = (f.ageVerified
-            ? `<span class="vrcn-badge ok"><span class="msi" style="font-size:10px;">verified</span>${typeof t === 'function' ? t('profiles.meta.age_verified', 'Age Verified') : 'Age Verified'}</span>`
-            : '')
-            + (f.ageVerificationStatus === '18+'
-            ? `<span class="vrcn-badge ok"><span class="msi" style="font-size:10px;">verified</span>18+</span>`
-            : '');
-        const platBadge = typeof getPlatformBadgeHtml === 'function' ? getPlatformBadgeHtml(f.platform || '') : '';
+        const meta = [];
+        if (rank) meta.push(`<span class="fp-meta-rank" style="color:${rank.color};">${esc(rank.label)}</span>`);
+        meta.push(`<span>${esc(t('profiles.badges.friend', 'Friend'))}</span>`);
+        if (f.ageVerificationStatus === '18+') meta.push(`<span>${esc(t('profiles.meta.age_verified', 'Age Verified'))} 18+</span>`);
+        else if (f.ageVerified) meta.push(`<span>${esc(t('profiles.meta.age_verified', 'Age Verified'))}</span>`);
+        const platLabel = typeof getPlatformLabel === 'function' ? getPlatformLabel(f.platform || '') : '';
+        if (platLabel) meta.push(`<span>${esc(platLabel)}</span>`);
+        const metaHtml = `<div class="fp-meta">${meta.join('<span class="fp-sep">·</span>')}</div>`;
         const vrcPlusBadge = isSupporter ? `<span class="vrcn-supporter-badge">VRC+</span>` : '';
-        const friendBadge = `<span class="vrcn-badge bdg-friend"><span class="msi" style="font-size:10px;">check_circle</span>${typeof t === 'function' ? t('profiles.badges.friend', 'Friend') : 'Friend'}</span>`;
 
         const truncBio = bio.length > 60 ? bio.slice(0, 60) + '…' : bio;
         const bioHtml = truncBio ? `<div class="fd-bio">${esc(truncBio)}</div>` : '';
 
-        const langsHtml = langs.length
-            ? `<div class="fd-lang-tags">${langs.map(l => `<span class="vrcn-badge">${esc(l)}</span>`).join('')}</div>`
-            : '';
+        const rows = [];
+        const statsText = buildStatsText(f.id);
+        if (statsText) rows.push(`<div class="fp-row"><span class="fp-row-label">${esc(t('profiles.meta.time_together', 'Time Together'))}</span><span class="fp-row-value">${statsText}</span></div>`);
+        if (langs.length) rows.push(`<div class="fp-row"><span class="fp-row-label">${esc(t('profiles.languages.title', 'Languages'))}</span><span class="fp-row-value">${langs.map(esc).join(', ')}</span></div>`);
 
         const instanceHtml = buildInstanceHtml(f);
-        const statsHtml = buildStatsRow(f.id);
         const avatarInner = img
             ? `<img class="fp-av" src="${esc(imgThumb(img, 96))}" onerror="this.style.display='none'">`
             : `<div class="fp-av fp-av-letter">${esc((f.displayName || '?')[0].toUpperCase())}</div>`;
@@ -204,12 +197,12 @@
                             <span class="fd-name">${esc(f.displayName)}</span>${vrcPlusBadge}
                         </div>
                         <div class="fp-status-row"><span>${esc(statusTxt)}</span></div>
-                        ${statsHtml}
                     </div>
                 </div>
                 <div class="fp-section">
-                    <div class="fd-badges-row">${rankBadge}${friendBadge}${ageBadge}${platBadge}</div>
-                    ${instanceHtml}${bioHtml}${langsHtml}
+                    ${metaHtml}
+                    ${instanceHtml}${bioHtml}
+                    ${rows.length ? `<div class="fp-rows">${rows.join('')}</div>` : ''}
                 </div>
             </div>`;
 
@@ -219,17 +212,13 @@
         if (typeof applyProfileTheme === 'function') applyProfileTheme(popup, extra || f);
     }
 
-    function buildStatsRow(uid) {
+    function buildStatsText(uid) {
         const st = (typeof window.getPeopleStat === 'function') ? window.getPeopleStat(uid) : null;
         if (typeof window.requestPeopleStats === 'function') window.requestPeopleStats();
         if (!st || ((st.seconds || 0) <= 0 && (st.meets || 0) <= 0)) return '';
         const timeStr = (typeof window.fmtPeopleStatTime === 'function')
             ? window.fmtPeopleStatTime(st.seconds || 0) : '';
-        return `<div class="fp-stats-row">
-            <span class="msi">schedule</span><span>${esc(timeStr)}</span>
-            <span class="fp-stats-dot">&middot;</span>
-            <span class="msi">handshake</span><span>${st.meets || 0}</span>
-        </div>`;
+        return `${esc(timeStr)}<span class="fp-sep">·</span>${st.meets || 0} ${esc(t('profiles.meta.meets', 'Meets'))}`;
     }
 
     function showPreview(uid, cardEl) {

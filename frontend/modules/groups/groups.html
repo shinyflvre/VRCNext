@@ -41,6 +41,7 @@
                     <span id="groupEditCount" class="vrcn-edit-count">0 selected</span>
                     <button id="groupEditSelectAllBtn" class="vrcn-button" onclick="groupEditSelectAll()" data-i18n="groups.edit.select_all">Select All</button>
                     <span class="vrcn-edit-spacer"></span>
+                    <button id="groupEditVisibilityBtn" class="vrcn-button gr-edit-action" disabled onclick="groupEditVisibilityMenu(this,event)"><span class="msi" style="font-size:14px;">visibility</span> <span data-i18n="groups.edit.bulk_visibility">Bulk Visibility</span></button>
                     <button id="groupEditLeaveBtn" class="vrcn-button vrcn-btn-danger gr-edit-action" disabled onclick="groupEditLeaveSelected()"><span class="msi" style="font-size:14px;">logout</span> <span data-i18n="groups.edit.bulk_leave">Bulk Leave</span></button>
                     <button id="groupEditDeleteBtn" class="vrcn-button vrcn-btn-danger gr-edit-action" disabled onclick="groupEditDeleteSelected()" style="display:none;"><span class="msi" style="font-size:14px;">delete</span> <span data-i18n="groups.edit.bulk_delete">Bulk Delete</span></button>
                 </div>

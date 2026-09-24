@@ -43,6 +43,28 @@ function renderModalBar(title, actions, opts) {
     return `<div class="${cls}"><div class="fd-modal-bar-crumbs"><span class="fd-modal-bar-title"${idAttr} title="${_esc(label)}">${_esc(label)}</span></div><div class="fd-modal-bar-actions">${opts.extra || ''}${_mnActionsHtml(actions, false)}</div></div>`;
 }
 
+const _MODAL_SHARE_KINDS = {
+    friend: { path: 'user',   id: 'Copy User ID',   link: 'Copy User Link',   idDone: 'User ID copied to clipboard',   linkDone: 'Profile link copied to clipboard' },
+    world:  { path: 'world',  id: 'Copy World ID',  link: 'Copy World Link',  idDone: 'World ID copied to clipboard',  linkDone: 'World link copied to clipboard' },
+    avatar: { path: 'avatar', id: 'Copy Avatar ID', link: 'Copy Avatar Link', idDone: 'Avatar ID copied to clipboard', linkDone: 'Avatar link copied to clipboard' },
+    group:  { path: 'group',  id: 'Copy Group ID',  link: 'Copy Group Link',  idDone: 'Group ID copied to clipboard',  linkDone: 'Group link copied to clipboard' },
+};
+
+function modalShareAction(kind, id, label) {
+    const k = _MODAL_SHARE_KINDS[kind];
+    const url = `https://vrchat.com/home/${k.path}/${id}`;
+    const copy = (text, key, fb) => `navigator.clipboard.writeText('${jsq(text)}').then(()=>showToast(true,t('context_menu.${kind}.${key}','${jsq(fb)}')))`;
+    return {
+        icon: 'link_2',
+        title: t('common.share', 'Share'),
+        label: label || t('common.share', 'Share'),
+        dropdown: [
+            { icon: 'id_card', label: t(`context_menu.${kind}.copy_id`, k.id), onclick: copy(id, 'id_copied', k.idDone) },
+            { icon: 'link_2', label: t(`context_menu.${kind}.copy_link`, k.link), onclick: copy(url, 'share_copied', k.linkDone) },
+        ],
+    };
+}
+
 function modalCloseAction(onclick) {
     return { icon: 'close', title: typeof t === 'function' ? t('common.close', 'Close') : 'Close', onclick };
 }
