@@ -50,6 +50,30 @@ function _inviteSendButtonLabel(count) {
     return count > 0 ? `${base} (${count})` : base;
 }
 
+function inviteLayoutHtml(title, leftHtml, sendLabel, sendCall, closeCall) {
+    return `${renderModalBar(title, [modalCloseAction(closeCall)], { flush: true })}
+        <div class="mi-layout inv-layout">
+            ${leftHtml}
+            <div class="mi-right inv-right">
+                <div class="inv-search-wrap">
+                    <span class="msi inv-search-icon">search</span>
+                    <input type="text" id="inviteSearch" class="inv-search-input" placeholder="${esc(t('invite.multi.search_placeholder', 'Search friends...'))}" oninput="_dbFilterInvite()">
+                </div>
+                <div id="inviteList" class="inv-list"></div>
+                <div class="inv-footer">
+                    <span id="inviteSelCount" class="inv-sel-count"></span>
+                    <button id="inviteSendBtn" class="vrcn-button" onclick="${sendCall}" disabled>${esc(sendLabel)}</button>
+                </div>
+                <div id="inviteProgress" class="inv-progress-wrap" style="display:none;">
+                    <div class="inv-progress-track"><div id="inviteProgressBar" class="inv-progress-bar"></div></div>
+                    <div id="inviteProgressText" class="inv-progress-text"></div>
+                </div>
+            </div>
+        </div>`;
+}
+
+let _inviteWorldId = '';
+
 function _renderInviteModal() {
     const box = document.getElementById('inviteBox');
     if (!box) return;
@@ -57,34 +81,27 @@ function _renderInviteModal() {
     const worldThumb = _inviteOverride?.worldThumb || currentInstanceData?.worldThumb || '';
     const instanceType = _inviteOverride?.instanceType || currentInstanceData?.instanceType || '';
     const ageGate = _inviteOverride?.ageGate || currentInstanceData?.ageGate || false;
+    const location = _inviteOverride?.location || currentInstanceData?.location || '';
+    const worldId = (_inviteOverride ? location.split(':')[0] : currentInstanceData?.worldId) || '';
+    _inviteWorldId = worldId;
+
+    const wc = (typeof dashWorldCache !== 'undefined' && worldId) ? (dashWorldCache[worldId] || null) : null;
+    if (worldId && (!wc || (!wc.description && !wc._descFetched)))
+        sendToCS({ action: 'vrcGetWorldInstancesDetail', worldId, locations: location ? [location] : [] });
+
     const { cls: badgeCls, label: badgeLabel } = getInstanceBadge(instanceType || 'public');
-    const typeBadge = instanceType && instanceType !== 'public'
-        ? `<span class="vrcn-badge ${badgeCls}">${esc(badgeLabel)}</span>` : '';
-    const ageGateBadge = ageGate
-        ? `<span class="vrcn-badge" style="background:rgba(255,75,85,.15);color:var(--err);">${esc(t('worlds.instances.age_gated', 'Age Gated'))}</span>` : '';
-    box.innerHTML = `
-        ${renderModalBar(worldName, [modalCloseAction('closeInviteModal()')], { flush: true })}
-        <div class="inv-world-banner" style="background-image:url('${esc(worldThumb)}')">
-            <div class="inv-world-fade"></div>
-            <div class="inv-world-info">
-                ${(typeBadge || ageGateBadge) ? `<div style="margin-bottom:4px;display:flex;gap:4px;flex-wrap:wrap;">${typeBadge}${ageGateBadge}</div>` : ''}
-                <div class="inv-world-name">${esc(worldName)}</div>
-                <div style="font-size:calc(10px + var(--fs-off, 0px));color:rgba(255,255,255,.65);margin-top:3px;">${esc(t('invite.multi.subtitle', 'Invite to this instance'))}</div>
-            </div>
-        </div>
-        <div class="inv-search-wrap">
-            <span class="msi inv-search-icon">search</span>
-            <input type="text" id="inviteSearch" class="inv-search-input" placeholder="${esc(t('invite.multi.search_placeholder', 'Search friends...'))}" oninput="_dbFilterInvite()">
-        </div>
-        <div id="inviteList" class="inv-list"></div>
-        <div class="inv-footer">
-            <span id="inviteSelCount" class="inv-sel-count"></span>
-            <button id="inviteSendBtn" class="vrcn-button" onclick="sendMultiInvite()" disabled>${esc(_inviteSendButtonLabel(_inviteSelected.size))}</button>
-        </div>
-        <div id="inviteProgress" class="inv-progress-wrap" style="display:none;">
-            <div class="inv-progress-track"><div id="inviteProgressBar" class="inv-progress-bar"></div></div>
-            <div id="inviteProgressText" class="inv-progress-text"></div>
-        </div>`;
+    const badgesHtml = `<div class="inv-banner-badges"><span class="vrcn-badge ${badgeCls}">${esc(badgeLabel)}</span>`
+        + (ageGate ? `<span class="vrcn-badge" style="background:rgba(255,75,85,.15);color:var(--err);">${esc(t('worlds.instances.age_gated', 'Age Gated'))}</span>` : '')
+        + '</div>';
+    const leftHtml = worldPanelHtml({
+        thumb: worldThumb,
+        name: worldName,
+        bannerHtml: badgesHtml,
+        subHtml: worldAuthorLineHtml(wc?.authorName || '', wc?.authorId || '', 'closeInviteModal()'),
+        description: wc?.description || '',
+    });
+    box.innerHTML = inviteLayoutHtml(worldName, leftHtml,
+        _inviteSendButtonLabel(_inviteSelected.size), 'sendMultiInvite()', 'closeInviteModal()');
     const search = document.getElementById('inviteSearch');
     if (search) search.value = _inviteFilter;
     renderInviteList(_inviteFilter);

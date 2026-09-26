@@ -786,7 +786,7 @@ public class AuthController
             {
                 var myName = _core.VrcApi.CurrentUserRaw?["displayName"]?.ToString() ?? "";
                 if (string.IsNullOrEmpty(myName) || displayName != myName) return;
-                if (avatarName == _lastAvatarName) return;
+                if (avatarName == _lastAvatarName || avatarName == _core.Timeline.GetLastAvatarSwitchName()) return;
                 _lastAvatarName = avatarName;
                 _ = Task.Run(async () =>
                 {
@@ -1155,7 +1155,7 @@ public class AuthController
     private bool   _selfProfileSeeded;
     private bool   _selfBioSeeded;
 
-    public void LogSelfProfileEvent(string subKind, string oldValue, string newValue)
+    public string? LogSelfProfileEvent(string subKind, string oldValue, string newValue, string? timestamp = null)
     {
         try
         {
@@ -1173,10 +1173,12 @@ public class AuthController
                 NotifTitle = oldValue.Length > 500 ? oldValue[..500] : oldValue,
                 Message    = newValue.Length > 500 ? newValue[..500] : newValue,
             };
+            if (!string.IsNullOrEmpty(timestamp)) ev.Timestamp = timestamp;
             _core.Timeline.AddEvent(ev);
             _core.SendToJS("timelineEvent", _instance.BuildTimelinePayload(ev));
+            return ev.Id;
         }
-        catch { }
+        catch { return null; }
     }
 
     private void DetectSelfProfileChanges(JObject user, bool loginFlow)
@@ -1298,7 +1300,7 @@ public class AuthController
                     // Close any open tracked instance_join event from a previous session
                     if (lastJoin != null && lastJoin.Tracked == 1 && string.IsNullOrEmpty(lastJoin.LeftAt))
                     {
-                        var nowStr = DateTime.UtcNow.ToString("o");
+                        var nowStr = _core.VrcSessions.ResolveVisitEnd(lastJoin.Timestamp);
                         _core.Timeline.UpdateEvent(lastJoin.Id, ev =>
                         {
                             if (ev.Players == null) return;
@@ -1336,7 +1338,7 @@ public class AuthController
             foreach (var openEv in _core.Timeline.GetOpenInstanceEvents())
             {
                 if (openEv.Id == resumedId) continue;
-                var nowStr = DateTime.UtcNow.ToString("o");
+                var nowStr = _core.VrcSessions.ResolveVisitEnd(openEv.Timestamp);
                 _core.Timeline.UpdateEvent(openEv.Id, ev =>
                 {
                     if (ev.Players == null) return;

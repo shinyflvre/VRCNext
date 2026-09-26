@@ -64,6 +64,7 @@ function avatarDetailFieldLabel(field) {
         desc: t('avatars.detail.sections.description', 'Description'),
         visibility: t('avatars.detail.sections.visibility', 'Visibility'),
         tags: t('avatars.detail.sections.tags', 'Tags'),
+        styles: t('avatars.detail.fields.styles', 'Styles'),
     };
     return labels[field] || t('avatars.detail.fields.avatar', 'Avatar');
 }

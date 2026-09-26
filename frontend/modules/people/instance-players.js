@@ -94,8 +94,6 @@ function buildInstancePlayersHtml(users, iStart, iTotal, now) {
             : `<span class="pl-av pl-av-letter">${esc(displayName[0].toUpperCase())}</span>`;
 
         const rank = getTrustRank(tags);
-        const langs = tags.filter(x => x.startsWith('language_'))
-            .map(x => `<span class="vrcn-badge">${esc((typeof LANG_MAP !== 'undefined' && LANG_MAP[x]) || x.replace('language_', '').toUpperCase())}</span>`).join('');
 
         let platIcon = '';
         if (platform === 'standalonewindows') platIcon = `<span class="msi" title="${esc(t('instance.platform.pc', 'PC'))}" style="font-size:16px;color:var(--tx2);">computer</span>`;
@@ -120,7 +118,7 @@ function buildInstancePlayersHtml(users, iStart, iTotal, now) {
             status:   `<td class="pl-status">${status ? `<span class="vrc-status-dot ${statusDotClass(status)}"></span><span class="pl-status-txt">${esc(statusDesc || statusLabel(status))}</span>` : ''}</td>`,
             age:      `<td>${is18 ? `<span class="vrcn-badge ip-age">18+</span>` : (ageVerified ? `<span class="vrcn-badge ip-age">Verified</span>` : '')}</td>`,
             platform: `<td>${platIcon}</td>`,
-            language: `<td class="pl-langs">${langs}</td>`,
+            language: `<td class="pl-langs">${_plLangCell({ tags })}</td>`,
             biolinks: `<td class="pl-bios">${_plBioLinksCell(u)}</td>`,
             pronouns: `<td class="lv-sub">${esc(u.pronouns || f?.pronouns || '')}</td>`,
             meets:     `<td class="pl-num">${st && st.meets ? esc(String(st.meets)) : ''}</td>`,

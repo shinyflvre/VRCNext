@@ -491,7 +491,8 @@ function renderMyProfileContent() {
     const _mr = (label, valueHtml) =>
         `<div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-size:calc(11px + var(--fs-off, 0px));"><span style="color:var(--tx2);">${label}</span><span style="color:var(--tx1);text-align:right;">${valueHtml}</span></div>`;
     const _infosRows = [
-        _mr(t('profiles.meta.joined',        'Joined'),         u.dateJoined  ? fmtShortDate(new Date(u.dateJoined + 'T00:00:00')) : '—'),
+        ...getProfileUsernameRows(_mypRawJson || u.rawJson, _mr),
+        _mr(t('profiles.meta.joined',        'Joined'),        u.dateJoined  ? fmtShortDate(new Date(u.dateJoined + 'T00:00:00')) : '—'),
         _mr(t('profiles.meta.last_login',    'Last Login'),     u.lastLogin   ? fmtShortDate(new Date(u.lastLogin)) : '—'),
         _mr(t('profiles.meta.platform',      'Platform'),       esc(getPlatformLabel(u.platform || u.lastPlatform) || '—')),
         _mr(t('profiles.meta.last_platform', 'Last Platform'),  esc(getPlatformLabel(u.lastPlatform) || '—')),

@@ -75,6 +75,11 @@ function handleWorldInstancesDetail(payload) {
             && typeof openInstanceInfoModal === 'function') {
             openInstanceInfoModal();
         }
+        const inv = document.getElementById('modalInvite');
+        if (inv && inv.style.display !== 'none' && typeof _inviteWorldId !== 'undefined' && _inviteWorldId === payload.worldId
+            && (typeof _grpInvGroupId === 'undefined' || _grpInvGroupId == null)) {
+            _renderInviteModal();
+        }
     }
 
     const m = document.getElementById('modalMyInstance');

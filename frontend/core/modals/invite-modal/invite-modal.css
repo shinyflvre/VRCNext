@@ -93,6 +93,38 @@
 .inv-list .vrcn-user-item { margin: 0 32px 6px; }
 .inv-row-sel { background: color-mix(in srgb, var(--accent) 14%, var(--bg-input)) !important; }
 
+#inviteBox { width: 860px; }
+#inviteBox .inv-layout { height: min(80vh, 560px); max-height: none; }
+#inviteBox .inv-search-wrap { padding: 12px 16px 8px; }
+#inviteBox .inv-search-icon { left: 27px; top: calc(50% + 2px); }
+#inviteBox .inv-list {
+    flex: 1 1 0;
+    min-height: 0;
+    max-height: none;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px 8px;
+    align-content: start;
+    padding: 4px 16px 2px;
+}
+#inviteBox .inv-section-lbl,
+#inviteBox .inv-empty { grid-column: 1 / -1; }
+#inviteBox .inv-section-lbl { padding: 6px 0 4px; }
+#inviteBox .inv-list .vrcn-user-item { margin: 0; min-width: 0; }
+#inviteBox .inv-footer { padding: 10px 16px 14px; border-top: 1px solid var(--brd); }
+#inviteBox .inv-progress-wrap { padding: 0 16px 14px; }
+#inviteBox .mi-world-description { -webkit-line-clamp: 20; }
+#inviteBox .inv-banner-badges {
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    bottom: 10px;
+    z-index: 1;
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
 .inv-msg-item {
     display: flex; align-items: center; gap: 8px;
     padding: 7px 10px; border-radius: 8px;

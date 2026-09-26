@@ -42,7 +42,9 @@ const _avFieldIds = {
     desc:       { view: 'avfDescView',       edit: 'avfDescEdit'       },
     visibility: { view: 'avfVisView',        edit: 'avfVisEdit'        },
     tags:       { view: 'avfTagsView',       edit: 'avfTagsEdit'       },
+    styles:     { view: 'avfInfoView',       edit: 'avfStylesEdit'     },
 };
+let _avStyles = null;
 let _avSavingField = '';
 
 
@@ -71,7 +73,31 @@ function editAvField(field) {
         _avEditTags = [...(_avDetailData?.tags || [])];
         avRenderTagChips();
         document.getElementById('avTagInput')?.focus();
+    } else if (field === 'styles') {
+        if (_avStyles) avFillStyleSelects();
+        else sendToCS({ action: 'vrcGetAvatarStyles' });
     }
+}
+
+function onAvatarStyles(list) {
+    _avStyles = Array.isArray(list) ? list : [];
+    avFillStyleSelects();
+}
+
+function avFillStyleSelects() {
+    const current = {
+        avPrimaryStyleSelect:   _avDetailData?.stylePrimary   || '',
+        avSecondaryStyleSelect: _avDetailData?.styleSecondary || '',
+    };
+    Object.entries(current).forEach(([id, name]) => {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        sel.innerHTML = `<option value="">${esc(t('common.none', 'None'))}</option>`
+            + (_avStyles || []).map(s => `<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('');
+        sel.value = (_avStyles || []).find(s => s.name === name)?.id || '';
+        if (!sel._vnSelect && typeof initVnSelect === 'function') initVnSelect(sel);
+        sel._vnRefresh?.();
+    });
 }
 
 function cancelAvField(field) {
@@ -124,9 +150,10 @@ function renderAvatarDetail(a) {
 
     const isPublic = a.releaseStatus === 'public';
     const statusBadge = avatarStatusBadge(isPublic);
-    const impostorBadge = a.hasImpostor
-        ? `<span class="vrcn-badge" style="background:rgba(138,43,226,.18);color:#b47aff;"><span class="msi" style="font-size:10px;">smart_toy</span> ${t('avatars.labels.impostor', 'Impostor')}</span>`
-        : '';
+    const noneText = esc(t('common.none', 'None'));
+    const impostorText = a.hasImpostor
+        ? esc(t('avatars.labels.impostor', 'Impostor') + (a.impostorVersion ? ` v${a.impostorVersion}` : ''))
+        : noneText;
 
     function fmtDate(iso) {
         if (!iso) return '-';
@@ -138,12 +165,6 @@ function renderAvatarDetail(a) {
     const authorHtml = a.authorId
         ? `<span onclick="navOpenModal('friend','${jsq(a.authorId)}','${jsq(a.authorName || '')}')" style="display:inline-flex;align-items:center;padding:1px 8px;border-radius:20px;background:var(--badge-bg);font-size:calc(11px + var(--fs-off, 0px));font-weight:600;color:var(--badge-tx);cursor:pointer;line-height:1.8;">${esc(a.authorName || a.authorId)}</span>`
         : esc(a.authorName || '');
-
-    const metaRows = [
-        `<div class="fd-meta-row"><span class="fd-meta-label">${t('avatars.detail.meta.created_at', 'Created At')}</span><span>${fmtDate(a.created_at)}</span></div>`,
-        `<div class="fd-meta-row"><span class="fd-meta-label">${t('avatars.detail.meta.updated_at', 'Last Updated')}</span><span>${fmtDate(a.updated_at)}</span></div>`,
-        a.version ? `<div class="fd-meta-row"><span class="fd-meta-label">${t('avatars.detail.meta.version', 'Version')}</span><span>v${a.version}</span></div>` : '',
-    ].join('');
 
     const tagsViewHtml = (a.tags && a.tags.length)
         ? `<div class="fd-lang-tags">${a.tags.map(tag => `<span class="vrcn-badge">${esc(fmtAvatarTag(tag))}</span>`).join('')}</div>`
@@ -198,15 +219,32 @@ function renderAvatarDetail(a) {
         a.hasIos   ? _mr('iOS', _perfVal(a.iosPerf))       : '',
     ].join('');
 
+    const _styleSelect = (id, label) => `<div style="display:grid;gap:4px;margin-bottom:8px;">
+            <span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);">${label}</span>
+            <select id="${id}" style="width:100%;"><option value="">${noneText}</option></select>
+        </div>`;
     const _infosCard = `<div class="fd-info-card">
-        <div class="fd-group-rep-label">${t('avatars.detail.sections.infos', 'Infos')}</div>
-        <div style="display:grid;gap:6px;margin-bottom:10px;">
+        <div class="myp-section-header">
+            <span class="myp-section-title">${t('avatars.detail.sections.infos', 'Infos')}</span>
+            ${isOwn ? `<button class="myp-edit-btn" onclick="editAvField('styles')"><span class="msi" style="font-size:14px;">edit</span></button>` : ''}
+        </div>
+        <div id="avfInfoView"><div style="display:grid;gap:6px;margin-bottom:10px;">
             ${_mr(t('avatars.detail.meta.created_at', 'Created'), fmtDate(a.created_at))}
             ${_mr(t('avatars.detail.meta.updated_at', 'Updated'), fmtDate(a.updated_at))}
             ${a.version ? _mr(t('avatars.detail.meta.version', 'Version'), `v${a.version}`) : ''}
+            ${_mr(t('avatars.detail.meta.impostor', 'Impostor'), impostorText)}
+            ${_mr(t('avatars.detail.meta.primary_style', 'Primary Style'), a.stylePrimary ? esc(a.stylePrimary) : noneText)}
+            ${_mr(t('avatars.detail.meta.secondary_style', 'Secondary Style'), a.styleSecondary ? esc(a.styleSecondary) : noneText)}
             ${platPerfRows}
-        </div>
-        ${impostorBadge ? `<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;">${impostorBadge}</div>` : ''}
+        </div></div>
+        ${isOwn ? `<div id="avfStylesEdit" style="display:none;margin-bottom:10px;">
+            ${_styleSelect('avPrimaryStyleSelect', t('avatars.detail.meta.primary_style', 'Primary Style'))}
+            ${_styleSelect('avSecondaryStyleSelect', t('avatars.detail.meta.secondary_style', 'Secondary Style'))}
+            <div class="myp-edit-actions">
+                <button class="vrcn-button" onclick="cancelAvField('styles')">${t('common.cancel', 'Cancel')}</button>
+                <button class="vrcn-button vrcn-btn-primary" onclick="saveAvField('styles','${aid}')">${t('common.save', 'Save')}</button>
+            </div>
+        </div>` : ''}
         <div class="myp-section-header">
             <span class="myp-section-title">${t('avatars.detail.sections.visibility', 'Visibility')}</span>
             ${isOwn ? `<button class="myp-edit-btn" onclick="editAvField('visibility')"><span class="msi" style="font-size:14px;">edit</span></button>` : ''}
@@ -280,6 +318,8 @@ function renderAvatarDetail(a) {
 
     const _avModal = document.getElementById('modalAvatarDetail');
     if (_avModal) _avModal.classList.add('av-style-compact');
+    if (isOwn && typeof initVnSelect === 'function')
+        ['avPrimaryStyleSelect', 'avSecondaryStyleSelect'].forEach(id => initVnSelect(document.getElementById(id)));
     _avRenderAnalysis();
 }
 
@@ -416,6 +456,10 @@ function _avPerfRowHtml(label, valueHtml) {
     return `<div class="av-perf-row"><span class="av-perf-row-label">${esc(label)}</span><span class="av-perf-row-value">${valueHtml}</span></div>`;
 }
 
+function _avPerfValueHtml(text, rank) {
+    return `${esc(text)}${rank && typeof avatarPerfIcon === 'function' ? avatarPerfIcon(rank, 14) : ''}`;
+}
+
 function _avPerfCards(platformKey, platformLabel, a, withPlatform) {
     const stats = a.avatarStats || {};
     const rating = a.performanceRating || '';
@@ -428,7 +472,7 @@ function _avPerfCards(platformKey, platformLabel, a, withPlatform) {
             ${_avPerfRowHtml(t('avatars.perf.rating', 'Rating'), ratingHtml)}
             ${_avPerfRowHtml(t('avatars.perf.download_size', 'Download size'), esc(_avPerfMb(a.fileSize)))}
             ${_avPerfRowHtml(t('avatars.perf.uncompressed_size', 'Uncompressed size'), esc(_avPerfMb(a.uncompressedSize)))}
-            ${_avPerfRowHtml(t('avatars.perf.texture_memory', 'Texture memory'), `<span class="${(r => r ? 'av-perf-r-' + r : '')(_avPerfRankOf(platformKey, 'totalTextureUsage', stats.totalTextureUsage))}">${esc(_avPerfMb(stats.totalTextureUsage))}</span>`)}
+            ${_avPerfRowHtml(t('avatars.perf.texture_memory', 'Texture memory'), (r => `<span class="av-perf-rating${r ? ' av-perf-r-' + r : ''}">${_avPerfValueHtml(_avPerfMb(stats.totalTextureUsage), r)}</span>`)(_avPerfRankOf(platformKey, 'totalTextureUsage', stats.totalTextureUsage)))}
         </div>
     </div>`;
     for (const [gk, gLabel, rows] of _AV_PERF_GROUPS) {
@@ -437,7 +481,7 @@ function _avPerfCards(platformKey, platformLabel, a, withPlatform) {
             const v = stats[key];
             const out = kind === 'bounds' ? _avPerfBounds(v) : kind === 'bool' ? _avPerfBool(v) : _avPerfInt(v);
             const rank = _avPerfRankOf(platformKey, key, v);
-            html += `<div class="av-perf-row"><span class="av-perf-row-label">${esc(t('avatars.perf.' + i18nKey, label))}</span><span class="av-perf-row-value${rank ? ' av-perf-r-' + rank : ''}" title="${rank ? esc(_avPerfPretty(rank)) : ''}">${esc(out)}</span></div>`;
+            html += `<div class="av-perf-row"><span class="av-perf-row-label">${esc(t('avatars.perf.' + i18nKey, label))}</span><span class="av-perf-row-value av-perf-rating${rank ? ' av-perf-r-' + rank : ''}" title="${rank ? esc(_avPerfPretty(rank)) : ''}">${_avPerfValueHtml(out, rank)}</span></div>`;
         }
         html += '</div></div>';
     }
@@ -490,8 +534,12 @@ function saveAvField(field, avatarId) {
     const description = field === 'desc' ? (document.getElementById('avDescInput')?.value ?? '') : (a.description || '');
     const releaseStatus = field === 'visibility' ? _avVisState : (a.releaseStatus || 'private');
     const tags = field === 'tags' ? [..._avEditTags] : (a.tags || []);
-
-    sendToCS({ action: 'vrcUpdateAvatar', avatarId, name, description, releaseStatus, tags });
+    const msg = { action: 'vrcUpdateAvatar', avatarId, name, description, releaseStatus, tags };
+    if (field === 'styles') {
+        msg.primaryStyle   = document.getElementById('avPrimaryStyleSelect')?.value || '';
+        msg.secondaryStyle = document.getElementById('avSecondaryStyleSelect')?.value || '';
+    }
+    sendToCS(msg);
 }
 
 
@@ -501,6 +549,7 @@ function onAvatarUpdateResult(data) {
         desc: avatarDetailFieldLabel('desc'),
         visibility: avatarDetailFieldLabel('visibility'),
         tags: avatarDetailFieldLabel('tags'),
+        styles: avatarDetailFieldLabel('styles'),
     };
     if (data.ok) {
         if (_avDetailData) {
@@ -508,6 +557,8 @@ function onAvatarUpdateResult(data) {
             if (data.description != null) _avDetailData.description = data.description;
             if (data.releaseStatus != null) _avDetailData.releaseStatus = data.releaseStatus;
             if (data.tags != null) _avDetailData.tags = data.tags;
+            if (data.stylePrimary != null) _avDetailData.stylePrimary = data.stylePrimary;
+            if (data.styleSecondary != null) _avDetailData.styleSecondary = data.styleSecondary;
         }
         const label = fieldLabels[_avSavingField] || avatarDetailFieldLabel('');
         showToast(true, tf('avatars.detail.toast.saved', { field: label }, '{field} saved'));

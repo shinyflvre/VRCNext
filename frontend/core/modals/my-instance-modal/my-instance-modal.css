@@ -27,6 +27,8 @@
     min-width: max-content;
 }
 
+#instanceInfoContent .mi-world-description { -webkit-line-clamp: 20; }
+#myInstanceContent .mi-world-description { -webkit-line-clamp: 6; }
 #instanceInfoContent.iim-no-left > .mi-layout { grid-template-columns: minmax(0, 1fr); }
 #instanceInfoContent.iim-no-left .mi-left { display: none; }
 #instanceInfoContent.iim-no-left .mi-right { border-radius: 0 0 14px 14px; }

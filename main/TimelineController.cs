@@ -187,339 +187,271 @@ public class TimelineController
         });
     }
 
-    private string RewindPhotoUrl(string path, string url)
+    private string RewindPhotoUrl(string path) => _core.GetVirtualMediaUrl?.Invoke(path) ?? "";
+
+    private sealed record RewindPhoto(string Path, string WorldId, string WorldName, List<string> Players);
+
+    private List<RewindPhoto> ReadRewindPhotos(int? year)
     {
-        if (!string.IsNullOrEmpty(path))
+        var result = new List<RewindPhoto>();
+        var dir = VrcPathsHelper.PhotoDir();
+        if (!Directory.Exists(dir)) return result;
+        try
         {
-            var u = _core.GetVirtualMediaUrl?.Invoke(path);
-            if (!string.IsNullOrEmpty(u)) return u;
+            foreach (var path in Directory.EnumerateFiles(dir, "VRChat_*", SearchOption.AllDirectories))
+            {
+                var name = Path.GetFileName(path);
+                if (!VrcPathsHelper.TryParseVrcPhotoTime(name, out var local) || (year != null && local.Year != year)) continue;
+                string? worldId = null, worldName = null;
+                if (path.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+                    (worldId, worldName, _, _) = UnifiedTimeEngine.ExtractPhotoMetaFromPng(path);
+                var rec = _core.PhotoPlayersStore.GetPhotoRecord(name);
+                if (string.IsNullOrEmpty(worldId)) worldId = rec?.WorldId;
+                result.Add(new RewindPhoto(path, worldId ?? "", worldName ?? "",
+                    rec?.Players.Select(p => p.UserId).ToList() ?? new List<string>()));
+            }
         }
-        return _core.FixLocalUrl(url ?? "");
+        catch { }
+        return result;
+    }
+
+    private sealed class RewindTime
+    {
+        public double Seconds;
+        public double LongestSeconds;
+        public readonly HashSet<DateTime> Days = new();
+        public readonly double[] Hours  = new double[24];
+        public readonly double[] Months = new double[13];
+    }
+
+    private static RewindTime MeasureSessions(List<(DateTime Start, DateTime End)> sessions, DateTime y0, DateTime y1)
+    {
+        var time = new RewindTime();
+        foreach (var (start, end) in sessions)
+        {
+            var s = start < y0 ? y0 : start;
+            var e = end > y1 ? y1 : end;
+            if (e <= s) continue;
+            var len = (e - s).TotalSeconds;
+            time.Seconds += len;
+            if (len > time.LongestSeconds) time.LongestSeconds = len;
+            for (var cur = s; cur < e;)
+            {
+                var local = cur.ToLocalTime();
+                var next = new DateTime(local.Year, local.Month, local.Day, local.Hour, 0, 0, DateTimeKind.Local).AddHours(1).ToUniversalTime();
+                if (next <= cur) next = cur.AddHours(1);
+                if (next > e) next = e;
+                var sec = (next - cur).TotalSeconds;
+                time.Hours[local.Hour]   += sec;
+                time.Months[local.Month] += sec;
+                time.Days.Add(local.Date);
+                cur = next;
+            }
+        }
+        return time;
+    }
+
+    private static int ArgMax(double[] values, int from)
+    {
+        var best = -1;
+        for (var i = from; i < values.Length; i++)
+            if (values[i] > 0 && (best < 0 || values[i] > values[best])) best = i;
+        return best;
     }
 
     private object BuildRewindPayload(int year, bool auto)
     {
         var selfId   = _core.VrcApi?.CurrentUserId ?? "";
         var selfName = _core.VrcApi?.CurrentUserRaw?["displayName"]?.ToString() ?? "";
-        var y0 = $"{year}-01-01";
-        var y1 = $"{year + 1}-01-01";
+        var y0Utc = new DateTime(year, 1, 1, 0, 0, 0, DateTimeKind.Local).ToUniversalTime();
+        var y1Utc = new DateTime(year + 1, 1, 1, 0, 0, 0, DateTimeKind.Local).ToUniversalTime();
+        var y0 = y0Utc.ToString("o");
+        var y1 = y1Utc.ToString("o");
+        var rng = new Random();
 
         using var db = Database.OpenConnection();
 
-        long Scalar(string sql)
+        SqliteCommand Cmd(string sql)
         {
-            using var cmd = db.CreateCommand();
+            var cmd = db.CreateCommand();
             cmd.CommandText = sql;
             cmd.Parameters.AddWithValue("$y0", y0);
             cmd.Parameters.AddWithValue("$y1", y1);
+            return cmd;
+        }
+
+        long Scalar(string sql)
+        {
+            using var cmd = Cmd(sql);
             var o = cmd.ExecuteScalar();
             return (o == null || o is DBNull) ? 0L : Convert.ToInt64(o);
         }
 
-        long hoursSec;
-        using (var cmd = db.CreateCommand())
-        {
-            cmd.CommandText = @"SELECT COALESCE(SUM((julianday(left_at)-julianday(timestamp))*86400),0)
-                FROM events WHERE type='instance_join' AND tracked=1 AND left_at<>'' AND timestamp>=$y0 AND timestamp<$y1";
-            cmd.Parameters.AddWithValue("$y0", y0);
-            cmd.Parameters.AddWithValue("$y1", y1);
-            var o = cmd.ExecuteScalar();
-            hoursSec = (o == null || o is DBNull) ? 0L : (long)Convert.ToDouble(o);
-        }
+        var time = MeasureSessions(_core.Timeline.GetSelfSessions(selfId), y0Utc, y1Utc);
+
         var worldsVisited = Scalar("SELECT COUNT(DISTINCT world_id) FROM events WHERE type='instance_join' AND world_id<>'' AND timestamp>=$y0 AND timestamp<$y1");
-        var photosCount   = Scalar("SELECT COUNT(*) FROM events WHERE type='photo' AND timestamp>=$y0 AND timestamp<$y1");
-        var peopleMet     = Scalar("SELECT COUNT(*) FROM events WHERE type='first_meet' AND timestamp>=$y0 AND timestamp<$y1");
         var instances     = Scalar("SELECT COUNT(*) FROM events WHERE type='instance_join' AND timestamp>=$y0 AND timestamp<$y1");
-
-        object? bestFriend = null;
-        string bfId = "";
-        using (var cmd = db.CreateCommand())
-        {
-            cmd.CommandText = @"SELECT user_id, display_name, image, total_seconds,
-                       meet_again_count + CASE WHEN first_meet_date <> '' THEN 1 ELSE 0 END
-                FROM user_tracking WHERE profile_is_friend=1 AND user_id<>$self AND display_name<>'' AND total_seconds>0
-                ORDER BY total_seconds DESC LIMIT 1";
-            cmd.Parameters.AddWithValue("$self", selfId);
-            using var r = cmd.ExecuteReader();
-            if (r.Read())
-            {
-                bfId = r.GetString(0);
-                bestFriend = new
-                {
-                    name  = r.GetString(1),
-                    image = ImageCacheHelper.GetUserUrl(bfId, r.IsDBNull(2) ? "" : r.GetString(2)),
-                    hours = Math.Round(r.GetInt64(3) / 3600.0, 1),
-                    meets = r.GetInt64(4),
-                };
-            }
-        }
-
-        object? sharedWorld = null;
-        if (bfId != "")
-        {
-            using var cmd = db.CreateCommand();
-            cmd.CommandText = @"SELECT e.world_id, e.world_name, e.world_thumb, COUNT(*) c
-                FROM events e JOIN event_players ep ON e.id=ep.event_id
-                WHERE ep.user_id=$bf AND e.type='instance_join' AND e.world_name<>''
-                GROUP BY e.world_name ORDER BY c DESC LIMIT 1";
-            cmd.Parameters.AddWithValue("$bf", bfId);
-            using var r = cmd.ExecuteReader();
-            if (r.Read())
-                sharedWorld = new
-                {
-                    name  = r.GetString(1),
-                    thumb = ImageCacheHelper.GetWorldUrl(r.IsDBNull(0) ? "" : r.GetString(0), r.IsDBNull(2) ? "" : r.GetString(2)),
-                    times = r.GetInt64(3),
-                };
-        }
-
-        var bfPhotos = new List<object>();
-        if (bfId != "")
-        {
-            using var cmd = db.CreateCommand();
-            cmd.CommandText = @"SELECT e.photo_path, e.photo_url FROM events e
-                WHERE e.type='photo' AND e.id IN (
-                    SELECT DISTINCT event_id FROM event_players WHERE user_id=$bf
-                )
-                ORDER BY RANDOM() LIMIT 16";
-            cmd.Parameters.AddWithValue("$bf", bfId);
-            using var r = cmd.ExecuteReader();
-            while (r.Read())
-            {
-                var p = r.IsDBNull(0) ? "" : r.GetString(0);
-                var u = RewindPhotoUrl(p, r.IsDBNull(1) ? "" : r.GetString(1));
-                if (!string.IsNullOrEmpty(u)) bfPhotos.Add(new { url = u, path = p });
-            }
-        }
-
-        var topWorlds   = new List<object>();
-        var topWorldIds = new List<string>();
-        using (var cmd = db.CreateCommand())
-        {
-            cmd.CommandText = @"SELECT world_id, world_name, world_thumb, total_seconds, visit_count
-                FROM world_tracking WHERE world_name<>'' AND total_seconds>0
-                ORDER BY total_seconds DESC LIMIT 10";
-            using var r = cmd.ExecuteReader();
-            while (r.Read())
-            {
-                var wid = r.IsDBNull(0) ? "" : r.GetString(0);
-                if (!string.IsNullOrEmpty(wid)) topWorldIds.Add(wid);
-                topWorlds.Add(new
-                {
-                    name   = r.GetString(1),
-                    thumb  = ImageCacheHelper.GetWorldUrl(wid, r.IsDBNull(2) ? "" : r.GetString(2)),
-                    hours  = Math.Round(r.GetInt64(3) / 3600.0, 1),
-                    visits = r.GetInt64(4),
-                });
-            }
-        }
-
-        var worldPhotos = new List<object>();
-        if (topWorldIds.Count > 0)
-        {
-            var inP = string.Join(",", topWorldIds.Select((_, i) => $"$w{i}"));
-            using var cmd = db.CreateCommand();
-            cmd.CommandText = $@"SELECT world_id, world_name, photo_path, photo_url
-                FROM events
-                WHERE type='photo' AND world_id IN ({inP})
-                ORDER BY RANDOM() LIMIT 16";
-            for (int i = 0; i < topWorldIds.Count; i++) cmd.Parameters.AddWithValue($"$w{i}", topWorldIds[i]);
-            using var r = cmd.ExecuteReader();
-            while (r.Read())
-            {
-                var p = r.IsDBNull(2) ? "" : r.GetString(2);
-                var u = RewindPhotoUrl(p, r.IsDBNull(3) ? "" : r.GetString(3));
-                if (!string.IsNullOrEmpty(u)) worldPhotos.Add(new { url = u, world = r.IsDBNull(1) ? "" : r.GetString(1), path = p });
-            }
-        }
-
-        var secrets = new List<object>();
-        using (var cmd = db.CreateCommand())
-        {
-            cmd.CommandText = @"SELECT user_id, display_name, image,
-                       meet_again_count + CASE WHEN first_meet_date <> '' THEN 1 ELSE 0 END, total_seconds
-                FROM user_tracking
-                WHERE (profile_is_friend IS NULL OR profile_is_friend!=1) AND user_id<>$self AND display_name<>'' AND total_seconds>3600
-                ORDER BY total_seconds DESC LIMIT 3";
-            cmd.Parameters.AddWithValue("$self", selfId);
-            using var r = cmd.ExecuteReader();
-            while (r.Read())
-            {
-                var uid = r.GetString(0);
-                secrets.Add(new
-                {
-                    name  = r.GetString(1),
-                    image = ImageCacheHelper.GetUserUrl(uid, r.IsDBNull(2) ? "" : r.GetString(2)),
-                    meets = r.GetInt64(3),
-                    hours = Math.Round(r.GetInt64(4) / 3600.0, 1),
-                });
-            }
-        }
-
-        var newFriendList = new List<object>();
-        using (var cmd = db.CreateCommand())
-        {
-            cmd.CommandText = @"SELECT fe.friend_id, fe.friend_name, fe.friend_image, ut.image, ut.total_seconds
-                FROM friend_events fe
-                LEFT JOIN user_tracking ut ON ut.user_id = fe.friend_id
-                WHERE fe.type='friend_added' AND fe.friend_name<>'' AND fe.timestamp>=$y0 AND fe.timestamp<$y1
-                GROUP BY fe.friend_id
-                ORDER BY MAX(fe.timestamp) DESC LIMIT 30";
-            cmd.Parameters.AddWithValue("$y0", y0);
-            cmd.Parameters.AddWithValue("$y1", y1);
-            using var r = cmd.ExecuteReader();
-            while (r.Read())
-            {
-                var fid = r.IsDBNull(0) ? "" : r.GetString(0);
-                var rawImg = (!r.IsDBNull(2) && r.GetString(2) != "") ? r.GetString(2) : (r.IsDBNull(3) ? "" : r.GetString(3));
-                newFriendList.Add(new
-                {
-                    name  = r.GetString(1),
-                    image = ImageCacheHelper.GetUserUrl(fid, rawImg),
-                    hours = Math.Round((r.IsDBNull(4) ? 0L : r.GetInt64(4)) / 3600.0, 1),
-                });
-            }
-        }
-        var newFriendsCount = Scalar("SELECT COUNT(*) FROM friend_events WHERE type='friend_added' AND timestamp>=$y0 AND timestamp<$y1");
-
-        int busiestMonth = 0; long busiestMonthCount = 0;
-        using (var cmd = db.CreateCommand())
-        {
-            cmd.CommandText = @"SELECT substr(timestamp,6,2) m, COUNT(*) c FROM events
-                WHERE type='instance_join' AND timestamp>=$y0 AND timestamp<$y1
-                GROUP BY m ORDER BY c DESC LIMIT 1";
-            cmd.Parameters.AddWithValue("$y0", y0);
-            cmd.Parameters.AddWithValue("$y1", y1);
-            using var r = cmd.ExecuteReader();
-            if (r.Read() && !r.IsDBNull(0))
-            {
-                int.TryParse(r.GetString(0), out busiestMonth);
-                busiestMonthCount = r.GetInt64(1);
-            }
-        }
-
-        object? favoriteAvatar = null;
-        using (var cmd = db.CreateCommand())
-        {
-            cmd.CommandText = @"SELECT user_name, COUNT(*) c FROM events
-                WHERE type='avatar_switch' AND user_name<>'' AND timestamp>=$y0 AND timestamp<$y1
-                GROUP BY user_name ORDER BY c DESC LIMIT 1";
-            cmd.Parameters.AddWithValue("$y0", y0);
-            cmd.Parameters.AddWithValue("$y1", y1);
-            using var r = cmd.ExecuteReader();
-            if (r.Read()) favoriteAvatar = new { name = r.GetString(0), count = r.GetInt64(1) };
-        }
-
-        var topFriends = new List<object>();
-        using (var cmd = db.CreateCommand())
-        {
-            cmd.CommandText = @"SELECT user_id, display_name, image, total_seconds,
-                       meet_again_count + CASE WHEN first_meet_date <> '' THEN 1 ELSE 0 END
-                FROM user_tracking WHERE profile_is_friend=1 AND user_id<>$self AND display_name<>'' AND total_seconds>0
-                ORDER BY total_seconds DESC LIMIT 10";
-            cmd.Parameters.AddWithValue("$self", selfId);
-            using var r = cmd.ExecuteReader();
-            while (r.Read())
-            {
-                var uid = r.GetString(0);
-                topFriends.Add(new
-                {
-                    name  = r.GetString(1),
-                    image = ImageCacheHelper.GetUserUrl(uid, r.IsDBNull(2) ? "" : r.GetString(2)),
-                    hours = Math.Round(r.GetInt64(3) / 3600.0, 1),
-                    meets = r.GetInt64(4),
-                });
-            }
-        }
-
-        long longestSessionMin = 0;
-        using (var cmd = db.CreateCommand())
-        {
-            cmd.CommandText = @"SELECT COALESCE(MAX((julianday(left_at)-julianday(timestamp))*1440),0)
-                FROM events WHERE type='instance_join' AND tracked=1 AND left_at<>'' AND timestamp>=$y0 AND timestamp<$y1";
-            cmd.Parameters.AddWithValue("$y0", y0);
-            cmd.Parameters.AddWithValue("$y1", y1);
-            var o = cmd.ExecuteScalar();
-            longestSessionMin = (o == null || o is DBNull) ? 0L : (long)Convert.ToDouble(o);
-        }
-
-        string topPhotoWorld = "";
-        using (var cmd = db.CreateCommand())
-        {
-            cmd.CommandText = @"SELECT world_name, COUNT(*) c FROM events
-                WHERE type='photo' AND world_name<>'' AND timestamp>=$y0 AND timestamp<$y1
-                GROUP BY world_name ORDER BY c DESC LIMIT 1";
-            cmd.Parameters.AddWithValue("$y0", y0);
-            cmd.Parameters.AddWithValue("$y1", y1);
-            using var r = cmd.ExecuteReader();
-            if (r.Read()) topPhotoWorld = r.GetString(0);
-        }
-
         var avatarSwitches = Scalar("SELECT COUNT(*) FROM events WHERE type='avatar_switch' AND timestamp>=$y0 AND timestamp<$y1");
-        var activeDays     = Scalar("SELECT COUNT(DISTINCT substr(timestamp,1,10)) FROM events WHERE type='instance_join' AND timestamp>=$y0 AND timestamp<$y1");
         var urlsShared     = Scalar("SELECT COUNT(*) FROM events WHERE type='video_url' AND timestamp>=$y0 AND timestamp<$y1");
 
-        int nightOwlHour = -1;
-        using (var cmd = db.CreateCommand())
-        {
-            cmd.CommandText = @"SELECT substr(timestamp,12,2) h, COUNT(*) c FROM events
-                WHERE type='instance_join' AND timestamp>=$y0 AND timestamp<$y1
-                GROUP BY h ORDER BY c DESC LIMIT 1";
-            cmd.Parameters.AddWithValue("$y0", y0);
-            cmd.Parameters.AddWithValue("$y1", y1);
-            using var r = cmd.ExecuteReader();
-            if (r.Read() && !r.IsDBNull(0)) int.TryParse(r.GetString(0), out nightOwlHour);
-        }
+        var metIds = new HashSet<string>();
+        using (var cmd = Cmd("SELECT DISTINCT user_id FROM events WHERE type='first_meet' AND user_id<>'' AND timestamp>=$y0 AND timestamp<$y1"))
+        using (var r = cmd.ExecuteReader())
+            while (r.Read()) if (r.GetString(0) != selfId) metIds.Add(r.GetString(0));
 
-        var slideshow = new List<object>();
-        using (var cmd = db.CreateCommand())
-        {
-            cmd.CommandText = @"SELECT photo_path, photo_url FROM events
-                WHERE type='photo' AND timestamp>=$y0 AND timestamp<$y1
-                ORDER BY RANDOM() LIMIT 14";
-            cmd.Parameters.AddWithValue("$y0", y0);
-            cmd.Parameters.AddWithValue("$y1", y1);
-            using var r = cmd.ExecuteReader();
+        var worldInfo  = new Dictionary<string, (string Name, string Thumb)>();
+        var worldTime  = new Dictionary<string, (double Sec, int Visits)>();
+        using (var cmd = Cmd(@"SELECT world_id, world_name, world_thumb, timestamp, left_at, COALESCE(tracked,0) FROM events
+                WHERE type='instance_join' AND world_id<>'' ORDER BY timestamp"))
+        using (var r = cmd.ExecuteReader())
             while (r.Read())
             {
-                var p = r.IsDBNull(0) ? "" : r.GetString(0);
-                var u = RewindPhotoUrl(p, r.IsDBNull(1) ? "" : r.GetString(1));
-                if (!string.IsNullOrEmpty(u)) slideshow.Add(new { url = u, path = p });
+                var wid = r.GetString(0);
+                if (!r.IsDBNull(1) && r.GetString(1).Length > 0) worldInfo[wid] = (r.GetString(1), r.IsDBNull(2) ? "" : r.GetString(2));
+                if (!DateTimeHelper.TryParseUtc(r.GetString(3), out var vs) || vs < y0Utc || vs >= y1Utc) continue;
+                worldTime.TryGetValue(wid, out var wt);
+                var sec = r.GetInt64(5) == 1 && DateTimeHelper.TryParseUtc(r.IsDBNull(4) ? "" : r.GetString(4), out var ve)
+                    ? Math.Max(0, ((ve > y1Utc ? y1Utc : ve) - vs).TotalSeconds) : 0;
+                worldTime[wid] = (wt.Sec + sec, wt.Visits + 1);
             }
-        }
-        if (slideshow.Count == 0)
+
+        string WorldName(string wid, string fallback = "")
         {
-            using var cmd = db.CreateCommand();
-            cmd.CommandText = "SELECT photo_path, photo_url FROM events WHERE type='photo' ORDER BY RANDOM() LIMIT 14";
-            using var r = cmd.ExecuteReader();
-            while (r.Read())
-            {
-                var p = r.IsDBNull(0) ? "" : r.GetString(0);
-                var u = RewindPhotoUrl(p, r.IsDBNull(1) ? "" : r.GetString(1));
-                if (!string.IsNullOrEmpty(u)) slideshow.Add(new { url = u, path = p });
-            }
+            if (!string.IsNullOrEmpty(fallback)) return fallback;
+            if (worldInfo.TryGetValue(wid, out var wi)) return wi.Name;
+            return _core.TimeEngine.Worlds.TryGetValue(wid, out var rec) ? rec.WorldName : "";
         }
 
-        bool hasData = bestFriend != null || topWorlds.Count > 0 || photosCount > 0 || instances > 0;
+        var together = new Dictionary<string, (long Sec, long Meets)>();
+        using (var cmd = Cmd("SELECT user_id, total_seconds, meets FROM user_year_tracking WHERE year=$year AND user_id<>$self"))
+        {
+            cmd.Parameters.AddWithValue("$year", year);
+            cmd.Parameters.AddWithValue("$self", selfId);
+            using var r = cmd.ExecuteReader();
+            while (r.Read()) together[r.GetString(0)] = (r.GetInt64(1), r.GetInt64(2));
+        }
+
+        var tracking = new Dictionary<string, (string Name, string Image)>();
+        using (var cmd = Cmd("SELECT user_id, display_name, image FROM user_tracking WHERE display_name<>''"))
+        using (var r = cmd.ExecuteReader())
+            while (r.Read()) tracking[r.GetString(0)] = (r.GetString(1), r.IsDBNull(2) ? "" : r.GetString(2));
+
+        string UserImage(string uid, string stored) => _core.FixLocalUrl(_friends.ResolveWithDiskFallback(uid, stored));
+
+        object Person(string uid)
+        {
+            var t = together[uid];
+            var (name, image) = tracking.TryGetValue(uid, out var tr) ? tr : ("", "");
+            return new
+            {
+                name,
+                image = UserImage(uid, image),
+                hours = Math.Round(t.Sec / 3600.0, 1),
+                meets = t.Meets,
+            };
+        }
+
+        var ranked       = together.Where(kv => kv.Value.Sec > 0 && tracking.ContainsKey(kv.Key))
+            .OrderByDescending(kv => kv.Value.Sec).Select(kv => kv.Key).ToList();
+        var friendRanked = ranked.Where(_friends.IsInStore).ToList();
+        var bfId         = friendRanked.FirstOrDefault() ?? "";
+        var bestFriend   = bfId.Length > 0 ? Person(bfId) : null;
+        var topFriends   = friendRanked.Take(10).Select(Person).ToList();
+        var secrets      = ranked.Where(uid => !_friends.IsInStore(uid) && together[uid].Sec > 3600).Take(3).Select(Person).ToList();
+
+        object? sharedWorld = null;
+        if (bfId.Length > 0)
+        {
+            string? shared = null;
+            using (var cmd = Cmd(@"SELECT world_id FROM events
+                    WHERE type IN ('first_meet','meet_again') AND user_id=$bf AND world_id<>'' AND timestamp>=$y0 AND timestamp<$y1
+                    GROUP BY world_id ORDER BY COUNT(*) DESC LIMIT 1"))
+            {
+                cmd.Parameters.AddWithValue("$bf", bfId);
+                shared = cmd.ExecuteScalar() as string;
+            }
+            if (shared != null && WorldName(shared) is { Length: > 0 } sharedName)
+                sharedWorld = new
+                {
+                    name  = sharedName,
+                    thumb = ImageCacheHelper.GetWorldUrl(shared, worldInfo.TryGetValue(shared, out var swi) ? swi.Thumb : ""),
+                };
+        }
+
+        var topWorldIds = worldTime.Where(kv => kv.Value.Sec > 0 && WorldName(kv.Key).Length > 0)
+            .OrderByDescending(kv => kv.Value.Sec).Take(10).Select(kv => kv.Key).ToList();
+        var topWorlds = topWorldIds.Select(wid => (object)new
+        {
+            name   = WorldName(wid),
+            thumb  = ImageCacheHelper.GetWorldUrl(wid, worldInfo.TryGetValue(wid, out var wi) ? wi.Thumb : ""),
+            hours  = Math.Round(worldTime[wid].Sec / 3600.0, 1),
+            visits = worldTime[wid].Visits,
+        }).ToList();
+
+        var photos = ReadRewindPhotos(year);
+        List<T> Pick<T>(IEnumerable<T> items, int n) => items.OrderBy(_ => rng.Next()).Take(n).ToList();
+        object PhotoItem(RewindPhoto p) => new { url = RewindPhotoUrl(p.Path), path = p.Path };
+
+        var topPhotoWorld = photos.Where(p => p.WorldId.Length > 0).GroupBy(p => p.WorldId)
+            .OrderByDescending(g => g.Count())
+            .Select(g => WorldName(g.Key, g.Select(p => p.WorldName).FirstOrDefault(n => n.Length > 0) ?? ""))
+            .FirstOrDefault(n => n.Length > 0) ?? "";
+        var bfPhotos = bfId.Length > 0 ? Pick(photos.Where(p => p.Players.Contains(bfId)), 16).Select(PhotoItem).ToList() : new List<object>();
+        var worldPhotos = Pick(photos.Where(p => topWorldIds.Contains(p.WorldId)), 16)
+            .Select(p => (object)new { url = RewindPhotoUrl(p.Path), world = WorldName(p.WorldId, p.WorldName), path = p.Path })
+            .ToList();
+        var slideshow = Pick(photos.Count > 0 ? photos : ReadRewindPhotos(null), 14).Select(PhotoItem).ToList();
+
+        var newFriendIds = new List<(string Id, string Name, string Image)>();
+        using (var cmd = Cmd(@"SELECT friend_id, friend_name, friend_image, MAX(timestamp) FROM friend_events
+                WHERE type='friend_added' AND friend_id<>'' AND timestamp>=$y0 AND timestamp<$y1
+                GROUP BY friend_id ORDER BY MAX(timestamp) DESC"))
+        using (var r = cmd.ExecuteReader())
+            while (r.Read())
+            {
+                var fid = r.GetString(0);
+                if (fid == selfId || !_friends.IsInStore(fid)) continue;
+                newFriendIds.Add((fid, r.IsDBNull(1) ? "" : r.GetString(1), r.IsDBNull(2) ? "" : r.GetString(2)));
+            }
+        var newFriendList = newFriendIds.Take(30).Select(f =>
+        {
+            var (name, image) = tracking.TryGetValue(f.Id, out var tr) ? tr : (f.Name, f.Image);
+            return (object)new
+            {
+                name  = string.IsNullOrEmpty(name) ? f.Name : name,
+                image = UserImage(f.Id, string.IsNullOrEmpty(image) ? f.Image : image),
+                hours = Math.Round((together.TryGetValue(f.Id, out var t) ? t.Sec : 0) / 3600.0, 1),
+            };
+        }).ToList();
+
+        object? favoriteAvatar = null;
+        using (var cmd = Cmd(@"SELECT MAX(user_name), COUNT(*) c FROM events
+                WHERE type='avatar_switch' AND user_name<>'' AND timestamp>=$y0 AND timestamp<$y1
+                GROUP BY CASE WHEN COALESCE(user_id,'')<>'' THEN user_id ELSE user_name END
+                ORDER BY c DESC LIMIT 1"))
+        using (var r = cmd.ExecuteReader())
+            if (r.Read()) favoriteAvatar = new { name = r.GetString(0) };
+
+        var hasData = time.Seconds > 0 || instances > 0 || photos.Count > 0 || bestFriend != null;
 
         return new
         {
             hasData, auto, year, selfName, slideshow,
-            newFriends = new { count = newFriendsCount, list = newFriendList },
-            busiestMonth = new { month = busiestMonth, count = busiestMonthCount },
+            newFriends = new { count = newFriendIds.Count, list = newFriendList },
+            busiestMonth = new { month = Math.Max(0, ArgMax(time.Months, 1)) },
             favoriteAvatar,
-            longestSessionMin,
+            longestSessionMin = (long)(time.LongestSeconds / 60),
             topPhotoWorld,
             avatarSwitches,
-            activeDays,
+            activeDays = time.Days.Count,
             urlsShared,
-            nightOwlHour,
+            nightOwlHour = ArgMax(time.Hours, 0),
             totals = new
             {
-                hours  = Math.Round(hoursSec / 3600.0, 1),
+                hours  = Math.Round(time.Seconds / 3600.0, 1),
                 worlds = worldsVisited,
-                photos = photosCount,
-                peopleMet,
+                photos = photos.Count,
+                peopleMet = metIds.Count,
                 instances,
             },
             bestFriend,

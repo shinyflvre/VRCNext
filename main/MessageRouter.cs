@@ -1868,10 +1868,14 @@ public partial class AppShell
                     var avDesc   = msg["description"]?.ToString()          ?? "";
                     var avStatus = msg["releaseStatus"]?.ToString()        ?? "private";
                     var avTags   = msg["tags"]?.ToObject<List<string>>()   ?? new();
+                    var avPrimaryStyle   = msg["primaryStyle"]?.ToString();
+                    var avSecondaryStyle = msg["secondaryStyle"]?.ToString();
                     if (!string.IsNullOrEmpty(avId))
                         _ = Task.Run(async () =>
                         {
-                            var (ok, error) = await _core.Avatars.UpdateAvatarAsync(avId, avName, avDesc, avStatus, avTags);
+                            var (ok, error, updated) = await _core.Avatars.UpdateAvatarAsync(
+                                avId, avName, avDesc, avStatus, avTags, avPrimaryStyle, avSecondaryStyle);
+                            var (stylePrimary, styleSecondary) = AvatarsAPI.ReadStyles(updated);
                             if (ok)
                             {
                                 var ex = _core.TimeEngine.GetAvatarDetail(avId);
@@ -1884,7 +1888,8 @@ public partial class AppShell
                                         DateTimeHelper.Iso(ex.CreatedAt), DateTimeHelper.Iso(ex.UpdatedAt),
                                         avDesc, avTags,
                                         ex.HasPC, ex.HasQuest, ex.HasImpostor,
-                                        ex.PcPerf, ex.QuestPerf);
+                                        ex.PcPerf, ex.QuestPerf, ex.HasIos, ex.IosPerf,
+                                        stylePrimary, styleSecondary);
                                     ModalCacheHelper.Invalidate(avId);
                                 }
                             }
@@ -1897,8 +1902,24 @@ public partial class AppShell
                                 description   = ok ? avDesc   : (string?)null,
                                 releaseStatus = ok ? avStatus : (string?)null,
                                 tags          = ok ? avTags   : (List<string>?)null,
+                                stylePrimary,
+                                styleSecondary,
                             }));
                         });
+                    break;
+                }
+
+                case "vrcGetAvatarStyles":
+                {
+                    _ = Task.Run(async () =>
+                    {
+                        var styles = await _core.Avatars.GetAvatarStylesAsync();
+                        var list = styles.OfType<JObject>()
+                            .Select(s => new { id = s["id"]?.ToString() ?? "", name = s["styleName"]?.ToString() ?? "" })
+                            .Where(s => s.id.Length > 0 && s.name.Length > 0)
+                            .ToList();
+                        Invoke(() => SendToJS("vrcAvatarStyles", list));
+                    });
                     break;
                 }
 
@@ -1921,6 +1942,8 @@ public partial class AppShell
                                 hasImpostor = avdCached.HasImpostor,
                                 pcPerf = ValidPerf(avdCached.PcPerf), questPerf = ValidPerf(avdCached.QuestPerf),
                                 iosPerf = ValidPerf(avdCached.IosPerf),
+                                stylePrimary = avdCached.StylePrimary, styleSecondary = avdCached.StyleSecondary,
+                                impostorVersion = avdCached.ImpostorVersion,
                             }));
                         SendCachedAvatarAnalysis(avdId);
                         if (ModalCacheHelper.IsCached(avdId)) break;
@@ -1940,6 +1963,8 @@ public partial class AppShell
                             var hasIos   = realPkgs.Any(p => p["platform"]?.ToString() == "ios");
                             var hasImpostor = packages.Any(p => p["variant"]?.ToString() == "impostor");
                             var (pcPerf, questPerf, iosPerf) = ResolveAvatarPerf(avatar);
+                            var (stylePrimary, styleSecondary) = AvatarsAPI.ReadStyles(avatar);
+                            var impostorVersion = AvatarsAPI.ReadImpostorVersion(avatar) ?? "";
                             // Save immediately so future opens are instant from DB
                             var avtSaveId = avatar["id"]?.ToString() ?? avdId;
                             _core.TimeEngine.SaveAvatarDetail(
@@ -1955,7 +1980,8 @@ public partial class AppShell
                                 DateTimeHelper.Iso(avatar["updated_at"]),
                                 avatar["description"]?.ToString() ?? "",
                                 avatar["tags"]?.ToObject<List<string>>() ?? new(),
-                                hasPC, hasQuest, hasImpostor, pcPerf, questPerf, hasIos, iosPerf);
+                                hasPC, hasQuest, hasImpostor, pcPerf, questPerf, hasIos, iosPerf,
+                                stylePrimary ?? "", styleSecondary ?? "", impostorVersion);
                             Invoke(() => SendToJS("vrcAvatarDetail", new
                             {
                                 id               = avatar["id"]?.ToString()                  ?? "",
@@ -1977,6 +2003,9 @@ public partial class AppShell
                                 pcPerf,
                                 questPerf,
                                 iosPerf,
+                                stylePrimary    = stylePrimary ?? "",
+                                styleSecondary  = styleSecondary ?? "",
+                                impostorVersion,
                                 rawJson = avatar,
                             }));
                             await FetchAvatarAnalysisAsync(avatar);
@@ -4428,6 +4457,8 @@ public partial class AppShell
             var version = avatar["version"]?.Value<int>() ?? 0;
             if (version == 0 && old != null) version = old.Version;
 
+            var (stylePrimary, styleSecondary) = AvatarsAPI.ReadStyles(avatar);
+
             engine.SaveAvatarDetail(
                 id,
                 Pick("name", old?.Name),
@@ -4441,7 +4472,9 @@ public partial class AppShell
                 updatedAt,
                 Pick("description", old?.Description),
                 tags,
-                hasPC, hasQuest, hasImpostor, pcPerf, questPerf, hasIos, iosPerf);
+                hasPC, hasQuest, hasImpostor, pcPerf, questPerf, hasIos, iosPerf,
+                stylePrimary, styleSecondary,
+                packages.Count > 0 ? AvatarsAPI.ReadImpostorVersion(avatar) : null);
         }
         catch { }
     }

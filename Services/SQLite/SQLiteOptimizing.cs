@@ -227,15 +227,20 @@ public static class SQLiteOptimizing
             feCleaned += cmd.ExecuteNonQuery();
         }
 
+        var rewindYearStart = new DateTime(DateTime.Now.Year, 1, 1, 0, 0, 0, DateTimeKind.Local).ToUniversalTime().ToString("o");
+
         int notifCleaned = 0;
-        foreach (var etype in new[] { "notification", "video_url", "avatar_switch" })
+        foreach (var (etype, keepYear) in new[] { ("notification", false), ("video_url", true), ("avatar_switch", true) })
         {
             using var cmd = db.CreateCommand();
             cmd.CommandText = @"DELETE FROM events
                 WHERE type = $t
+                  AND ($keepYear = 0 OR timestamp < $y0)
                   AND id NOT IN (SELECT id FROM events WHERE type = $t ORDER BY timestamp DESC LIMIT $n)";
             cmd.Parameters.AddWithValue("$t", etype);
             cmd.Parameters.AddWithValue("$n", keepRecent);
+            cmd.Parameters.AddWithValue("$keepYear", keepYear ? 1 : 0);
+            cmd.Parameters.AddWithValue("$y0", rewindYearStart);
             notifCleaned += cmd.ExecuteNonQuery();
         }
 
@@ -246,9 +251,11 @@ public static class SQLiteOptimizing
                 WHERE event_id IN (
                     SELECT id FROM events
                     WHERE type = 'instance_join'
+                      AND timestamp < $y0
                       AND id NOT IN (SELECT id FROM events WHERE type = 'instance_join' ORDER BY timestamp DESC LIMIT $n)
                 )";
             cmd.Parameters.AddWithValue("$n", keepRecent);
+            cmd.Parameters.AddWithValue("$y0", rewindYearStart);
             epCleaned = cmd.ExecuteNonQuery();
         }
 

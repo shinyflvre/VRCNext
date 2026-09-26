@@ -1,54 +1,41 @@
-﻿# **2026.61.0**
-
-This update focuses on quality of life. Profile previews have been reworked, and user profiles are cleaner and easier to read.
+﻿# **2026.61.1**
 
 **Avatar Tab**
-* Added **Bulk Status** to edit mode in **My Avatars** to make several avatars public or private at once.
-* Added **Bulk Tag Add** to edit mode in **My Avatars** to add a tag to several avatars at once.
+* You can now set the **Primary Style** and **Secondary Style** of your own avatars.
+* The **Infos** card of avatars now shows **Impostor**, **Primary Style** and **Secondary Style**.
+* The impostor badge was replaced by an **Impostor** row with its version.
+* Fixed saving an avatar clearing its iOS info.
+* New colors for the performance ratings in the avatar window: green for Excellent and Good, yellow for Medium, red for Poor and Very Poor.
+* Every rated performance stat in the avatar window now shows its rating icon after the number.
 
-**Group Tab**
-* Added a **Visible to** column to the list view that shows who can see each group on your profile.
-* Added **Bulk Visibility** to edit mode to change the visibility of several groups at once.
-* Changing a group's visibility now shows a confirmation.
-
-**Own Profile**
-* **Current Avatar** and **Representing** are now shown side by side.
-* If only one of **Current Avatar** or **Representing** is shown, it now uses the full width.
-* **Pronouns** moved below the **Badges** card.
-* **Links** and **Languages** are now shown side by side in the **Bio** card.
-* The language dropdown now uses the same dropdown as the rest of the app, and the **+** button next to it has the same height.
-* Fixed being able to add more than 3 languages.
-
-**Profile Modals**
-* Added an **Activity Summary** card with Time Together, Meets, Last Seen, Last Active, Status Mostly and Joined.
-* The **Infos** card now only shows Platform, Last Platform, Age Verified and Avatar Cloning.
-* Platforms now show as PC, Quest, iOS or Web instead of internal names like `standalonewindows`.
-* The **...** button moved next to the other profile buttons and now shows the same options as the right click menu.
-* Removed the separate **Unfriend** button. Unfriend is now in the **...** menu.
-* Unfriend now asks for confirmation in a dialog.
-
-**Profile Previews**
-* Time spent and languages are now shown in a cleaner way.
-
-**Removed**
-* Removed the **Trust & Safety** card.
-* Removed the **Trust Score**.
+**Improvements**
+* The **Infos** card in profiles now shows the username and previous usernames when VRChat provides them.
+* VRChat sessions now use the real start time of VRChat, even when VRCNext was started later.
+* The end of a VRChat session is now read from the VRChat log, so it stays correct when VRCNext was closed first.
 
 **Changes**
-* Tags and languages you are editing in profiles, avatars, worlds and groups now use the same colors as the finished badges.
-* The **Share** button in profile, world, avatar and group windows now lets you copy either the ID or the link.
-* **Kikitan XD**: Translations now fall back to a second AI model if the main one fails.
-* Removed the color from **Status Mostly**.
+* The **Trusted User** color is now #A18FFF in all themes.
+* List items in **Rewind**, **Time Spent** and the profile insights now have a small gap between them.
 
-**Fixed Bugs**
-* Fixed translation not working in the Kikitan XD live translator.
-* Fixed translation of bios and groups with Kikitan XD.
-* Fixed the Timeline and Insights switches in profiles sometimes showing nothing selected.
-* Fixed unfriending not working for people with an apostrophe in their name.
-* Fixed the **Visibility** card in groups not showing your current setting.
-* Fixed the selection circles in list view edit mode not being centered in their row.
-* Fixed avatars in the Instance list and **People > Instance** not updating when someone changed avatars.
-* Fixed profiles sometimes showing outdated avatars after the VRChat API changes.
-* **Check for Avatar** now shows the avatar name when known, even if the avatar is not in a public database.
-* Avatars that are only known by name can be opened more often.
-* Avatars that were not found are now checked again after an hour instead of 30 days.
+**Invite & Instance**
+* Redesigned the invite window with a wider two-column friend layout and the world shown on the left.
+* Invite, instance, and **My Instance** windows now display more of the world description.
+
+**Activity Log**
+* Redesigned the stats bar with a cleaner text-based layout, matching the button font and full available width.
+* Search is now placed at the bottom next to the action buttons.
+* Improved the layout for smaller windows by allowing the stats bar to wrap.
+
+**Rewind**
+* Rewind now handles photos and VRChat data more accurately, including full-quality images, original photos, correct worlds, local time, and actual VRChat playtime.
+* Yearly stats are now more accurate, with friends, worlds, favorites, and secrets limited to the selected year.
+* Optimize Database now keeps all data Rewind needs.
+
+**Bug Fixes**
+* Fixed **People > Instance** and the instance window cutting off languages. All languages are shown now.
+* Fixed the profile buttons staying disabled after closing the **Join** window.
+* Fixed world visits staying open for days or weeks after VRCNext was closed or the account was switched. Existing visits are repaired once on update.
+* Fixed missing or doubled VRChat start and stop entries. Existing entries are repaired once on update.
+* Fixed every restart of VRCNext counting as an avatar switch. Existing duplicates are removed once on update.
+* Fixed photos of other accounts showing up in the timeline. They are removed once on update.
+* Fixed doubled world visits from older imports. They are removed once on update.

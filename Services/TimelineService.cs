@@ -622,9 +622,31 @@ public class TimelineService : IDisposable
         }
 
         if (ev.Type == "first_meet" && !string.IsNullOrEmpty(ev.UserId))
+        {
+            var isFirst = GetFirstMeetDate(ev.UserId).Length == 0;
             DbSetFirstMeetDate(ev.UserId, ev.Timestamp);
+            if (isFirst) DbAddYearMeet(ev.UserId, ev.Timestamp);
+        }
         else if (ev.Type == "meet_again" && !string.IsNullOrEmpty(ev.UserId))
+        {
             DbIncrementMeetAgain(ev.UserId);
+            DbAddYearMeet(ev.UserId, ev.Timestamp);
+        }
+    }
+
+    private void DbAddYearMeet(string userId, string timestamp)
+    {
+        var at = Helpers.DateTimeHelper.TryParseUtc(timestamp, out var t) ? t : DateTime.UtcNow;
+        try
+        {
+            using var cmd = _db.CreateCommand();
+            cmd.CommandText = @"INSERT INTO user_year_tracking(user_id,year,total_seconds,meets) VALUES($uid,$y,0,1)
+                ON CONFLICT(user_id,year) DO UPDATE SET meets=user_year_tracking.meets+1";
+            cmd.Parameters.AddWithValue("$uid", userId);
+            cmd.Parameters.AddWithValue("$y", at.ToLocalTime().Year);
+            cmd.ExecuteNonQuery();
+        }
+        catch { }
     }
 
     public void BulkImportEvents(IEnumerable<TimelineEvent> events)
@@ -2372,11 +2394,11 @@ public class TimelineService : IDisposable
         try
         {
             using var cmd = _db.CreateCommand();
-            cmd.CommandText = @"SELECT id, location FROM events
+            cmd.CommandText = @"SELECT id, location, timestamp FROM events
                 WHERE type='instance_join' AND tracked=1 AND (left_at IS NULL OR left_at='')";
             using var r = cmd.ExecuteReader();
             while (r.Read())
-                result.Add(new TimelineEvent { Id = r.GetString(0), Location = r.IsDBNull(1) ? "" : r.GetString(1) });
+                result.Add(new TimelineEvent { Id = r.GetString(0), Location = r.IsDBNull(1) ? "" : r.GetString(1), Timestamp = r.GetString(2) });
         }
         catch { }
         return result;
@@ -3170,30 +3192,131 @@ public class TimelineService : IDisposable
         return MergeOnlineEvents(events);
     }
 
-    private List<(DateTime Start, DateTime End)> BuildSelfOnlineSessions(string userId)
+    public sealed record LaunchSession(string StartId, DateTime StartUtc, DateTime? EndUtc, string? StopId);
+
+    public List<LaunchSession> GetLaunchSessions(string userId)
+    {
+        var rows = new List<(string Id, string Ts, string LeftAt, bool IsStart)>();
+        if (string.IsNullOrEmpty(userId)) return new();
+        lock (_lock)
+        {
+            try
+            {
+                using var cmd = _db.CreateCommand();
+                cmd.CommandText = @"SELECT id, timestamp, COALESCE(left_at,''), COALESCE(message,'') FROM events
+                    WHERE type='profile' AND notif_type='launch' AND user_id=$uid
+                    ORDER BY timestamp ASC";
+                cmd.Parameters.AddWithValue("$uid", userId);
+                using var r = cmd.ExecuteReader();
+                while (r.Read()) rows.Add((r.GetString(0), r.GetString(1), r.GetString(2), r.GetString(3) == "start"));
+            }
+            catch { return new(); }
+        }
+
+        var result = new List<LaunchSession>();
+        for (int i = 0; i < rows.Count; i++)
+        {
+            if (!rows[i].IsStart || !Helpers.DateTimeHelper.TryParseUtc(rows[i].Ts, out var start)) continue;
+            string? stopId = null;
+            DateTime? end = Helpers.DateTimeHelper.TryParseUtc(rows[i].LeftAt, out var la) ? la : null;
+            if (i + 1 < rows.Count && !rows[i + 1].IsStart)
+            {
+                stopId = rows[i + 1].Id;
+                if (Helpers.DateTimeHelper.TryParseUtc(rows[i + 1].Ts, out var stop)) end = stop;
+            }
+            result.Add(new LaunchSession(rows[i].Id, start, end, stopId));
+        }
+        return result;
+    }
+
+    public void SetEventSpan(string id, string timestamp, string leftAt)
+    {
+        lock (_lock)
+        {
+            var ev = _events.FirstOrDefault(e => e.Id == id);
+            if (ev != null) { ev.Timestamp = timestamp; ev.LeftAt = leftAt; }
+            try
+            {
+                using var cmd = _db.CreateCommand();
+                cmd.CommandText = "UPDATE events SET timestamp=$ts, left_at=$la WHERE id=$id";
+                cmd.Parameters.AddWithValue("$ts", timestamp);
+                cmd.Parameters.AddWithValue("$la", leftAt);
+                cmd.Parameters.AddWithValue("$id", id);
+                cmd.ExecuteNonQuery();
+            }
+            catch { }
+        }
+    }
+
+    public string GetLastAvatarSwitchName()
+    {
+        lock (_lock)
+        {
+            try
+            {
+                using var cmd = _db.CreateCommand();
+                cmd.CommandText = "SELECT user_name FROM events WHERE type='avatar_switch' ORDER BY timestamp DESC LIMIT 1";
+                return cmd.ExecuteScalar() as string ?? "";
+            }
+            catch { return ""; }
+        }
+    }
+
+    public void ReloadFromDb()
+    {
+        lock (_lock)
+        {
+            _events.Clear();
+            _friendEvents.Clear();
+            _loggedNotifs.Clear();
+            LoadFromDb();
+        }
+    }
+
+    public List<(DateTime Start, DateTime End)> GetSelfSessions(string userId)
+    {
+        var intervals = new List<(DateTime Start, DateTime End)>();
+        if (string.IsNullOrEmpty(userId)) return intervals;
+
+        var launches = GetLaunchSessions(userId);
+        foreach (var s in launches)
+            if (s.EndUtc is DateTime end && end > s.StartUtc) intervals.Add((s.StartUtc, end));
+
+        var firstLaunch = launches.Count > 0 ? launches[0].StartUtc : DateTime.MaxValue;
+        lock (_lock)
+        {
+            try
+            {
+                using var cmd = _db.CreateCommand();
+                cmd.CommandText = @"SELECT timestamp, left_at FROM events
+                    WHERE type='instance_join' AND tracked=1 AND left_at<>'' AND timestamp<$first";
+                cmd.Parameters.AddWithValue("$first", firstLaunch == DateTime.MaxValue ? "9999" : firstLaunch.ToString("o"));
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
+                {
+                    if (!Helpers.DateTimeHelper.TryParseUtc(r.GetString(0), out var a) || !Helpers.DateTimeHelper.TryParseUtc(r.GetString(1), out var b)) continue;
+                    if (b > firstLaunch) b = firstLaunch;
+                    if (b > a) intervals.Add((a, b));
+                }
+            }
+            catch { }
+        }
+        return MergeIntervals(intervals, 0);
+    }
+
+    private static List<(DateTime Start, DateTime End)> MergeIntervals(List<(DateTime Start, DateTime End)> sessions, double gapMin)
     {
         var result = new List<(DateTime Start, DateTime End)>();
-        if (string.IsNullOrEmpty(userId)) return result;
-
-        var events = new List<(DateTime Ts, bool IsOnline)>();
-        try
+        sessions.Sort((a, b) => a.Start.CompareTo(b.Start));
+        foreach (var s in sessions)
         {
-            using var cmd = _db.CreateCommand();
-            cmd.CommandText = @"SELECT timestamp, message FROM events
-                WHERE type='profile' AND notif_type='launch' AND user_id=$uid
-                ORDER BY timestamp ASC";
-            cmd.Parameters.AddWithValue("$uid", userId);
-            using var r = cmd.ExecuteReader();
-            while (r.Read())
+            if (result.Count > 0 && (s.Start - result[^1].End).TotalMinutes <= gapMin)
             {
-                if (!DateTime.TryParse(r.GetString(0), null,
-                    System.Globalization.DateTimeStyles.RoundtripKind, out var dt)) continue;
-                events.Add((dt.ToUniversalTime(), (r.IsDBNull(1) ? "" : r.GetString(1)) == "start"));
+                if (s.End > result[^1].End) result[^1] = (result[^1].Start, s.End);
             }
+            else result.Add(s);
         }
-        catch { return result; }
-
-        return MergeOnlineEvents(events);
+        return result;
     }
 
     private static List<(DateTime Start, DateTime End)> MergeOnlineEvents(List<(DateTime Ts, bool IsOnline)> events)
@@ -3201,8 +3324,7 @@ public class TimelineService : IDisposable
         const double MAX_SESSION_MIN = 8 * 60;
         const double MERGE_GAP_MIN   = 5;
 
-        var result = new List<(DateTime Start, DateTime End)>();
-        if (events.Count == 0) return result;
+        if (events.Count == 0) return new();
 
         var now = DateTime.UtcNow;
         var sessions = new List<(DateTime Start, DateTime End)>();
@@ -3222,16 +3344,7 @@ public class TimelineService : IDisposable
         }
         if (curStart != null) sessions.Add((curStart.Value, now));
 
-        sessions.Sort((a, b) => a.Start.CompareTo(b.Start));
-        foreach (var s in sessions)
-        {
-            if (result.Count > 0 && (s.Start - result[^1].End).TotalMinutes <= MERGE_GAP_MIN)
-            {
-                if (s.End > result[^1].End) result[^1] = (result[^1].Start, s.End);
-            }
-            else result.Add(s);
-        }
-
+        var result = MergeIntervals(sessions, MERGE_GAP_MIN);
         for (int i = 0; i < result.Count; i++)
         {
             var cap = result[i].Start.AddMinutes(MAX_SESSION_MIN);
@@ -3250,7 +3363,7 @@ public class TimelineService : IDisposable
     public OnlineHeatmap GetSelfOnlineHeatmap(string userId, int days = 30)
     {
         if (string.IsNullOrEmpty(userId)) return new OnlineHeatmap();
-        return BuildHeatmap(BuildSelfOnlineSessions(userId), days);
+        return BuildHeatmap(GetSelfSessions(userId), days);
     }
 
     private static OnlineHeatmap BuildHeatmap(List<(DateTime Start, DateTime End)> merged, int days)
@@ -3351,7 +3464,7 @@ public class TimelineService : IDisposable
             @"SELECT timestamp, notif_title, message FROM events
               WHERE type='profile' AND notif_type='status' AND user_id=$uid ORDER BY timestamp ASC",
             userId, out var initial);
-        return BuildStatusBreakdown(BuildSelfOnlineSessions(userId), transitions, initial, userId, days);
+        return BuildStatusBreakdown(GetSelfSessions(userId), transitions, initial, userId, days);
     }
 
     private List<(DateTime Ts, string Status)> ReadStatusTransitions(string sql, string userId, out string initialStatus)

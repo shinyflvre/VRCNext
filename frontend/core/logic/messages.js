@@ -934,6 +934,9 @@ window.external.receiveMessage(rawMsg => {
             case 'vrcAvatarImageResult':
                 if (typeof onAvatarImageResult === 'function') onAvatarImageResult(payload);
                 break;
+            case 'vrcAvatarStyles':
+                if (typeof onAvatarStyles === 'function') onAvatarStyles(payload);
+                break;
             case 'vrcAvatarUpdateResult':
                 if (typeof avBulkUpdateConsume === 'function' && avBulkUpdateConsume(payload)) break;
                 onAvatarUpdateResult(payload);

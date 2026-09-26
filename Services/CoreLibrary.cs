@@ -110,7 +110,8 @@ public class CoreLibrary
     public Action? PushDiscordPresence { get; set; }
     public Func<bool>? IsVrcRunning { get; set; }
     public Func<bool>? IsSteamVrRunning { get; set; }
-    public Action<string, string, string>? LogSelfProfile { get; set; }
+    public Func<string, string, string, string?, string?>? LogSelfProfile { get; set; }
+    public VrcSessionTracker VrcSessions { get; }
     public Func<string, string>? GetVirtualMediaUrl { get; set; }
     public Action<string>? LoadPage { get; set; }
     public Func<string, Task>? DispatchMessage { get; set; }
@@ -162,6 +163,7 @@ public class CoreLibrary
         MemTrim = memTrim;
         UpdateService = updateService;
         SendToJS = sendToJS;
+        VrcSessions = new VrcSessionTracker(this);
     }
 
     public void TrimCaches(bool force = false)

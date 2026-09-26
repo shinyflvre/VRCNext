@@ -110,9 +110,7 @@ function openInstanceInfoModal() {
         if      (platform === 'standalonewindows') platIcon = `<span class="msi" title="${t('instance.platform.pc', 'PC')}" style="font-size:16px;color:var(--tx2);">computer</span>`;
         else if (platform === 'android')           platIcon = `<span class="msi" title="${t('instance.platform.quest', 'Quest')}" style="font-size:16px;color:var(--tx2);">view_in_ar</span>`;
         const platformCell = `<div class="iim-cell">${platIcon}</div>`;
-        const langsHtml = tags.filter(x => x.startsWith('language_'))
-            .map(x => `<span class="vrcn-badge">${esc(LANG_MAP[x] || x.replace('language_', '').toUpperCase())}</span>`).join('');
-        const langCell  = `<div class="iim-cell"><div class="iim-lang-cell">${langsHtml}</div></div>`;
+        const langCell  = `<div class="iim-cell"><div class="iim-lang-cell">${_plLangCell({ tags })}</div></div>`;
         const bioLinks  = (Array.isArray(u.bioLinks) && u.bioLinks.length ? u.bioLinks : f?.bioLinks) || [];
         const bioCell   = `<div class="iim-cell">${typeof _plBioLinksCell === 'function' ? _plBioLinksCell({ bioLinks }) : ''}</div>`;
         const nameCell  = `<div class="iim-cell"><span class="iim-name">${esc(displayName)}</span></div>`;
@@ -161,29 +159,14 @@ function openInstanceInfoModal() {
     const worldAuthorId = wc?.authorId || '';
     const worldDesc     = wc?.description || '';
 
-    const bannerImg = thumb
-        ? `<img class="mi-world-banner" src="${thumb}" onerror="this.style.display='none'">`
-        : '';
-
-    const authorHtml = worldAuthor
-        ? `<div class="mi-world-author">${t('worlds.meta.by', 'by')} ${worldAuthorId
-            ? `<span onclick="closeInstanceInfoModal();navOpenModal('friend','${jsq(worldAuthorId)}','${jsq(worldAuthor)}')" style="display:inline-flex;align-items:center;padding:1px 8px;border-radius:20px;background:var(--badge-bg);font-size:calc(11px + var(--fs-off, 0px));font-weight:600;color:var(--badge-tx);cursor:pointer;line-height:1.8;">${esc(worldAuthor)}</span>`
-            : esc(worldAuthor)}</div>`
-        : '';
-    const descHtml = worldDesc ? `<div class="mi-world-description">${esc(worldDesc)}</div>` : '';
-
-    const leftHtml = `<div class="mi-left">
-        <div class="mi-world-banner-wrap">${bannerImg}<div class="mi-world-banner-fade"></div></div>
-        <div class="mi-world-info">
-            <div class="mi-world-name">${esc(name)}</div>
-            ${authorHtml}
-            ${descHtml}
-        </div>
-        <div class="mi-left-actions">
-            <button class="vrcn-button-round mi-action-btn" onclick="closeInstanceInfoModal();openInviteModal()"><span class="msi" style="font-size:14px;">person_add</span> ${t('instance.actions.invite', 'Invite')}</button>
-            <button class="vrcn-button-round mi-action-btn" onclick="closeInstanceInfoModal();openWorldSearchDetail('${wid}')">${t('dashboard.instances.open_world', 'Open World')}</button>
-        </div>
-    </div>`;
+    const leftHtml = worldPanelHtml({
+        thumb,
+        name,
+        subHtml: worldAuthorLineHtml(worldAuthor, worldAuthorId, 'closeInstanceInfoModal()'),
+        description: worldDesc,
+        actionsHtml: `<button class="vrcn-button-round mi-action-btn" onclick="closeInstanceInfoModal();openInviteModal()"><span class="msi" style="font-size:14px;">person_add</span> ${t('instance.actions.invite', 'Invite')}</button>
+            <button class="vrcn-button-round mi-action-btn" onclick="closeInstanceInfoModal();openWorldSearchDetail('${wid}')">${t('dashboard.instances.open_world', 'Open World')}</button>`,
+    });
 
     const joinBtn = data.location
         ? `<button class="vrcn-button-round vrcn-btn-join" style="margin-left:auto;" title="${esc(t('common.join', 'Join'))}" onclick="sendToCS({action:'vrcJoinFriend',location:'${jsq(data.location)}'})"><span class="msi" style="font-size:14px;">login</span> ${esc(t('common.join', 'Join'))}</button>`
@@ -223,6 +206,26 @@ function openInstanceInfoModal() {
     };
     if (typeof lvKeepScroll === 'function') lvKeepScroll(c, render);
     else render();
+}
+
+function worldAuthorLineHtml(authorName, authorId, closeCall) {
+    if (!authorName) return '';
+    const who = authorId
+        ? `<span onclick="${closeCall};navOpenModal('friend','${jsq(authorId)}','${jsq(authorName)}')" style="display:inline-flex;align-items:center;padding:1px 8px;border-radius:20px;background:var(--badge-bg);font-size:calc(11px + var(--fs-off, 0px));font-weight:600;color:var(--badge-tx);cursor:pointer;line-height:1.8;">${esc(authorName)}</span>`
+        : esc(authorName);
+    return `<div class="mi-world-author">${t('worlds.meta.by', 'by')} ${who}</div>`;
+}
+
+function worldPanelHtml({ thumb, name, bannerHtml = '', subHtml = '', description = '', actionsHtml = '' }) {
+    return `<div class="mi-left">
+        <div class="mi-world-banner-wrap">${thumb ? `<img class="mi-world-banner" src="${esc(thumb)}" onerror="this.style.display='none'">` : ''}<div class="mi-world-banner-fade"></div>${bannerHtml}</div>
+        <div class="mi-world-info">
+            <div class="mi-world-name">${esc(name)}</div>
+            ${subHtml}
+            ${description ? `<div class="mi-world-description">${esc(description)}</div>` : ''}
+        </div>
+        ${actionsHtml ? `<div class="mi-left-actions">${actionsHtml}</div>` : ''}
+    </div>`;
 }
 
 const IIM_SORT_KEY = 'vrcn_iim_sort';
@@ -315,7 +318,7 @@ const IIM_COL_WIDTHS = {
     status:   'minmax(100px, 136px)',
     age:      '76px',
     platform: '98px',
-    language: 'minmax(100px, .8fr)',
+    language: '200px',
     biolinks: '96px',
     presence: '200px',
 };

@@ -145,7 +145,7 @@ public class UnifiedTimeEngine : IDisposable
             {
                 if (Users.TryGetValue(userId, out var rec))
                 {
-                    rec.TotalSeconds += delta;
+                    AddUserSecondsLocked(userId, rec, delta, now);
                     rec.LastSeen = now.ToString("o");
                     if (!string.IsNullOrEmpty(_currentLocation))
                         rec.LastSeenLocation = _currentLocation;
@@ -875,6 +875,9 @@ public class UnifiedTimeEngine : IDisposable
         public string PcPerf            { get; set; } = "";
         public string QuestPerf         { get; set; } = "";
         public string IosPerf           { get; set; } = "";
+        public string StylePrimary      { get; set; } = "";
+        public string StyleSecondary    { get; set; } = "";
+        public string ImpostorVersion   { get; set; } = "";
     }
 
     private static readonly string[] _perfNames = { "excellent", "good", "medium", "poor", "verypoor" };
@@ -895,7 +898,8 @@ public class UnifiedTimeEngine : IDisposable
                 using var cmd = _db.CreateCommand();
                 cmd.CommandText = @"SELECT name,author_name,author_id,thumbnail_image_url,image_url,
                     release_status,version,created_at,updated_at,description,tags,
-                    has_pc,has_quest,has_impostor,pc_perf,quest_perf,detail_cached_at,has_ios,ios_perf
+                    has_pc,has_quest,has_impostor,pc_perf,quest_perf,detail_cached_at,has_ios,ios_perf,
+                    style_primary,style_secondary,impostor_version
                     FROM avatar_tracking WHERE avatar_id=$id";
                 cmd.Parameters.AddWithValue("$id", avatarId);
                 using var r = cmd.ExecuteReader();
@@ -915,6 +919,9 @@ public class UnifiedTimeEngine : IDisposable
                     QuestPerf         = NormalizePerf(r.GetString(15)),
                     HasIos            = r.GetInt32(17) != 0,
                     IosPerf           = NormalizePerf(r.GetString(18)),
+                    StylePrimary      = r.GetString(19),
+                    StyleSecondary    = r.GetString(20),
+                    ImpostorVersion   = r.GetString(21),
                 };
             }
             catch { return null; }
@@ -925,7 +932,8 @@ public class UnifiedTimeEngine : IDisposable
         string thumbnailImageUrl, string imageUrl, string releaseStatus, int version,
         string createdAt, string updatedAt, string description, List<string> tags,
         bool hasPC, bool hasQuest, bool hasImpostor, string pcPerf, string questPerf,
-        bool hasIos = false, string iosPerf = "")
+        bool hasIos = false, string iosPerf = "",
+        string? stylePrimary = null, string? styleSecondary = null, string? impostorVersion = null)
     {
         if (string.IsNullOrEmpty(avatarId)) return;
         if (avatarId == "avtr_c38a1615-5bf5-42b4-84eb-a8b6c37cbd11") return;
@@ -937,8 +945,10 @@ public class UnifiedTimeEngine : IDisposable
                 using var cmd = _db.CreateCommand();
                 cmd.CommandText = @"INSERT INTO avatar_tracking(avatar_id,name,author_name,author_id,thumbnail_image_url,
                     image_url,release_status,version,created_at,updated_at,description,tags,
-                    has_pc,has_quest,has_impostor,pc_perf,quest_perf,detail_cached_at,has_ios,ios_perf)
-                    VALUES($id,$n,$an,$ai,$ti,$img,$rs,$ver,$ca,$ua,$desc,$tags,$hpc,$hq,$hi,$pcp,$qp,$cat,$his,$iosp)
+                    has_pc,has_quest,has_impostor,pc_perf,quest_perf,detail_cached_at,has_ios,ios_perf,
+                    style_primary,style_secondary,impostor_version)
+                    VALUES($id,$n,$an,$ai,$ti,$img,$rs,$ver,$ca,$ua,$desc,$tags,$hpc,$hq,$hi,$pcp,$qp,$cat,$his,$iosp,
+                    COALESCE($sp,''),COALESCE($ss,''),COALESCE($iv,''))
                     ON CONFLICT(avatar_id) DO UPDATE SET
                         name=excluded.name, author_name=excluded.author_name, author_id=excluded.author_id,
                         thumbnail_image_url=excluded.thumbnail_image_url, image_url=excluded.image_url,
@@ -947,7 +957,10 @@ public class UnifiedTimeEngine : IDisposable
                         description=excluded.description, tags=excluded.tags,
                         has_pc=excluded.has_pc, has_quest=excluded.has_quest, has_impostor=excluded.has_impostor,
                         pc_perf=excluded.pc_perf, quest_perf=excluded.quest_perf, detail_cached_at=excluded.detail_cached_at,
-                        has_ios=excluded.has_ios, ios_perf=excluded.ios_perf";
+                        has_ios=excluded.has_ios, ios_perf=excluded.ios_perf,
+                        style_primary=COALESCE($sp, avatar_tracking.style_primary),
+                        style_secondary=COALESCE($ss, avatar_tracking.style_secondary),
+                        impostor_version=COALESCE($iv, avatar_tracking.impostor_version)";
                 cmd.Parameters.AddWithValue("$id",   avatarId);
                 cmd.Parameters.AddWithValue("$n",    name);
                 cmd.Parameters.AddWithValue("$an",   authorName);
@@ -968,6 +981,9 @@ public class UnifiedTimeEngine : IDisposable
                 cmd.Parameters.AddWithValue("$cat",  now);
                 cmd.Parameters.AddWithValue("$his",  hasIos ? 1 : 0);
                 cmd.Parameters.AddWithValue("$iosp", iosPerf);
+                cmd.Parameters.AddWithValue("$sp",   (object?)stylePrimary ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("$ss",   (object?)styleSecondary ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("$iv",   (object?)impostorVersion ?? DBNull.Value);
                 cmd.ExecuteNonQuery();
             }
             catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[AVT-SAVE-ERR] {ex.Message}"); }
@@ -2053,7 +2069,7 @@ public class UnifiedTimeEngine : IDisposable
             if (delta <= 0 || delta > 86400) continue;
             if (Users.TryGetValue(userId, out var rec))
             {
-                rec.TotalSeconds += delta;
+                AddUserSecondsLocked(userId, rec, delta, now);
                 rec.LastSeen = now.ToString("o");
                 _logger?.Invoke($"[TIMER] Spend Time saved: {rec.DisplayName} +{delta}s — overall time: {FormatDuration(rec.TotalSeconds)}");
             }
@@ -2148,7 +2164,7 @@ public class UnifiedTimeEngine : IDisposable
             {
                 if (Users.TryGetValue(userId, out var rec))
                 {
-                    rec.TotalSeconds += delta;
+                    AddUserSecondsLocked(userId, rec, delta, now);
                     rec.LastSeen = now.ToString("o");
                     if (!string.IsNullOrEmpty(_currentLocation))
                         rec.LastSeenLocation = _currentLocation;
@@ -2471,6 +2487,9 @@ public class UnifiedTimeEngine : IDisposable
             "detail_cached_at    TEXT NOT NULL DEFAULT ''",
             "has_ios             INTEGER NOT NULL DEFAULT 0",
             "ios_perf            TEXT NOT NULL DEFAULT ''",
+            "style_primary       TEXT NOT NULL DEFAULT ''",
+            "style_secondary     TEXT NOT NULL DEFAULT ''",
+            "impostor_version    TEXT NOT NULL DEFAULT ''",
         })
         {
             try { using var mc = _db.CreateCommand(); mc.CommandText = $"ALTER TABLE avatar_tracking ADD COLUMN {col}"; mc.ExecuteNonQuery(); } catch { }
@@ -2607,6 +2626,9 @@ public class UnifiedTimeEngine : IDisposable
         {
             try { using var mc = _db.CreateCommand(); mc.CommandText = $"ALTER TABLE user_tracking ADD COLUMN {col}"; mc.ExecuteNonQuery(); } catch { }
         }
+
+        try { InitYearTracking(); }
+        catch (Exception ex) { CrashHandler.WriteEntry("UnifiedTimeEngine.InitYearTracking", ex); }
     }
 
     private void MigrateUsersFromJson()
@@ -2697,6 +2719,118 @@ public class UnifiedTimeEngine : IDisposable
                 WorldName    = r.GetString(4),
                 WorldThumb   = r.GetString(5),
             };
+    }
+
+    private void AddUserSecondsLocked(string userId, UserRecord rec, long delta, DateTime nowUtc)
+    {
+        rec.TotalSeconds += delta;
+        var year      = nowUtc.ToLocalTime().Year;
+        var yearStart = new DateTime(year, 1, 1, 0, 0, 0, DateTimeKind.Local).ToUniversalTime();
+        var before    = (long)Math.Min(delta, Math.Max(0, (yearStart - nowUtc.AddSeconds(-delta)).TotalSeconds));
+        AddYearSecondsLocked(userId, year - 1, before);
+        AddYearSecondsLocked(userId, year, delta - before);
+    }
+
+    private void AddYearSecondsLocked(string userId, int year, long seconds)
+    {
+        if (seconds <= 0) return;
+        try
+        {
+            using var cmd = _db.CreateCommand();
+            cmd.CommandText = @"INSERT INTO user_year_tracking(user_id,year,total_seconds) VALUES($uid,$y,$s)
+                ON CONFLICT(user_id,year) DO UPDATE SET total_seconds=user_year_tracking.total_seconds+excluded.total_seconds";
+            cmd.Parameters.AddWithValue("$uid", userId);
+            cmd.Parameters.AddWithValue("$y", year);
+            cmd.Parameters.AddWithValue("$s", seconds);
+            cmd.ExecuteNonQuery();
+        }
+        catch { }
+    }
+
+    private void InitYearTracking()
+    {
+        using (var chk = _db.CreateCommand())
+        {
+            chk.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='user_year_tracking'";
+            if (Convert.ToInt64(chk.ExecuteScalar()) > 0) return;
+        }
+        using var tx = _db.BeginTransaction();
+        using (var create = _db.CreateCommand())
+        {
+            create.Transaction = tx;
+            create.CommandText = @"CREATE TABLE user_year_tracking (
+                user_id       TEXT    NOT NULL,
+                year          INTEGER NOT NULL,
+                total_seconds INTEGER NOT NULL DEFAULT 0,
+                meets         INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY (user_id, year)
+            )";
+            create.ExecuteNonQuery();
+        }
+
+        var totals = new List<(string UserId, long Seconds, long Meets, string LastSeen)>();
+        using (var sel = _db.CreateCommand())
+        {
+            sel.Transaction = tx;
+            sel.CommandText = $@"SELECT user_id, total_seconds, {TsMeetsExpr}, COALESCE(last_seen,'') FROM user_tracking
+                WHERE total_seconds>0 OR {TsMeetsExpr}>0";
+            using var r = sel.ExecuteReader();
+            while (r.Read()) totals.Add((r.GetString(0), r.GetInt64(1), r.GetInt64(2), r.GetString(3)));
+        }
+
+        var meetsByYear = new Dictionary<string, Dictionary<int, long>>();
+        try
+        {
+            using var sel = _db.CreateCommand();
+            sel.Transaction = tx;
+            sel.CommandText = "SELECT user_id, timestamp FROM events WHERE type IN ('first_meet','meet_again') AND user_id<>''";
+            using var r = sel.ExecuteReader();
+            while (r.Read())
+            {
+                if (!Helpers.DateTimeHelper.TryParseUtc(r.GetString(1), out var t)) continue;
+                if (!meetsByYear.TryGetValue(r.GetString(0), out var years)) meetsByYear[r.GetString(0)] = years = new();
+                var y = t.ToLocalTime().Year;
+                years[y] = years.GetValueOrDefault(y) + 1;
+            }
+        }
+        catch { }
+
+        using var ins = _db.CreateCommand();
+        ins.Transaction = tx;
+        ins.CommandText = "INSERT INTO user_year_tracking(user_id,year,total_seconds,meets) VALUES($uid,$y,$s,$m)";
+        var pUid = ins.Parameters.Add("$uid", SqliteType.Text);
+        var pY   = ins.Parameters.Add("$y",   SqliteType.Integer);
+        var pS   = ins.Parameters.Add("$s",   SqliteType.Integer);
+        var pM   = ins.Parameters.Add("$m",   SqliteType.Integer);
+
+        static Dictionary<int, long> Split(long total, Dictionary<int, long> weights)
+        {
+            var shares = new Dictionary<int, long>();
+            var sum = weights.Values.Sum();
+            long assigned = 0;
+            foreach (var (y, w) in weights) { shares[y] = total * w / sum; assigned += shares[y]; }
+            shares[weights.Keys.Max()] += total - assigned;
+            return shares;
+        }
+
+        foreach (var (userId, seconds, meets, lastSeen) in totals)
+        {
+            var weights = meetsByYear.TryGetValue(userId, out var years) && years.Count > 0
+                ? years
+                : new Dictionary<int, long>
+                  {
+                      [Helpers.DateTimeHelper.TryParseUtc(lastSeen, out var ls) ? ls.ToLocalTime().Year : DateTime.Now.Year] = 1
+                  };
+            var secShares  = Split(seconds, weights);
+            var meetShares = Split(meets, weights);
+            foreach (var y in weights.Keys)
+            {
+                if (secShares[y] <= 0 && meetShares[y] <= 0) continue;
+                pUid.Value = userId; pY.Value = y; pS.Value = secShares[y]; pM.Value = meetShares[y];
+                ins.ExecuteNonQuery();
+            }
+        }
+        tx.Commit();
     }
 
     private void PersistUserLocked(string userId, DateTime now)
@@ -3024,13 +3158,23 @@ public class UnifiedTimeEngine : IDisposable
         return (name, id);
     }
 
+    private static string? WorldNameFromTexts(List<string> texts)
+    {
+        foreach (var text in texts)
+        {
+            var m = System.Text.RegularExpressions.Regex.Match(text, @"WorldDisplayName>\s*([^<]+?)\s*</");
+            if (m.Success) return System.Net.WebUtility.HtmlDecode(m.Groups[1].Value);
+        }
+        return null;
+    }
+
     // Single-pass variant: world id and author from one file read instead of two.
-    public static (string? worldId, string? authorName, string? authorId) ExtractPhotoMetaFromPng(string filePath)
+    public static (string? worldId, string? worldName, string? authorName, string? authorId) ExtractPhotoMetaFromPng(string filePath)
     {
         var texts = ReadPngTextChunks(filePath);
-        if (texts.Count == 0) return (null, null, null);
+        if (texts.Count == 0) return (null, null, null, null);
         var (an, aid) = AuthorFromTexts(texts);
-        return (WorldIdFromTexts(texts), an, aid);
+        return (WorldIdFromTexts(texts), WorldNameFromTexts(texts), an, aid);
     }
 
     public static string? ExtractWorldIdFromPng(string filePath)
@@ -3038,4 +3182,15 @@ public class UnifiedTimeEngine : IDisposable
 
     public static (string? name, string? id) ExtractPhotoAuthorFromPng(string filePath)
         => AuthorFromTexts(ReadPngTextChunks(filePath));
+
+    public static bool IsOwnPhoto(string filePath, IEnumerable<string> playerIds, string accountId)
+    {
+        if (string.IsNullOrEmpty(accountId)) return true;
+        var author = filePath.EndsWith(".png", StringComparison.OrdinalIgnoreCase)
+            ? ExtractPhotoAuthorFromPng(filePath).id
+            : null;
+        if (!string.IsNullOrEmpty(author)) return author == accountId;
+        var players = playerIds.Where(id => !string.IsNullOrEmpty(id)).ToList();
+        return players.Count == 0 || players.Contains(accountId);
+    }
 }

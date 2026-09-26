@@ -2068,29 +2068,13 @@ function _renderGroupInviteBox() {
     const groupName = gd.name || '';
     const groupIcon = gd.iconUrl || '';
     const bannerUrl = gd.bannerUrl || '';
-    const bannerBg = bannerUrl || groupIcon;
-    box.innerHTML = `
-        ${renderModalBar(groupName, [modalCloseAction('closeInviteModal();_grpInvGroupId=null;')], { flush: true })}
-        <div class="inv-world-banner" style="background-image:url('${esc(bannerBg)}')">
-            <div class="inv-world-fade"></div>
-            <div class="inv-world-info">
-                <div class="inv-world-name">${esc(groupName)}</div>
-                <div style="font-size:calc(10px + var(--fs-off, 0px));color:rgba(255,255,255,.65);margin-top:3px;">${esc(t('groups.invite.subtitle', 'Invite to this group'))}</div>
-            </div>
-        </div>
-        <div class="inv-search-wrap">
-            <span class="msi inv-search-icon">search</span>
-            <input type="text" id="inviteSearch" class="inv-search-input" placeholder="${esc(t('invite.multi.search_placeholder', 'Search friends...'))}" oninput="_dbFilterInvite()">
-        </div>
-        <div id="inviteList" class="inv-list"></div>
-        <div class="inv-footer">
-            <span id="inviteSelCount" class="inv-sel-count"></span>
-            <button id="inviteSendBtn" class="vrcn-button" onclick="_sendGroupInvites()" disabled>${esc(t('groups.actions.invite', 'Invite'))}</button>
-        </div>
-        <div id="inviteProgress" class="inv-progress-wrap" style="display:none;">
-            <div class="inv-progress-track"><div id="inviteProgressBar" class="inv-progress-bar"></div></div>
-            <div id="inviteProgressText" class="inv-progress-text"></div>
-        </div>`;
+    const leftHtml = worldPanelHtml({
+        thumb: bannerUrl || groupIcon,
+        name: groupName,
+        description: gd.description || '',
+    });
+    box.innerHTML = inviteLayoutHtml(groupName, leftHtml,
+        t('groups.actions.invite', 'Invite'), '_sendGroupInvites()', 'closeInviteModal();_grpInvGroupId=null;');
     const search = document.getElementById('inviteSearch');
     if (search) search.value = _inviteFilter;
     renderInviteList(_inviteFilter);

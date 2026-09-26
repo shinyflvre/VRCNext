@@ -143,24 +143,14 @@ public class PhotosController
                     catch { }
                 }
                 if (filePath == null) continue;
+                if (!UnifiedTimeEngine.IsOwnPhoto(filePath, rec.Players.Select(p => p.UserId), _core.CurrentVrcUserId)) continue;
 
                 var photoUrl = GetVirtualMediaUrl(filePath);
                 if (string.IsNullOrEmpty(photoUrl)) continue;
 
-                // Parse timestamp from VRChat filename (VRChat_YYYY-MM-DD_HH-mm-ss.fff_...)
-                DateTime ts;
-                try
-                {
-                    var m = System.Text.RegularExpressions.Regex.Match(fileName,
-                        @"VRChat_(\d{4}-\d{2}-\d{2})_(\d{2}-\d{2}-\d{2})");
-                    ts = m.Success
-                        ? DateTime.ParseExact($"{m.Groups[1].Value} {m.Groups[2].Value}",
-                            "yyyy-MM-dd HH-mm-ss",
-                            System.Globalization.CultureInfo.InvariantCulture,
-                            System.Globalization.DateTimeStyles.AssumeLocal).ToUniversalTime()
-                        : new FileInfo(filePath).LastWriteTimeUtc;
-                }
-                catch { ts = new FileInfo(filePath).LastWriteTimeUtc; }
+                var ts = VrcPathsHelper.TryParseVrcPhotoTime(fileName, out var shotLocal)
+                    ? shotLocal.ToUniversalTime()
+                    : new FileInfo(filePath).LastWriteTimeUtc;
 
                 var bsWorldName  = "";
                 var bsWorldThumb = "";
@@ -969,7 +959,7 @@ public class PhotosController
             string? worldId = null;
             try
             {
-                var (wid, an, aid) = UnifiedTimeEngine.ExtractPhotoMetaFromPng(f.FullName);
+                var (wid, _, an, aid) = UnifiedTimeEngine.ExtractPhotoMetaFromPng(f.FullName);
                 worldId = wid;
                 if (!string.IsNullOrEmpty(an) || !string.IsNullOrEmpty(aid))
                 {

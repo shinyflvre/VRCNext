@@ -59,6 +59,24 @@ public static class VrcPathsHelper
         return dir;
     }
 
+    private static readonly System.Text.RegularExpressions.Regex VrcPhotoNameRx = new(
+        @"^VRChat_(?:\d+x\d+_)?(\d{4})-(\d{2})-(\d{2})_(\d{2})-(\d{2})-(\d{2})\.\d{3}(?:_\d+x\d+)?\.(?:png|jpe?g|webp)$",
+        System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    public static bool TryParseVrcPhotoTime(string fileName, out DateTime local)
+    {
+        local = default;
+        var m = VrcPhotoNameRx.Match(fileName);
+        if (!m.Success) return false;
+        try
+        {
+            local = new DateTime(int.Parse(m.Groups[1].Value), int.Parse(m.Groups[2].Value), int.Parse(m.Groups[3].Value),
+                int.Parse(m.Groups[4].Value), int.Parse(m.Groups[5].Value), int.Parse(m.Groups[6].Value), DateTimeKind.Local);
+            return true;
+        }
+        catch { return false; }
+    }
+
     public static string TranslateGamePath(string path)
     {
 #if WINDOWS

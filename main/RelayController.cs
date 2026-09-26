@@ -582,6 +582,11 @@ public class RelayController : IDisposable
 
             if (_vrcSessionPid != 0 && !_vrcSessionHandled)
                 TryHandleVrcSessionStart();
+
+            var startUtc = _vrcSessionProcStart != DateTime.MinValue
+                ? _vrcSessionProcStart.ToUniversalTime()
+                : _vrcSessionFirstSeen;
+            _core.VrcSessions.Tick(_vrcSessionPid, startUtc);
         }
         finally { System.Threading.Interlocked.Exchange(ref _vrcCheckBusy, 0); }
     }
@@ -608,7 +613,6 @@ public class RelayController : IDisposable
             _pendingLaunch = null;
         }
 
-        LogVrcLaunchState(true);
         Invoke(() => _core.SendToJS("vrcRunningChanged", new { running = true }));
     }
 
@@ -619,7 +623,7 @@ public class RelayController : IDisposable
         _vrcSessionHandled      = false;
         _vrcSessionModeResolved = false;
 
-        LogVrcLaunchState(false);
+        _core.VrcSessions.End(DateTime.UtcNow);
         Invoke(() => _core.SendToJS("vrcRunningChanged", new { running = false }));
 
         if (_core.Settings.CloseWithVrc)
@@ -658,11 +662,6 @@ public class RelayController : IDisposable
             if (launchApps) LaunchExtraApps(apps, log: true, vr: vr);
             _core.SendToJS("vrcLaunched", new { vr });
         });
-    }
-
-    private void LogVrcLaunchState(bool running)
-    {
-        Invoke(() => _core.LogSelfProfile?.Invoke("launch", "", running ? "start" : "stop"));
     }
 
     private void CloseTrackedExtraApps()

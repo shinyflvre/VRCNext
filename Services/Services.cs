@@ -721,6 +721,8 @@ public class AppSettings
 
     public bool EventPlayerSessionsRepaired { get; set; } = false;
 
+    public bool RewindHistoryRepaired { get; set; } = false;
+
     public bool DuplicateFriendRemovedCleaned { get; set; } = false;
 
     public bool ExtraExeAutoStartMigrated { get; set; } = false;

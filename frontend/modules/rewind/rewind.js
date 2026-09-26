@@ -43,7 +43,7 @@ function handleRewindData(data) {
 
 function _rwAvatar(url, name) {
     return url
-        ? `<div class="rw-av" style="background-image:url('${cssUrl(imgThumb(url, 128))}')"></div>`
+        ? `<div class="rw-av" style="background-image:url('${cssUrl(url)}')"></div>`
         : `<div class="rw-av rw-av-letter">${esc((name || '?')[0].toUpperCase())}</div>`;
 }
 
@@ -83,7 +83,7 @@ function _rwBuildPages(d) {
     if (d.bestFriend) {
         const bf = d.bestFriend;
         const sw = d.sharedWorld ? `<div class="rw-inline-card">
-            ${d.sharedWorld.thumb ? `<div class="rw-mini-thumb" style="background-image:url('${cssUrl(imgThumb(d.sharedWorld.thumb, 128))}')"></div>` : ''}
+            ${d.sharedWorld.thumb ? `<div class="rw-mini-thumb" style="background-image:url('${cssUrl(d.sharedWorld.thumb)}')"></div>` : ''}
             <div><div class="rw-inline-label">${esc(rwT('sharedworld.title', 'Your happy place together'))}</div>
             <div class="rw-inline-name">${esc(d.sharedWorld.name)}</div></div>
         </div>` : '';
@@ -99,7 +99,7 @@ function _rwBuildPages(d) {
     }
 
     if (bfPics.length) {
-        const imgs = bfPics.slice(0, 16).map(p => `<div class="rw-img" style="background-image:url('${cssUrl(mediaThumb(p.url))}')"></div>`).join('');
+        const imgs = bfPics.slice(0, 16).map(p => `<div class="rw-img" style="background-image:url('${cssUrl(p.url)}')"></div>`).join('');
         pages.push(`${_rwHeader('', rwT('bfphotos.title', 'Moments you shared'))}
             <div class="rw-content rw-scroll"><div class="rw-img-grid-4">${imgs}</div></div>`);
     }
@@ -107,7 +107,7 @@ function _rwBuildPages(d) {
     if (d.newFriends && d.newFriends.count > 0) {
         const list = d.newFriends.list || [];
         const rows = list.map(f => `<div class="ts-item">
-            ${f.image ? `<img class="ts-item-avatar" src="${esc(imgThumb(f.image, 96))}" onerror="this.style.visibility='hidden'">` : `<div class="ts-item-avatar ts-avatar-placeholder"></div>`}
+            ${f.image ? `<img class="ts-item-avatar" src="${esc(f.image)}" onerror="this.style.visibility='hidden'">` : `<div class="ts-item-avatar ts-avatar-placeholder"></div>`}
             <div class="ts-item-body"><div class="ts-item-name">${esc(f.name)}</div>
             <div class="ts-item-meta">${f.hours ? _rwNum(f.hours) + 'h ' + esc(rwT('bestfriend.together', 'together')) : '&nbsp;'}</div></div>
             ${f.hours ? `<div class="ts-item-time">${_rwNum(f.hours)}h</div>` : ''}
@@ -120,7 +120,7 @@ function _rwBuildPages(d) {
     if (d.topFriends && d.topFriends.length) {
         const rows = d.topFriends.map((f, i) => `<div class="ts-item">
             <div class="ts-item-rank">#${i + 1}</div>
-            ${f.image ? `<img class="ts-item-avatar" src="${esc(imgThumb(f.image, 96))}" onerror="this.style.visibility='hidden'">` : `<div class="ts-item-avatar ts-avatar-placeholder"></div>`}
+            ${f.image ? `<img class="ts-item-avatar" src="${esc(f.image)}" onerror="this.style.visibility='hidden'">` : `<div class="ts-item-avatar ts-avatar-placeholder"></div>`}
             <div class="ts-item-body"><div class="ts-item-name">${esc(f.name)}</div>
             <div class="ts-item-meta">${_rwNum(f.meets)} ${esc(rwT('bestfriend.reunions', 'reunions'))}</div></div>
             <div class="ts-item-time">${_rwNum(f.hours)}h</div>
@@ -134,7 +134,7 @@ function _rwBuildPages(d) {
         const rows = d.topWorlds.map((w, i) => {
             const pct = Math.max(3, Math.round((w.hours || 0) / maxH * 100));
             const thumb = w.thumb
-                ? `<img class="ts-item-thumb" src="${esc(imgThumb(w.thumb, 96))}" onerror="this.style.visibility='hidden'">`
+                ? `<img class="ts-item-thumb" src="${esc(w.thumb)}" onerror="this.style.visibility='hidden'">`
                 : `<div class="ts-item-thumb ts-thumb-placeholder"></div>`;
             return `<div class="ts-item">
                 <div class="ts-item-rank">#${i + 1}</div>
@@ -151,7 +151,7 @@ function _rwBuildPages(d) {
 
     if (wPics.length) {
         const cells = wPics.slice(0, 16).map(p => `<figure class="rw-figure">
-            <div class="rw-img" style="background-image:url('${cssUrl(mediaThumb(p.url))}')"></div>
+            <div class="rw-img" style="background-image:url('${cssUrl(p.url)}')"></div>
             ${p.world ? `<figcaption class="rw-figcap">${esc(p.world)}</figcaption>` : ''}
         </figure>`).join('');
         pages.push(`${_rwHeader('', rwT('worldphotos.title', 'So many memories in those worlds'))}
@@ -200,7 +200,7 @@ function openRewindModal(d) {
     const hidden = _rwHidden();
     const slides = (d.slideshow || []).filter(s => !hidden.has(s.path)).slice(0, 14);
     const bgHtml = `<div class="rw-bg" id="rwBg">
-        ${slides.map((s, i) => `<div class="rw-slide${i === 0 ? ' active' : ''}" style="background-image:url('${cssUrl(mediaThumb(s.url))}')"></div>`).join('')}
+        ${slides.map((s, i) => `<div class="rw-slide${i === 0 ? ' active' : ''}" style="background-image:url('${cssUrl(s.url)}')"></div>`).join('')}
         <div class="rw-bg-scrim"></div>
     </div>`;
 

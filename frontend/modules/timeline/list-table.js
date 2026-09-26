@@ -46,7 +46,7 @@ const TL_TABLE_DEFS = {
         { id: 'status',   key: 'instance.table.status',           fallback: 'Status',       width: '160px', sort: 'status' },
         { id: 'age',      key: 'instance.table.age',              fallback: '18+',          width: '70px',  sort: 'age' },
         { id: 'platform', key: 'instance.table.platform',         fallback: 'Platform',     width: '90px',  sort: 'platform' },
-        { id: 'language', key: 'instance.table.language',         fallback: 'Language',     width: '110px', sort: 'language' },
+        { id: 'language', key: 'instance.table.language',         fallback: 'Language',     width: '200px', sort: 'language' },
         { id: 'biolinks', key: 'people.list.header.bio_links',    fallback: 'Bio Links',    width: '100px', sort: 'biolinks' },
         { id: 'pronouns', key: 'people.list.header.pronouns',     fallback: 'Pronouns',     width: '120px', sort: 'pronouns' },
         { id: 'meets',    key: 'people.list.header.meets',        fallback: 'Meets',        width: '80px',  sort: 'meets' },

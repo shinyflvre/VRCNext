@@ -46,20 +46,62 @@ public class AvatarsAPI(VRChatApiService ctx)
         return (0, null);
     }
 
-    public async Task<(bool ok, string error)> UpdateAvatarAsync(string avatarId, string name, string description, string releaseStatus, List<string> tags)
+    public async Task<(bool ok, string error, JObject? avatar)> UpdateAvatarAsync(string avatarId, string name, string description,
+        string releaseStatus, List<string> tags, string? primaryStyleId = null, string? secondaryStyleId = null)
     {
-        if (!ctx.IsLoggedIn) return (false, "Not logged in");
+        if (!ctx.IsLoggedIn) return (false, "Not logged in", null);
         try
         {
-            var body = JsonConvert.SerializeObject(new { name, description, releaseStatus, tags });
-            var content = new StringContent(body, Encoding.UTF8, "application/json");
+            var body = new JObject
+            {
+                ["name"]          = name,
+                ["description"]   = description,
+                ["releaseStatus"] = releaseStatus,
+                ["tags"]          = JArray.FromObject(tags),
+            };
+            if (primaryStyleId != null)   body["primaryStyle"]   = primaryStyleId;
+            if (secondaryStyleId != null) body["secondaryStyle"] = secondaryStyleId;
+            var content = new StringContent(body.ToString(Formatting.None), Encoding.UTF8, "application/json");
             var resp = await ctx._http.PutAsync($"{VRChatApiService.BASE}/avatars/{avatarId}", content);
             var respBody = await resp.Content.ReadAsStringAsync();
-            if (resp.IsSuccessStatusCode) return (true, "");
+            if (resp.IsSuccessStatusCode)
+            {
+                JObject? updated = null;
+                try { updated = JObject.Parse(respBody); } catch { }
+                return (true, "", updated);
+            }
             ctx.Log($"UpdateAvatar {(int)resp.StatusCode}: {respBody[..Math.Min(200, respBody.Length)]}");
-            return (false, $"API error {(int)resp.StatusCode}");
+            return (false, $"API error {(int)resp.StatusCode}", null);
         }
-        catch (Exception ex) { ctx.Log($"UpdateAvatar exception: {ex.Message}"); return (false, ex.Message); }
+        catch (Exception ex) { ctx.Log($"UpdateAvatar exception: {ex.Message}"); return (false, ex.Message, null); }
+    }
+
+    public async Task<JArray> GetAvatarStylesAsync()
+    {
+        if (!ctx.IsLoggedIn) return new JArray();
+        try
+        {
+            var resp = await ctx._http.GetAsync($"{VRChatApiService.BASE}/avatarStyles");
+            var body = await resp.Content.ReadAsStringAsync();
+            if (resp.IsSuccessStatusCode) return JArray.Parse(body);
+            ctx.Log($"GetAvatarStyles {(int)resp.StatusCode}: {body[..Math.Min(200, body.Length)]}");
+        }
+        catch (Exception ex) { ctx.Log($"GetAvatarStyles exception: {ex.Message}"); }
+        return new JArray();
+    }
+
+    public static (string? primary, string? secondary) ReadStyles(JObject? avatar)
+    {
+        if (avatar?["styles"] is not JObject styles) return (null, null);
+        static string Value(JToken? t) => t == null || t.Type == JTokenType.Null ? "" : t.ToString();
+        return (Value(styles["primary"]), Value(styles["secondary"]));
+    }
+
+    public static string? ReadImpostorVersion(JObject? avatar)
+    {
+        if (avatar?["unityPackages"] is not JArray packages) return null;
+        var impostor = packages.OfType<JObject>().LastOrDefault(p => p["variant"]?.ToString() == "impostor");
+        return impostor?["impostorizerVersion"]?.ToString() ?? "";
     }
 
     public async Task<bool> SelectAvatarAsync(string avatarId)

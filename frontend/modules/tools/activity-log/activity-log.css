@@ -100,61 +100,51 @@
     flex-wrap: wrap;
     flex-shrink: 0;
 }
-.log-search { margin-bottom: 0; flex: 0 1 170px; min-width: 102px; }
+.log-search { margin-bottom: 0; flex: 0 1 220px; min-width: 120px; }
 
 .log-stats {
+    flex: 1 1 auto;
+    min-width: 0;
     display: flex;
     align-items: center;
-    gap: 4px;
+    justify-content: space-between;
     flex-wrap: wrap;
-    margin-left: auto;
+    gap: 4px 16px;
+    font-size: calc(12px + var(--fs-off, 0px));
+    font-weight: 600;
+    line-height: 16px;
 }
 .log-stat {
     display: inline-flex;
     align-items: baseline;
-    gap: 5px;
-    padding: 3px 8px;
-    border-radius: 7px;
-    background: var(--bg-input);
+    gap: 4px;
+    white-space: nowrap;
 }
-.log-stat-k {
-    font-size: calc(11px + var(--fs-off, 0px));
-    font-weight: 600;
-    letter-spacing: .3px;
-    color: var(--tx2);
-}
+.log-stat-k { color: var(--tx2); }
 .log-stat-v {
-    font-size: calc(11px + var(--fs-off, 0px));
-    font-weight: 600;
     font-variant-numeric: tabular-nums;
-    color: var(--tx2);
+    color: var(--tx0);
 }
-.log-stat-v.ok     { color: var(--ok); }
-.log-stat-v.warn   { color: var(--warn); }
-.log-stat-v.err    { color: var(--err); }
-.log-stat-v.cdn    { color: var(--cyan); }
-.log-stat-v.accent { color: var(--accent-lt); }
-.log-stat-v.zero   { color: var(--tx2); }
+.log-stat-v.zero { color: var(--tx2); }
 
 .log-stat-sep {
     width: 1px;
-    height: 16px;
+    height: 12px;
     background: var(--brd);
-    margin: 0 2px;
+    flex-shrink: 0;
 }
 
 .log-ws {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    padding: 4px 10px;
-    border-radius: 7px;
-    font-size: calc(11px + var(--fs-off, 0px));
+    gap: 4px;
+    font-size: calc(12px + var(--fs-off, 0px));
     font-weight: 600;
-    background: var(--bg-input);
-    color: var(--tx0);
+    line-height: 16px;
+    color: var(--tx2);
     flex-shrink: 0;
+    margin-left: 6px;
 }
 .log-ws-icon { font-size: calc(14px + var(--fs-off, 0px)) !important; }
-.log-ws.online  { background: rgba(45,212,140,.12); color: var(--ok); }
+.log-ws.online .log-ws-icon { color: var(--ok); }
 .log-ws.offline { color: var(--tx3); }

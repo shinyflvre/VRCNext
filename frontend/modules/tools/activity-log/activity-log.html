@@ -1,19 +1,18 @@
                 <div class="tab-toolbar log-toolbar">
-                    <div class="search-bar-row log-search"><span class="msi search-ico">search</span><input id="logSearchInput" type="text" class="vrcn-input" placeholder="Search..." data-i18n-placeholder="logs.search.placeholder" oninput="onLogSearch(this.value)"></div>
                     <div class="log-stats" id="logStats">
                         <div class="log-stat" id="statAget"><span class="log-stat-k">AGET/H</span><span class="log-stat-v zero">0</span></div>
                         <div class="log-stat" id="statAcdn"><span class="log-stat-k">ACDN/H</span><span class="log-stat-v zero">0</span></div>
-                        <div class="log-stat" id="statCdn"><span class="log-stat-k">CDN</span><span class="log-stat-v cdn zero">0</span></div>
+                        <div class="log-stat" id="statCdn"><span class="log-stat-k">CDN</span><span class="log-stat-v zero">0</span></div>
                         <div class="log-stat-sep"></div>
-                        <div class="log-stat" id="statAvtrdbGet"><span class="log-stat-k">AVTRDB/GET</span><span class="log-stat-v accent zero">0</span></div>
-                        <div class="log-stat" id="statAvtrdbQry"><span class="log-stat-k">AVTRDB/QRY</span><span class="log-stat-v accent zero">0</span></div>
-                        <div class="log-stat" id="statAvtrdbSub"><span class="log-stat-k">AVTRDB/SUB</span><span class="log-stat-v accent zero">0</span></div>
+                        <div class="log-stat" id="statAvtrdbGet"><span class="log-stat-k">AVTRDB/GET</span><span class="log-stat-v zero">0</span></div>
+                        <div class="log-stat" id="statAvtrdbQry"><span class="log-stat-k">AVTRDB/QRY</span><span class="log-stat-v zero">0</span></div>
+                        <div class="log-stat" id="statAvtrdbSub"><span class="log-stat-k">AVTRDB/SUB</span><span class="log-stat-v zero">0</span></div>
                         <div class="log-stat-sep"></div>
-                        <div class="log-stat" id="statHttp200"><span class="log-stat-k">200</span><span class="log-stat-v ok zero">0</span></div>
-                        <div class="log-stat" id="statHttp429"><span class="log-stat-k">429</span><span class="log-stat-v warn zero">0</span></div>
-                        <div class="log-stat" id="statHttp404"><span class="log-stat-k">404</span><span class="log-stat-v err zero">0</span></div>
-                        <div class="log-stat" id="statHttp403"><span class="log-stat-k">403</span><span class="log-stat-v err zero">0</span></div>
-                        <div class="log-stat" id="statHttp400"><span class="log-stat-k">400</span><span class="log-stat-v err zero">0</span></div>
+                        <div class="log-stat" id="statHttp200"><span class="log-stat-k">200</span><span class="log-stat-v zero">0</span></div>
+                        <div class="log-stat" id="statHttp429"><span class="log-stat-k">429</span><span class="log-stat-v zero">0</span></div>
+                        <div class="log-stat" id="statHttp404"><span class="log-stat-k">404</span><span class="log-stat-v zero">0</span></div>
+                        <div class="log-stat" id="statHttp403"><span class="log-stat-k">403</span><span class="log-stat-v zero">0</span></div>
+                        <div class="log-stat" id="statHttp400"><span class="log-stat-k">400</span><span class="log-stat-v zero">0</span></div>
                     </div>
                     <div class="log-ws" id="wsBadge">
                         <span class="msi log-ws-icon">wifi_off</span>
@@ -28,6 +27,7 @@
                     </div>
                 </div>
                 <div style="display:flex;gap:6px;margin-top:8px;flex-shrink:0;">
+                    <div class="search-bar-row log-search"><span class="msi search-ico">search</span><input id="logSearchInput" type="text" class="vrcn-input" placeholder="Search..." data-i18n-placeholder="logs.search.placeholder" oninput="onLogSearch(this.value)"></div>
                     <button id="logShowFullBtn" class="vrcn-button" onclick="toggleLogShowFull()" style="flex:1;justify-content:center;" title="Toggle full log view" data-i18n-title="activity.actions.show_full_title"><span class="msi logShowFullIcon" style="font-size:16px;">unfold_more</span> <span class="logShowFullText" data-i18n="activity.actions.show_full">Show Full</span></button>
                     <button class="vrcn-button" onclick="copyLog()" style="flex:1;justify-content:center;" title="Copy to Clipboard" data-i18n-title="activity.actions.copy_title"><span class="msi" style="font-size:16px;">content_copy</span> <span data-i18n="common.copy">Copy</span></button>
                     <button class="vrcn-button" onclick="sendToCS({action:'openLogFile'})" style="flex:1;justify-content:center;" title="Open current log file" data-i18n-title="activity.actions.open_log_title"><span class="msi" style="font-size:16px;">description</span> <span data-i18n="activity.actions.open_log">Open Log</span></button>

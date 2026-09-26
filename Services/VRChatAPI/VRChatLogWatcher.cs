@@ -78,19 +78,95 @@ public class VRChatLogWatcher : IDisposable
     private void Log(string msg) => DebugLog?.Invoke(msg);
 
     private static DateTime ParseLogTimestamp(string line)
+        => TryParseLogTimestamp(line, out var ts) ? ts : DateTime.Now;
+
+    // Manual parse avoids Interop+Globalization.CompareString (ICU)
+    private static bool TryParseLogTimestamp(string line, out DateTime ts)
     {
-        // Manual parse avoids Interop+Globalization.CompareString (ICU)
-        if (line.Length >= 19
-            && int.TryParse(line.AsSpan(0,  4), out int yr)
-            && int.TryParse(line.AsSpan(5,  2), out int mo)
-            && int.TryParse(line.AsSpan(8,  2), out int dy)
-            && int.TryParse(line.AsSpan(11, 2), out int hh)
-            && int.TryParse(line.AsSpan(14, 2), out int mm)
-            && int.TryParse(line.AsSpan(17, 2), out int ss))
+        ts = default;
+        if (line.Length < 19 || line[4] != '.' || line[7] != '.' || line[10] != ' ') return false;
+        if (!int.TryParse(line.AsSpan(0,  4), out int yr)
+            || !int.TryParse(line.AsSpan(5,  2), out int mo)
+            || !int.TryParse(line.AsSpan(8,  2), out int dy)
+            || !int.TryParse(line.AsSpan(11, 2), out int hh)
+            || !int.TryParse(line.AsSpan(14, 2), out int mm)
+            || !int.TryParse(line.AsSpan(17, 2), out int ss)) return false;
+        try { ts = new DateTime(yr, mo, dy, hh, mm, ss, DateTimeKind.Local); return true; }
+        catch { return false; }
+    }
+
+    public sealed record VrcLogSession(
+        string Path, DateTime StartUtc, DateTime EndUtc, string UserId,
+        List<(DateTime AtUtc, string Location)> JoinsUtc, List<DateTime> LeftRoomsUtc);
+
+    private static readonly Regex RxUserAuth = new(
+        @"User Authenticated: .*\((usr_[0-9a-fA-F-]+)\)\s*$", RegexOptions.Compiled);
+    private static readonly Regex RxLogFileStart = new(
+        @"output_log_(\d{4})-(\d{2})-(\d{2})_(\d{2})-(\d{2})-(\d{2})", RegexOptions.Compiled);
+
+    public string AuthenticatedUserId { get; private set; } = "";
+    public DateTime? CurrentLogStartUtc { get; private set; }
+
+    private static DateTime? LogFileStartUtc(string path)
+    {
+        var m = RxLogFileStart.Match(System.IO.Path.GetFileName(path));
+        if (!m.Success) return null;
+        try
         {
-            try { return new DateTime(yr, mo, dy, hh, mm, ss); } catch { }
+            return new DateTime(int.Parse(m.Groups[1].Value), int.Parse(m.Groups[2].Value), int.Parse(m.Groups[3].Value),
+                int.Parse(m.Groups[4].Value), int.Parse(m.Groups[5].Value), int.Parse(m.Groups[6].Value),
+                DateTimeKind.Local).ToUniversalTime();
         }
-        return DateTime.Now;
+        catch { return null; }
+    }
+
+    public static List<VrcLogSession> ReadLogSessions()
+    {
+        var result = new List<VrcLogSession>();
+        foreach (var f in GetLogFilesNewestFirst())
+        {
+            var s = ReadLogSession(f);
+            if (s != null) result.Add(s);
+        }
+        result.Sort((a, b) => a.StartUtc.CompareTo(b.StartUtc));
+        return result;
+    }
+
+    private static VrcLogSession? ReadLogSession(string path)
+    {
+        try
+        {
+            DateTime? first = null, last = null;
+            var user  = "";
+            var joins = new List<(DateTime AtUtc, string Location)>();
+            var lefts = new List<DateTime>();
+            using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var reader = new StreamReader(fs);
+            string? line;
+            while ((line = reader.ReadLine()) != null)
+            {
+                if (line.Length < 30 || !TryParseLogTimestamp(line, out var ts)) continue;
+                var utc = ts.ToUniversalTime();
+                first ??= utc;
+                last = utc;
+                if (user.Length == 0 && line.Contains("User Authenticated:"))
+                {
+                    var m = RxUserAuth.Match(line);
+                    if (m.Success) user = m.Groups[1].Value;
+                }
+                else if (line.Contains("Joining wrld_"))
+                {
+                    var m = RxRoomJoin.Match(line);
+                    if (m.Success) joins.Add((utc, m.Groups[1].Value));
+                }
+                else if (line.Contains("OnLeftRoom")) lefts.Add(utc);
+            }
+            if (first == null || last == null) return null;
+            var start = LogFileStartUtc(path) ?? first.Value;
+            if (start > first.Value) start = first.Value;
+            return new VrcLogSession(path, start, last.Value, user, joins, lefts);
+        }
+        catch { return null; }
     }
 
     // [Behaviour] prefix required to avoid false matches from world scripts
@@ -322,6 +398,8 @@ public class VRChatLogWatcher : IDisposable
             {
                 _currentLogFile = latest;
                 _lastPosition = 0;
+                AuthenticatedUserId = "";
+                CurrentLogStartUtc = LogFileStartUtc(latest);
                 lock (_lock) _players.Clear();
                 _totalJoinEvents = 0; _totalLeftEvents = 0; _totalRoomEvents = 0;
                 Log($"LogWatcher: Switched to {Path.GetFileName(latest)}");
@@ -452,6 +530,13 @@ public class VRChatLogWatcher : IDisposable
     private void ParseLine(string line, bool catchUp)
     {
         if (line.Length < 30) return;
+
+        if (AuthenticatedUserId.Length == 0 && line.Contains("User Authenticated:"))
+        {
+            var am = RxUserAuth.Match(line);
+            if (am.Success) AuthenticatedUserId = am.Groups[1].Value;
+            return;
+        }
 
         if (AvatarSeen != null && line.Contains("avtr_"))
             foreach (Match am in RxAvatarId.Matches(line))

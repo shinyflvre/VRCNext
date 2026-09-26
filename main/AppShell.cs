@@ -274,7 +274,7 @@ public partial class AppShell
         WindowController.OnMinimized = () => _memTrim.TrimNow();
 #endif
         _authCtrl = new AuthController(_core, _friends, _instance, _photos, _relayCtrl, _groups, _discordCtrl);
-        _core.LogSelfProfile = _authCtrl.LogSelfProfileEvent;
+        _core.LogSelfProfile = (kind, oldValue, newValue, timestamp) => _authCtrl.LogSelfProfileEvent(kind, oldValue, newValue, timestamp);
         _relayCtrl.OnOwnUserUpdated = user =>
         {
             _authCtrl.SendVrcUserData(user);
@@ -302,6 +302,11 @@ public partial class AppShell
         _ = SQLiteMigrator.RepairEventPlayerSessionsAsync(
             _settings,
             _core.Timeline,
+            pct => _core.SendToJS("dbMigrationProgress", new { percent = pct }));
+        _ = SQLiteMigrator.RepairRewindHistoryAsync(
+            _settings,
+            () => _core.Timeline,
+            _core.VrcSessions,
             pct => _core.SendToJS("dbMigrationProgress", new { percent = pct }));
 
         // Permini — load persisted list into memory

@@ -747,6 +747,7 @@ function renderFriendDetail(d) {
         </div>`;
 
     const _aboutRows = [
+        ...getProfileUsernameRows(d.rawJson, _mr),
         _mr(t('profiles.meta.platform',       'Platform'),       esc(getPlatformLabel(d.platform || d.lastPlatform) || '—')),
         _mr(t('profiles.meta.last_platform',  'Last Platform'),  esc(getPlatformLabel(d.lastPlatform) || '—')),
         _mr(t('profiles.meta.age_verified',   'Age Verified'),   d.ageVerified        ? t('common.yes','Yes') : t('common.no','No')),
@@ -1822,10 +1823,10 @@ function drawStatusHeatmap(payload, ids, view) {
 }
 
 function friendAction(action, location, userId) {
+    if (action === 'join') { sendToCS({ action: 'vrcJoinFriend', location: location }); return; }
     const btnContainer = document.querySelector('.fd-actions');
     if (btnContainer) btnContainer.querySelectorAll('button').forEach(b => b.disabled = true);
-    if (action === 'join') sendToCS({ action: 'vrcJoinFriend', location: location });
-    else if (action === 'invite') sendToCS({ action: 'vrcInviteFriend', userId: userId });
+    if (action === 'invite') sendToCS({ action: 'vrcInviteFriend', userId: userId });
     else if (action === 'requestInvite') sendToCS({ action: 'vrcRequestInvite', userId: userId });
 }
 
