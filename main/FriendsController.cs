@@ -2667,6 +2667,7 @@ public class FriendsController
             dateJoined = user["date_joined"]?.ToString() ?? "",
             location, worldName, worldThumb, instanceType, userCount, worldCapacity,
             ageGate = location.Contains("~ageGate"),
+            minAvatarPerf = inst?["minimumAvatarPerformance"]?.ToString() ?? "",
             isFriend = user["isFriend"]?.Value<bool>() ?? !string.IsNullOrEmpty(user["friendKey"]?.ToString()),
             canJoin = isInWorld && canJoin, canRequestInvite, canInvite = true,
             currentAvatarImageUrl = ImageCacheHelper.GetAvatarUrl(user["currentAvatar"]?.ToString(), user["currentAvatarImageUrl"]?.ToString()),

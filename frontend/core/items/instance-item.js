@@ -49,8 +49,22 @@ function getInstanceMembers(location) {
  * @param {string}  [opts.onclick]    - Inline JS onclick string (makes card clickable)
  * @returns {string} HTML string
  */
+function instanceMinPerfBadge(perf) {
+    const key = String(perf || '').toLowerCase().replace(/[^a-z]/g, '');
+    const labels = {
+        excellent: ['avatars.perf.excellent', 'Excellent'],
+        good:      ['avatars.perf.good', 'Good'],
+        medium:    ['avatars.perf.medium', 'Medium'],
+        poor:      ['avatars.perf.poor', 'Poor'],
+        verypoor:  ['avatars.perf.very_poor', 'Very Poor'],
+    }[key];
+    if (!labels) return '';
+    const title = t('worlds.instances.min_perf', 'Minimum Avatar Performance');
+    return `<span class="vrcn-badge av-perf-r-${key}" title="${esc(title)}"><img src="assets/Avatars/${key}.png" alt="" style="height:11px;width:auto;">${esc(t(labels[0], labels[1]))}</span>`;
+}
+
 function renderInstanceItem(opts) {
-    const { thumb, worldName, worldTitle, instanceType, instanceId, owner, ownerGroup, ownerId, region, userCount, capacity, friends, location, onclick, ageGate, languageRatio } = opts;
+    const { thumb, worldName, worldTitle, instanceType, instanceId, owner, ownerGroup, ownerId, region, userCount, capacity, friends, location, onclick, ageGate, languageRatio, minAvatarPerf } = opts;
 
     const { cls, label } = getInstanceBadge(instanceType);
     const joinLabel = t('common.join', 'Join');
@@ -75,7 +89,7 @@ function renderInstanceItem(opts) {
     }
 
     const ageGateLabel = t('worlds.instances.age_gated', 'Age Gated');
-    const badgeHtml = `<span class="vrcn-badge ${cls}">${esc(label)}</span>${ageGate ? `<span class="vrcn-badge" style="background:rgba(255,75,85,.15);color:var(--err);">${esc(ageGateLabel)}</span>` : ''}`;
+    const badgeHtml = `<span class="vrcn-badge ${cls}">${esc(label)}</span>${ageGate ? `<span class="vrcn-badge" style="background:rgba(255,75,85,.15);color:var(--err);">${esc(ageGateLabel)}</span>` : ''}${instanceMinPerfBadge(minAvatarPerf)}`;
     const thumbEl   = `<div class="inst-item-thumb" style="${thumbStyle}"></div>`;
     const clickAttr = onclick ? ` onclick="${onclick}" style="cursor:pointer;"` : '';
 

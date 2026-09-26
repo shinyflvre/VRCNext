@@ -161,6 +161,8 @@ function renderInstancePlayers() {
         if (instNum) parts.push(`<span class="vrcn-badge ip-inst-id" title="${esc(t('timeline.actions.copy_instance_link', 'Copy Instance Link'))}" onclick="copyInstanceLink('${jsq(data.location || '')}')">#${esc(instNum)}</span>`);
         if (badge?.label) parts.push(`<span class="vrcn-badge ${badge.cls || ''}">${esc(badge.label)}</span>`);
         if (data.ageGate) parts.push(`<span class="vrcn-badge" style="background:rgba(255,75,85,.15);color:var(--err);">${esc(t('worlds.instances.age_gated', 'Age Gated'))}</span>`);
+        const perfBadge = instanceMinPerfBadge(data.minAvatarPerf);
+        if (perfBadge) parts.push(perfBadge);
         if (typeof getOwnerBadgeHtml === 'function') {
             const owner = getOwnerBadgeHtml(data.ownerId || '', data.ownerName || '', data.ownerGroup || '', '');
             if (owner) parts.push(owner);

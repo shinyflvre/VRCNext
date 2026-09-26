@@ -206,6 +206,7 @@ public class GroupsController
                         .Select(g => new {
                             gid  = g["groupId"]?.ToString() ?? g["id"]?.ToString() ?? "",
                             name = g["name"]?.ToString() ?? "",
+                            shortCode = g["shortCode"]?.ToString() ?? "",
                             icon = ImageCacheHelper.GetGroupUrl(g["groupId"]?.ToString() ?? g["id"]?.ToString(), g["iconUrl"]?.ToString()),
                         })
                         .Where(g => !string.IsNullOrEmpty(g.gid))
@@ -219,6 +220,7 @@ public class GroupsController
                             return new {
                                 groupId   = gid,
                                 groupName = grp?.name ?? "",
+                                groupShortCode = grp?.shortCode ?? "",
                                 groupIcon = grp?.icon ?? "",
                                 location  = i["location"]?.ToString() ?? "",
                                 worldName = i["world"]?["name"]?.ToString() ?? "",

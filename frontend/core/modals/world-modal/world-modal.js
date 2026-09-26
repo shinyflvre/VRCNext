@@ -85,6 +85,23 @@ function _wdFilterSortInstances(list, friendsByLoc, q) {
     return out;
 }
 
+function _wdAddGroupInstances(worldId, list) {
+    if (typeof _dashGroupInstances === 'undefined' || !Array.isArray(_dashGroupInstances)) return;
+    const stripNonce = l => (l || '').replace(/~nonce\([^)]*\)/g, '');
+    _dashGroupInstances.forEach(gi => {
+        const loc = gi.location || '';
+        const { worldId: gwid, instanceType } = parseFriendLocation(loc);
+        if (gwid !== worldId || list.some(i => stripNonce(i.location) === stripNonce(loc))) return;
+        const regionMatch = loc.match(/region\(([^)]+)\)/);
+        list.push({
+            instanceId: loc.split(':')[1] || '', users: gi.userCount || 0, type: instanceType,
+            region: regionMatch ? regionMatch[1] : 'us', location: loc,
+            ownerName: gi.groupName || '', ownerGroup: gi.groupShortCode || '', ownerId: gi.groupId || '',
+            ageGate: loc.includes('~ageGate'),
+        });
+    });
+}
+
 function _wdInstMakeCard(inst) {
     const v = _wdInstView;
     return renderInstanceItem({
@@ -146,6 +163,7 @@ function _wdUpdateInstancesInPlace(w) {
     }
     const stripNonce = l => (l || '').replace(/~nonce\([^)]*\)/g, '');
     const allInstances = [...(w.instances || [])];
+    _wdAddGroupInstances(w.id, allInstances);
     Object.keys(worldFriendsByLoc).forEach(loc => {
         const existing = allInstances.find(i => stripNonce(i.location) === stripNonce(loc));
         if (existing) { existing.location = loc; }
@@ -212,6 +230,7 @@ function renderWorldSearchDetail(w) {
     // Strip nonce for comparison: API instances don't have ~nonce(...) but friend locations do
     const stripNonce = l => (l || '').replace(/~nonce\([^)]*\)/g, '');
     const allInstances = [...(w.instances || [])];
+    _wdAddGroupInstances(w.id, allInstances);
     Object.keys(worldFriendsByLoc).forEach(loc => {
         const existing = allInstances.find(i => stripNonce(i.location) === stripNonce(loc));
         if (existing) {

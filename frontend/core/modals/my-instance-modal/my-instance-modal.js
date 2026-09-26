@@ -156,6 +156,9 @@ function _miApplyEnrichedData(inst) {
         platEl.innerHTML = platHtml;
     }
 
+    const perfEl = card.querySelector('.mi-inst-perf');
+    if (perfEl) perfEl.innerHTML = instanceMinPerfBadge(inst.minAvatarPerf);
+
     // Queue → stats row
     const statsEl = card.querySelector('.mi-inst-stats');
     if (statsEl) {
@@ -266,7 +269,7 @@ function _buildInstanceCard(locBase, g, isMyInstance) {
         <div class="mi-instance-header">
             <span class="vrcn-badge ${cls}">${typeLabel}</span>
             ${copyBadge}
-            ${ageGateBadge}${ownerBadge}
+            ${ageGateBadge}<span class="mi-inst-perf">${instanceMinPerfBadge(enriched.minAvatarPerf)}</span>${ownerBadge}
             <span class="mi-inst-display-name vrcn-badge" style="display:none;"></span>
             ${regionHtml}${platformsHtml}
             ${occHtml}

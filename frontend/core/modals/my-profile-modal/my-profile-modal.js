@@ -11,6 +11,7 @@ let _mypAvatarInfo = null;
 let _mypLoadedAvatarKey = '';
 
 let _mypFavsRequested = false;
+let _mypFavPayload = null;
 let _mypHeatmapDays = 30;
 let _mypHeatmapView = 'online';
 let _mypStatusData = null;
@@ -40,6 +41,7 @@ function openMyProfileModal() {
     _mypAvatarsRequested = false;
     _mypAvatarsLoaded = false;
     _mypFavsRequested    = false;
+    _mypFavPayload       = null;
     _mypHeatmapDays      = 30;
     _mypHeatmapView      = 'online';
     _mypStatusData       = null;
@@ -656,7 +658,7 @@ function renderMyProfileContent() {
         <button class="fd-tab active" data-myptab="info" onclick="switchMypTab('info',this)">${t('profiles.tabs.info', 'Info')}</button>
         <button class="fd-tab" data-myptab="groups" onclick="switchMypTab('groups',this)">${t('profiles.tabs.groups_label', 'Groups')} ${_tabBadge(_mypGroupCount)}</button>
         <button class="fd-tab" id="mypTabContentBtn" data-myptab="content" onclick="switchMypTab('content',this)">${t('profiles.tabs.content_label', 'Content')} ${_tabBadge(0)}</button>
-        <button class="fd-tab" data-myptab="favs" onclick="switchMypTab('favs',this)">${t('profiles.tabs.favs', 'Favs.')}</button>
+        <button class="fd-tab" id="mypTabFavsBtn" data-myptab="favs" onclick="switchMypTab('favs',this)">${favsTabLabelHtml(_mypFavPayload?.groups)}</button>
         <button class="fd-tab" data-myptab="json" onclick="switchMypTab('json',this)">Json</button>
     </div>`;
 
@@ -664,7 +666,7 @@ function renderMyProfileContent() {
         <div id="mypTabInfo">${infoContent}</div>
         <div id="mypTabGroups" style="display:none;">${groupsContent}</div>
         <div id="mypTabContent" style="display:none;">${contentHtml}</div>
-        <div id="mypTabFavs" style="display:none;"></div>
+        <div id="mypTabFavs" style="display:none;"><div class="empty-msg">${t('profiles.favs.loading', 'Loading favorites...')}</div></div>
         <div id="mypTabJson" style="display:none;"><div class="json-viewer">${jsonHighlight(_mypRawJson || {})}</div></div>`;
 
     {
@@ -706,6 +708,11 @@ function renderMyProfileContent() {
     _mypUpdateContentCounts();
     if (_mypAllWorlds.length)  renderMypWorldsPage(0);
     if (_mypAllAvatars.length) renderMypAvatarsPage(0);
+    if (_mypFavPayload) renderMypFavWorlds(_mypFavPayload);
+    else if (u.id && !_mypFavsRequested) {
+        _mypFavsRequested = true;
+        sendToCS({ action: 'vrcGetUserFavWorlds', userId: u.id });
+    }
 
     if (_mypPrevTab && _mypPrevTab !== 'info') {
         const _restoreBtn = document.querySelector(`#mypBox .fd-tab[data-myptab="${_mypPrevTab}"]`);
@@ -918,13 +925,6 @@ function switchMypTab(tab, btn) {
     };
     if (typeof animateModalBox === 'function') animateModalBox(box, apply);
     else apply();
-
-    if (tab === 'favs' && !_mypFavsRequested && currentVrcUser?.id) {
-        _mypFavsRequested = true;
-        const el = document.getElementById('mypTabFavs');
-        if (el) el.innerHTML = `<div class="empty-msg">${t('profiles.favs.loading', 'Loading favorites...')}</div>`;
-        sendToCS({ action: 'vrcGetUserFavWorlds', userId: currentVrcUser.id });
-    }
 }
 
 function switchMypInsightsPill(pill, btn) {
@@ -1107,7 +1107,10 @@ function onMypUserAvatars(payload) {
 function renderMypFavWorlds(payload) {
     const el = document.getElementById('mypTabFavs');
     if (!el || !_mypIsSelf(payload.userId)) return;
+    _mypFavPayload = payload;
     const groups = payload.groups || [];
+    const favsBtn = document.getElementById('mypTabFavsBtn');
+    if (favsBtn) favsBtn.innerHTML = favsTabLabelHtml(groups);
     if (!groups.length) {
         el.innerHTML = `<div class="empty-msg">${t('profiles.favs.none', 'No public favorite worlds.')}</div>`;
         return;
@@ -1630,6 +1633,7 @@ function _mypWmState(s) {
         avatarInfo:       _mypAvatarInfo,
         loadedAvatarKey:  _mypLoadedAvatarKey,
         favsRequested:    _mypFavsRequested,
+        favPayload:       _mypFavPayload,
         heatmapDays:      _mypHeatmapDays,
         heatmapView:      _mypHeatmapView,
         statusData:       _mypStatusData,
@@ -1651,6 +1655,7 @@ function _mypWmState(s) {
     _mypAvatarInfo       = s.avatarInfo       ?? null;
     _mypLoadedAvatarKey  = s.loadedAvatarKey  ?? '';
     _mypFavsRequested    = s.favsRequested    ?? false;
+    _mypFavPayload       = s.favPayload       ?? null;
     _mypHeatmapDays      = s.heatmapDays      ?? 30;
     _mypHeatmapView      = s.heatmapView      ?? 'online';
     _mypStatusData       = s.statusData       ?? null;

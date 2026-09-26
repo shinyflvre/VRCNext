@@ -28,7 +28,9 @@
 }
 
 #instanceInfoContent .mi-world-description { -webkit-line-clamp: 20; }
-#myInstanceContent .mi-world-description { -webkit-line-clamp: 6; }
+#myInstanceContent .mi-world-description { -webkit-line-clamp: 10; }
+#modalMyInstance .modal-box.wide { width: 940px; }
+#myInstanceContent > .mi-layout { height: min(88vh, 460px); max-height: 460px; }
 #instanceInfoContent.iim-no-left > .mi-layout { grid-template-columns: minmax(0, 1fr); }
 #instanceInfoContent.iim-no-left .mi-left { display: none; }
 #instanceInfoContent.iim-no-left .mi-right { border-radius: 0 0 14px 14px; }
@@ -180,10 +182,9 @@
     white-space: nowrap;
 }
 
-.mi-inst-platforms {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
+.mi-inst-platforms,
+.mi-inst-perf {
+    display: contents;
 }
 
 .mi-header-actions {

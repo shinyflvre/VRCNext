@@ -195,6 +195,16 @@ function openFriendDetail(userId) {
 let _fdLoadedAvatarKey = '';
 let _fdLastAvatarPayload = null;
 let _fdLastAvatarUserId = '';
+let _fdFavUserId = '';
+let _fdFavPayload = null;
+
+function favWorldsTotal(groups) {
+    return (groups || []).reduce((n, g) => n + (g.worlds ? g.worlds.length : 0), 0);
+}
+
+function favsTabLabelHtml(groups) {
+    return `${t('profiles.tabs.favs', 'Favs.')} <span class="vrcn-badge fd-tab-badge">${favWorldsTotal(groups)}</span>`;
+}
 
 function closeFriendDetail(fromNav = false) {
     if (_fdLiveTimer) { clearInterval(_fdLiveTimer); _fdLiveTimer = null; }
@@ -204,6 +214,8 @@ function closeFriendDetail(fromNav = false) {
     _fdLoadedAvatarKey = '';
     _fdLastAvatarPayload = null;
     _fdLastAvatarUserId = '';
+    _fdFavUserId = '';
+    _fdFavPayload = null;
     if (!fromNav && typeof navClear === 'function') navClear();
     if (!fromNav && typeof releaseClosedModals === 'function') releaseClosedModals();
 }
@@ -418,21 +430,15 @@ function switchFdTab(tab, btn) {
         (tabRow ? tabRow.querySelectorAll('.fd-tab') : document.querySelectorAll('.fd-tab[data-fdtab]')).forEach(t => t.classList.remove('active'));
         if (btn) btn.classList.add('active');
     });
-    if (tab === 'favs') {
-        const uid = favsEl?.dataset.userId;
-        if (uid && !favsEl.dataset.loaded) {
-            favsEl.dataset.loaded = '1';
-            if (!favsEl.querySelector('.fd-content-pills'))
-                favsEl.innerHTML = `<div class="empty-msg">${t('profiles.favs.loading', 'Loading favorites...')}</div>`;
-            sendToCS({ action: 'vrcGetUserFavWorlds', userId: uid });
-        }
-    }
 }
 
 function renderUserFavWorlds(payload) {
     const el = document.getElementById('fdTabFavs');
     if (!el || el.dataset.userId !== payload.userId) return;
+    if (payload.userId === _fdFavUserId) _fdFavPayload = payload;
     const groups = payload.groups || [];
+    const favsBtn = document.getElementById('fdTabFavsBtn');
+    if (favsBtn) favsBtn.innerHTML = favsTabLabelHtml(groups);
     if (!groups.length) {
         el.innerHTML = `<div class="empty-msg">${t('profiles.favs.none', 'No public favorite worlds.')}</div>`;
         return;
@@ -698,6 +704,7 @@ function renderFriendDetail(d) {
             userCount:    d.userCount || 0,
             capacity:     d.worldCapacity || 0,
             ageGate:      d.ageGate || false,
+            minAvatarPerf: d.minAvatarPerf || '',
             location:     _loc,
             onclick,
         });
@@ -1100,7 +1107,7 @@ function renderFriendDetail(d) {
         if (hasGroups) tabsHtml += `<button class="fd-tab" data-fdtab="groups" onclick="switchFdTab('groups',this)">${t('profiles.tabs.groups_label', 'Groups')} ${_tabBadge(groupsTabCount)}</button>`;
         if (hasMutuals) tabsHtml += `<button class="fd-tab" data-fdtab="mutuals" onclick="switchFdTab('mutuals',this)">${t('profiles.tabs.mutuals_label', 'Mutuals')} ${_tabBadge(mutualTotal)}</button>`;
         tabsHtml += `<button class="fd-tab" id="fdTabContentBtn" data-fdtab="content" onclick="switchFdTab('content',this)">${t('profiles.tabs.content_label', 'Content')} ${_tabBadge(allUserWorlds.length)}</button>`;
-        tabsHtml += `<button class="fd-tab" data-fdtab="favs" onclick="switchFdTab('favs',this)">${t('profiles.tabs.favs', 'Favs.')}</button>`;
+        tabsHtml += `<button class="fd-tab" id="fdTabFavsBtn" data-fdtab="favs" onclick="switchFdTab('favs',this)">${favsTabLabelHtml(_fdFavUserId === d.id ? _fdFavPayload?.groups : null)}</button>`;
         tabsHtml += `<button class="fd-tab" data-fdtab="json" onclick="switchFdTab('json',this)">Json</button>`;
         tabsHtml += `</div>`;
     }
@@ -1144,7 +1151,7 @@ function renderFriendDetail(d) {
                 ${_infosCard}
             </div>
         </div>`;
-        const _fdRightHtml = `<div class="fd-right"><div class="fd-right-scroll">${tabsHtml}<div id="fdTabInfo">${infoContent}</div><div id="fdTabGroups" style="display:none;">${groupsContent}</div><div id="fdTabMutuals" style="display:none;">${mutualsContent}</div><div id="fdTabContent" style="display:none;">${contentHtml}</div><div id="fdTabFavs" style="display:none;" data-user-id="${esc(userId)}"></div><div id="fdTabJson" style="display:none;"><div class="fd-group-rep-label">GET /api/1/users/{id}</div><div class="json-viewer">${jsonHighlight((d.id && _fdRawJsonCache[d.id]) || {})}</div><div class="fd-group-rep-label" style="margin-top:12px;">GET /api/1/profile/{id}</div><div class="json-viewer">${jsonHighlight((d.id && _fdRawProfileJsonCache[d.id]) || {})}</div></div></div></div>`;
+        const _fdRightHtml = `<div class="fd-right"><div class="fd-right-scroll">${tabsHtml}<div id="fdTabInfo">${infoContent}</div><div id="fdTabGroups" style="display:none;">${groupsContent}</div><div id="fdTabMutuals" style="display:none;">${mutualsContent}</div><div id="fdTabContent" style="display:none;">${contentHtml}</div><div id="fdTabFavs" style="display:none;" data-user-id="${esc(userId)}"><div class="empty-msg">${t('profiles.favs.loading', 'Loading favorites...')}</div></div><div id="fdTabJson" style="display:none;"><div class="fd-group-rep-label">GET /api/1/users/{id}</div><div class="json-viewer">${jsonHighlight((d.id && _fdRawJsonCache[d.id]) || {})}</div><div class="fd-group-rep-label" style="margin-top:12px;">GET /api/1/profile/{id}</div><div class="json-viewer">${jsonHighlight((d.id && _fdRawProfileJsonCache[d.id]) || {})}</div></div></div></div>`;
         c.innerHTML = `${fdHeaderActions}<div class="fd-layout">${_fdLeftHtml}${_fdRightHtml}</div>`;
     }
 
@@ -1166,6 +1173,13 @@ function renderFriendDetail(d) {
     filterFdMutuals();
     filterFdMutualsGroups();
     renderFdWorldsPage(0);
+
+    if (userId && _fdFavUserId !== userId) {
+        _fdFavUserId = userId;
+        _fdFavPayload = null;
+        sendToCS({ action: 'vrcGetUserFavWorlds', userId });
+    }
+    if (_fdFavPayload) renderUserFavWorlds(_fdFavPayload);
 
     if (_fdPrevTab && _fdPrevTab !== 'info' && _fdPrevId === d.id) {
         const _restoreBtn = document.querySelector(`#modalFriendDetail .fd-tab[data-fdtab="${_fdPrevTab}"]`);
@@ -2142,6 +2156,8 @@ function _fdWmState(s) {
         detail:            currentFriendDetail,
         loadedAvatarKey:   _fdLoadedAvatarKey,
         lastAvatarPayload: _fdLastAvatarPayload,
+        favUserId:         _fdFavUserId,
+        favPayload:        _fdFavPayload,
         groupsSort:        _fdGroupsSortMode,
         mutualsSort:       _fdMutualsSortMode,
         mutualsGroupsSort: _fdMutualsGroupsSortMode,
@@ -2167,7 +2183,9 @@ function _fdWmState(s) {
     currentFriendDetail        = s.detail            ?? null;
     _fdLoadedAvatarKey         = s.loadedAvatarKey   ?? '';
     _fdLastAvatarPayload       = s.lastAvatarPayload ?? null;
-    _fdGroupsSortMode          = s.groupsSort        ?? 'alpha';
+    _fdFavUserId               = s.favUserId         ?? '';
+    _fdFavPayload              = s.favPayload        ?? null;
+    _fdGroupsSortMode         = s.groupsSort        ?? 'alpha';
     _fdMutualsSortMode         = s.mutualsSort       ?? 'alpha';
     _fdMutualsGroupsSortMode   = s.mutualsGroupsSort ?? 'alpha';
     _fdHeatmapDays             = s.heatmapDays       ?? 30;

@@ -175,6 +175,7 @@ function openInstanceInfoModal() {
         <span class="vrcn-badge ${instCls}">${instLabel}</span>
         ${copyBadge}
         ${data.ageGate ? `<span class="vrcn-badge" style="background:rgba(255,75,85,.15);color:var(--err);">${esc(t('worlds.instances.age_gated', 'Age Gated'))}</span>` : ''}
+        ${instanceMinPerfBadge(data.minAvatarPerf)}
         ${getOwnerBadgeHtml(data.ownerId || '', data.ownerName || '', data.ownerGroup || '', 'closeInstanceInfoModal()')}
         <span class="vrcn-badge"><span class="msi" style="font-size:11px;">person</span>&nbsp;${users.length || data.nUsers || 0}${data.capacity ? '/' + data.capacity : ''}</span>
         ${joinBtn}
