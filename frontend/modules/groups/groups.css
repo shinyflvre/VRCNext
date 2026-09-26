@@ -178,7 +178,7 @@
 }
 .cg-optional { color: var(--tx3); font-weight: 400; text-transform: none; letter-spacing: 0; }
 .cg-form .sf-section-label { margin-top: 0; }
-.cg-textarea { resize: vertical; min-height: 88px; font-family: inherit; }
+.cg-textarea { resize: vertical; min-height: 88px; height: auto; padding: 8px 10px; line-height: 1.5; font-family: inherit; }
 .cg-counter { text-align: right; margin-top: 4px; }
 .cg-error {
     margin-top: 12px;

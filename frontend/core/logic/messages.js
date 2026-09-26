@@ -299,6 +299,7 @@ window.external.receiveMessage(rawMsg => {
                 renderVrcProfile(payload);
                 if (currentInstanceData) renderCurrentInstance(currentInstanceData);
                 if (payload.currentAvatar) currentAvatarId = payload.currentAvatar;
+                if (typeof mypOnAvatarChanged === 'function') mypOnAvatarChanged();
                 // Login state is reflected in the Accounts tab now that the old login card is gone.
                 if (typeof requestAccountsList === 'function') requestAccountsList();
                 if (typeof updateTbAppUserHeader === 'function') updateTbAppUserHeader();
@@ -717,6 +718,7 @@ window.external.receiveMessage(rawMsg => {
                 if (payload.filter === 'own') {
                     avatarsData = payload.avatars || [];
                     if (payload.currentAvatarId) currentAvatarId = payload.currentAvatarId;
+                    if (typeof mypOnAvatarChanged === 'function') mypOnAvatarChanged();
                     avatarsLoaded = true;
                     if (typeof _avOnOwnLoaded === 'function') _avOnOwnLoaded();
                     (payload.avatars || []).forEach(a => {
@@ -742,6 +744,7 @@ window.external.receiveMessage(rawMsg => {
                 break;
             case 'vrcAvatarSelected':
                 if (payload.avatarId) currentAvatarId = payload.avatarId;
+                if (typeof mypOnAvatarChanged === 'function') mypOnAvatarChanged();
                 document.querySelectorAll('.av-card').forEach(c => { c.style.pointerEvents = ''; c.style.opacity = ''; });
                 if (avatarFilter === 'own') renderAvatarGrid();
                 else if (avatarFilter === 'favorites') filterFavAvatars();

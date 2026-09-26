@@ -786,8 +786,9 @@ public class AuthController
             {
                 var myName = _core.VrcApi.CurrentUserRaw?["displayName"]?.ToString() ?? "";
                 if (string.IsNullOrEmpty(myName) || displayName != myName) return;
-                if (avatarName == _lastAvatarName || avatarName == _core.Timeline.GetLastAvatarSwitchName()) return;
+                if (avatarName == _lastAvatarName) return;
                 _lastAvatarName = avatarName;
+                var repeatOfLast = avatarName == _core.Timeline.GetLastAvatarSwitchName();
                 _ = Task.Run(async () =>
                 {
                     try
@@ -803,16 +804,19 @@ public class AuthController
                             av = await _core.Avatars.GetAvatarAsync(avatarId);
                             avatarThumb = av?["thumbnailImageUrl"]?.ToString() ?? av?["imageUrl"]?.ToString() ?? "";
                         }
-                        var ev = new TimelineService.TimelineEvent
+                        if (!repeatOfLast)
                         {
-                            Type      = "avatar_switch",
-                            Timestamp = DateTime.UtcNow.ToString("o"),
-                            UserId    = avatarId,
-                            UserName  = avatarName,
-                            UserImage = avatarThumb,
-                        };
-                        _core.Timeline.AddEvent(ev);
-                        _core.SendToJS("timelineEvent", _instance.BuildTimelinePayload(ev));
+                            var ev = new TimelineService.TimelineEvent
+                            {
+                                Type      = "avatar_switch",
+                                Timestamp = DateTime.UtcNow.ToString("o"),
+                                UserId    = avatarId,
+                                UserName  = avatarName,
+                                UserImage = avatarThumb,
+                            };
+                            _core.Timeline.AddEvent(ev);
+                            _core.SendToJS("timelineEvent", _instance.BuildTimelinePayload(ev));
+                        }
 
                         if (!string.IsNullOrEmpty(avatarId))
                             _core.SendToJS("vrcAvatarSelected", new { avatarId });
@@ -2856,7 +2860,7 @@ public class AuthController
                     .ToArray(),
             }).ToList();
             if (_core.Settings.FfcEnabled)
-                _core.Cache.Save(CacheHandler.KeyAvatars, new { filter = "own", avatars = rawList, currentAvatarId = _core.VrcApi.CurrentAvatarId ?? "" });
+                _core.Cache.Save(CacheHandler.KeyAvatars, new { filter = "own", avatars = rawList });
             // Send to JS with processed image URLs (disk cache or CDN)
             var jsList = rawList.Select(a => { var img = ImageCacheHelper.GetAvatarUrl(a.id, a.imageUrl); return new { a.id, a.name, imageUrl = img, thumbnailImageUrl = img, a.authorName, a.releaseStatus, a.description, a.created_at, a.updated_at, a.tags, a.unityPackages }; }).ToList();
             Invoke(() => _core.SendToJS("vrcAvatars", new { filter = "own", avatars = jsList, currentAvatarId = _core.VrcApi.CurrentAvatarId ?? "" }));
@@ -2884,6 +2888,7 @@ public class AuthController
                     ao["thumbnailImageUrl"] = ao["imageUrl"];
                     AppShell.EnrichAvatarFromCache(_core.TimeEngine, ao, ao["id"]?.ToString() ?? "");
                 }
+            avatarsObj["currentAvatarId"] = _core.VrcApi.CurrentAvatarId ?? "";
             _core.SendToJS("vrcAvatars", avatarsObj);
         }
 

@@ -1118,8 +1118,11 @@ public partial class AppShell
                     {
                         if (_settings.FfcEnabled)
                         {
-                            var cachedAvt = _cache.LoadRaw(CacheHandler.KeyAvatars);
-                            if (cachedAvt != null) Invoke(() => SendToJS("vrcAvatars", cachedAvt));
+                            if (_cache.LoadRaw(CacheHandler.KeyAvatars) is JObject cachedAvt)
+                            {
+                                cachedAvt["currentAvatarId"] = _core.VrcApi.CurrentAvatarId ?? "";
+                                Invoke(() => SendToJS("vrcAvatars", cachedAvt));
+                            }
                         }
                         _ = Task.Run(_authCtrl.FetchAndCacheAvatarsAsync);
                     }

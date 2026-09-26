@@ -297,9 +297,27 @@ function onSetProfileDecorationResult(data) {
     renderProfileDecoPicker(false);
 }
 
+function _mypCurrentAvatarId() {
+    return (typeof currentAvatarId !== 'undefined' && currentAvatarId) || currentVrcUser?.currentAvatar || '';
+}
+
+function _mypEnsureAvatarInfo() {
+    const avatarId = _mypCurrentAvatarId();
+    if (!avatarId || avatarId === _mypLoadedAvatarKey) return;
+    _mypLoadedAvatarKey = avatarId;
+    const known = (_mypAvatarInfo?.avatarId === avatarId) || _mypAllAvatars.some(a => a.id === avatarId);
+    if (!known) sendToCS({ action: 'vrcGetAvatarInfo', avatarId, context: 'myprofile' });
+}
+
+function mypOnAvatarChanged() {
+    if (document.getElementById('modalMyProfile')?.style.display === 'none') return;
+    _mypEnsureAvatarInfo();
+    _mypUpdateAvatarCard();
+}
+
 function _mypAvatarCardInner() {
     const u = currentVrcUser || {};
-    const avatarId = u.currentAvatar || '';
+    const avatarId = _mypCurrentAvatarId();
     if (!avatarId) return '';
     const own  = _mypAllAvatars.find(a => a.id === avatarId);
     const info = (_mypAvatarInfo && _mypAvatarInfo.avatarId === avatarId) ? _mypAvatarInfo : null;
@@ -702,12 +720,7 @@ function renderMyProfileContent() {
         if (!_mypAvatarsRequested) { _mypAvatarsRequested = true; sendToCS({ action: 'vrcGetUserAvatars', userId: _uid }); }
     }
 
-    const _mypAvatarId = u.currentAvatar || '';
-    if (_mypAvatarId && _mypAvatarId !== _mypLoadedAvatarKey) {
-        _mypLoadedAvatarKey = _mypAvatarId;
-        const _mypAvatarKnown = (_mypAvatarInfo?.avatarId === _mypAvatarId) || _mypAllAvatars.some(a => a.id === _mypAvatarId);
-        if (!_mypAvatarKnown) sendToCS({ action: 'vrcGetAvatarInfo', avatarId: _mypAvatarId, context: 'myprofile' });
-    }
+    _mypEnsureAvatarInfo();
     if (!_mypWorldsRequested) { _mypWorldsRequested = true; sendToCS({ action: 'vrcGetMyWorlds' }); }
     if (typeof myGroupsLoaded !== 'undefined' && !myGroupsLoaded) sendToCS({ action: 'vrcGetMyGroups' });
 
