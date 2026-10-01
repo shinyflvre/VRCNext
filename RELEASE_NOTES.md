@@ -25,3 +25,4 @@
 * Fixed the description field in **Create Group** having its text stuck to the top edge.
 * Fixed a double gap between the region and player count badges in the **My Instance** modal.
 * Fixed the instance card in the friends sidebar not showing the **Public** badge.
+* Fixed the player count sometimes missing on the **Current World** card in profiles.

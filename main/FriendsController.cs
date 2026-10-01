@@ -354,6 +354,32 @@ public class FriendsController
                 break;
             }
 
+            case "vrcGetInstanceCounts":
+            {
+                var icUser = msg["userId"]?.ToString() ?? "";
+                var icLoc  = msg["location"]?.ToString() ?? "";
+                if (string.IsNullOrEmpty(icLoc) || !icLoc.Contains(':')) break;
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        var icInst = await _core.Instances.GetInstanceAsync(icLoc);
+                        if (icInst == null) return;
+                        var icWorld = icInst["world"] as JObject;
+                        _core.SendToJS("vrcInstanceCounts", new
+                        {
+                            userId        = icUser,
+                            location      = icLoc,
+                            userCount     = icInst["n_users"]?.Value<int>() ?? icInst["userCount"]?.Value<int>() ?? 0,
+                            capacity      = icWorld?["capacity"]?.Value<int>() ?? icInst["capacity"]?.Value<int>() ?? 0,
+                            minAvatarPerf = icInst["minimumAvatarPerformance"]?.ToString() ?? "",
+                        });
+                    }
+                    catch { }
+                });
+                break;
+            }
+
             case "vrcGetUserBasic":
             {
                 var ubId        = msg["userId"]?.ToString();
