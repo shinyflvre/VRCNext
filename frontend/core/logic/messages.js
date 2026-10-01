@@ -406,6 +406,9 @@ window.external.receiveMessage(rawMsg => {
                 renderFriendDetail(payload);
                 if (typeof patchFriendProfileFacts === 'function') patchFriendProfileFacts(payload);
                 break;
+            case 'vrcInstanceCounts':
+                if (typeof handleFdInstanceCounts === 'function') handleFdInstanceCounts(payload);
+                break;
             case 'vrcFriendFetchProgress':
                 if (typeof onFriendFetchProgress === 'function') onFriendFetchProgress(payload);
                 break;

@@ -19,7 +19,7 @@ public static class AvtrdbCacheHelper
     {
         if (_conn != null) return _conn;
         Directory.CreateDirectory(Path.GetDirectoryName(_dbPath)!);
-        _conn = new SqliteConnection($"Data Source={_dbPath}");
+        _conn = Database.Track(new SqliteConnection($"Data Source={_dbPath}"));
         _conn.Open();
         Run("PRAGMA journal_mode=WAL");
         Run("PRAGMA cache_size=-1024");

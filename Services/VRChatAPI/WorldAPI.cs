@@ -75,14 +75,19 @@ public class WorldAPI
             {
                 var raw = ch.LoadRaw(CacheHandler.KeyWorldMeta);
                 if (raw is JArray arr)
+                {
                     foreach (var item in arr.OfType<JObject>())
                     {
                         var id = item["id"]?.ToString();
                         if (!string.IsNullOrEmpty(id) && !dict.ContainsKey(id))
                             dict[id] = item;
                     }
+                    arr.Clear();
+                }
                 while (dict.Count > DiskCacheMax)
                     dict.Remove(dict.Keys.First());
+                foreach (var item in dict.Values)
+                    PreventAdoption(item);
             }
         }
         catch { }
@@ -183,6 +188,8 @@ public class WorldAPI
     // therwise the cached instance pins every container it was ever added to.
     private static void PreventAdoption(JObject world) => _ = new JArray(world);
 
+    private static readonly JsonLoadSettings WorldLoadSettings = new() { LineInfoHandling = LineInfoHandling.Ignore };
+
     private async Task<JObject?> FetchWorldAsync(string worldId)
     {
         try
@@ -191,7 +198,7 @@ public class WorldAPI
             var body = await resp.Content.ReadAsStringAsync();
             if (resp.IsSuccessStatusCode)
             {
-                var world = JObject.Parse(body);
+                var world = JObject.Parse(body, WorldLoadSettings);
                 PreventAdoption(world);
                 StoreCachedWorld(worldId, world);
                 PersistWorld(worldId, world);
@@ -221,7 +228,7 @@ public class WorldAPI
             var body = await resp.Content.ReadAsStringAsync();
             if (resp.IsSuccessStatusCode)
             {
-                var world = JObject.Parse(body);
+                var world = JObject.Parse(body, WorldLoadSettings);
                 PreventAdoption(world);
                 StoreCachedWorld(worldId, world);
                 PersistWorld(worldId, world);

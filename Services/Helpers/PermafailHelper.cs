@@ -34,7 +34,7 @@ public static class PermafailHelper
 
         Directory.CreateDirectory(Path.GetDirectoryName(_dbPath)!);
 
-        _db = new SqliteConnection($"Data Source={_dbPath}");
+        _db = Database.Track(new SqliteConnection($"Data Source={_dbPath}"));
         _db.Open();
 
         using var cmd = _db.CreateCommand();

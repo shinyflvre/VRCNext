@@ -70,10 +70,12 @@ public class KikitanXDController : IDisposable
             {
                 var inputSel = InputSelection;
                 var ttsSel   = TtsSelection;
+                var inputs   = AudioDeviceManager.ListInputs();
+                var outputs  = AudioDeviceManager.ListOutputs();
                 _core.SendToJS("kxdDevices", new
                 {
-                    devices = AudioDeviceManager.ListInputs().Select(d => new { id = d.Id, name = d.Name }).ToArray(),
-                    input = new { mode = inputSel.ModeString, id = inputSel.EndpointId, name = inputSel.DisplayName, available = AudioDeviceManager.IsAvailable(true, inputSel) },
+                    devices = inputs.Select(d => new { id = d.Id, name = d.Name }).ToArray(),
+                    input = new { mode = inputSel.ModeString, id = inputSel.EndpointId, name = inputSel.DisplayName, available = AudioDeviceManager.IsAvailable(inputSel, inputs) },
                     apiKey = _settings.ApiKey,
                     sourceLang = _settings.SourceLang,
                     targetLang = _settings.TargetLang,
@@ -95,11 +97,11 @@ public class KikitanXDController : IDisposable
                     localVadEnabled = _settings.LocalVadEnabled,
                     localUseGpu = _settings.LocalUseGpu,
                     ttsEnabled = _settings.TtsEnabled,
-                    tts = new { mode = ttsSel.ModeString, id = ttsSel.EndpointId, name = ttsSel.DisplayName, available = AudioDeviceManager.IsAvailable(false, ttsSel) },
+                    tts = new { mode = ttsSel.ModeString, id = ttsSel.EndpointId, name = ttsSel.DisplayName, available = AudioDeviceManager.IsAvailable(ttsSel, outputs) },
                     ttsVoice = _settings.TtsVoice,
                     ttsEngine = _settings.TtsEngine,
                     ttsRate = _settings.TtsRate,
-                    ttsDevices = AudioDeviceManager.ListOutputs().Select(d => new { id = d.Id, name = d.Name }).ToArray(),
+                    ttsDevices = outputs.Select(d => new { id = d.Id, name = d.Name }).ToArray(),
                     ttsVoices = VRCNext.Services.Helpers.TtsService.GetSapiVoices()
                 });
                 break;

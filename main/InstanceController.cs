@@ -75,7 +75,7 @@ public class InstanceController
                 .ToList();
             _core.Timeline.UpdateEvent(id, ev => ev.Players = finalPlayers);
             _core.Timeline.SetInstanceEventLeftAt(id, now);
-            var closed = _core.Timeline.GetEvents().FirstOrDefault(e => e.Id == id);
+            var closed = _core.Timeline.GetEvent(id);
             if (closed != null) _core.SendToJS("timelineEvent", BuildTimelinePayload(closed));
         };
     }
@@ -1259,7 +1259,7 @@ public class InstanceController
             var prevId = _pendingInstanceEventId;
             _core.Timeline.UpdateEvent(prevId, ev => ev.Players = finalPlayers);
             _core.Timeline.SetInstanceEventLeftAt(prevId, now);
-            var finalEv = _core.Timeline.GetEvents().FirstOrDefault(e => e.Id == prevId);
+            var finalEv = _core.Timeline.GetEvent(prevId);
             if (finalEv != null) _core.SendToJS("timelineEvent", BuildTimelinePayload(finalEv));
         }
 
@@ -1371,7 +1371,7 @@ public class InstanceController
                             BackfillWorldName(worldId, wName, wThumb);
                         }
 
-                        var updated = _core.Timeline.GetEvents().FirstOrDefault(e => e.Id == evId);
+                        var updated = _core.Timeline.GetEvent(evId);
                         if (updated != null) _core.SendToJS("timelineEvent", BuildTimelinePayload(updated));
                     }
                     catch { }
@@ -1461,13 +1461,12 @@ public class InstanceController
             var snap = _cumulativeInstancePlayers
                 .Select(kv => BuildPlayerSnap(kv.Key, kv.Value.displayName, kv.Value.image))
                 .ToList();
-            _core.Timeline.UpdateEvent(evId, ev =>
+            var updated = _core.Timeline.UpdateEvent(evId, ev =>
             {
                 ev.Players = snap;
                 // A join means the instance is still active — clear any stale LeftAt that may have been set on startup/auth.
                 if (!string.IsNullOrEmpty(ev.LeftAt)) ev.LeftAt = "";
             });
-            var updated = _core.Timeline.GetEvents().FirstOrDefault(e => e.Id == evId);
             if (updated != null) _core.SendToJS("timelineEvent", BuildTimelinePayload(updated));
         }
 
@@ -1529,8 +1528,7 @@ public class InstanceController
                         _core.PlayerAgeVerifiedCache[userId] = profile["ageVerified"]?.Value<bool>() ?? false;
                         if (_cumulativeInstancePlayers.TryGetValue(userId, out var ex2) && string.IsNullOrEmpty(ex2.image))
                             _cumulativeInstancePlayers[userId] = (ex2.displayName, fetchedImg);
-                        _core.Timeline.UpdateEvent(evId, ev => ev.UserImage = fetchedImg);
-                        var updated = _core.Timeline.GetEvents().FirstOrDefault(e => e.Id == evId);
+                        var updated = _core.Timeline.UpdateEvent(evId, ev => ev.UserImage = fetchedImg);
                         if (updated != null) Invoke(() => _core.SendToJS("timelineEvent", BuildTimelinePayload(updated)));
                     }
                     catch { }
@@ -1598,8 +1596,7 @@ public class InstanceController
                             _core.PlayerAgeVerifiedCache[userId] = profile["ageVerified"]?.Value<bool>() ?? false;
                             if (_cumulativeInstancePlayers.TryGetValue(userId, out var ex3) && string.IsNullOrEmpty(ex3.image))
                                 _cumulativeInstancePlayers[userId] = (ex3.displayName, fetchedImg);
-                            _core.Timeline.UpdateEvent(maEvId, ev => ev.UserImage = fetchedImg);
-                            var updated = _core.Timeline.GetEvents().FirstOrDefault(e => e.Id == maEvId);
+                            var updated = _core.Timeline.UpdateEvent(maEvId, ev => ev.UserImage = fetchedImg);
                             if (updated != null) Invoke(() => _core.SendToJS("timelineEvent", BuildTimelinePayload(updated)));
                         }
                         catch { }
@@ -1677,8 +1674,7 @@ public class InstanceController
             var snap = _cumulativeInstancePlayers
                 .Select(kv => BuildPlayerSnap(kv.Key, kv.Value.displayName, kv.Value.image))
                 .ToList();
-            _core.Timeline.UpdateEvent(evId, ev => ev.Players = snap);
-            var updated = _core.Timeline.GetEvents().FirstOrDefault(e => e.Id == evId);
+            var updated = _core.Timeline.UpdateEvent(evId, ev => ev.Players = snap);
             if (updated != null) _core.SendToJS("timelineEvent", BuildTimelinePayload(updated));
         }
     }
@@ -1702,14 +1698,10 @@ public class InstanceController
     private void BackfillWorldName(string worldId, string wName, string wThumb)
     {
         if (string.IsNullOrEmpty(worldId) || string.IsNullOrEmpty(wName)) return;
-        var toFix = _core.Timeline.GetEvents()
-            .Where(e => e.WorldId == worldId && string.IsNullOrEmpty(e.WorldName))
-            .ToList();
-        foreach (var ev in toFix)
+        foreach (var (evId, _) in _core.Timeline.GetEventsMissingWorldName(worldId))
         {
-            _core.Timeline.UpdateEvent(ev.Id, e => { e.WorldName = wName; e.WorldThumb = wThumb; });
-            Invoke(() => _core.SendToJS("timelineEvent", BuildTimelinePayload(
-                _core.Timeline.GetEvents().FirstOrDefault(e => e.Id == ev.Id) ?? ev)));
+            var updated = _core.Timeline.UpdateEvent(evId, e => { e.WorldName = wName; e.WorldThumb = wThumb; });
+            if (updated != null) Invoke(() => _core.SendToJS("timelineEvent", BuildTimelinePayload(updated)));
         }
     }
 

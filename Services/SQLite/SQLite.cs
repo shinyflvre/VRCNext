@@ -1159,7 +1159,7 @@ public class UnifiedTimeEngine : IDisposable
         public string ProfileThemeSubtext     { get; set; } = "";
     }
 
-    public UserProfileCache? GetUserProfileCache(string userId)
+    public UserProfileCache? GetUserProfileCache(string userId, bool withGroupsAndContent = true)
     {
         if (string.IsNullOrEmpty(userId)) return null;
         lock (_lock)
@@ -1179,7 +1179,9 @@ public class UnifiedTimeEngine : IDisposable
                     profile_pronouns, profile_age_verification, profile_age_verified,
                     profile_bio_links, profile_is_favorited, profile_fav_friend_id, profile_badges,
                     profile_represented_group,
-                    groups, groups_cached_at, content, content_cached_at,
+                    " + (withGroupsAndContent
+                        ? "groups, groups_cached_at, content, content_cached_at,"
+                        : "'' AS groups, '' AS groups_cached_at, '' AS content, '' AS content_cached_at,") + @"
                     mutuals, mutuals_cached_at, mutual_groups, mutual_groups_cached_at,
                     profile_current_avatar, profile_icon_frame, profile_nameplate, profile_effect,
                     profile_bg_type, profile_bg_texture, profile_bg_grad_top, profile_bg_grad_bottom,
@@ -1508,6 +1510,7 @@ public class UnifiedTimeEngine : IDisposable
         var now = DateTime.UtcNow.ToString("o");
         lock (_lock)
         {
+            _mutualsVersion++;
             try
             {
                 using var ins = _db.CreateCommand();
@@ -1529,6 +1532,7 @@ public class UnifiedTimeEngine : IDisposable
         var now = DateTime.UtcNow.ToString("o");
         lock (_lock)
         {
+            _mutualsVersion++;
             try
             {
                 using var ins = _db.CreateCommand();
@@ -1544,11 +1548,39 @@ public class UnifiedTimeEngine : IDisposable
         }
     }
 
+    private long _mutualsVersion;
+    private long _mutualsCleanVersion = -1;
+    private long _mutualsCleanDataVersion = -1;
+    private HashSet<string>? _mutualsCleanFriendIds;
+    private HashSet<string>? _mutualsCleanGroupIds;
+
+    private long? ReadDataVersionLocked()
+    {
+        try
+        {
+            using var cmd = _db.CreateCommand();
+            cmd.CommandText = "PRAGMA data_version";
+            return Convert.ToInt64(cmd.ExecuteScalar());
+        }
+        catch { return null; }
+    }
+
+    private static bool SameIdSet(HashSet<string>? a, HashSet<string>? b) =>
+        a == null ? b == null : b != null && a.SetEquals(b);
+
     public void CleanMutualCaches(HashSet<string>? validFriendIds, HashSet<string>? validGroupIds)
     {
         if (validFriendIds == null && validGroupIds == null) return;
         lock (_lock)
         {
+            var dataVersion = ReadDataVersionLocked();
+            if (dataVersion is long dv
+                && _mutualsCleanVersion == _mutualsVersion
+                && _mutualsCleanDataVersion == dv
+                && SameIdSet(_mutualsCleanFriendIds, validFriendIds)
+                && SameIdSet(_mutualsCleanGroupIds, validGroupIds))
+                return;
+            _mutualsCleanVersion = -1;
             try
             {
                 var rows = new List<(string id, string mutuals, string mutualGroups)>();
@@ -1630,6 +1662,14 @@ public class UnifiedTimeEngine : IDisposable
                     }
                     upd.Parameters.AddWithValue("$id", uid);
                     upd.ExecuteNonQuery();
+                }
+
+                if (dataVersion is long done)
+                {
+                    _mutualsCleanVersion = _mutualsVersion;
+                    _mutualsCleanDataVersion = done;
+                    _mutualsCleanFriendIds = validFriendIds;
+                    _mutualsCleanGroupIds = validGroupIds;
                 }
             }
             catch (Exception ex) { CrashHandler.WriteEntry("CleanMutualCaches", ex); }

@@ -546,12 +546,11 @@ public class TimelineController
                 var tlTypeFilter = msg["type"]?.ToString() ?? "";
 
                 // 0) Backfill missing world names from TimeEngine DB cache (entire DB, no API calls)
-                var allEvents = _core.Timeline.GetEvents();
-                foreach (var ev in allEvents.Where(e => !string.IsNullOrEmpty(e.WorldId) && string.IsNullOrEmpty(e.WorldName)))
+                foreach (var (evId, worldId) in _core.Timeline.GetEventsMissingWorldName())
                 {
-                    if (_core.TimeEngine.Worlds.TryGetValue(ev.WorldId, out var wRec) && !string.IsNullOrEmpty(wRec.WorldName))
+                    if (_core.TimeEngine.Worlds.TryGetValue(worldId, out var wRec) && !string.IsNullOrEmpty(wRec.WorldName))
                     {
-                        _core.Timeline.UpdateEvent(ev.Id, e =>
+                        _core.Timeline.UpdateEvent(evId, e =>
                         {
                             e.WorldName = wRec.WorldName;
                             if (string.IsNullOrEmpty(e.WorldThumb)) e.WorldThumb = wRec.WorldThumb;
@@ -561,13 +560,11 @@ public class TimelineController
 
                 // 0b) Backfill moderation user names the same way - older rows were written
                 // before the name was resolved for non-friends and show up as "Unknown".
-                foreach (var ev in allEvents.Where(e => e.Type == "moderation"
-                                                     && !string.IsNullOrEmpty(e.UserId)
-                                                     && string.IsNullOrEmpty(e.UserName)))
+                foreach (var (evId, userId) in _core.Timeline.GetModerationEventsMissingUserName())
                 {
                     var bfName  = "";
                     var bfImage = "";
-                    if (_core.TimeEngine.Users.TryGetValue(ev.UserId, out var uRec) && !string.IsNullOrEmpty(uRec.DisplayName))
+                    if (_core.TimeEngine.Users.TryGetValue(userId, out var uRec) && !string.IsNullOrEmpty(uRec.DisplayName))
                     {
                         bfName  = uRec.DisplayName;
                         bfImage = uRec.Image ?? "";
@@ -576,7 +573,7 @@ public class TimelineController
                     {
                         try
                         {
-                            var uDet = _core.TimeEngine.GetUserDetail(ev.UserId);
+                            var uDet = _core.TimeEngine.GetUserDetail(userId);
                             if (uDet != null && !string.IsNullOrEmpty(uDet.DisplayName))
                             {
                                 bfName  = uDet.DisplayName;
@@ -588,7 +585,7 @@ public class TimelineController
 
                     if (!string.IsNullOrEmpty(bfName))
                     {
-                        _core.Timeline.UpdateEvent(ev.Id, e =>
+                        _core.Timeline.UpdateEvent(evId, e =>
                         {
                             e.UserName = bfName;
                             if (string.IsNullOrEmpty(e.UserImage)) e.UserImage = bfImage;

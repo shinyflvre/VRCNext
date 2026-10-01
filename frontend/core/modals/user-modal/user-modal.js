@@ -189,9 +189,13 @@ function openFriendDetail(userId) {
     c.innerHTML = sk('content-modal-compact');
     if (typeof vrcnPlusOnProfileOpened === 'function') vrcnPlusOnProfileOpened(userId);
     m.style.display = 'flex';
+    _fdCountsReqKey = '';
+    _fdCounts = null;
     sendToCS({ action: 'vrcGetFriendDetail', userId: userId });
 }
 
+let _fdCountsReqKey = '';
+let _fdCounts = null;
 let _fdLoadedAvatarKey = '';
 let _fdLastAvatarPayload = null;
 let _fdLastAvatarUserId = '';
@@ -665,6 +669,7 @@ function renderFriendDetail(d) {
     if (d.id && d.rawJson) _fdRawJsonCache[d.id] = d.rawJson;
     if (d.id && d.rawProfileJson) _fdRawProfileJsonCache[d.id] = d.rawProfileJson;
     currentFriendDetail = d;
+    _fdApplyCachedCounts(d);
     if (typeof vrcnPlusOnProfileOpened === 'function' && d.id) vrcnPlusOnProfileOpened(d.id);
     if (typeof navUpdateLabel === 'function') navUpdateLabel(d.displayName || '');
     window._fdGroupsPage = 0;
@@ -1246,6 +1251,57 @@ function renderFriendDetail(d) {
         }, 1000);
     }
 
+    _fdRequestInstanceCounts();
+}
+
+function _fdApplyCachedCounts(d) {
+    if (!d || d.userCount > 0 || !_fdCounts) return;
+    if (_fdCounts.key !== (d.id + '|' + (d.location || ''))) return;
+    d.userCount = _fdCounts.userCount;
+    d.worldCapacity = _fdCounts.capacity;
+    if (!d.minAvatarPerf) d.minAvatarPerf = _fdCounts.minAvatarPerf;
+}
+
+function _fdWorldItemHtml(d) {
+    const loc = d.location || '';
+    const { worldId: wid } = parseFriendLocation(loc);
+    const instId = loc.includes(':') ? (loc.split(':')[1] || '').split('~')[0] : '';
+    const regionRaw = (loc.match(/~region\(([^)]+)\)/) || [])[1] || '';
+    return renderInstanceItem({
+        thumb: d.worldThumb || '',
+        worldName: d.worldName,
+        instanceType: d.instanceType,
+        instanceId: instId,
+        region: regionRaw ? getWorldRegionLabel(regionRaw) : '',
+        userCount: d.userCount || 0,
+        capacity: d.worldCapacity || 0,
+        ageGate: loc.includes('~ageGate'),
+        minAvatarPerf: d.minAvatarPerf || '',
+        location: loc,
+        onclick: wid ? `navOpenModal('worldSearch','${jsq(wid)}','${jsq(d.worldName || '')}')` : '',
+    });
+}
+
+function _fdRequestInstanceCounts() {
+    const d = currentFriendDetail;
+    if (!d || !d.id || !d.worldName || d.userCount > 0) return;
+    const loc = d.location || '';
+    if (!loc.includes(':')) return;
+    const key = d.id + '|' + loc;
+    if (_fdCountsReqKey === key) return;
+    _fdCountsReqKey = key;
+    sendToCS({ action: 'vrcGetInstanceCounts', userId: d.id, location: loc });
+}
+
+function handleFdInstanceCounts(p) {
+    const d = currentFriendDetail;
+    if (!d || !p || d.id !== p.userId || d.location !== p.location || !(p.userCount > 0)) return;
+    _fdCounts = { key: p.userId + '|' + p.location, userCount: p.userCount, capacity: p.capacity || 0, minAvatarPerf: p.minAvatarPerf || '' };
+    d.userCount = _fdCounts.userCount;
+    d.worldCapacity = _fdCounts.capacity;
+    if (_fdCounts.minAvatarPerf) d.minAvatarPerf = _fdCounts.minAvatarPerf;
+    const item = document.querySelector('#friendDetailContent .fd-world-card .inst-item');
+    if (item) item.outerHTML = _fdWorldItemHtml(d);
 }
 
 function patchFriendDetailLive(f) {
@@ -1376,9 +1432,13 @@ function patchFriendDetailLive(f) {
             const region     = regionRaw ? getWorldRegionLabel(regionRaw) : '';
             const onclick    = wid ? `navOpenModal('worldSearch','${jsq(wid)}','${jsq(worldName)}')` : '';
 
+            const sameInstance = loc === currentFriendDetail.location;
             const instanceItemHtml = renderInstanceItem({
                 thumb: worldThumb, worldName, instanceType,
-                instanceId: instId, region, userCount: 0, capacity: 0,
+                instanceId: instId, region,
+                userCount: sameInstance ? (currentFriendDetail.userCount || 0) : 0,
+                capacity: sameInstance ? (currentFriendDetail.worldCapacity || 0) : 0,
+                minAvatarPerf: sameInstance ? (currentFriendDetail.minAvatarPerf || '') : '',
                 ageGate: loc.includes('~ageGate'), location: loc, onclick,
             });
             const worldInner = `<div class="fd-group-rep-label">${t('profiles.meta.current_world', 'Current World')}</div>${instanceItemHtml}`;
@@ -1436,10 +1496,16 @@ function patchFriendDetailLive(f) {
                 }
             }
 
+            if (!sameInstance) {
+                currentFriendDetail.userCount = 0;
+                currentFriendDetail.worldCapacity = 0;
+                currentFriendDetail.minAvatarPerf = '';
+            }
             currentFriendDetail.location     = loc;
             currentFriendDetail.worldName    = worldName;
             currentFriendDetail.worldThumb   = worldThumb;
             currentFriendDetail.instanceType = instanceType;
+            _fdRequestInstanceCounts();
         }
         // if worldName is still empty (cache miss on first push) — no-op, wait for second push
     }

@@ -80,10 +80,11 @@ public static class AudioDeviceManager
         try
         {
             var list = new List<(string, string)>();
-            var en = new NAudio.CoreAudioApi.MMDeviceEnumerator();
+            using var en = new NAudio.CoreAudioApi.MMDeviceEnumerator();
             var flow = input ? NAudio.CoreAudioApi.DataFlow.Capture : NAudio.CoreAudioApi.DataFlow.Render;
-            foreach (var d in en.EnumerateAudioEndPoints(flow, NAudio.CoreAudioApi.DeviceState.Active))
-                list.Add((d.ID, d.FriendlyName));
+            using var devices = en.EnumerateAudioEndPoints(flow, NAudio.CoreAudioApi.DeviceState.Active);
+            foreach (var d in devices)
+                using (d) list.Add((d.ID, d.FriendlyName));
             return list.ToArray();
         }
         catch (Exception ex) { Log?.Invoke($"[Audio] Endpoint enumeration failed: {ex.Message}"); }
@@ -117,7 +118,13 @@ public static class AudioDeviceManager
     public static string CurrentName(bool input, string endpointId)
     {
         if (string.IsNullOrEmpty(endpointId)) return "";
-        foreach (var (id, name) in ListEndpoints(input))
+        return NameIn(ListEndpoints(input), endpointId);
+    }
+
+    private static string NameIn((string Id, string Name)[] endpoints, string endpointId)
+    {
+        if (string.IsNullOrEmpty(endpointId)) return "";
+        foreach (var (id, name) in endpoints)
             if (string.Equals(id, endpointId, StringComparison.OrdinalIgnoreCase)) return name;
         return "";
     }
@@ -126,6 +133,13 @@ public static class AudioDeviceManager
     {
         AudioSelectionMode.SystemDefault => true,
         AudioSelectionMode.Endpoint      => CurrentName(input, sel.EndpointId).Length > 0,
+        _                                => false,
+    };
+
+    public static bool IsAvailable(AudioSelection sel, (string Id, string Name)[] endpoints) => sel.Mode switch
+    {
+        AudioSelectionMode.SystemDefault => true,
+        AudioSelectionMode.Endpoint      => NameIn(endpoints, sel.EndpointId).Length > 0,
         _                                => false,
     };
 

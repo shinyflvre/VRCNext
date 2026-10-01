@@ -730,14 +730,25 @@ public class RelayController : IDisposable
 
     // Static process checks
 
+    private static bool AnyProcessAlive(string name)
+    {
+        bool alive = false;
+        foreach (var p in Process.GetProcessesByName(name))
+        {
+            try { if (!alive && !p.HasExited) alive = true; }
+            catch { }
+            finally { p.Dispose(); }
+        }
+        return alive;
+    }
+
     public static bool IsVrcRunning()
     {
         try
         {
-            bool Alive(Process p) { try { return !p.HasExited; } catch { return false; } }
-            if (Process.GetProcessesByName("VRChat").Any(Alive)) return true;
+            if (AnyProcessAlive("VRChat")) return true;
 #if !WINDOWS
-            if (Process.GetProcessesByName("VRChat.exe").Any(Alive)) return true;
+            if (AnyProcessAlive("VRChat.exe")) return true;
 #endif
             return false;
         }
@@ -746,7 +757,7 @@ public class RelayController : IDisposable
 
     public static bool IsSteamVrRunning()
     {
-        try { return Process.GetProcessesByName("vrserver").Any(p => { try { return !p.HasExited; } catch { return false; } }); }
+        try { return AnyProcessAlive("vrserver"); }
         catch { return false; }
     }
 

@@ -49,7 +49,11 @@ public sealed class LocalAiManager
     }
 
     public static bool VulkanAvailable()
-        => System.Runtime.InteropServices.NativeLibrary.TryLoad("vulkan-1.dll", out _);
+    {
+        if (!System.Runtime.InteropServices.NativeLibrary.TryLoad("vulkan-1.dll", out var handle)) return false;
+        System.Runtime.InteropServices.NativeLibrary.Free(handle);
+        return true;
+    }
 
     public object GetState()
     {

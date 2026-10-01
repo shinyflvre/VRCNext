@@ -562,7 +562,7 @@ function renderCurrentInstance(data) {
     }
 
     const { cls: _instCls, label: _instLabel } = getInstanceBadge(data.instanceType);
-    const typeBadge = data.instanceType && data.instanceType !== 'public'
+    const typeBadge = data.instanceType
         ? `<span class="inst-type-badge vrcn-badge ${_instCls}">${esc(_instLabel)}</span>` : '';
     const _ageGateLabel = t('worlds.instances.age_gated', 'Age Gated');
     const ageGateBadge = data.ageGate

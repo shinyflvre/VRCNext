@@ -4,7 +4,7 @@ using Newtonsoft.Json.Linq;
 
 namespace VRCNext.Services;
 
-// persists timeline events to SQLite. in-memory caches for fast lookups, incremental writes, auto-migrates from legacy JSON.
+// persists timeline events to SQLite. incremental writes, auto-migrates from legacy JSON.
 public class TimelineService : IDisposable
 {
     public class FriendTimelineEvent
@@ -137,8 +137,6 @@ public class TimelineService : IDisposable
         public int    Tracked      { get; set; } = 0;
     }
 
-    private readonly List<TimelineEvent>       _events       = new();
-    private readonly List<FriendTimelineEvent> _friendEvents = new();
     private readonly HashSet<string>           _loggedNotifs = new();
     private readonly object                    _lock         = new();
     private bool                               _knownUsersSeeded;
@@ -383,186 +381,22 @@ public class TimelineService : IDisposable
         }
     }
 
+    private string EventWindow() =>
+        _optimizeMode ? " AND id IN (SELECT id FROM events ORDER BY timestamp DESC LIMIT $n)" : "";
+
+    private void AddEventWindowParam(SqliteCommand cmd)
+    {
+        if (_optimizeMode) cmd.Parameters.AddWithValue("$n", _maxN);
+    }
+
     private void LoadFromDb()
     {
-        if (_optimizeMode)
-        {
-            // Players only for the N most recent events (subquery avoids SQLite param-count limits)
-            var optPlayerMap = new Dictionary<string, List<PlayerSnap>>();
-            using (var cmd = _db.CreateCommand())
-            {
-                cmd.CommandText = @"SELECT ep.event_id,ep.user_id,ep.display_name,ep.image,ep.joined_at,ep.left_at
-                    FROM event_players ep
-                    WHERE ep.event_id IN (SELECT id FROM events ORDER BY timestamp DESC LIMIT $n)";
-                cmd.Parameters.AddWithValue("$n", _maxN);
-                using var r = cmd.ExecuteReader();
-                while (r.Read())
-                {
-                    var eid = r.GetString(0);
-                    if (!optPlayerMap.TryGetValue(eid, out var list)) optPlayerMap[eid] = list = new();
-                    list.Add(new PlayerSnap {
-                        UserId      = r.GetString(1),
-                        DisplayName = r.GetString(2),
-                        Image       = r.GetString(3),
-                        JoinedAts   = PlayerSnap.ParseSessions(r.IsDBNull(4) ? "" : r.GetString(4)),
-                        LeftAts     = PlayerSnap.ParseSessions(r.IsDBNull(5) ? "" : r.GetString(5)),
-                    });
-                }
-            }
-
-            // Latest N events — newest-first (DESC)
-            using (var cmd = _db.CreateCommand())
-            {
-                cmd.CommandText = @"SELECT id,type,timestamp,world_id,world_name,world_thumb,
-                    location,photo_path,photo_url,user_id,user_name,user_image,
-                    notif_id,notif_type,notif_title,sender_name,sender_id,sender_image,message,
-                    left_at,tracked
-                    FROM events
-                    WHERE id IN (SELECT id FROM events ORDER BY timestamp DESC LIMIT $n)
-                    ORDER BY timestamp DESC";
-                cmd.Parameters.AddWithValue("$n", _maxN);
-                using var r = cmd.ExecuteReader();
-                while (r.Read())
-                {
-                    var id = r.GetString(0);
-                    var ev = new TimelineEvent
-                    {
-                        Id          = id,
-                        Type        = r.GetString(1),
-                        Timestamp   = r.GetString(2),
-                        WorldId     = r.GetString(3),
-                        WorldName   = r.GetString(4),
-                        WorldThumb  = r.GetString(5),
-                        Location    = r.GetString(6),
-                        PhotoPath   = r.GetString(7),
-                        PhotoUrl    = r.GetString(8),
-                        UserId      = r.GetString(9),
-                        UserName    = r.GetString(10),
-                        UserImage   = r.GetString(11),
-                        NotifId     = r.GetString(12),
-                        NotifType   = r.GetString(13),
-                        NotifTitle  = r.GetString(14),
-                        SenderName  = r.GetString(15),
-                        SenderId    = r.GetString(16),
-                        SenderImage = r.GetString(17),
-                        Message     = r.GetString(18),
-                        LeftAt      = r.IsDBNull(19) ? "" : r.GetString(19),
-                        Tracked     = r.GetInt32(20),
-                        Players     = optPlayerMap.TryGetValue(id, out var pl) ? pl : new(),
-                    };
-                    _events.Add(ev);
-                    if (ev.Type == "notification" && !string.IsNullOrEmpty(ev.NotifId))
-                        _loggedNotifs.Add(ev.NotifId);
-                }
-            }
-
-            using (var cmd = _db.CreateCommand())
-            {
-                cmd.CommandText = "SELECT COUNT(1) FROM known_users LIMIT 1";
-                _knownUsersSeeded = (long)(cmd.ExecuteScalar() ?? 0L) > 0;
-            }
-
-            using (var cmd = _db.CreateCommand())
-            {
-                cmd.CommandText = "SELECT notif_id FROM logged_notifs ORDER BY rowid DESC LIMIT 2000";
-                using var r = cmd.ExecuteReader();
-                while (r.Read()) _loggedNotifs.Add(r.GetString(0));
-            }
-
-            // Latest N friend events — newest-first (DESC)
-            using (var cmd = _db.CreateCommand())
-            {
-                cmd.CommandText = @"SELECT id,type,timestamp,friend_id,friend_name,friend_image,
-                    world_id,world_name,world_thumb,location,old_value,new_value,left_at,tracked
-                    FROM friend_events
-                    WHERE id IN (SELECT id FROM friend_events ORDER BY timestamp DESC LIMIT $n)
-                    ORDER BY timestamp DESC";
-                cmd.Parameters.AddWithValue("$n", _maxN);
-                using var r = cmd.ExecuteReader();
-                while (r.Read())
-                    _friendEvents.Add(new FriendTimelineEvent
-                    {
-                        Id          = r.GetString(0),
-                        Type        = r.GetString(1),
-                        Timestamp   = r.GetString(2),
-                        FriendId    = r.GetString(3),
-                        FriendName  = r.GetString(4),
-                        FriendImage = r.GetString(5),
-                        WorldId     = r.GetString(6),
-                        WorldName   = r.GetString(7),
-                        WorldThumb  = r.GetString(8),
-                        Location    = r.GetString(9),
-                        OldValue    = r.GetString(10),
-                        NewValue    = r.GetString(11),
-                        LeftAt      = r.IsDBNull(12) ? "" : r.GetString(12),
-                        Tracked     = r.GetInt32(13),
-                    });
-            }
-
-            return; // skip full load
-        }
-
-        var playerMap = new Dictionary<string, List<PlayerSnap>>();
         using (var cmd = _db.CreateCommand())
         {
-            cmd.CommandText = "SELECT event_id, user_id, display_name, image, joined_at, left_at FROM event_players";
+            cmd.CommandText = "SELECT notif_id FROM events WHERE type='notification' AND notif_id != ''" + EventWindow();
+            AddEventWindowParam(cmd);
             using var r = cmd.ExecuteReader();
-            while (r.Read())
-            {
-                var eid = r.GetString(0);
-                if (!playerMap.TryGetValue(eid, out var list))
-                    playerMap[eid] = list = new();
-                list.Add(new PlayerSnap
-                {
-                    UserId      = r.GetString(1),
-                    DisplayName = r.GetString(2),
-                    Image       = r.GetString(3),
-                    JoinedAts   = PlayerSnap.ParseSessions(r.IsDBNull(4) ? "" : r.GetString(4)),
-                    LeftAts     = PlayerSnap.ParseSessions(r.IsDBNull(5) ? "" : r.GetString(5)),
-                });
-            }
-        }
-
-        using (var cmd = _db.CreateCommand())
-        {
-            cmd.CommandText = @"SELECT id,type,timestamp,world_id,world_name,world_thumb,
-                location,photo_path,photo_url,user_id,user_name,user_image,
-                notif_id,notif_type,notif_title,sender_name,sender_id,sender_image,message,
-                left_at,tracked
-                FROM events ORDER BY timestamp ASC";
-            using var r = cmd.ExecuteReader();
-            while (r.Read())
-            {
-                var id = r.GetString(0);
-                var ev = new TimelineEvent
-                {
-                    Id          = id,
-                    Type        = r.GetString(1),
-                    Timestamp   = r.GetString(2),
-                    WorldId     = r.GetString(3),
-                    WorldName   = r.GetString(4),
-                    WorldThumb  = r.GetString(5),
-                    Location    = r.GetString(6),
-                    PhotoPath   = r.GetString(7),
-                    PhotoUrl    = r.GetString(8),
-                    UserId      = r.GetString(9),
-                    UserName    = r.GetString(10),
-                    UserImage   = r.GetString(11),
-                    NotifId     = r.GetString(12),
-                    NotifType   = r.GetString(13),
-                    NotifTitle  = r.GetString(14),
-                    SenderName  = r.GetString(15),
-                    SenderId    = r.GetString(16),
-                    SenderImage = r.GetString(17),
-                    Message     = r.GetString(18),
-                    LeftAt      = r.IsDBNull(19) ? "" : r.GetString(19),
-                    Tracked     = r.GetInt32(20),
-                    Players     = playerMap.TryGetValue(id, out var pl) ? pl : new(),
-                };
-                _events.Add(ev);
-                if (ev.Type == "notification" && !string.IsNullOrEmpty(ev.NotifId))
-                    _loggedNotifs.Add(ev.NotifId);
-            }
+            while (r.Read()) _loggedNotifs.Add(r.GetString(0));
         }
 
         using (var cmd = _db.CreateCommand())
@@ -577,49 +411,104 @@ public class TimelineService : IDisposable
             using var r = cmd.ExecuteReader();
             while (r.Read()) _loggedNotifs.Add(r.GetString(0));
         }
+    }
 
-        using (var cmd = _db.CreateCommand())
+    private TimelineEvent? DbReadEvent(string id)
+    {
+        if (string.IsNullOrEmpty(id)) return null;
+        try
         {
+            var players = new List<PlayerSnap>();
+            using (var pcmd = _db.CreateCommand())
+            {
+                pcmd.CommandText = "SELECT user_id,display_name,image,joined_at,left_at FROM event_players WHERE event_id=$id";
+                pcmd.Parameters.AddWithValue("$id", id);
+                using var pr = pcmd.ExecuteReader();
+                while (pr.Read())
+                    players.Add(new PlayerSnap {
+                        UserId      = pr.GetString(0),
+                        DisplayName = pr.GetString(1),
+                        Image       = pr.GetString(2),
+                        JoinedAts   = PlayerSnap.ParseSessions(pr.IsDBNull(3) ? "" : pr.GetString(3)),
+                        LeftAts     = PlayerSnap.ParseSessions(pr.IsDBNull(4) ? "" : pr.GetString(4)),
+                    });
+            }
+
+            using var cmd = _db.CreateCommand();
+            cmd.CommandText = @"SELECT id,type,timestamp,world_id,world_name,world_thumb,
+                location,photo_path,photo_url,user_id,user_name,user_image,
+                notif_id,notif_type,notif_title,sender_name,sender_id,sender_image,message,
+                left_at,tracked
+                FROM events WHERE id=$id";
+            cmd.Parameters.AddWithValue("$id", id);
+            using var r = cmd.ExecuteReader();
+            if (!r.Read()) return null;
+            return new TimelineEvent
+            {
+                Id          = r.GetString(0),
+                Type        = r.GetString(1),
+                Timestamp   = r.GetString(2),
+                WorldId     = r.GetString(3),
+                WorldName   = r.GetString(4),
+                WorldThumb  = r.GetString(5),
+                Location    = r.GetString(6),
+                PhotoPath   = r.GetString(7),
+                PhotoUrl    = r.GetString(8),
+                UserId      = r.GetString(9),
+                UserName    = r.GetString(10),
+                UserImage   = r.GetString(11),
+                NotifId     = r.GetString(12),
+                NotifType   = r.GetString(13),
+                NotifTitle  = r.GetString(14),
+                SenderName  = r.GetString(15),
+                SenderId    = r.GetString(16),
+                SenderImage = r.GetString(17),
+                Message     = r.GetString(18),
+                LeftAt      = r.IsDBNull(19) ? "" : r.GetString(19),
+                Tracked     = r.GetInt32(20),
+                Players     = players,
+            };
+        }
+        catch { return null; }
+    }
+
+    private FriendTimelineEvent? DbReadFriendEvent(string id)
+    {
+        if (string.IsNullOrEmpty(id)) return null;
+        try
+        {
+            using var cmd = _db.CreateCommand();
             cmd.CommandText = @"SELECT id,type,timestamp,friend_id,friend_name,friend_image,
                 world_id,world_name,world_thumb,location,old_value,new_value,left_at,tracked
-                FROM friend_events ORDER BY timestamp ASC";
+                FROM friend_events WHERE id=$id";
+            cmd.Parameters.AddWithValue("$id", id);
             using var r = cmd.ExecuteReader();
-            while (r.Read())
+            if (!r.Read()) return null;
+            return new FriendTimelineEvent
             {
-                _friendEvents.Add(new FriendTimelineEvent
-                {
-                    Id          = r.GetString(0),
-                    Type        = r.GetString(1),
-                    Timestamp   = r.GetString(2),
-                    FriendId    = r.GetString(3),
-                    FriendName  = r.GetString(4),
-                    FriendImage = r.GetString(5),
-                    WorldId     = r.GetString(6),
-                    WorldName   = r.GetString(7),
-                    WorldThumb  = r.GetString(8),
-                    Location    = r.GetString(9),
-                    OldValue    = r.GetString(10),
-                    NewValue    = r.GetString(11),
-                    LeftAt      = r.IsDBNull(12) ? "" : r.GetString(12),
-                    Tracked     = r.GetInt32(13),
-                });
-            }
+                Id          = r.GetString(0),
+                Type        = r.GetString(1),
+                Timestamp   = r.GetString(2),
+                FriendId    = r.GetString(3),
+                FriendName  = r.GetString(4),
+                FriendImage = r.GetString(5),
+                WorldId     = r.GetString(6),
+                WorldName   = r.GetString(7),
+                WorldThumb  = r.GetString(8),
+                Location    = r.GetString(9),
+                OldValue    = r.GetString(10),
+                NewValue    = r.GetString(11),
+                LeftAt      = r.IsDBNull(12) ? "" : r.GetString(12),
+                Tracked     = r.GetInt32(13),
+            };
         }
+        catch { return null; }
     }
 
     public void AddEvent(TimelineEvent ev)
     {
         lock (_lock)
-        {
-            if (_optimizeMode)
-            {
-                _events.Insert(0, ev);
-                if (_events.Count > _maxN) _events.RemoveAt(_events.Count - 1);
-            }
-            else
-                _events.Add(ev);
             DbInsertEvent(ev, null);
-        }
 
         if (ev.Type == "first_meet" && !string.IsNullOrEmpty(ev.UserId))
         {
@@ -655,26 +544,12 @@ public class TimelineService : IDisposable
         {
             try
             {
-                var have = new HashSet<string>(StringComparer.Ordinal);
-                foreach (var e in _events) have.Add(e.Id);
-
-                var newEvents = new List<TimelineEvent>();
                 using var tx = _db.BeginTransaction();
                 foreach (var ev in events)
-                {
                     DbInsertIgnoreEvent(ev, tx);
-                    if (have.Add(ev.Id)) newEvents.Add(ev);
-                }
                 tx.Commit();
-                _events.AddRange(newEvents);
             }
             catch (Exception ex) { CrashHandler.WriteEntry("BulkImportEvents", ex); }
-
-            if (_optimizeMode)
-            {
-                _events.Sort((a, b) => string.Compare(b.Timestamp, a.Timestamp, StringComparison.Ordinal));
-                if (_events.Count > _maxN) _events.RemoveRange(_maxN, _events.Count - _maxN);
-            }
         }
     }
 
@@ -684,68 +559,106 @@ public class TimelineService : IDisposable
         {
             try
             {
-                var have = new HashSet<string>(StringComparer.Ordinal);
-                foreach (var e in _friendEvents) have.Add(e.Id);
-
-                var newEvents = new List<FriendTimelineEvent>();
                 using var tx = _db.BeginTransaction();
                 foreach (var ev in events)
-                {
                     DbInsertIgnoreFriendEvent(ev, tx);
-                    if (have.Add(ev.Id)) newEvents.Add(ev);
-                }
                 tx.Commit();
-                _friendEvents.AddRange(newEvents);
             }
             catch (Exception ex) { CrashHandler.WriteEntry("BulkImportFriendEvents", ex); }
-
-            if (_optimizeMode)
-            {
-                _friendEvents.Sort((a, b) => string.Compare(b.Timestamp, a.Timestamp, StringComparison.Ordinal));
-                if (_friendEvents.Count > _maxN) _friendEvents.RemoveRange(_maxN, _friendEvents.Count - _maxN);
-            }
         }
     }
 
-    public void UpdateEvent(string id, Action<TimelineEvent> update)
+    public TimelineEvent? UpdateEvent(string id, Action<TimelineEvent> update)
     {
-        TimelineEvent? ev;
-        lock (_lock) ev = _events.FirstOrDefault(e => e.Id == id);
-        if (ev == null) return;
         lock (_lock)
         {
+            var ev = DbReadEvent(id);
+            if (ev == null) return null;
+            var leftAt = ev.LeftAt;
             update(ev);
-            DbUpdateEvent(ev);
+            DbUpdateEvent(ev, ev.LeftAt != leftAt);
+            return ev;
         }
     }
 
-    public void ApplyPlayerSessionRepairs(List<(string EventId, string UserId, List<string> LeftAts)> fixes)
+    public TimelineEvent? GetEvent(string id)
     {
-        if (fixes == null || fixes.Count == 0) return;
-        var byEvent = new Dictionary<string, List<(string UserId, List<string> LeftAts)>>();
-        foreach (var f in fixes)
-        {
-            if (!byEvent.TryGetValue(f.EventId, out var list)) byEvent[f.EventId] = list = new();
-            list.Add((f.UserId, f.LeftAts));
-        }
+        lock (_lock) return DbReadEvent(id);
+    }
+
+    public TimelineEvent? GetLatestEventByType(string type)
+    {
         lock (_lock)
         {
-            foreach (var ev in _events)
+            string? id = null;
+            try
             {
-                if (!byEvent.TryGetValue(ev.Id, out var list)) continue;
-                foreach (var (uid, lefts) in list)
-                {
-                    var p = ev.Players.FirstOrDefault(x => x.UserId == uid);
-                    if (p != null) p.LeftAts = new List<string>(lefts);
-                }
+                using var cmd = _db.CreateCommand();
+                cmd.CommandText = "SELECT id FROM events WHERE type=$type" + EventWindow() + " ORDER BY timestamp DESC LIMIT 1";
+                cmd.Parameters.AddWithValue("$type", type);
+                AddEventWindowParam(cmd);
+                id = cmd.ExecuteScalar() as string;
             }
+            catch { }
+            return id == null ? null : DbReadEvent(id);
         }
     }
 
-    public List<TimelineEvent> GetEvents()
+    public List<(string Id, string WorldId)> GetEventsMissingWorldName(string? worldId = null)
     {
+        var result = new List<(string Id, string WorldId)>();
         lock (_lock)
-            return _events.OrderByDescending(e => e.Timestamp).ToList();
+        {
+            try
+            {
+                using var cmd = _db.CreateCommand();
+                cmd.CommandText = string.IsNullOrEmpty(worldId)
+                    ? "SELECT id, world_id FROM events WHERE world_id != '' AND world_name = ''" + EventWindow()
+                    : "SELECT id, world_id FROM events WHERE world_id = $wid AND world_name = ''" + EventWindow();
+                if (!string.IsNullOrEmpty(worldId)) cmd.Parameters.AddWithValue("$wid", worldId);
+                AddEventWindowParam(cmd);
+                using var r = cmd.ExecuteReader();
+                while (r.Read()) result.Add((r.GetString(0), r.GetString(1)));
+            }
+            catch { }
+        }
+        return result;
+    }
+
+    public List<(string Id, string UserId)> GetModerationEventsMissingUserName()
+    {
+        var result = new List<(string Id, string UserId)>();
+        lock (_lock)
+        {
+            try
+            {
+                using var cmd = _db.CreateCommand();
+                cmd.CommandText = "SELECT id, user_id FROM events WHERE type='moderation' AND user_id != '' AND user_name = ''" + EventWindow();
+                AddEventWindowParam(cmd);
+                using var r = cmd.ExecuteReader();
+                while (r.Read()) result.Add((r.GetString(0), r.GetString(1)));
+            }
+            catch { }
+        }
+        return result;
+    }
+
+    public List<(string NotifId, string SenderImage)> GetNotificationSenderImages()
+    {
+        var result = new List<(string NotifId, string SenderImage)>();
+        lock (_lock)
+        {
+            try
+            {
+                using var cmd = _db.CreateCommand();
+                cmd.CommandText = "SELECT notif_id, sender_image FROM events WHERE type='notification' AND notif_id != '' AND sender_image != ''" + EventWindow();
+                AddEventWindowParam(cmd);
+                using var r = cmd.ExecuteReader();
+                while (r.Read()) result.Add((r.GetString(0), r.GetString(1)));
+            }
+            catch { }
+        }
+        return result;
     }
 
     public bool DeleteEvent(string id)
@@ -774,7 +687,6 @@ public class TimelineService : IDisposable
                 tx.Commit();
             }
             catch { return false; }
-            _events.RemoveAll(e => e.Id == id);
             return n > 0;
         }
     }
@@ -804,8 +716,6 @@ public class TimelineService : IDisposable
                 tx.Commit();
             }
             catch { return 0; }
-            var set = new HashSet<string>(list);
-            _events.RemoveAll(e => set.Contains(e.Id));
         }
         return total;
     }
@@ -846,8 +756,6 @@ public class TimelineService : IDisposable
                 tx.Commit();
             }
             catch { return 0; }
-            var set = new HashSet<string>(ids);
-            _events.RemoveAll(e => set.Contains(e.Id));
             return ids.Count;
         }
     }
@@ -855,13 +763,18 @@ public class TimelineService : IDisposable
     public List<string> PruneOrphanedPhotos(Action<int>? onProgress = null)
     {
         var deleted = new List<string>();
-        List<(string Id, string Path)> photos;
+        var photos  = new List<(string Id, string Path)>();
         lock (_lock)
         {
-            photos = _events
-                .Where(e => e.Type == "photo" && !string.IsNullOrEmpty(e.PhotoPath))
-                .Select(e => (e.Id, e.PhotoPath))
-                .ToList();
+            try
+            {
+                using var cmd = _db.CreateCommand();
+                cmd.CommandText = "SELECT id, photo_path FROM events WHERE type='photo' AND photo_path != ''" + EventWindow();
+                AddEventWindowParam(cmd);
+                using var r = cmd.ExecuteReader();
+                while (r.Read()) photos.Add((r.GetString(0), r.GetString(1)));
+            }
+            catch { }
         }
         if (photos.Count == 0) return deleted;
 
@@ -890,8 +803,6 @@ public class TimelineService : IDisposable
                 var p = cmd.Parameters.Add("$p", Microsoft.Data.Sqlite.SqliteType.Text);
                 foreach (var path in orphanPaths) { p.Value = path; cmd.ExecuteNonQuery(); }
                 tx.Commit();
-                var set = new HashSet<string>(orphanIds, StringComparer.Ordinal);
-                _events.RemoveAll(e => set.Contains(e.Id));
                 deleted.AddRange(orphanIds);
             }
             catch { }
@@ -1069,47 +980,37 @@ public class TimelineService : IDisposable
 
     public long GetEventCount(string typeFilter = "")
     {
-        if (_optimizeMode && string.IsNullOrEmpty(typeFilter))
+        lock (_lock)
         {
-            lock (_lock)
+            try
             {
-                return _events.Count;
+                using var cmd = _db.CreateCommand();
+                var typeClause = string.IsNullOrEmpty(typeFilter) ? "" : "WHERE type = $type";
+                cmd.CommandText = $"SELECT COUNT(*) FROM events {typeClause}";
+                if (!string.IsNullOrEmpty(typeFilter)) cmd.Parameters.AddWithValue("$type", typeFilter);
+                var count = Convert.ToInt64(cmd.ExecuteScalar() ?? 0L);
+                return (_optimizeMode && count > _maxN) ? (long)_maxN : count;
             }
+            catch { return 0; }
         }
-
-        try
-        {
-            using var cmd = _db.CreateCommand();
-            var typeClause = string.IsNullOrEmpty(typeFilter) ? "" : "WHERE type = $type";
-            cmd.CommandText = $"SELECT COUNT(*) FROM events {typeClause}";
-            if (!string.IsNullOrEmpty(typeFilter)) cmd.Parameters.AddWithValue("$type", typeFilter);
-            var count = Convert.ToInt64(cmd.ExecuteScalar() ?? 0L);
-            return (_optimizeMode && count > _maxN) ? (long)_maxN : count;
-        }
-        catch { return 0; }
     }
 
     public long GetFriendEventCount(string typeFilter = "")
     {
         var hasTypeCount = !string.IsNullOrEmpty(typeFilter) && typeFilter != "all";
-        if (_optimizeMode && !hasTypeCount)
+        lock (_lock)
         {
-            lock (_lock)
+            try
             {
-                return _friendEvents.Count;
+                using var cmd = _db.CreateCommand();
+                var typeClause = hasTypeCount ? "WHERE type = $type" : "";
+                cmd.CommandText = $"SELECT COUNT(*) FROM friend_events {typeClause}";
+                if (hasTypeCount) cmd.Parameters.AddWithValue("$type", typeFilter);
+                var count = Convert.ToInt64(cmd.ExecuteScalar() ?? 0L);
+                return (_optimizeMode && count > _maxN) ? (long)_maxN : count;
             }
+            catch { return 0; }
         }
-
-        try
-        {
-            using var cmd = _db.CreateCommand();
-            var typeClause = hasTypeCount ? "WHERE type = $type" : "";
-            cmd.CommandText = $"SELECT COUNT(*) FROM friend_events {typeClause}";
-            if (hasTypeCount) cmd.Parameters.AddWithValue("$type", typeFilter);
-            var count = Convert.ToInt64(cmd.ExecuteScalar() ?? 0L);
-            return (_optimizeMode && count > _maxN) ? (long)_maxN : count;
-        }
-        catch { return 0; }
     }
 
     public long SearchEventsCount(string query, string typeFilter = "", string date = "")
@@ -1303,19 +1204,12 @@ public class TimelineService : IDisposable
     public (List<TimelineEvent> Events, bool HasMore) GetEventsPaged(
         int limit, int offset, string typeFilter = "", string? sortBy = null, string? sortDir = null)
     {
-        var defaultSort = string.IsNullOrEmpty(sortBy)
-            || (string.Equals(sortBy, "timestamp", StringComparison.OrdinalIgnoreCase)
-                && !string.Equals(sortDir, "asc", StringComparison.OrdinalIgnoreCase));
+        lock (_lock) return QueryEventsPage(limit, offset, typeFilter, sortBy, sortDir);
+    }
 
-        if (_optimizeMode && string.IsNullOrEmpty(typeFilter) && defaultSort)
-        {
-            lock (_lock)
-            {
-                var filtered = _events.ToList();
-                return (filtered.Skip(offset).Take(limit).ToList(), offset + limit < filtered.Count);
-            }
-        }
-
+    private (List<TimelineEvent> Events, bool HasMore) QueryEventsPage(
+        int limit, int offset, string typeFilter, string? sortBy, string? sortDir)
+    {
         var ids = new List<string>();
         try
         {
@@ -1918,22 +1812,12 @@ public class TimelineService : IDisposable
     public void AddFriendEvent(FriendTimelineEvent ev)
     {
         lock (_lock)
-        {
-            if (_optimizeMode)
-            {
-                _friendEvents.Insert(0, ev);
-                if (_friendEvents.Count > _maxN) _friendEvents.RemoveAt(_friendEvents.Count - 1);
-            }
-            else
-                _friendEvents.Add(ev);
             DbInsertFriendEvent(ev);
-        }
     }
 
-    public List<FriendTimelineEvent> GetFriendEvents()
+    public FriendTimelineEvent? GetFriendEvent(string id)
     {
-        lock (_lock)
-            return _friendEvents.OrderByDescending(e => e.Timestamp).ToList();
+        lock (_lock) return DbReadFriendEvent(id);
     }
 
     public bool DeleteFriendEvent(string id)
@@ -1962,7 +1846,6 @@ public class TimelineService : IDisposable
                 tx.Commit();
             }
             catch { return false; }
-            _friendEvents.RemoveAll(e => e.Id == id);
             return n > 0;
         }
     }
@@ -1992,8 +1875,6 @@ public class TimelineService : IDisposable
                 tx.Commit();
             }
             catch { return 0; }
-            var set = new HashSet<string>(list);
-            _friendEvents.RemoveAll(e => set.Contains(e.Id));
         }
         return total;
     }
@@ -2035,8 +1916,6 @@ public class TimelineService : IDisposable
                 tx.Commit();
             }
             catch { return 0; }
-            var set = new HashSet<string>(ids);
-            _friendEvents.RemoveAll(e => set.Contains(e.Id));
             return ids.Count;
         }
     }
@@ -2056,20 +1935,13 @@ public class TimelineService : IDisposable
     public (List<FriendTimelineEvent> Events, bool HasMore) GetFriendEventsPaged(
         int limit, int offset, string? type = null, string? sortBy = null, string? sortDir = null)
     {
+        lock (_lock) return QueryFriendEventsPage(limit, offset, type, sortBy, sortDir);
+    }
+
+    private (List<FriendTimelineEvent> Events, bool HasMore) QueryFriendEventsPage(
+        int limit, int offset, string? type, string? sortBy, string? sortDir)
+    {
         var hasType = !string.IsNullOrEmpty(type) && type != "all";
-        var defaultSort = string.IsNullOrEmpty(sortBy)
-            || (string.Equals(sortBy, "timestamp", StringComparison.OrdinalIgnoreCase)
-                && !string.Equals(sortDir, "asc", StringComparison.OrdinalIgnoreCase));
-
-        if (_optimizeMode && !hasType && defaultSort)
-        {
-            lock (_lock)
-            {
-                var filtered = _friendEvents.ToList();
-                return (filtered.Skip(offset).Take(limit).ToList(), offset + limit < filtered.Count);
-            }
-        }
-
         var result = new List<FriendTimelineEvent>();
         try
         {
@@ -2320,55 +2192,50 @@ public class TimelineService : IDisposable
 
     public void UpdateFriendEventImage(string id, string friendImage)
     {
-        FriendTimelineEvent? ev;
-        lock (_lock) ev = _friendEvents.FirstOrDefault(e => e.Id == id);
-        if (ev == null) return;
-        lock (_lock) ev.FriendImage = friendImage;
-        try
+        lock (_lock)
         {
-            using var cmd = _db.CreateCommand();
-            cmd.CommandText = "UPDATE friend_events SET friend_image=$fi WHERE id=$id";
-            cmd.Parameters.AddWithValue("$fi",  friendImage);
-            cmd.Parameters.AddWithValue("$id",  id);
-            cmd.ExecuteNonQuery();
+            try
+            {
+                using var cmd = _db.CreateCommand();
+                cmd.CommandText = "UPDATE friend_events SET friend_image=$fi WHERE id=$id";
+                cmd.Parameters.AddWithValue("$fi",  friendImage);
+                cmd.Parameters.AddWithValue("$id",  id);
+                cmd.ExecuteNonQuery();
+            }
+            catch { }
         }
-        catch { }
     }
 
     public void SetFriendEventLeftAt(string id, string leftAt)
     {
         lock (_lock)
         {
-            var ev = _friendEvents.FirstOrDefault(e => e.Id == id);
-            if (ev != null) ev.LeftAt = leftAt;
+            try
+            {
+                using var cmd = _db.CreateCommand();
+                cmd.CommandText = "UPDATE friend_events SET left_at=$la WHERE id=$id";
+                cmd.Parameters.AddWithValue("$la", leftAt);
+                cmd.Parameters.AddWithValue("$id", id);
+                cmd.ExecuteNonQuery();
+            }
+            catch { }
         }
-        try
-        {
-            using var cmd = _db.CreateCommand();
-            cmd.CommandText = "UPDATE friend_events SET left_at=$la WHERE id=$id";
-            cmd.Parameters.AddWithValue("$la", leftAt);
-            cmd.Parameters.AddWithValue("$id", id);
-            cmd.ExecuteNonQuery();
-        }
-        catch { }
     }
 
     public void SetInstanceEventLeftAt(string id, string leftAt)
     {
         lock (_lock)
         {
-            var ev = _events.FirstOrDefault(e => e.Id == id);
-            if (ev != null) ev.LeftAt = leftAt;
+            try
+            {
+                using var cmd = _db.CreateCommand();
+                cmd.CommandText = "UPDATE events SET left_at=$la WHERE id=$id";
+                cmd.Parameters.AddWithValue("$la", leftAt);
+                cmd.Parameters.AddWithValue("$id", id);
+                cmd.ExecuteNonQuery();
+            }
+            catch { }
         }
-        try
-        {
-            using var cmd = _db.CreateCommand();
-            cmd.CommandText = "UPDATE events SET left_at=$la WHERE id=$id";
-            cmd.Parameters.AddWithValue("$la", leftAt);
-            cmd.Parameters.AddWithValue("$id", id);
-            cmd.ExecuteNonQuery();
-        }
-        catch { }
     }
 
     public void AddFriendEventColocated(string eventId, string friendId, string friendName, string friendImage)
@@ -2498,24 +2365,19 @@ public class TimelineService : IDisposable
 
     public void UpdateFriendEventWorld(string id, string worldName, string worldThumb)
     {
-        FriendTimelineEvent? ev;
-        lock (_lock) ev = _friendEvents.FirstOrDefault(e => e.Id == id);
-        if (ev == null) return;
         lock (_lock)
         {
-            ev.WorldName  = worldName;
-            ev.WorldThumb = worldThumb;
+            try
+            {
+                using var cmd = _db.CreateCommand();
+                cmd.CommandText = "UPDATE friend_events SET world_name=$wn, world_thumb=$wt WHERE id=$id";
+                cmd.Parameters.AddWithValue("$wn",  worldName);
+                cmd.Parameters.AddWithValue("$wt",  worldThumb);
+                cmd.Parameters.AddWithValue("$id",  id);
+                cmd.ExecuteNonQuery();
+            }
+            catch { }
         }
-        try
-        {
-            using var cmd = _db.CreateCommand();
-            cmd.CommandText = "UPDATE friend_events SET world_name=$wn, world_thumb=$wt WHERE id=$id";
-            cmd.Parameters.AddWithValue("$wn",  worldName);
-            cmd.Parameters.AddWithValue("$wt",  worldThumb);
-            cmd.Parameters.AddWithValue("$id",  id);
-            cmd.ExecuteNonQuery();
-        }
-        catch { }
     }
 
     // Known users tracking
@@ -2654,22 +2516,24 @@ public class TimelineService : IDisposable
         catch { }
     }
 
-    private void DbUpdateEvent(TimelineEvent ev)
+    private void DbUpdateEvent(TimelineEvent ev, bool writeLeftAt)
     {
         try
         {
             using var tx  = _db.BeginTransaction();
             using var cmd = _db.CreateCommand();
             cmd.Transaction = tx;
-            cmd.CommandText = @"
+            cmd.CommandText = $@"
                 UPDATE events SET
-                    world_name=$wn, world_thumb=$wt, user_image=$ui,
+                    world_name=$wn, world_thumb=$wt, user_name=$un, user_image=$ui,
                     photo_url=$pu, message=$msg,
-                    sender_name=$sn, sender_image=$sim
+                    sender_name=$sn, sender_image=$sim{(writeLeftAt ? ", left_at=$la" : "")}
                 WHERE id=$id";
             cmd.Parameters.AddWithValue("$wn",  ev.WorldName);
             cmd.Parameters.AddWithValue("$wt",  ev.WorldThumb);
+            cmd.Parameters.AddWithValue("$un",  ev.UserName);
             cmd.Parameters.AddWithValue("$ui",  ev.UserImage);
+            if (writeLeftAt) cmd.Parameters.AddWithValue("$la", string.IsNullOrEmpty(ev.LeftAt) ? (object)DBNull.Value : ev.LeftAt);
             cmd.Parameters.AddWithValue("$pu",  ev.PhotoUrl);
             cmd.Parameters.AddWithValue("$msg", ev.Message);
             cmd.Parameters.AddWithValue("$sn",  ev.SenderName);
@@ -3233,8 +3097,6 @@ public class TimelineService : IDisposable
     {
         lock (_lock)
         {
-            var ev = _events.FirstOrDefault(e => e.Id == id);
-            if (ev != null) { ev.Timestamp = timestamp; ev.LeftAt = leftAt; }
             try
             {
                 using var cmd = _db.CreateCommand();
@@ -3266,8 +3128,6 @@ public class TimelineService : IDisposable
     {
         lock (_lock)
         {
-            _events.Clear();
-            _friendEvents.Clear();
             _loggedNotifs.Clear();
             LoadFromDb();
         }
