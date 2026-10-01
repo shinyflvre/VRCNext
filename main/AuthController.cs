@@ -1270,7 +1270,7 @@ public class AuthController
             if (vrcRunning && !string.IsNullOrEmpty(_core.LogWatcher.CurrentWorldId) && _instance.PendingInstanceEventId == null)
             {
                 var loc = _core.LogWatcher.CurrentLocation ?? _core.LogWatcher.CurrentWorldId;
-                var lastJoin = _core.Timeline.GetEvents().FirstOrDefault(e => e.Type == "instance_join");
+                var lastJoin = _core.Timeline.GetLatestEventByType("instance_join");
                 var lastJoinFinalised = lastJoin != null && !string.IsNullOrEmpty(lastJoin.LeftAt);
                 if (lastJoin != null && lastJoin.Location == loc && !lastJoinFinalised)
                 {
@@ -1350,7 +1350,7 @@ public class AuthController
                         p.LeftAts.Add(nowStr);
                 });
                 _core.Timeline.SetInstanceEventLeftAt(openEv.Id, nowStr);
-                var closed = _core.Timeline.GetEvents().FirstOrDefault(e => e.Id == openEv.Id);
+                var closed = _core.Timeline.GetEvent(openEv.Id);
                 if (closed != null) _core.SendToJS("timelineEvent", _instance.BuildTimelinePayload(closed));
             }
         }
@@ -1598,7 +1598,7 @@ public class AuthController
                 });
             }
         });
-        var refreshed = _core.Timeline.GetEvents().FirstOrDefault(e => e.Id == lastJoin.Id);
+        var refreshed = _core.Timeline.GetEvent(lastJoin.Id);
         if (refreshed != null) _core.SendToJS("timelineEvent", _instance.BuildTimelinePayload(refreshed));
     }
 

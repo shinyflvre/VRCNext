@@ -390,10 +390,14 @@ public class VRChatLogWatcher : IDisposable
         {
             var dir = GetLogDirectory();
             if (!Directory.Exists(dir)) return;
-            var files = Directory.GetFiles(dir, "output_log_*.txt")
-                .OrderByDescending(f => new FileInfo(f).LastWriteTime).ToList();
-            if (files.Count == 0) return;
-            var latest = files[0];
+            string? latest = null;
+            var latestTime = DateTime.MinValue;
+            foreach (var f in Directory.EnumerateFiles(dir, "output_log_*.txt"))
+            {
+                var t = File.GetLastWriteTime(f);
+                if (latest == null || t > latestTime) { latest = f; latestTime = t; }
+            }
+            if (latest == null) return;
             if (latest != _currentLogFile)
             {
                 _currentLogFile = latest;
@@ -443,24 +447,29 @@ public class VRChatLogWatcher : IDisposable
 
     private static long FindLastNewlineEnd(FileStream fs, long from)
     {
-        var buf = new byte[64 * 1024];
-        var pos = fs.Length;
-        while (pos > from)
+        const int bufSize = 64 * 1024;
+        var buf = System.Buffers.ArrayPool<byte>.Shared.Rent(bufSize);
+        try
         {
-            var chunk = (int)Math.Min(buf.Length, pos - from);
-            fs.Seek(pos - chunk, SeekOrigin.Begin);
-            var read = 0;
-            while (read < chunk)
+            var pos = fs.Length;
+            while (pos > from)
             {
-                var n = fs.Read(buf, read, chunk - read);
-                if (n <= 0) break;
-                read += n;
+                var chunk = (int)Math.Min(bufSize, pos - from);
+                fs.Seek(pos - chunk, SeekOrigin.Begin);
+                var read = 0;
+                while (read < chunk)
+                {
+                    var n = fs.Read(buf, read, chunk - read);
+                    if (n <= 0) break;
+                    read += n;
+                }
+                for (var i = read - 1; i >= 0; i--)
+                    if (buf[i] == (byte)'\n') return pos - chunk + i + 1;
+                pos -= chunk;
             }
-            for (var i = read - 1; i >= 0; i--)
-                if (buf[i] == (byte)'\n') return pos - chunk + i + 1;
-            pos -= chunk;
+            return from;
         }
-        return from;
+        finally { System.Buffers.ArrayPool<byte>.Shared.Return(buf); }
     }
 
     private sealed class BoundedReadStream : Stream

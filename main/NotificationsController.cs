@@ -681,7 +681,7 @@ public class NotificationsController
                             _core.Timeline.UpdateEvent(evId, ev => ev.SenderName = name);
                         Invoke(() =>
                         {
-                            var updated = _core.Timeline.GetEvents().FirstOrDefault(e => e.Id == evId);
+                            var updated = _core.Timeline.GetEvent(evId);
                             if (updated != null) _core.SendToJS("timelineEvent", _instance.BuildTimelinePayload(updated));
                             _core.SendToJS("vrcNotifImageUpdate", new { notifId, image = ImageCacheHelper.GetUserUrl(uid, img), senderUsername = name });
                         });
@@ -714,7 +714,7 @@ public class NotificationsController
                             lock (_notifImageCache) _notifImageCache[notifId] = groupIcon;
                         Invoke(() =>
                         {
-                            var updated = _core.Timeline.GetEvents().FirstOrDefault(e => e.Id == evId);
+                            var updated = _core.Timeline.GetEvent(evId);
                             if (updated != null) _core.SendToJS("timelineEvent", _instance.BuildTimelinePayload(updated));
                             _core.SendToJS("vrcNotifImageUpdate", new { notifId, image = ImageCacheHelper.GetGroupUrl(groupId, groupIcon), senderUsername = groupName });
                         });
@@ -760,12 +760,8 @@ public class NotificationsController
         // Seed in-memory cache from persisted timeline (survives restarts, safe with duplicates)
         lock (_notifImageCache)
         {
-            foreach (var e in _core.Timeline.GetEvents())
-            {
-                if (e.Type == "notification" && !string.IsNullOrEmpty(e.NotifId)
-                    && !string.IsNullOrEmpty(e.SenderImage))
-                    _notifImageCache.TryAdd(e.NotifId, e.SenderImage);
-            }
+            foreach (var (notifId, senderImage) in _core.Timeline.GetNotificationSenderImages())
+                _notifImageCache.TryAdd(notifId, senderImage);
         }
 
         // Build enriched list for JS — check image cache first, then friend store

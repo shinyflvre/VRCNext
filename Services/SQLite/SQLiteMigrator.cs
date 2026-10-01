@@ -39,11 +39,8 @@ public static class SQLiteMigrator
             {
                 var from = 5 + (int)(i * 90.0 / count);
                 var to   = 5 + (int)((i + 1) * 90.0 / count);
-                List<(string EventId, string UserId, List<string> LeftAts)> fixes;
                 using (var db = Database.OpenConnectionAt(paths[i]))
-                    fixes = RepairEventPlayerSessions(db, onProgress, from, to);
-                if (fixes.Count > 0 && string.Equals(paths[i], Database.DbPath, StringComparison.OrdinalIgnoreCase))
-                    timeline.ApplyPlayerSessionRepairs(fixes);
+                    RepairEventPlayerSessions(db, onProgress, from, to);
                 await Task.Delay(15);
             }
         }

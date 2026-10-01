@@ -627,7 +627,7 @@ public static class ImageCacheHelper
             _pathCache[$"{subdir}/{entityId}"] = finalPath;
             SaveUrl(subdir, entityId, fetchUrl);
             Log?.Invoke($"CDN 200 - {subdir} - {fetchUrl}", "ok");
-            _ = Task.Run(() => TrimIfNeeded());
+            ScheduleTrim();
             return finalPath;
         }
         finally { _downloadSem.Release(); }
@@ -678,33 +678,66 @@ public static class ImageCacheHelper
 
     // Cache Manager
 
+    private const int TrimDelayMs = 5000;
+    private static int _trimScheduled;
+    private static readonly object _trimLock = new();
+
+    private static readonly EnumerationOptions _cacheEnumOptions = new()
+    {
+        RecurseSubdirectories = true,
+        AttributesToSkip      = 0,
+        IgnoreInaccessible    = false,
+    };
+
+    private static bool IsCacheFile(ref System.IO.Enumeration.FileSystemEntry e) =>
+        !e.IsDirectory && !e.FileName.EndsWith(".tmp", StringComparison.Ordinal);
+
+    private static void ScheduleTrim()
+    {
+        if (Interlocked.Exchange(ref _trimScheduled, 1) == 1) return;
+        _ = Task.Delay(TrimDelayMs).ContinueWith(_ =>
+        {
+            Interlocked.Exchange(ref _trimScheduled, 0);
+            TrimIfNeeded();
+        });
+    }
+
     public static long GetCacheSizeBytes()
     {
         if (!Directory.Exists(_baseDir)) return 0;
-        return new DirectoryInfo(_baseDir)
-            .GetFiles("*", SearchOption.AllDirectories)
-            .Where(f => !f.Name.EndsWith(".tmp"))
-            .Sum(f => f.Length);
+        long total = 0;
+        var sizes = new System.IO.Enumeration.FileSystemEnumerable<long>(
+            _baseDir, (ref System.IO.Enumeration.FileSystemEntry e) => e.Length, _cacheEnumOptions)
+        {
+            ShouldIncludePredicate = IsCacheFile,
+        };
+        foreach (var len in sizes) total += len;
+        return total;
     }
 
     public static void TrimIfNeeded(bool force = false)
     {
         var limitBytes = (long)LimitGb * 1024 * 1024 * 1024;
         if (limitBytes <= 0 || !Directory.Exists(_baseDir)) return;
+        lock (_trimLock)
         try
         {
-            var files = new DirectoryInfo(_baseDir)
-                .GetFiles("*", SearchOption.AllDirectories)
-                .Where(f => !f.Name.EndsWith(".tmp"))
-                .OrderBy(f => f.LastWriteTimeUtc)
-                .ToList();
-            var total = files.Sum(f => f.Length);
+            var total = GetCacheSizeBytes();
 
             int deletedFiles = 0;
             long deletedBytes = 0;
 
             if (force || total > limitBytes)
             {
+                var files = new System.IO.Enumeration.FileSystemEnumerable<(string Path, long Length, DateTime LastWriteUtc)>(
+                    _baseDir,
+                    (ref System.IO.Enumeration.FileSystemEntry e) => (e.ToFullPath(), e.Length, e.LastWriteTimeUtc.UtcDateTime),
+                    _cacheEnumOptions)
+                {
+                    ShouldIncludePredicate = IsCacheFile,
+                }.OrderBy(f => f.LastWriteUtc).ToList();
+                total = files.Sum(f => f.Length);
+
                 var target = (long)(limitBytes * 0.8);
                 foreach (var f in files)
                 {
@@ -713,9 +746,9 @@ public static class ImageCacheHelper
                     {
                         total -= f.Length;
                         deletedBytes += f.Length;
-                        f.Delete();
+                        File.Delete(f.Path);
                         deletedFiles++;
-                        var rel = Path.GetRelativePath(_baseDir, f.FullName);
+                        var rel = Path.GetRelativePath(_baseDir, f.Path);
                         var key = Path.ChangeExtension(rel, null).Replace('\\', '/');
                         _pathCache.TryRemove(key, out _);
                         _urls.TryRemove(key, out _);

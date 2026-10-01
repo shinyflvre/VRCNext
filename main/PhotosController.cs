@@ -1008,16 +1008,17 @@ public class PhotosController
         var pending = new List<KeyValuePair<string, int>>();
         int scanned = 0;
 
-        foreach (var e in _libFileCache)
+        foreach (var e in _libFileCache.ToArray())
         {
             var path  = e.Fi.FullName;
             var stars = await PhotoRatingHelper.GetRatingAsync(path);
+            var hasKnown = _ratingCache.TryGetValue(path, out var known);
 
-            if (!_ratingCache.TryGetValue(path, out var known) || known != stars)
+            if (!hasKnown || known != stars)
             {
                 _ratingCache[path] = stars;
                 batch[path] = stars;
-                pending.Add(new KeyValuePair<string, int>(path, stars));
+                if (hasKnown || stars != 0) pending.Add(new KeyValuePair<string, int>(path, stars));
             }
 
             if (batch.Count >= 50)

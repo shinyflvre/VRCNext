@@ -68,21 +68,26 @@ public class VoiceFightController : IDisposable
         }
     }
 
-    private object BuildDevicesPayload() => new
+    private object BuildDevicesPayload()
     {
-        inputs  = AudioDeviceManager.ListInputs().Select(d => new { id = d.Id, name = d.Name }).ToArray(),
-        outputs = AudioDeviceManager.ListOutputs().Select(d => new { id = d.Id, name = d.Name }).ToArray(),
-        input   = SelectionPayload(true, InputSelection),
-        output  = SelectionPayload(false, OutputSelection),
-        stopWord = _vfSettings.StopWord,
-    };
+        var inputs  = AudioDeviceManager.ListInputs();
+        var outputs = AudioDeviceManager.ListOutputs();
+        return new
+        {
+            inputs  = inputs.Select(d => new { id = d.Id, name = d.Name }).ToArray(),
+            outputs = outputs.Select(d => new { id = d.Id, name = d.Name }).ToArray(),
+            input   = SelectionPayload(InputSelection, inputs),
+            output  = SelectionPayload(OutputSelection, outputs),
+            stopWord = _vfSettings.StopWord,
+        };
+    }
 
-    private static object SelectionPayload(bool input, AudioSelection sel) => new
+    private static object SelectionPayload(AudioSelection sel, (string Id, string Name)[] endpoints) => new
     {
         mode = sel.ModeString,
         id = sel.EndpointId,
         name = sel.DisplayName,
-        available = AudioDeviceManager.IsAvailable(input, sel),
+        available = AudioDeviceManager.IsAvailable(sel, endpoints),
     };
 
     // Message Handler

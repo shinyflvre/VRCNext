@@ -28,6 +28,10 @@ public partial class AppShell
     private System.Threading.Timer? _amplitudeTimer;
     private string _amplitudePath = "";
     private string _amplitudeLast = "";
+    private byte[] _amplitudeBuf = Array.Empty<byte>();
+    private byte[] _amplitudeLastBytes = Array.Empty<byte>();
+    private int _amplitudeLastLen = -1;
+    private int _amplitudePolling;
     private static readonly System.Text.RegularExpressions.Regex _rxAvatarId = new(
         @"avtr_[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
         System.Text.RegularExpressions.RegexOptions.Compiled);
@@ -1067,12 +1071,28 @@ public partial class AppShell
     private void PollAmplitude()
     {
         if (!_settings.VrcndbSubmitAvatars) return;
+        if (Interlocked.Exchange(ref _amplitudePolling, 1) == 1) return;
         try
         {
             if (!File.Exists(_amplitudePath)) return;
+            int len = 0;
+            using (var handle = File.OpenHandle(_amplitudePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                long size = RandomAccess.GetLength(handle);
+                if (_amplitudeBuf.Length <= size) _amplitudeBuf = new byte[size + (size >> 2) + 4096];
+                while (true)
+                {
+                    if (len == _amplitudeBuf.Length) Array.Resize(ref _amplitudeBuf, _amplitudeBuf.Length * 2);
+                    int n = RandomAccess.Read(handle, _amplitudeBuf.AsSpan(len), len);
+                    if (n == 0) break;
+                    len += n;
+                }
+            }
+            if (len == _amplitudeLastLen && _amplitudeBuf.AsSpan(0, len).SequenceEqual(_amplitudeLastBytes.AsSpan(0, len))) return;
+            (_amplitudeBuf, _amplitudeLastBytes) = (_amplitudeLastBytes, _amplitudeBuf);
+            _amplitudeLastLen = len;
             string text;
-            using (var fs = new FileStream(_amplitudePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            using (var sr = new StreamReader(fs))
+            using (var sr = new StreamReader(new MemoryStream(_amplitudeLastBytes, 0, len, false)))
                 text = sr.ReadToEnd();
             if (text == _amplitudeLast) return;
             _amplitudeLast = text;
@@ -1081,6 +1101,7 @@ public partial class AppShell
                 QueueVrcndbSubmit(m.Value);
         }
         catch { }
+        finally { Volatile.Write(ref _amplitudePolling, 0); }
     }
 
     // SendToJS

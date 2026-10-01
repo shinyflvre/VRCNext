@@ -2771,7 +2771,7 @@ public class FriendsController
         var lastSeen = LastSeenTogether(userId);
         try
         {
-            var c = _core.TimeEngine.GetUserProfileCache(userId);
+            var c = _core.TimeEngine.GetUserProfileCache(userId, withGroupsAndContent: false);
             if (c == null) return ("", "", 0, 0, lastSeen, "", "", "[]", "", false, "");
             return (c.ProfileDateJoined, c.ProfilePronouns, MutualFriendCount(c.MutualsJson), JsonArrayCount(c.MutualGroupsJson), lastSeen,
                 c.ProfileLastLogin, c.ProfileLastActivity, c.ProfileBioLinks, c.ProfileBio,
@@ -2848,7 +2848,7 @@ public class FriendsController
             target["lastSeen"] = seen;
 
         UnifiedTimeEngine.UserProfileCache? c;
-        try { c = _core.TimeEngine.GetUserProfileCache(userId); }
+        try { c = _core.TimeEngine.GetUserProfileCache(userId, withGroupsAndContent: false); }
         catch { return; }
         if (c == null) return;
 
@@ -3039,7 +3039,7 @@ public class FriendsController
                 var wname = world["name"]?.ToString() ?? "";
                 var wthumb = world["thumbnailImageUrl"]?.ToString() ?? "";
                 _core.Timeline.UpdateFriendEventWorld(evId, wname, wthumb);
-                var updated = _core.Timeline.GetFriendEvents().FirstOrDefault(x => x.Id == evId);
+                var updated = _core.Timeline.GetFriendEvent(evId);
                 if (updated != null)
                     _core.SendToJS("friendTimelineEvent", BuildFriendTimelinePayload(updated));
 #if WINDOWS

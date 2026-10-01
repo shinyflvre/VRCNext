@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text;
 using Newtonsoft.Json;
 
 namespace VRCNext.Services;
@@ -58,7 +60,14 @@ public class CacheHandler
     {
         var path = Resolve(key);
         if (!File.Exists(path)) return null;
-        try   { return JsonConvert.DeserializeObject(File.ReadAllText(path)); }
+        try
+        {
+            var chunks = ReadFileChunks(path);
+            var serializer = JsonSerializer.CreateDefault();
+            serializer.CheckAdditionalContent = true;
+            using var reader = new JsonTextReader(new StreamReader(new ChunkReadStream(chunks), Encoding.UTF8, true));
+            return serializer.Deserialize(reader);
+        }
         catch { return null; }
     }
 
@@ -68,9 +77,75 @@ public class CacheHandler
         {
             var path = Resolve(key);
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            File.WriteAllText(path, JsonConvert.SerializeObject(data));
+            var serializer = JsonSerializer.CreateDefault();
+            var sb = new StringBuilder(256);
+            using (var sw = new StringWriter(sb, CultureInfo.InvariantCulture))
+            using (var jw = new JsonTextWriter(sw))
+            {
+                jw.Formatting = serializer.Formatting;
+                serializer.Serialize(jw, data, null);
+            }
+            using var fw = new StreamWriter(path, false);
+            foreach (var chunk in sb.GetChunks()) fw.Write(chunk.Span);
         }
         catch (Exception ex) { CrashHandler.WriteEntry("CacheHandler.Save", ex); }
+    }
+
+    private const int FileChunkSize = 64 * 1024;
+
+    private static List<(byte[] Buf, int Len)> ReadFileChunks(string path)
+    {
+        var chunks = new List<(byte[] Buf, int Len)>();
+        using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 1, FileOptions.SequentialScan);
+        while (true)
+        {
+            var buf = new byte[FileChunkSize];
+            int len = 0;
+            while (len < buf.Length)
+            {
+                int n = fs.Read(buf, len, buf.Length - len);
+                if (n == 0) break;
+                len += n;
+            }
+            if (len > 0) chunks.Add((buf, len));
+            if (len < buf.Length) break;
+        }
+        return chunks;
+    }
+
+    private sealed class ChunkReadStream : Stream
+    {
+        private readonly List<(byte[] Buf, int Len)> _chunks;
+        private int _index;
+        private int _offset;
+        public ChunkReadStream(List<(byte[] Buf, int Len)> chunks) { _chunks = chunks; }
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => throw new NotSupportedException();
+        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+        public override void Flush() { }
+        public override int Read(byte[] buffer, int offset, int count) => Read(buffer.AsSpan(offset, count));
+        public override int Read(Span<byte> buffer)
+        {
+            while (_index < _chunks.Count)
+            {
+                var (buf, len) = _chunks[_index];
+                if (_offset < len)
+                {
+                    int n = Math.Min(buffer.Length, len - _offset);
+                    buf.AsSpan(_offset, n).CopyTo(buffer);
+                    _offset += n;
+                    return n;
+                }
+                _index++;
+                _offset = 0;
+            }
+            return 0;
+        }
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
     }
 
     public bool Has(string key) => File.Exists(Resolve(key));
