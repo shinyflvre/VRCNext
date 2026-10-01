@@ -137,7 +137,7 @@ public static class WindowsFixes
             var vtbl = *(IntPtr**)factory;
             if (((delegate* unmanaged[Stdcall]<IntPtr, IntPtr*, int>)vtbl[6])(factory, &result) < 0 || result == IntPtr.Zero) return false;
             op = result;
-            if (Marshal.QueryInterface(op, ref _asyncInfoIid, out info) < 0) { info = IntPtr.Zero; return false; }
+            if (Marshal.QueryInterface(op, in _asyncInfoIid, out info) < 0) { info = IntPtr.Zero; return false; }
             return info != IntPtr.Zero;
         }
         finally

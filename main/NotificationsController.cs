@@ -423,7 +423,25 @@ public class NotificationsController
         return n["emojiId"]?.ToString();
     }
 
-    private static dynamic NormalizeNotifV1(JObject n) => (dynamic)new {
+    private sealed class NormalizedNotif
+    {
+        public string   id             { get; init; } = "";
+        public string   type           { get; init; } = "";
+        public string   senderUserId   { get; init; } = "";
+        public string   senderUsername { get; init; } = "";
+        public string   message        { get; init; } = "";
+        public string   created_at     { get; init; } = "";
+        public bool     seen           { get; init; }
+        public JToken?  details        { get; init; }
+        public bool     _v2            { get; init; }
+        public string?  _title         { get; init; }
+        public string?  _link          { get; init; }
+        public JToken?  _data          { get; init; }
+        public string?  _emojiId       { get; init; }
+        public bool ShouldSerialize_data() => _v2;
+    }
+
+    private static NormalizedNotif NormalizeNotifV1(JObject n) => new NormalizedNotif {
         id             = n["id"]?.ToString() ?? "",
         type           = n["type"]?.ToString() ?? "",
         senderUserId   = n["senderUserId"]?.ToString() ?? "",
@@ -440,7 +458,7 @@ public class NotificationsController
         _emojiId       = ExtractEmojiId(n),
     };
 
-    private static dynamic NormalizeNotifV2(JObject n) => (dynamic)new {
+    private static NormalizedNotif NormalizeNotifV2(JObject n) => new NormalizedNotif {
         id             = n["id"]?.ToString() ?? "",
         type           = n["type"]?.ToString() ?? "",
         senderUserId   = n["senderUserId"]?.ToString() ?? "",
@@ -453,7 +471,7 @@ public class NotificationsController
                            ? n["createdAt"]!.Value<DateTime>().ToString("o")
                            : n["createdAt"]?.ToString() ?? DateTime.UtcNow.ToString("o"),
         seen           = n["seen"]?.Value<bool>() ?? false,
-        details        = (object?)null,
+        details        = null,
         _v2            = true,
         _title         = n["title"]?.ToString(),
         _link          = n["link"]?.ToString(),
@@ -463,7 +481,7 @@ public class NotificationsController
 
     // Core Logic
 
-    private object? ProcessSingleNotif(dynamic n, bool prependToJs)
+    private object? ProcessSingleNotif(NormalizedNotif n, bool prependToJs)
     {
         if (_core.Timeline.IsLoggedNotif((string)n.id)) return null;
         _core.Timeline.AddLoggedNotif((string)n.id);
@@ -856,9 +874,9 @@ public class NotificationsController
 
     // Push actionable notifications to VR overlay (wrist alerts tab + HMD toast)
 #if !WINDOWS
-    private void PushToVrOverlay(dynamic n, string senderImg) { }
+    private void PushToVrOverlay(NormalizedNotif n, string senderImg) { }
 #else
-    private void PushToVrOverlay(dynamic n, string senderImg)
+    private void PushToVrOverlay(NormalizedNotif n, string senderImg)
     {
         var vro = _core.VrOverlay;
         if (vro == null) return;

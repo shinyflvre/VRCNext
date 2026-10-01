@@ -13,6 +13,10 @@
 * **Submit avatars to VRCNDb** now uses far less memory while VRCNext is running.
 * **Fix NPSMSvc** in **Windows Fixes** now uses less memory.
 * Saving and loading caches now uses less memory.
+* Player profiles of people in your instance now use less memory.
+* World information now uses less memory.
+* Notifications now use less memory.
+* The database now frees unused memory in the background.
 
 **Fixed Bugs**
 * Fixed photo ratings changed outside VRCNext sometimes not being picked up for the whole **Media Library**.

@@ -40,9 +40,28 @@ public class CoreLibrary
     public ConcurrentDictionary<string, bool> PlayerAgeVerifiedCache { get; } = new();
     public ConcurrentDictionary<string, Newtonsoft.Json.Linq.JObject> PlayerProfileCache { get; } = new();
 
+    private static readonly string[] PlayerProfileFields =
+    {
+        "status", "statusDescription", "last_platform", "platform", "ageVerified", "ageVerificationStatus",
+        "tags", "bioLinks", "bio", "pronouns", "date_joined", "last_login", "last_activity",
+        "iconUrl", "userIcon", "profilePicOverride", "currentAvatarImageUrl", "currentAvatarThumbnailImageUrl",
+    };
+    private static readonly Newtonsoft.Json.Linq.JsonCloneSettings PlayerProfileCloneSettings = new() { CopyAnnotations = false };
+
+    private static Newtonsoft.Json.Linq.JObject SlimPlayerProfile(Newtonsoft.Json.Linq.JObject profile)
+    {
+        var slim = new Newtonsoft.Json.Linq.JObject();
+        foreach (var field in PlayerProfileFields)
+        {
+            var prop = profile.Property(field, StringComparison.Ordinal);
+            if (prop != null) slim.Add(field, prop.Value.DeepClone(PlayerProfileCloneSettings));
+        }
+        return slim;
+    }
+
     public void StorePlayerProfile(string userId, Newtonsoft.Json.Linq.JObject profile)
     {
-        PlayerProfileCache[userId] = profile;
+        PlayerProfileCache[userId] = SlimPlayerProfile(profile);
         var count = PlayerProfileCache.Count;
         if (count <= 300) return;
         var protect = new HashSet<string>();
@@ -211,6 +230,8 @@ public class CoreLibrary
                 SendToJS("log", new { msg = $"[GC] - VrWorldCache - No trim needed. {worldCount}/150 entries.", color = "sec" });
             }
         }
+
+        _ = Task.Run(Database.ReleaseConnectionMemory);
     }
 
     public string FixLocalUrl(string url)
