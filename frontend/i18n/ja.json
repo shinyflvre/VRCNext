@@ -1938,7 +1938,7 @@
   "instance.table.language": "言語",
   "instance.table.joined": "参加時刻",
   "instance.platform.pc": "PC",
-  "instance.platform.quest": "Quest",
+  "instance.platform.quest": "Android",
   "instance.owner": "インスタンスオーナー",
   "instance.join": "参加",
   "instance.timer.hours_minutes": "{hours}時間{minutes}分",

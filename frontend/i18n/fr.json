@@ -1939,7 +1939,7 @@
   "instance.table.language": "Langue",
   "instance.table.joined": "Rejoint",
   "instance.platform.pc": "PC",
-  "instance.platform.quest": "Quest",
+  "instance.platform.quest": "Android",
   "instance.owner": "Propriétaire de l'instance",
   "instance.join": "Rejoindre",
   "instance.timer.hours_minutes": "{hours}h {minutes}m",

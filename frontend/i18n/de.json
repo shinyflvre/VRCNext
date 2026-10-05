@@ -1967,7 +1967,7 @@
   "instance.table.language": "Sprache",
   "instance.table.joined": "Beigetreten",
   "instance.platform.pc": "PC",
-  "instance.platform.quest": "Quest",
+  "instance.platform.quest": "Android",
   "instance.owner": "Instanz-Besitzer",
   "instance.join": "Beitreten",
   "instance.timer.hours_minutes": "{hours}h {minutes}m",

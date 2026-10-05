@@ -1939,7 +1939,7 @@
   "instance.table.language": "语言",
   "instance.table.joined": "加入时间",
   "instance.platform.pc": "PC",
-  "instance.platform.quest": "Quest",
+  "instance.platform.quest": "Android",
   "instance.owner": "实例房主",
   "instance.join": "加入",
   "instance.timer.hours_minutes": "{hours} 时 {minutes} 分",
