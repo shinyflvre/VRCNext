@@ -3,9 +3,9 @@
 public static class AppInfo
 {
     public const string Version = "2026.62.0";
-    public const string ContactEmail = "vrcn@shinyflvres.com";
+    public const string ContactEmail = "hollynn@kittymail.com";
     public const string Website = "vrcn.shinyflvres.com";
-    public const string UserAgent = $"VRCNext/{Version} ({ContactEmail})";
+    public const string UserAgent = $"Nano-VRCNext/{Version} ({ContactEmail})";
 
     public static string SelfExecutable
     {

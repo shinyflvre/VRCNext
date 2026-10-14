@@ -138,14 +138,35 @@ function navSaveLayout(layout, hidden, start = 'dashboard') {
 // Apply the configured start page on app launch. No-op for the default (Dashboard,
 // which is already the active tab) or when the page is hidden / unavailable.
 function navApplyStartPage() {
+    const diagnostic = window.__vrcnStartupDiagnostic;
+    const record = state => {
+        window.__vrcnStartupNavigationState = state;
+        if (typeof diagnostic === 'function') diagnostic(`startup navigation ${state}`);
+    };
     try {
         const { hidden, start } = navLoadLayout();
-        if (!start || start === 'dashboard') return;
+        if (!start || start === 'dashboard') {
+            record('completed start=dashboard active=' + (document.querySelector('.tab.active')?.id || 'none'));
+            return;
+        }
         const def = NAV_ITEMS_DEF[start];
-        if (!def || hidden.includes(start)) return;
-        if (def.windowsOnly && typeof _navIsLinux !== 'undefined' && _navIsLinux) return;
+        if (!def) {
+            record(`skipped invalid-start=${start}`);
+            return;
+        }
+        if (hidden.includes(start)) {
+            record(`skipped hidden-start=${start}`);
+            return;
+        }
+        if (def.windowsOnly && typeof _navIsLinux !== 'undefined' && _navIsLinux) {
+            record(`skipped linux-unavailable-start=${start}`);
+            return;
+        }
         if (typeof showTab === 'function') showTab(def.tab);
-    } catch { /* ignore */ }
+        record(`completed start=${start} tab=${def.tab} active=${document.querySelector('.tab.active')?.id || 'none'}`);
+    } catch (error) {
+        record(`failed error=${error?.message || error}`);
+    }
 }
 
 function navSanitizeLayout(layout, hidden = []) {

@@ -734,7 +734,7 @@ public class AuthController
             if (src == null) return "";
             const int size = 80;
             using var dst = new SkiaSharp.SKBitmap(size, size, SkiaSharp.SKColorType.Rgba8888, SkiaSharp.SKAlphaType.Premul);
-            src.ScalePixels(dst, SkiaSharp.SKFilterQuality.Medium);
+            src.ScalePixels( dst, new SkiaSharp.SKSamplingOptions(SkiaSharp.SKFilterMode.Linear) );
             using var img  = SkiaSharp.SKImage.FromBitmap(dst);
             using var data = img.Encode(SkiaSharp.SKEncodedImageFormat.Png, 90);
             if (data == null) return "";

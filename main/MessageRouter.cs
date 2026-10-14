@@ -467,6 +467,7 @@ public partial class AppShell
                 msg = JObject.Load(_jr);
             var action = msg["action"]?.ToString() ?? "";
             CrashHandler.AddBreadcrumb($"JS→C# action={action}");
+            TrackStartupTraffic("JS->CS", action);
 
 #if !WINDOWS
             if (IsWindowsOnlyAction(action)) return;
@@ -475,6 +476,8 @@ public partial class AppShell
             switch (action)
             {
                 case "ready":
+                    WriteStartupDiagnostic("backend ready received");
+                    StartStartupTrafficDiagnostics();
                     // Signal platform to JS (hides Windows-only tabs on Linux)
                     SendToJS("setPlatform", new { isLinux = !OperatingSystem.IsWindows() });
                     SendToJS("localHttpInfo", new { port = _core.HttpPort, token = _core.HttpCorsToken });

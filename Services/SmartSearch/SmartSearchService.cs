@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
+using VRCNext;
 
 namespace VRCNext.Services.SmartSearch;
 
@@ -187,7 +188,7 @@ public static class SmartSearchService
         try
         {
             using var req = new HttpRequestMessage(HttpMethod.Get, $"{WikiBase}?a=pages_tree");
-            req.Headers.UserAgent.ParseAdd("VRCNext");
+            req.Headers.UserAgent.ParseAdd(AppInfo.UserAgent);
             var resp = await _http.SendAsync(req);
             if (!resp.IsSuccessStatusCode) return pages;
             var json = JObject.Parse(await resp.Content.ReadAsStringAsync());
@@ -210,7 +211,7 @@ public static class SmartSearchService
         {
             using var req = new HttpRequestMessage(HttpMethod.Get,
                 $"{WikiBase}?a=search&q={Uri.EscapeDataString(query)}");
-            req.Headers.UserAgent.ParseAdd("VRCNext");
+            req.Headers.UserAgent.ParseAdd(AppInfo.UserAgent);
             var resp = await _http.SendAsync(req);
             if (!resp.IsSuccessStatusCode) return slugs;
             var json = JObject.Parse(await resp.Content.ReadAsStringAsync());
@@ -231,7 +232,7 @@ public static class SmartSearchService
         {
             using var req = new HttpRequestMessage(HttpMethod.Get,
                 $"{WikiBase}?a=page_get&slug={Uri.EscapeDataString(slug)}");
-            req.Headers.UserAgent.ParseAdd("VRCNext");
+            req.Headers.UserAgent.ParseAdd(AppInfo.UserAgent);
             var resp = await _http.SendAsync(req);
             if (!resp.IsSuccessStatusCode) return "";
             var json = JObject.Parse(await resp.Content.ReadAsStringAsync());

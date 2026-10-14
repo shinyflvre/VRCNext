@@ -1,6 +1,10 @@
 ﻿<!DOCTYPE html>
 <html lang="en" class="vrcn-scrollbar">
 <head>
+    <script>
+        if (new URLSearchParams(location.search).get('vrcnPlatform') === 'linux')
+            document.documentElement.classList.add('vrcn-linux');
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VRCNext</title>
@@ -698,7 +702,91 @@
 
     <script>
     (async function () {
+        const loaderTimeoutMs = 30000;
+        let startupDiagnosticSequence = 0;
+        const startupDiagnosticStartedAt = performance.now();
+        let startupLoaderComplete = false;
+
+        function startupDiagnostic(message) {
+            const elapsed = (performance.now() - startupDiagnosticStartedAt).toFixed(1);
+            const record = `${++startupDiagnosticSequence} +${elapsed}ms ${message}`;
+            try { navigator.sendBeacon('/startup-diagnostics', record); } catch {}
+        }
+        window.__vrcnStartupDiagnostic = startupDiagnostic;
+        let startupUiInputRecorded = false;
+        const recordStartupUiInput = event => {
+            if (!startupLoaderComplete || startupUiInputRecorded) return;
+            startupUiInputRecorded = true;
+            startupDiagnostic(`post-loader input received type=${event.type}`);
+            window.removeEventListener('keydown', recordStartupUiInput, true);
+            window.removeEventListener('pointerdown', recordStartupUiInput, true);
+        };
+        window.addEventListener('keydown', recordStartupUiInput, true);
+        window.addEventListener('pointerdown', recordStartupUiInput, true);
+
+        window.addEventListener('error', event => {
+            startupDiagnostic(`javascript ${startupLoaderComplete ? 'post-loader' : 'loader'} error: ${event.message} at ${event.filename}:${event.lineno}:${event.colno}`);
+        });
+        window.addEventListener('unhandledrejection', event => {
+            const reason = event.reason?.stack || event.reason?.message || String(event.reason);
+            startupDiagnostic(`${startupLoaderComplete ? 'post-loader' : 'loader'} unhandled rejection: ${reason}`);
+        });
+        startupDiagnostic(`loader start url=${location.href}`);
+
+        function startupUiSnapshot(sample, timerDelayMs) {
+            const describe = element => {
+                if (!element) return 'missing';
+                const style = getComputedStyle(element);
+                const rect = element.getBoundingClientRect();
+                return `${element.id || element.className || element.tagName}[${Math.round(rect.width)}x${Math.round(rect.height)}@${Math.round(rect.left)},${Math.round(rect.top)};display=${style.display};opacity=${style.opacity};visibility=${style.visibility}]`;
+            };
+            const tab = document.getElementById('tab0');
+            const heroCard = document.querySelector(
+                '.dash-hero-widgets .dash-hw-card, .dash-hero-slot .dash-flocs-card, ' +
+                '.dash-hero-widgets .dash-hw-event, .dash-hero-widgets .dash-hw-news'
+            );
+            const ancestors = [];
+            for (let element = tab, depth = 0; element && depth < 5; element = element.parentElement, depth++)
+                ancestors.push(describe(element));
+            const activeTabs = Array.from(document.querySelectorAll('.tab.active'), element => element.id).join(',') || 'none';
+            startupDiagnostic(
+                `post-loader-ui-heartbeat sample=${sample} timerDelay=${timerDelayMs.toFixed(1)}ms ` +
+                `readyState=${document.readyState} path=${location.pathname} activeTabs=${activeTabs} ` +
+                `navigation=${window.__vrcnStartupNavigationState || 'not-recorded'} ` +
+                `render=${window.__vrcnStartupRenderDashboardState || 'not-recorded'} ` +
+                `linuxUiClass=${document.documentElement.classList.contains('vrcn-linux')} ` +
+                `heroBackdropFilter=${heroCard ? getComputedStyle(heroCard).backdropFilter : 'no-card'} ` +
+                `heroLists=${document.querySelectorAll('.dash-hw-friends').length} ` +
+                `heroCards=${document.querySelectorAll('.dash-hw-friends > *, .dash-hero-slot .dash-flocs-card').length} ` +
+                `dashboard=${describe(tab)} hero=${describe(document.getElementById('dashHero'))} ` +
+                `ancestors=${ancestors.join('>')}`
+            );
+        }
+
+        if (typeof PerformanceObserver !== 'undefined' &&
+            PerformanceObserver.supportedEntryTypes?.includes('longtask')) {
+            let longTaskCount = 0;
+            const longTaskObserver = new PerformanceObserver(list => {
+                for (const entry of list.getEntries()) {
+                    if (longTaskCount >= 8) break;
+                    longTaskCount++;
+                    const source = entry.attribution?.[0];
+                    startupDiagnostic(
+                        `post-loader longtask #${longTaskCount} start=${entry.startTime.toFixed(1)}ms ` +
+                        `duration=${entry.duration.toFixed(1)}ms source=${source?.name?.slice(0, 100) || entry.name}`
+                    );
+                }
+                if (longTaskCount >= 8) longTaskObserver.disconnect();
+            });
+            longTaskObserver.observe({ entryTypes: ['longtask'] });
+            setTimeout(() => longTaskObserver.disconnect(), 45000);
+            startupDiagnostic('post-loader longtask observer enabled');
+        } else {
+            startupDiagnostic('post-loader longtask observer unavailable');
+        }
+
         function showFatalError(msg, detail) {
+            startupDiagnostic(`loader fatal: ${msg}`);
             console.error('[FRAGMENT LOADER]', msg, detail || '');
             const sp = document.getElementById('vrcnSplash');
             if (sp) sp.remove();
@@ -879,11 +967,28 @@
                 if (bar) bar.style.width = Math.min(100, Math.round(_splashDone / _splashTotal * 100)) + '%';
             };
             const htmls = await Promise.all(entries.map(async ([tabId, p]) => {
-                const r = await fetch(p);
-                if (!r.ok) throw new Error('fetch ' + p + ' -> HTTP ' + r.status);
-                const txt = await r.text();
-                _splashTick();
-                return [tabId, txt];
+                const startedAt = performance.now();
+                startupDiagnostic(`fragment start ${tabId} ${p}`);
+                const controller = new AbortController();
+                let timedOut = false;
+                const timeout = setTimeout(() => {
+                    timedOut = true;
+                    controller.abort();
+                }, loaderTimeoutMs);
+                try {
+                    const r = await fetch(p, { signal: controller.signal });
+                    if (!r.ok) throw new Error('fetch ' + p + ' -> HTTP ' + r.status);
+                    const txt = await r.text();
+                    startupDiagnostic(`fragment complete ${tabId} ${p} status=${r.status} elapsed=${(performance.now() - startedAt).toFixed(1)}ms`);
+                    _splashTick();
+                    return [tabId, txt];
+                } catch (err) {
+                    startupDiagnostic(`fragment error ${tabId} ${p}: ${err?.message || err}`);
+                    if (timedOut) throw new Error('fetch ' + p + ' timed out after ' + loaderTimeoutMs + 'ms');
+                    throw err;
+                } finally {
+                    clearTimeout(timeout);
+                }
             }));
             for (const [tabId, html] of htmls) {
                 const host = document.getElementById(tabId);
@@ -892,11 +997,27 @@
             }
             for (const src of scripts) {
                 await new Promise((resolve, reject) => {
+                    const startedAt = performance.now();
+                    startupDiagnostic(`script start ${src}`);
                     const s = document.createElement('script');
                     s.src = src;
                     s.async = false;
-                    s.onload = resolve;
-                    s.onerror = () => reject(new Error('script ' + src + ' failed to load'));
+                    const timeout = setTimeout(() => {
+                        s.onload = null;
+                        s.onerror = null;
+                        s.remove();
+                        reject(new Error('script ' + src + ' timed out after ' + loaderTimeoutMs + 'ms'));
+                    }, loaderTimeoutMs);
+                    s.onload = () => {
+                        clearTimeout(timeout);
+                        startupDiagnostic(`script complete ${src} elapsed=${(performance.now() - startedAt).toFixed(1)}ms`);
+                        resolve();
+                    };
+                    s.onerror = () => {
+                        clearTimeout(timeout);
+                        startupDiagnostic(`script error ${src}`);
+                        reject(new Error('script ' + src + ' failed to load'));
+                    };
                     document.body.appendChild(s);
                 });
                 _splashTick();
@@ -905,19 +1026,55 @@
             // Must run AFTER init.js so that the backend's loadSettings response
             // doesn't overwrite UI state that init.js will populate (e.g. webhooks).
             if (typeof sendToCS === 'function') {
+                startupDiagnostic('backend ready send');
                 sendToCS({ action: 'ready' });
                 sendToCS({ action: 'kxdGetDevices' });
                 sendToCS({ action: 'vfGetDevices' });
             }
+            startupLoaderComplete = true;
             if (typeof navApplyStartPage === 'function') navApplyStartPage();
+            else startupDiagnostic('startup navigation unavailable');
+            startupDiagnostic('loader complete; splash hide scheduled');
             const _splashBar = document.getElementById('vrcnSplashBar');
             if (_splashBar) _splashBar.style.width = '100%';
+            startupDiagnostic('splash hide timer scheduled delay=2000ms');
             setTimeout(() => {
                 const sp = document.getElementById('vrcnSplash');
+                startupDiagnostic(`splash hide callback entered exists=${!!sp} class=${sp?.className || 'missing'}`);
+                const before = sp
+                    ? `exists=true class=${sp.className} opacity=${getComputedStyle(sp).opacity} transition=${getComputedStyle(sp).transition}`
+                    : 'exists=false';
+                startupDiagnostic(`splash hide callback state before ${before}`);
                 if (!sp) return;
+                sp.addEventListener('transitionend', event => {
+                    if (event.target === sp && event.propertyName === 'opacity')
+                        startupDiagnostic(`splash opacity transitionend elapsed=${event.elapsedTime}s class=${sp.className} opacity=${getComputedStyle(sp).opacity}`);
+                }, { once: true });
                 sp.classList.add('vrcn-splash-hide');
-                setTimeout(() => sp.remove(), 550);
+                startupDiagnostic(`splash hide class applied exists=${document.getElementById('vrcnSplash') === sp} class=${sp.className}`);
+                const after = `exists=${document.getElementById('vrcnSplash') === sp} class=${sp.className} opacity=${getComputedStyle(sp).opacity} transition=${getComputedStyle(sp).transition}`;
+                startupDiagnostic(`splash hide callback after ${after}`);
+                setTimeout(() => {
+                    const current = document.getElementById('vrcnSplash');
+                    startupDiagnostic(`splash removal callback before exists=${!!current} class=${current?.className || 'missing'} opacity=${current ? getComputedStyle(current).opacity : 'missing'}`);
+                    current?.remove();
+                    startupDiagnostic(`splash removal callback after exists=${!!document.getElementById('vrcnSplash')}`);
+                }, 550);
             }, 2000);
+            let uiSample = 0;
+            let nextUiSampleAt = performance.now() + 5000;
+            const scheduleUiSample = () => {
+                setTimeout(() => {
+                    uiSample++;
+                    const now = performance.now();
+                    startupUiSnapshot(uiSample, Math.max(0, now - nextUiSampleAt));
+                    if (uiSample < 13) {
+                        nextUiSampleAt = now + 5000;
+                        scheduleUiSample();
+                    }
+                }, Math.max(0, nextUiSampleAt - performance.now()));
+            };
+            scheduleUiSample();
         } catch (err) {
             showFatalError(err.message, err.stack);
             throw err;
