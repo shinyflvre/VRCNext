@@ -1425,6 +1425,13 @@ body:has(.rsidebar.collapsed) .dash-hero-content { padding-right: calc(var(--rsi
     flex: 1;
 }
 
+html.vrcn-linux .dash-hero-widgets .dash-hw-card,
+html.vrcn-linux .dash-hero-slot .dash-flocs-card,
+html.vrcn-linux .dash-hero-widgets .dash-hw-event,
+html.vrcn-linux .dash-hero-widgets .dash-hw-news {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
 
 .dash-hw-empty {
     padding: 18px 14px;

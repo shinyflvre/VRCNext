@@ -17,6 +17,13 @@ public partial class AppShell
     private string _customThemesDir = "";
     private int _httpPort;
     private System.Net.HttpListener? _httpListener;
+    private readonly object _startupDiagnosticLock = new();
+    private string _startupDiagnosticPath = "";
+    private sealed class StartupTrafficCounter { public long Count; }
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, StartupTrafficCounter> _startupTraffic = new();
+    private System.Threading.Timer? _startupTrafficTimer;
+    private int _startupTrafficEnabled;
+    private long _startupLastHeartbeatUtcTicks;
     private System.Threading.Timer? _uptimeTimer2;
     private System.Threading.Timer? _worldStatsTimer;
     private System.Threading.Timer? _apiHealthTimer;
@@ -373,6 +380,9 @@ public partial class AppShell
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "VRCNext", "Logs");
         Directory.CreateDirectory(_activityLogDir);
+        _startupDiagnosticPath = Path.Combine(
+            _activityLogDir, $"vrcn-startup-diagnostics-{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.log");
+        WriteStartupDiagnostic("TEMP startup diagnostics enabled");
         _customThemesDir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "VRCNext", "custom-themes");
@@ -501,7 +511,7 @@ public partial class AppShell
 
 #if !WINDOWS
         // Auto-install missing GStreamer plugins required by WebKit2GTK (blank window without them)
-        EnsureLinuxGstreamer();
+        _ = Task.Run(EnsureLinuxGstreamer);
 
         // WebKit2GTK on systems without proper GPU (VMs, Hyper-V, missing Vulkan):
         // Force Mesa software rendering so EGL/OpenGL never fails in the WebKit child process.
@@ -906,6 +916,7 @@ public partial class AppShell
         _worldStatsTimer?.Dispose();
         _apiHealthTimer?.Dispose();
         _memDiagTimer?.Dispose();
+        _startupTrafficTimer?.Dispose();
         _sfCtrl?.Dispose();
         _stCtrl?.Dispose();
         _fsCtrl?.Dispose();
@@ -1061,6 +1072,7 @@ public partial class AppShell
 
     private void SendToJS(string type, object? payload = null)
     {
+        TrackStartupTraffic("CS->JS", type);
         if (type == "log" && payload != null && _activityLogWriter != null)
         {
             try
@@ -1230,7 +1242,8 @@ public partial class AppShell
         catch { rel = "index.html"; }
         if (rel.StartsWith("..") || Path.IsPathRooted(rel)) rel = "index.html";
         rel = rel.Replace(Path.DirectorySeparatorChar, '/');
-        return $"http://localhost:{_httpPort}/app/{rel}";
+        var url = $"http://localhost:{_httpPort}/app/{rel}";
+        return OperatingSystem.IsLinux() ? url + "?vrcnPlatform=linux" : url;
     }
 #endif
 
@@ -1263,6 +1276,45 @@ public partial class AppShell
         [".md"]   = "text/plain; charset=utf-8",
         [".map"]  = "application/json; charset=utf-8",
     };
+
+    private void WriteStartupDiagnostic(string message)
+    {
+        var path = _startupDiagnosticPath;
+        if (string.IsNullOrEmpty(path)) return;
+
+        lock (_startupDiagnosticLock)
+        {
+            File.AppendAllText(path, $"{DateTimeOffset.Now:O} {message}{Environment.NewLine}");
+        }
+    }
+
+    private void TrackStartupTraffic(string direction, string name)
+    {
+        if (Volatile.Read(ref _startupTrafficEnabled) == 0) return;
+        var key = $"{direction} {name}";
+        var counter = _startupTraffic.GetOrAdd(key, static _ => new StartupTrafficCounter());
+        Interlocked.Increment(ref counter.Count);
+    }
+
+    private void StartStartupTrafficDiagnostics()
+    {
+        if (Interlocked.Exchange(ref _startupTrafficEnabled, 1) != 0) return;
+        _startupTrafficTimer = new System.Threading.Timer(_ =>
+        {
+            var counts = new List<string>();
+            foreach (var (name, counter) in _startupTraffic)
+            {
+                var count = Interlocked.Exchange(ref counter.Count, 0);
+                if (count > 0) counts.Add($"{name}={count}");
+            }
+
+            var heartbeatTicks = Interlocked.Read(ref _startupLastHeartbeatUtcTicks);
+            var heartbeatAge = heartbeatTicks == 0
+                ? "none"
+                : $"{TimeSpan.FromTicks(DateTime.UtcNow.Ticks - heartbeatTicks).TotalSeconds:F1}s";
+            WriteStartupDiagnostic($"traffic window=5s webviewHeartbeatAge={heartbeatAge} messages={(counts.Count == 0 ? "none" : string.Join(",", counts))}");
+        }, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+    }
 
     private static async Task ServeFrontendAsync(System.Net.HttpListenerContext ctx, string rel)
     {
@@ -1309,6 +1361,14 @@ public partial class AppShell
     {
         var path    = ctx.Request.Url?.AbsolutePath ?? "/";
         var isThumb = ctx.Request.Url?.Query?.Contains("thumb=1") == true;
+        var isFrontendRequest = path.StartsWith("/app/", StringComparison.Ordinal);
+        var frontendExtension = Path.GetExtension(path);
+        var isStartupResource = isFrontendRequest &&
+            (frontendExtension.Equals(".html", StringComparison.OrdinalIgnoreCase) ||
+             frontendExtension.Equals(".js", StringComparison.OrdinalIgnoreCase));
+        var frontendRequestTimer = isStartupResource ? Stopwatch.StartNew() : null;
+        if (isStartupResource)
+            WriteStartupDiagnostic($"http start {ctx.Request.HttpMethod} {path}");
         try
         {
             if (ctx.Request.HttpMethod == "OPTIONS")
@@ -1324,7 +1384,23 @@ public partial class AppShell
                 return;
             }
 
-            if (path.StartsWith("/app/"))
+            if (path == "/startup-diagnostics")
+            {
+                if (ctx.Request.HttpMethod != "POST" || ctx.Request.ContentLength64 > 4096)
+                {
+                    ctx.Response.StatusCode = ctx.Request.ContentLength64 > 4096 ? 413 : 405;
+                    return;
+                }
+
+                using var reader = new StreamReader(ctx.Request.InputStream, ctx.Request.ContentEncoding);
+                var message = await reader.ReadToEndAsync();
+                message = message.Replace('\r', ' ').Replace('\n', ' ');
+                if (message.Contains("post-loader-ui-heartbeat ", StringComparison.Ordinal))
+                    Interlocked.Exchange(ref _startupLastHeartbeatUtcTicks, DateTime.UtcNow.Ticks);
+                WriteStartupDiagnostic($"webview {message[..Math.Min(message.Length, 2048)]}");
+                ctx.Response.StatusCode = 204;
+            }
+            else if (isFrontendRequest)
             {
                 await ServeFrontendAsync(ctx, Uri.UnescapeDataString(path["/app/".Length..]));
             }
@@ -1421,8 +1497,18 @@ public partial class AppShell
             }
             else ctx.Response.StatusCode = 404;
         }
-        catch { ctx.Response.StatusCode = 500; }
-        finally { try { ctx.Response.Close(); } catch { } }
+        catch (Exception ex)
+        {
+            if (isStartupResource)
+                WriteStartupDiagnostic($"http error {path}: {ex.GetType().Name}: {ex.Message}");
+            ctx.Response.StatusCode = 500;
+        }
+        finally
+        {
+            if (isStartupResource)
+                WriteStartupDiagnostic($"http end {path} status={ctx.Response.StatusCode} elapsed={frontendRequestTimer!.ElapsedMilliseconds}ms");
+            try { ctx.Response.Close(); } catch { }
+        }
     }
 
     private static string? ResolveUnder(string baseDir, string rel)
@@ -1621,7 +1707,7 @@ public partial class AppShell
         using var src = SkiaSharp.SKBitmap.Decode(codec);
         if (src == null) return false;
         using var dst = new SkiaSharp.SKBitmap(w, h, SkiaSharp.SKColorType.Rgba8888, SkiaSharp.SKAlphaType.Premul);
-        src.ScalePixels(dst, SkiaSharp.SKFilterQuality.High);
+        src.ScalePixels( dst, new SkiaSharp.SKSamplingOptions(SkiaSharp.SKFilterMode.Nearest) );
         using var img  = SkiaSharp.SKImage.FromBitmap(dst);
         using var data = img.Encode(keepAlpha ? SkiaSharp.SKEncodedImageFormat.Png : SkiaSharp.SKEncodedImageFormat.Jpeg, 88);
         if (data == null) return false;
@@ -1836,7 +1922,10 @@ public partial class AppShell
                         using var src = SkiaSharp.SKBitmap.Decode(codec);
                         if (src == null) throw new InvalidOperationException("Image decode failed");
                         using var dst = new SkiaSharp.SKBitmap(w, h, SkiaSharp.SKColorType.Rgba8888, SkiaSharp.SKAlphaType.Premul);
-                        src.ScalePixels(dst, SkiaSharp.SKFilterQuality.Medium);
+                        src.ScalePixels(
+                            dst,
+                            new SkiaSharp.SKSamplingOptions(SkiaSharp.SKFilterMode.Linear)
+                        );
                         using var img  = SkiaSharp.SKImage.FromBitmap(dst);
                         using var data = img.Encode(SkiaSharp.SKEncodedImageFormat.Jpeg, 72);
                         using (var fsOut = File.Create(tmpPath))
