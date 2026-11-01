@@ -10,7 +10,8 @@ const UI_LANGUAGES = {
     'zh-cn': { label: '\u7B80\u4F53\u4E2D\u6587', flag: '\uD83C\uDDE8\uD83C\uDDF3', locale: 'zh-CN' },
     'zh-tw': { label: '\u7E41\u9AD4\u4E2D\u6587(\u53F0\u7063)', flag: '\uD83C\uDDF9\uD83C\uDDFC', locale: 'zh-TW' },
     ru: { label: '\u0420\u0443\u0441\u0441\u043A\u0438\u0439', flag: '\uD83C\uDDF7\uD83C\uDDFA', locale: 'ru-RU' },
-    ko: { label: '\uD55C\uAD6D\uC5B4', flag: '\uD83C\uDDF0\uD83C\uDDF7', locale: 'ko-KR' }
+        ko: { label: '\uD55C\uAD6D\uC5B4', flag: '\uD83C\uDDF0\uD83C\uDDF7', locale: 'ko-KR' },
+        uk: { label: '\u0423\u043A\u0440\u0430\u0457\u043D\u0441\u044C\u043A\u0430', flag: '\uD83C\uDDFA\uD83C\uDDE6', locale: 'uk-UA' }
 };
 
 function normalizeUiLanguage(language) {
