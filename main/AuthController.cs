@@ -2437,6 +2437,7 @@ public class AuthController
             "zh_tw" => "zh-TW",
             "ru"    => "ru",
             "ko"  => "ko",
+            "uk" => "uk",
             _ => "en"
         };
     }
