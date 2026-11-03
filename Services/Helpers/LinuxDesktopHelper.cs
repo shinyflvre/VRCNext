@@ -1,5 +1,7 @@
 #if !WINDOWS
 using System.Diagnostics;
+using System.Security.Cryptography;
+using SkiaSharp;
 
 namespace VRCNext.Services.Helpers;
 
@@ -194,6 +196,167 @@ public static class LinuxDesktopHelper
             return true;
         }
         catch (Exception ex) { error = ex.Message; return false; }
+    }
+}
+
+public static class LinuxNotificationHelper
+{
+    private const int MaxImageBytes = 5 * 1024 * 1024;
+    private const int MaxImageDimension = 256;
+    private const int MaxDecodedPixels = 16_000_000;
+
+    public static async Task<bool> TrySendAsync(
+        string title,
+        string body,
+        string? imageUrl,
+        HttpClient http,
+        Action<string> log)
+    {
+        var notifySend = FindExecutable("notify-send");
+        if (notifySend == null) return false;
+
+        string? imagePath = null;
+        if (!string.IsNullOrWhiteSpace(imageUrl))
+        {
+            try
+            {
+                imagePath = await GetImagePathAsync(imageUrl, http);
+            }
+            catch (Exception ex) when (ex is HttpRequestException or IOException or UnauthorizedAccessException or ArgumentException or OperationCanceledException)
+            {
+                log($"[Notifications] Could not prepare notification image: {ex.Message}");
+            }
+        }
+
+        try
+        {
+            var startInfo = new ProcessStartInfo(notifySend) { UseShellExecute = false };
+            startInfo.ArgumentList.Add("--app-name=VRCNext");
+            if (imagePath != null)
+            {
+                startInfo.ArgumentList.Add($"--icon={imagePath}");
+                var imageUri = new Uri(imagePath).AbsoluteUri;
+                startInfo.ArgumentList.Add($"--hint=string:image-path:{imageUri}");
+                startInfo.ArgumentList.Add($"--hint=string:image_path:{imageUri}");
+            }
+            startInfo.ArgumentList.Add(title);
+            startInfo.ArgumentList.Add(body);
+
+            using var process = Process.Start(startInfo);
+            if (process == null)
+            {
+                log("[Notifications] Could not start notify-send.");
+                return false;
+            }
+
+            await process.WaitForExitAsync();
+            if (process.ExitCode == 0) return true;
+
+            log($"[Notifications] notify-send exited with code {process.ExitCode}.");
+            return false;
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception or IOException)
+        {
+            log($"[Notifications] Could not send desktop notification: {ex.Message}");
+            return false;
+        }
+    }
+
+    private static async Task<string?> GetImagePathAsync(string imageUrl, HttpClient http)
+    {
+        var cacheDir = Path.Combine(
+            Environment.GetEnvironmentVariable("XDG_CACHE_HOME")
+                ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".cache"),
+            "VRCNext", "NotificationImages");
+        Directory.CreateDirectory(cacheDir);
+
+        var cacheKey = imageUrl;
+        if (Uri.TryCreate(imageUrl, UriKind.Absolute, out var fileUri) && fileUri.IsFile)
+            imageUrl = fileUri.LocalPath;
+
+        var cachePath = Path.Combine(cacheDir, Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(cacheKey))) + ".png");
+        if (File.Exists(cachePath)) return cachePath;
+
+        byte[] imageBytes;
+        if (Uri.TryCreate(imageUrl, UriKind.Absolute, out var uri)
+            && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
+        {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            using var response = await http.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
+            response.EnsureSuccessStatusCode();
+            if (response.Content.Headers.ContentLength > MaxImageBytes)
+                throw new IOException("Image exceeds the 5 MB notification image limit.");
+            if (response.Content.Headers.ContentType?.MediaType is { } mediaType
+                && !mediaType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+                throw new IOException($"URL returned non-image content ({mediaType}).");
+
+            await using var source = await response.Content.ReadAsStreamAsync(timeout.Token);
+            using var buffer = new MemoryStream();
+            var chunk = new byte[81920];
+            while (true)
+            {
+                var read = await source.ReadAsync(chunk, timeout.Token);
+                if (read == 0) break;
+                if (buffer.Length + read > MaxImageBytes)
+                    throw new IOException("Image exceeds the 5 MB notification image limit.");
+                await buffer.WriteAsync(chunk.AsMemory(0, read), timeout.Token);
+            }
+            imageBytes = buffer.ToArray();
+        }
+        else
+        {
+            if (!File.Exists(imageUrl)) return null;
+            var fileInfo = new FileInfo(imageUrl);
+            if (fileInfo.Length > MaxImageBytes)
+                throw new IOException("Image exceeds the 5 MB notification image limit.");
+            imageBytes = await File.ReadAllBytesAsync(imageUrl);
+        }
+
+        var pngBytes = CreatePngThumbnail(imageBytes);
+        var temporaryPath = cachePath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        try
+        {
+            await File.WriteAllBytesAsync(temporaryPath, pngBytes);
+            File.Move(temporaryPath, cachePath, overwrite: true);
+            return cachePath;
+        }
+        finally
+        {
+            if (File.Exists(temporaryPath)) File.Delete(temporaryPath);
+        }
+    }
+
+    private static byte[] CreatePngThumbnail(byte[] imageBytes)
+    {
+        using var data = SKData.CreateCopy(imageBytes);
+        using var codec = SKCodec.Create(data) ?? throw new IOException("The notification image format is not supported.");
+        var info = codec.Info;
+        if (info.Width <= 0 || info.Height <= 0 || (long)info.Width * info.Height > MaxDecodedPixels)
+            throw new IOException("The notification image dimensions are invalid or too large.");
+
+        using var source = SKBitmap.Decode(codec) ?? throw new IOException("The notification image could not be decoded.");
+        var scale = Math.Min(1d, (double)MaxImageDimension / Math.Max(source.Width, source.Height));
+        var width = Math.Max(1, (int)Math.Round(source.Width * scale));
+        var height = Math.Max(1, (int)Math.Round(source.Height * scale));
+        using var thumbnail = new SKBitmap(width, height, SKColorType.Rgba8888, SKAlphaType.Premul);
+        if (!source.ScalePixels(thumbnail, new SKSamplingOptions(SKFilterMode.Linear)))
+            throw new IOException("The notification image could not be resized.");
+
+        using var outputImage = SKImage.FromBitmap(thumbnail);
+        using var outputData = outputImage.Encode(SKEncodedImageFormat.Png, 100)
+            ?? throw new IOException("The notification image could not be encoded.");
+        return outputData.ToArray();
+    }
+
+    private static string? FindExecutable(string name)
+    {
+        foreach (var directory in (Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator))
+        {
+            if (string.IsNullOrWhiteSpace(directory)) continue;
+            var path = Path.Combine(directory, name);
+            if (File.Exists(path)) return path;
+        }
+        return null;
     }
 }
 #endif

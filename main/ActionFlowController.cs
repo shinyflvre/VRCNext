@@ -104,7 +104,10 @@ public class ActionFlowController : IDisposable
                 var tray = TrayServiceProvider?.Invoke();
                 tray?.ShowNotification(title, subtitle, imageUrl, accent);
 #else
-                _core.Window?.SendNotification(title, subtitle);
+                if (string.IsNullOrWhiteSpace(imageUrl))
+                    _core.Window?.SendNotification(title, subtitle);
+                else
+                    _ = SendLinuxNotificationAsync(title, subtitle, imageUrl);
 #endif
 #if WINDOWS
                 var notifTime = DateTimeHelper.FormatTime(DateTime.Now);
@@ -374,6 +377,24 @@ public class ActionFlowController : IDisposable
             }
         }
     }
+
+#if !WINDOWS
+    private async Task SendLinuxNotificationAsync(string title, string body, string imageUrl)
+    {
+        try
+        {
+            var sent = await LinuxNotificationHelper.TrySendAsync(
+                title, body, imageUrl, _core.VrcApi.GetHttpClient(),
+                message => _core.SendToJS("log", new { msg = message, color = "warn" }));
+            if (!sent) _core.Window?.SendNotification(title, body);
+        }
+        catch (Exception ex)
+        {
+            _core.SendToJS("log", new { msg = "[Notifications] " + ex.Message, color = "warn" });
+            _core.Window?.SendNotification(title, body);
+        }
+    }
+#endif
 
     public void Dispose()
     {

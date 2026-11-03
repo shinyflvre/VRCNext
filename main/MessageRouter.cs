@@ -4136,12 +4136,22 @@ public partial class AppShell
                     {
                         var tnTitle  = msg["title"]?.ToString()    ?? "";
                         var tnSub   = msg["subtitle"]?.ToString()  ?? "";
+                        var tnImage = msg["imageUrl"]?.ToString() ?? "";
 #if WINDOWS
                         var tnAccent = msg["accentKey"]?.ToString() ?? "accent";
-                        var tnImage  = msg["imageUrl"]?.ToString()  ?? "";
                         _trayService?.ShowNotification(tnTitle, tnSub, tnImage, tnAccent);
 #else
-                        _window?.SendNotification(tnTitle, tnSub);
+                        if (string.IsNullOrWhiteSpace(tnImage))
+                        {
+                            _window?.SendNotification(tnTitle, tnSub);
+                        }
+                        else
+                        {
+                            var sent = await LinuxNotificationHelper.TrySendAsync(
+                                tnTitle, tnSub, tnImage, _vrcApi.GetHttpClient(),
+                                message => SendToJS("log", new { msg = message, color = "warn" }));
+                            if (!sent) _window?.SendNotification(tnTitle, tnSub);
+                        }
 #endif
                     }
                     break;
