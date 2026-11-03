@@ -109,6 +109,7 @@ public partial class AppShell
 #if WINDOWS
     private SystemTrayService? _trayService;
 #else
+    private LinuxSystemTrayService? _trayService;
     private int _lastNormalW, _lastNormalH;
     private int _lastNormalX = -1, _lastNormalY = -1;
     private bool _lastMaximized;
@@ -282,6 +283,7 @@ public partial class AppShell
 #if WINDOWS
         WindowController.OnMinimized = () => _memTrim.TrimNow();
 #endif
+        _core.OnTraySettingChanged = (enabled, autoHide) => ApplyTraySetting(enabled, autoHide);
         _authCtrl = new AuthController(_core, _friends, _instance, _photos, _relayCtrl, _groups, _discordCtrl);
         _core.LogSelfProfile = (kind, oldValue, newValue, timestamp) => _authCtrl.LogSelfProfileEvent(kind, oldValue, newValue, timestamp);
         _relayCtrl.OnOwnUserUpdated = user =>
@@ -347,10 +349,39 @@ public partial class AppShell
             return await _vrcApi.GetHttpClient().GetByteArrayAsync(url);
         };
         _trayService.Initialize();
-        _core.OnTraySettingChanged = (enabled, autoHide) => ApplyTraySetting(enabled, autoHide);
         _core.OnTrayUserUpdate = UpdateTrayUser;
         _core.OnTrayLoggedOut = () => _trayService?.SetLoggedIn(false);
         _core.OnTrayThemeUpdate = colors => _trayService?.UpdateTheme(colors);
+#else
+        _trayService = new LinuxSystemTrayService();
+        _trayService.OnShowWindow = () => _windowCtrl.ToggleWindowVisibility();
+        _trayService.OnStatusChange = status =>
+        {
+            var currentDesc = _vrcApi.CurrentUserRaw?["statusDescription"]?.ToString() ?? "";
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(new { action = "vrcUpdateStatus", status, statusDescription = currentDesc });
+            _ = OnWebMessage(json);
+        };
+        _trayService.OnLaunchVRChat = vr =>
+        {
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(new { action = "vrcLaunchAndJoin", location = "", vr });
+            _ = OnWebMessage(json);
+        };
+        _trayService.IsVrcRunning = RelayController.IsVrcRunning;
+        _core.OnTrayUserUpdate = UpdateTrayUser;
+        _core.OnTrayLoggedOut = () => _trayService?.SetLoggedIn(false);
+        _trayService.OnReady = () => ApplyTraySetting(_settings.MinimizeToTray, _settings.MinimizeToTray);
+        _trayService.OnStatus = message => _core.SendToJS("log", new { msg = message, color = "warn" });
+        _trayService.OnUnavailable = message =>
+        {
+            _windowCtrl.SetHideFromTaskbar(false);
+            _windowCtrl.ShowWindow();
+            _core.SendToJS("log", new { msg = $"{message} Closing to tray has been disabled.", color = "warn" });
+        };
+        _trayService.OnClose = () =>
+        {
+            WindowController.AllowNextClose();
+            try { _window.Close(); } catch { }
+        };
 #endif
     }
 
@@ -558,6 +589,9 @@ public partial class AppShell
                 ? Photino.NET.PhotinoSuspendableResources.Rendering | Photino.NET.PhotinoSuspendableResources.Gpu
                 : Photino.NET.PhotinoSuspendableResources.None)
 #endif
+#if !WINDOWS
+            .RegisterWindowClosingHandler((_, _) => _windowCtrl.HandleWindowClosing())
+#endif
             .RegisterWindowCreatedHandler((_, _) => _windowReady.TrySetResult())
             .RegisterWebMessageReceivedHandler((_, message) => { _ = OnWebMessage(message); });
         if (File.Exists(iconPath)) windowBuilder.SetIconFile(iconPath);
@@ -599,6 +633,7 @@ public partial class AppShell
         _core.Window = _window;
         _ = RunJsDispatcherAsync();
         _ = RunAutoBackupsAsync();
+        EfficiencyModeService.OnLog += message => _core.SendToJS("log", new { msg = message, color = "warn" });
         EfficiencyModeService.Apply(_settings.EfficiencyMode);
 
         if (_minimized) _window.SetMinimized(true);
@@ -622,20 +657,29 @@ public partial class AppShell
 #if !WINDOWS
     private static void EnsureLinuxGstreamer()
     {
-        // Check if autoaudiosink is available — its absence crashes WebKitWebProcess (blank window)
-        try
+        // WebKitGTK needs both an audio sink and Vorbis/Ogg decoders for notification sounds.
+        var requiredElements = new[] { "autoaudiosink", "vorbisdec", "oggdemux" };
+        var missingElements = new List<string>();
+        foreach (var element in requiredElements)
         {
-            var check = Process.Start(new ProcessStartInfo("gst-inspect-1.0")
+            try
             {
-                Arguments = "autoaudiosink",
-                RedirectStandardOutput = true,
-                RedirectStandardError  = true,
-                UseShellExecute        = false,
-            });
-            check?.WaitForExit(3000);
-            if (check?.ExitCode == 0) return; // already installed
+                using var check = Process.Start(new ProcessStartInfo("gst-inspect-1.0")
+                {
+                    Arguments = element,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                });
+                if (check == null || !check.WaitForExit(3000) || check.ExitCode != 0)
+                    missingElements.Add(element);
+            }
+            catch (System.ComponentModel.Win32Exception)
+            {
+                missingElements.Add(element);
+            }
         }
-        catch { return; } // gst-inspect-1.0 not on PATH — nothing we can do
+        if (missingElements.Count == 0) return;
 
         // Determine install command for the running distro
         string pkgs = "";
@@ -645,7 +689,11 @@ public partial class AppShell
             pkgs = "gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-libav";
         else if (File.Exists("/usr/bin/dnf"))
             pkgs = "gstreamer1-plugins-base gstreamer1-plugins-good";
-        if (string.IsNullOrEmpty(pkgs)) return;
+        if (string.IsNullOrEmpty(pkgs))
+        {
+            Console.Error.WriteLine($"Missing GStreamer elements ({string.Join(", ", missingElements)}); install the GStreamer base and good plugin packages.");
+            return;
+        }
 
         string pm  = File.Exists("/usr/bin/pacman") || File.Exists("/bin/pacman") ? "pacman -S --noconfirm"
                    : File.Exists("/usr/bin/apt-get")                               ? "apt-get install -y"
@@ -936,29 +984,35 @@ public partial class AppShell
         _memTrim.Dispose();
         _httpListener?.Stop();
         _activityLogWriter?.Dispose();
-#if WINDOWS
         _trayService?.Dispose();
-#endif
     }
 
-#if WINDOWS
     private void ApplyTraySetting(bool enabled, bool autoHide)
     {
         _trayService?.SetVisible(enabled);
+#if WINDOWS
         _trayService?.UpdateLanguage(_settings.Language);
-        _windowCtrl.SetHideFromTaskbar(enabled);
+#endif
+        var trayAvailable = true;
+#if !WINDOWS
+        trayAvailable = !enabled || _trayService?.IsReady == true;
+        if (enabled && !trayAvailable)
+            SendToJS("log", new { msg = "The Linux tray helper is not ready; VRCNext will remain visible when closed.", color = "warn" });
+#endif
+        _windowCtrl.SetHideFromTaskbar(enabled && trayAvailable);
         // On startup, auto-hide the window to tray immediately
-        if (enabled && autoHide)
+        if (enabled && autoHide && trayAvailable)
             _windowCtrl.HideWindow();
     }
 
     private void UpdateTrayUser(string name, string status, string statusDesc, string imageUrl)
     {
         _trayService?.UpdateUserInfo(name, status, statusDesc, imageUrl);
+#if WINDOWS
         var id = _core.VrcApi.CurrentUserRaw?["id"]?.ToString() ?? "";
         _core.VrOverlay?.SetSelfUser(id, ImageCacheHelper.GetUserUrl(id, imageUrl), status);
-    }
 #endif
+    }
 
 
     // Deep links (vrcn://)

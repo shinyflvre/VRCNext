@@ -478,7 +478,10 @@ public partial class AppShell
                 case "ready":
                     WriteStartupDiagnostic("backend ready received");
                     StartStartupTrafficDiagnostics();
-                    // Signal platform to JS (hides Windows-only tabs on Linux)
+                    // Signal platform so the UI can hide unsupported controls.
+#if !WINDOWS
+                    _trayService?.Initialize(_window);
+#endif
                     SendToJS("setPlatform", new { isLinux = !OperatingSystem.IsWindows() });
                     SendToJS("localHttpInfo", new { port = _core.HttpPort, token = _core.HttpCorsToken });
                     _windowCtrl.InstallChrome();
@@ -3046,8 +3049,11 @@ public partial class AppShell
                     break;
 
                 // Custom Chatbox OSC
+                case "chatboxWindowToolsCheck":
+                case "chatboxWindowToolsInstall":
                 case "chatboxConfig":
                 case "chatboxDirectSend":
+                case "chatboxToggle":
                     _chatboxCtrl.HandleMessage(action, msg);
                     break;
 
@@ -4126,16 +4132,18 @@ public partial class AppShell
 
 
                 case "trayNotification":
-#if WINDOWS
                     if (_settings.MinimizeToTray && _settings.TrayNotificationsEnabled)
                     {
                         var tnTitle  = msg["title"]?.ToString()    ?? "";
                         var tnSub   = msg["subtitle"]?.ToString()  ?? "";
+#if WINDOWS
                         var tnAccent = msg["accentKey"]?.ToString() ?? "accent";
                         var tnImage  = msg["imageUrl"]?.ToString()  ?? "";
                         _trayService?.ShowNotification(tnTitle, tnSub, tnImage, tnAccent);
-                    }
+#else
+                        _window?.SendNotification(tnTitle, tnSub);
 #endif
+                    }
                     break;
 
                 // VR Wrist Overlay
@@ -4221,11 +4229,10 @@ public partial class AppShell
 
 #if !WINDOWS
     private static readonly string[] _windowsOnlyActionPrefixes =
-        { "vf", "kxd", "chatbox", "osc", "sf", "st", "fs", "dp", "vc", "vro", "as" };
+        { "vf", "kxd", "sf", "st", "fs", "vc", "vro", "as" };
 
     private static bool IsWindowsOnlyAction(string action)
     {
-        if (action == "startRelay" || action == "stopRelay") return true;
         foreach (var prefix in _windowsOnlyActionPrefixes)
         {
             if (action.Length > prefix.Length

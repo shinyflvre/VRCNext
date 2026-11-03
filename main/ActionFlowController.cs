@@ -103,7 +103,10 @@ public class ActionFlowController : IDisposable
 #if WINDOWS
                 var tray = TrayServiceProvider?.Invoke();
                 tray?.ShowNotification(title, subtitle, imageUrl, accent);
-
+#else
+                _core.Window?.SendNotification(title, subtitle);
+#endif
+#if WINDOWS
                 var notifTime = DateTimeHelper.FormatTime(DateTime.Now);
                 _core.VrOverlay?.AddNotification("notif_actionflow", title, subtitle, notifTime, imageUrl, friendId);
                 _core.VrOverlay?.EnqueueToast("notif_actionflow", title, subtitle, notifTime, imageUrl, false, friendId);

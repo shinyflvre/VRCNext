@@ -287,22 +287,22 @@
                             </label>
                         </div>
                         <div class="set-desc" id="descStartWithSystem" data-i18n="settings.launch.auto_start_windows_desc">VRCNext launches automatically when Windows starts. It will appear in the system tray.</div>
-                        <div class="sf-toggle-row" style="margin-top:14px;" data-windows-only>
+                        <div class="sf-toggle-row" style="margin-top:14px;">
                             <span data-i18n="settings.system.hide_in_tray">Hide in System Tray</span>
                             <label class="toggle">
                                 <input type="checkbox" id="setMinimizeToTray" onchange="autoSave(); updateTrayNotifToggle()">
                                 <div class="toggle-track"><div class="toggle-knob"></div></div>
                             </label>
                         </div>
-                        <div class="set-desc" data-windows-only data-i18n="settings.system.hide_in_tray_desc">When closing VRCNext, it minimizes to the system tray instead of exiting. Click the tray icon to restore the window.</div>
-                        <div class="sf-toggle-row" style="margin-top:14px;" id="trayNotifRow" data-windows-only>
+                        <div class="set-desc" data-i18n="settings.system.hide_in_tray_desc">When closing VRCNext, it hides to the system tray instead of exiting. Click the tray icon to restore the window.</div>
+                        <div class="sf-toggle-row" style="margin-top:14px;" id="trayNotifRow">
                             <span data-i18n="settings.system.tray.notifications">Show notifications on system tray</span>
                             <label class="toggle">
                                 <input type="checkbox" id="setTrayNotifications" onchange="autoSave()">
                                 <div class="toggle-track"><div class="toggle-knob"></div></div>
                             </label>
                         </div>
-                        <div class="set-desc" id="trayNotifDesc" data-windows-only data-i18n="settings.system.tray.notifications_desc">Displays a notification when a new VRChat notification arrives while VRCNext is hidden in the system tray.</div>
+                        <div class="set-desc" id="trayNotifDesc" data-i18n="settings.system.tray.notifications_desc">Displays a desktop notification when a new VRChat notification arrives while VRCNext is hidden in the system tray.</div>
                     </div>
 
                     <!-- VRC+ DECORATIONS -->

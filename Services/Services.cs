@@ -118,17 +118,25 @@ public class FileWatcherService : IDisposable
     public void Start(IEnumerable<string> folders)
     {
         Stop();
-        foreach (var folder in folders.Where(Directory.Exists))
+        try
         {
-            var w = new FileSystemWatcher(folder)
+            foreach (var folder in folders.Where(Directory.Exists))
             {
-                IncludeSubdirectories = true,
-                EnableRaisingEvents = true,
-                NotifyFilter = NotifyFilters.FileName | NotifyFilters.CreationTime
-            };
-            w.Created += (s, e) => Handle(e.FullPath);
-            w.Renamed += (s, e) => Handle(e.FullPath);
-            _watchers.Add(w);
+                var w = new FileSystemWatcher(folder)
+                {
+                    IncludeSubdirectories = true,
+                    EnableRaisingEvents = true,
+                    NotifyFilter = NotifyFilters.FileName | NotifyFilters.CreationTime
+                };
+                w.Created += (s, e) => Handle(e.FullPath);
+                w.Renamed += (s, e) => Handle(e.FullPath);
+                _watchers.Add(w);
+            }
+        }
+        catch
+        {
+            Stop();
+            throw;
         }
     }
 

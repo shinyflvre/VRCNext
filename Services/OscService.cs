@@ -24,6 +24,7 @@ namespace VRCNext
         private UdpClient? _receiver;
         private UdpClient? _receiverAdvertised;
         private UdpClient? _sender;
+        private readonly object _senderLock = new();
         private CancellationTokenSource? _cts;
         private bool _running;
         private int _oscReceivePort;
@@ -63,7 +64,6 @@ namespace VRCNext
                 _receiver.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                 _receiver.Client.Bind(new IPEndPoint(IPAddress.Any, VRC_LISTEN_PORT));
                 _sender = new UdpClient();
-                _sender.Connect(IPAddress.Parse(OSC_IP), VRC_SEND_PORT);
                 _cts = new CancellationTokenSource();
                 _running = true;
                 _ = ReceiveLoopAsync(_receiver, _cts.Token);
@@ -102,7 +102,11 @@ namespace VRCNext
             _cts?.Cancel();
             _receiver?.Close(); _receiver = null;
             _receiverAdvertised?.Close(); _receiverAdvertised = null;
-            _sender?.Close(); _sender = null;
+            lock (_senderLock)
+            {
+                _sender?.Dispose();
+                _sender = null;
+            }
             try { _oscQuery?.Dispose(); } catch { }
             _oscQuery = null;
             _vrcEndpoint = null;
@@ -464,23 +468,33 @@ namespace VRCNext
             return v;
         }
 
-        private void EnsureSender()
+        private int SendPacket(byte[] packet)
         {
-            if (_sender != null) return;
-            _sender = new UdpClient();
-            _sender.Connect(IPAddress.Parse(OSC_IP), VRC_SEND_PORT);
+            lock (_senderLock)
+            {
+                try
+                {
+                    _sender ??= new UdpClient();
+                    return _sender.Send(packet, packet.Length, new IPEndPoint(IPAddress.Parse(OSC_IP), VRC_SEND_PORT));
+                }
+                catch (Exception ex) when (ex is SocketException or ObjectDisposedException or ArgumentException)
+                {
+                    _sender?.Dispose();
+                    _sender = null;
+                    throw;
+                }
+            }
         }
 
         public void SendBool(string name, bool value)
         {
-            EnsureSender();
             try
             {
                 var buf = new List<byte>();
                 WriteOscString(buf, $"/avatar/parameters/{name}");
                 WriteOscString(buf, value ? ",T" : ",F");
                 var p = buf.ToArray();
-                int sent = _sender.Send(p, p.Length);
+                int sent = SendPacket(p);
                 LogSend(name, $"[OSC] → {name} = {value} ({sent}B to :{VRC_SEND_PORT})");
             }
             catch (Exception ex) { _log($"[OSC] Send bool error: {ex.Message}"); }
@@ -488,7 +502,6 @@ namespace VRCNext
 
         public void SendFloat(string name, float value)
         {
-            EnsureSender();
             try
             {
                 var buf = new List<byte>();
@@ -497,7 +510,7 @@ namespace VRCNext
                 byte[] fb = BitConverter.GetBytes(value);
                 buf.Add(fb[3]); buf.Add(fb[2]); buf.Add(fb[1]); buf.Add(fb[0]);
                 var p = buf.ToArray();
-                int sent = _sender.Send(p, p.Length);
+                int sent = SendPacket(p);
                 LogSend(name, $"[OSC] → {name} = {value:F3} ({sent}B to :{VRC_SEND_PORT})");
             }
             catch (Exception ex) { _log($"[OSC] Send float error: {ex.Message}"); }
@@ -505,7 +518,6 @@ namespace VRCNext
 
         public void SendRawFloat(string address, float value)
         {
-            EnsureSender();
             try
             {
                 var buf = new List<byte>();
@@ -514,7 +526,7 @@ namespace VRCNext
                 byte[] fb = BitConverter.GetBytes(value);
                 buf.Add(fb[3]); buf.Add(fb[2]); buf.Add(fb[1]); buf.Add(fb[0]);
                 var p = buf.ToArray();
-                int sent = _sender.Send(p, p.Length);
+                int sent = SendPacket(p);
                 LogSend(address, $"[OSC] → {address} = {value:F4} ({sent}B to :{VRC_SEND_PORT})");
             }
             catch (Exception ex) { _log($"[OSC] SendRawFloat error: {ex.Message}"); }
@@ -522,14 +534,13 @@ namespace VRCNext
 
         public void SendRawBool(string address, bool value)
         {
-            EnsureSender();
             try
             {
                 var buf = new List<byte>();
                 WriteOscString(buf, address);
                 WriteOscString(buf, value ? ",T" : ",F");
                 var p = buf.ToArray();
-                int sent = _sender.Send(p, p.Length);
+                int sent = SendPacket(p);
                 LogSend(address, $"[OSC] → {address} = {value} ({sent}B to :{VRC_SEND_PORT})");
             }
             catch (Exception ex) { _log($"[OSC] SendRawBool error: {ex.Message}"); }
@@ -537,7 +548,6 @@ namespace VRCNext
 
         public void SendRawInt(string address, int value)
         {
-            EnsureSender();
             try
             {
                 var buf = new List<byte>();
@@ -548,7 +558,7 @@ namespace VRCNext
                 buf.Add((byte)(value >> 8));
                 buf.Add((byte)(value));
                 var p = buf.ToArray();
-                int sent = _sender.Send(p, p.Length);
+                int sent = SendPacket(p);
                 LogSend(address, $"[OSC] → {address} = {value} ({sent}B to :{VRC_SEND_PORT})");
             }
             catch (Exception ex) { _log($"[OSC] SendRawInt error: {ex.Message}"); }
@@ -556,7 +566,6 @@ namespace VRCNext
 
         public void SendEyeHeight(float meters)
         {
-            EnsureSender();
             try
             {
                 var buf = new List<byte>();
@@ -565,7 +574,7 @@ namespace VRCNext
                 byte[] fb = BitConverter.GetBytes(meters);
                 buf.Add(fb[3]); buf.Add(fb[2]); buf.Add(fb[1]); buf.Add(fb[0]);
                 var p = buf.ToArray();
-                int sent = _sender.Send(p, p.Length);
+                int sent = SendPacket(p);
                 LogSend("/avatar/eyeheight", $"[OSC] → /avatar/eyeheight = {meters:F4}m ({sent}B to :{VRC_SEND_PORT})");
             }
             catch (Exception ex) { _log($"[OSC] Send eye height error: {ex.Message}"); }
@@ -573,7 +582,6 @@ namespace VRCNext
 
         public void SendInt(string name, int value)
         {
-            EnsureSender();
             try
             {
                 var buf = new List<byte>();
@@ -584,7 +592,7 @@ namespace VRCNext
                 buf.Add((byte)(value >> 8));
                 buf.Add((byte)(value));
                 var p = buf.ToArray();
-                int sent = _sender.Send(p, p.Length);
+                int sent = SendPacket(p);
                 LogSend(name, $"[OSC] → {name} = {value} ({sent}B to :{VRC_SEND_PORT})");
             }
             catch (Exception ex) { _log($"[OSC] Send int error: {ex.Message}"); }

@@ -227,9 +227,9 @@
                                     <div class="tb-dd-item" onclick="showTab(20)"><span class="msi">watch</span><span data-i18n="nav.vr_overlay">VR Overlay</span></div>
                                     <div class="tb-dd-item" onclick="showTab(10)"><span class="msi">rocket_launch</span><span data-i18n="nav.space_flight">Space Flight</span></div>
                                     <div class="tb-dd-item" onclick="showTab(28)"><span class="msi">rotate_right</span><span data-i18n="nav.space_turn">Space Turn</span></div>
-                                    <div class="tb-dd-item" onclick="showTab(5)"><span class="msi">chat</span><span data-i18n="nav.custom_chatbox">Custom Chatbox</span></div>
                                 </div>
                             </div>
+                            <div class="tb-dd-item" onclick="showTab(5)"><span class="msi">chat</span><span data-i18n="nav.custom_chatbox">Custom Chatbox</span></div>
                             <div class="tb-dd-submenu">
                                 <button class="tb-dd-item"><span class="msi">bolt</span><span data-i18n="tb.tools.automation">Automation</span><span class="msi tb-dd-arrow">chevron_right</span></button>
                                 <div class="tb-dd-sub-drop">
@@ -240,8 +240,8 @@
                                 </div>
                             </div>
                             <div class="tb-dd-sep" data-windows-only></div>
-                            <div class="tb-dd-item" data-windows-only onclick="showTab(6)"><span class="msi">cell_tower</span><span data-i18n="nav.media_relay">Media Relay</span></div>
-                            <div class="tb-dd-item" data-windows-only onclick="showTab(11)"><span class="msi">tune</span><span data-i18n="nav.osc_tool">OSC Tool</span></div>
+                            <div class="tb-dd-item" onclick="showTab(6)"><span class="msi">cell_tower</span><span data-i18n="nav.media_relay">Media Relay</span></div>
+                            <div class="tb-dd-item" onclick="showTab(11)"><span class="msi">tune</span><span data-i18n="nav.osc_tool">OSC Tool</span></div>
                             <div class="tb-dd-item" data-windows-only onclick="showTab(14)"><span class="msi">smart_display</span><span data-i18n="nav.youtube_fix">YouTube Fix</span></div>
                             <div class="tb-dd-sep"></div>
                             <div class="tb-dd-item" onclick="showTab(8)"><span class="msi">article</span><span data-i18n="nav.activity_log">Activity Log</span></div>
@@ -250,7 +250,7 @@
                             <div class="tb-dd-item" onclick="showTab(16)"><span class="msi">schedule</span><span data-i18n="nav.time_spent">Time Spent</span></div>
                             <div class="tb-dd-sep" data-windows-only></div>
                             <div class="tb-dd-item" data-windows-only onclick="showTab(18)"><span class="msi">mic</span><span data-i18n="nav.voice_fight">Voice Fight</span></div>
-                            <div class="tb-dd-item" data-windows-only onclick="showTab(19)"><span class="msi">sensors</span><span data-i18n="nav.discord_presence">Discord Presence</span></div>
+                            <div class="tb-dd-item" onclick="showTab(19)"><span class="msi">sensors</span><span data-i18n="nav.discord_presence">Discord Presence</span></div>
                             <div class="tb-dd-item" data-windows-only onclick="showTab(22)"><span class="msi">translate</span><span data-i18n="nav.kikitan_xd">Kikitan XD</span></div>
                             <div class="tb-dd-item" data-windows-only onclick="showTab(24)"><span class="msi">height</span><span data-i18n="nav.avatar_scaling">Avatar Scaling</span></div>
                         </div>
@@ -300,17 +300,17 @@
                     </div>
                 </div>
                 <button class="tb-sidebar-btn" id="tbApiHealth" style="display:none;" title="VRChat API Status" data-i18n-title="apihealth.title" onclick="toggleApiHealthPanel()"><span class="msi tbah-icon" id="tbApiHealthDot">database</span></button>
-                <div id="tbToolsGroup" data-windows-only>
+                <div id="tbToolsGroup">
                     <button class="tb-sidebar-btn" id="badgeRelay" title="Media Relay" data-i18n-title="nav.media_relay" onclick="toggleRelay()"><span class="msi">cell_tower</span></button>
                     <button class="tb-sidebar-btn" id="badgeChatbox" title="Custom Chatbox" data-i18n-title="nav.custom_chatbox" onclick="toggleChatbox()"><span class="msi">chat</span></button>
-                    <button class="tb-sidebar-btn" id="badgeSpace" title="Space Flight" data-i18n-title="nav.space_flight" onclick="sfConnect()"><span class="msi">rocket_launch</span></button>
-                    <button class="tb-sidebar-btn" id="badgeSpaceTurn" title="Space Turn" data-i18n-title="nav.space_turn" onclick="stConnect()"><span class="msi">rotate_right</span></button>
-                    <button class="tb-sidebar-btn" id="badgeFrameShot" title="FrameShot" data-i18n-title="nav.frame_shot" onclick="fsConnect()"><span class="msi">photo_camera</span></button>
-                    <button class="tb-sidebar-btn" id="badgeVoice" title="Voice Fight" data-i18n-title="nav.voice_fight" onclick="if(!vfRunning)vfOnTabOpen();vfConnect()"><span class="msi">mic</span></button>
+                    <button class="tb-sidebar-btn" id="badgeSpace" data-windows-only title="Space Flight" data-i18n-title="nav.space_flight" onclick="sfConnect()"><span class="msi">rocket_launch</span></button>
+                    <button class="tb-sidebar-btn" id="badgeSpaceTurn" data-windows-only title="Space Turn" data-i18n-title="nav.space_turn" onclick="stConnect()"><span class="msi">rotate_right</span></button>
+                    <button class="tb-sidebar-btn" id="badgeFrameShot" data-windows-only title="FrameShot" data-i18n-title="nav.frame_shot" onclick="fsConnect()"><span class="msi">photo_camera</span></button>
+                    <button class="tb-sidebar-btn" id="badgeVoice" data-windows-only title="Voice Fight" data-i18n-title="nav.voice_fight" onclick="if(!vfRunning)vfOnTabOpen();vfConnect()"><span class="msi">mic</span></button>
                     <button class="tb-sidebar-btn" id="badgeDp" title="Discord Presence" data-i18n-title="nav.discord_presence" onclick="dpToggle()"><span class="msi">sensors</span></button>
-                    <button class="tb-sidebar-btn" id="badgeYt" title="YouTube Fix" data-i18n-title="nav.youtube_fix" onclick="toggleVc()"><span class="msi">smart_display</span></button>
-                    <button class="tb-sidebar-btn" id="badgeKxd" title="Kikitan XD" data-i18n-title="nav.kikitan_xd" onclick="kxdConnect()"><span class="msi">translate</span></button>
-                    <button class="tb-sidebar-btn" id="badgeVroTop" title="VR Overlay" data-i18n-title="nav.vr_overlay" onclick="vroConnect()"><span class="msi">watch</span></button>
+                    <button class="tb-sidebar-btn" id="badgeYt" data-windows-only title="YouTube Fix" data-i18n-title="nav.youtube_fix" onclick="toggleVc()"><span class="msi">smart_display</span></button>
+                    <button class="tb-sidebar-btn" id="badgeKxd" data-windows-only title="Kikitan XD" data-i18n-title="nav.kikitan_xd" onclick="kxdConnect()"><span class="msi">translate</span></button>
+                    <button class="tb-sidebar-btn" id="badgeVroTop" data-windows-only title="VR Overlay" data-i18n-title="nav.vr_overlay" onclick="vroConnect()"><span class="msi">watch</span></button>
                     <div class="tb-sep"></div>
                 </div>
                 <button class="tb-sidebar-btn" id="btnUpdate" onclick="toggleUpdatePanel()" title="Update available" data-i18n-title="update.available" style="display:none;"><span class="msi">system_update_alt</span><span class="notif-count" id="updateBadge">1</span></button>
@@ -399,9 +399,9 @@
             <!-- Tab 4: Avatars -->
             <div class="tab" id="tab4"></div>
             <!-- Tab 5: Custom Chatbox -->
-            <div class="tab" id="tab5" data-windows-only></div>
+            <div class="tab" id="tab5"></div>
             <!-- Tab 6: Media Relay -->
-            <div class="tab" id="tab6" data-windows-only></div>
+            <div class="tab" id="tab6"></div>
             <!-- Tab 7: Media Library -->
             <div class="tab" id="tab7"></div>
             <!-- Tab 8: Activity Log -->
@@ -411,7 +411,7 @@
             <!-- Tab 10: Space Flight -->
             <div class="tab" id="tab10" data-windows-only></div>
             <!-- Tab 11: OSC Tool -->
-            <div class="tab" id="tab11" data-windows-only></div>
+            <div class="tab" id="tab11"></div>
             <!-- Tab 12: Timeline -->
             <div class="tab" id="tab12"></div>
             <!-- Tab 13: Inventory -->
@@ -431,7 +431,7 @@
             <div class="tab" id="tab18" data-windows-only></div>
 
             <!-- Tab 19: Discord Presence -->
-            <div class="tab" id="tab19" data-windows-only></div>
+            <div class="tab" id="tab19"></div>
             <!-- Tab 20: VR Wrist Overlay -->
             <div class="tab" id="tab20" data-windows-only></div>
 

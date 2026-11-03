@@ -1163,6 +1163,10 @@ case 'vrcNews':
             case 'chatboxUpdate':
                 handleChatboxUpdate(payload);
                 break;
+            case 'chatboxWindowToolsState':
+                if (typeof handleChatboxWindowToolsState === 'function')
+                    handleChatboxWindowToolsState(payload);
+                break;
             case 'sfUpdate':
                 handleSfUpdate(payload);
                 break;
@@ -1334,6 +1338,7 @@ case 'vrcNews':
         case 'setPlatform':
             window._isLinuxUi = !!payload?.isLinux;
             if (payload?.isLinux) {
+                sendToCS({ action: 'chatboxWindowToolsCheck' });
                 document.documentElement.classList.add('linux-ui');
                 window._kxdProfileTranslationEnabled = false;
                 if (typeof navSetLinux === 'function') navSetLinux(true);
@@ -1431,4 +1436,3 @@ case 'vrcNews':
 // index.html, AFTER all scripts have loaded. Sending them here would cause the
 // backend's loadSettings response to arrive before init.js runs, and init.js's
 // renderWebhookCards([{},{},{},{}]) would overwrite the loaded webhook data.
-

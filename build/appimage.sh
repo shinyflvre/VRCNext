@@ -36,6 +36,9 @@ fi
 echo "==> Using dotnet: $DOTNET ($("$DOTNET" --version))"
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
 export DOTNET_NOLOGO=1
+if [ -z "${VRCNEXT_HYPERATE_API_KEY:-}" ]; then
+    echo "[WARN] HypeRate support will be unavailable in this build because VRCNEXT_HYPERATE_API_KEY is unset."
+fi
 
 # ----------------------------------------------------------------- source sync
 SRC="$CACHE/src"
@@ -107,7 +110,7 @@ mkdir -p "$APPDIR/usr/bin/vrcnext" \
 
 cp -a "$STAGE/." "$APPDIR/usr/bin/vrcnext/"
 
-for lib in /usr/lib/x86_64-linux-gnu/libnotify.so.4*; do
+for lib in /usr/lib/x86_64-linux-gnu/libnotify.so.4* /usr/lib/libnotify.so.4*; do
     [ -e "$lib" ] && cp -a "$lib" "$APPDIR/usr/lib/"
 done
 [ -e "$APPDIR/usr/lib/libnotify.so.4" ] || echo "[WARN] libnotify.so.4 not found on build system — not bundled"
@@ -160,7 +163,32 @@ If a GLIBC version is reported as missing, your distribution is too old for this
     exit 1
 fi
 
-exec "$APP" "$@"
+DEBUG=0
+APP_ARGS=()
+for arg in "$@"; do
+    if [ "$arg" = "--debug" ]; then
+        DEBUG=1
+    else
+        APP_ARGS+=("$arg")
+    fi
+done
+
+if [ "${VRCNEXT_DEBUG:-0}" = "1" ]; then
+    DEBUG=1
+fi
+
+if [ "$DEBUG" = "1" ]; then
+    export VRCNEXT_DEBUG=1
+    STATE_HOME="${XDG_STATE_HOME:-${HOME:-/tmp}/.local/state}"
+    LOG_DIR="$STATE_HOME/VRCNext/Logs"
+    mkdir -p "$LOG_DIR"
+    LOG_FILE="$LOG_DIR/appimage_$(date +%Y-%m-%d_%H-%M-%S).log"
+    printf 'VRCNext AppImage debug log: %s\n' "$LOG_FILE" >&2
+    "$APP" "${APP_ARGS[@]}" 2>&1 | tee "$LOG_FILE"
+    exit "${PIPESTATUS[0]}"
+fi
+
+exec "$APP" "${APP_ARGS[@]}"
 EOF
 chmod +x "$APPDIR/AppRun"
 

@@ -268,7 +268,23 @@ public class RelayController : IDisposable
 
     private void StartRelay()
     {
+        if (_relayRunning) return;
+
         var allFolders = _core.Settings.WatchFolders.Where(Directory.Exists).ToList();
+        if (OperatingSystem.IsLinux() && VrcPathsHelper.FindProtonPrefix() != null)
+        {
+            var vrcPhotoDir = VrcPathsHelper.PhotoDir();
+            try
+            {
+                Directory.CreateDirectory(vrcPhotoDir);
+                if (!allFolders.Contains(vrcPhotoDir, StringComparer.OrdinalIgnoreCase))
+                    allFolders.Add(vrcPhotoDir);
+            }
+            catch (Exception ex)
+            {
+                _core.SendToJS("log", new { msg = $"Could not prepare VRChat's Proton photo folder: {ex.Message}", color = "warn" });
+            }
+        }
         var enabledFilter = _core.Settings.RelayEnabledFolders;
         var folders = enabledFilter == null
             ? allFolders
@@ -276,16 +292,28 @@ public class RelayController : IDisposable
         if (folders.Count == 0)
         {
             _core.SendToJS("log", new { msg = "No valid watch folders configured!", color = "err" });
+            _core.SendToJS("relayState", new { running = false, streams = 0 });
             return;
         }
         var whs = _core.Settings.Webhooks.Where(w => w.Enabled && !string.IsNullOrWhiteSpace(w.Url)).ToList();
         if (whs.Count == 0)
         {
             _core.SendToJS("log", new { msg = "No webhooks active!", color = "err" });
+            _core.SendToJS("relayState", new { running = false, streams = 0 });
             return;
         }
 
-        _core.FileWatcher.Start(folders);
+        try
+        {
+            _core.FileWatcher.Start(folders);
+        }
+        catch (Exception ex)
+        {
+            _core.SendToJS("log", new { msg = $"Failed to start Media Relay file watchers: {ex.Message}", color = "err" });
+            _core.SendToJS("relayState", new { running = false, streams = 0 });
+            return;
+        }
+
         _relayRunning = true;
         _relayStart = DateTime.Now;
         _vroCtrl.UpdateToolStates();

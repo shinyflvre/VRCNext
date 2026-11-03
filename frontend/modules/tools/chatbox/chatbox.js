@@ -9,6 +9,7 @@ const CB_LINE_IDS = ['time', 'media', 'stats', 'pulse', 'weather', 'window', 'cu
 let _cbEditLineIndex = -1;
 let _cbDragCleanup = null;
 let _cbLineDragCleanup = null;
+let _cbWindowToolsInstalling = false;
 
 function chatboxButtonHtml() {
     return chatboxEnabled
@@ -47,10 +48,35 @@ function rerenderChatboxTranslations() {
 document.documentElement.addEventListener('languagechange', rerenderChatboxTranslations);
 
 function toggleChatbox() {
+    if (!document.getElementById('cbShowTime')) {
+        sendToCS({ action: 'chatboxToggle' });
+        return;
+    }
     chatboxEnabled = !chatboxEnabled;
     syncChatboxToggleUi();
     document.getElementById('badgeChatbox').classList.toggle('tb-active', chatboxEnabled);
     updateChatboxConfig();
+}
+
+function installChatboxWindowTools() {
+    if (_cbWindowToolsInstalling) return;
+    _cbWindowToolsInstalling = true;
+    const btn = document.getElementById('cbWindowToolsInstallBtn');
+    if (btn) btn.disabled = true;
+    sendToCS({ action: 'chatboxWindowToolsInstall' });
+}
+
+function handleChatboxWindowToolsState(state) {
+    _cbWindowToolsInstalling = !!state?.installing;
+    const btn = document.getElementById('cbWindowToolsInstallBtn');
+    if (!btn) return;
+    btn.style.display = state?.available ? 'none' : '';
+    btn.disabled = _cbWindowToolsInstalling;
+    btn.innerHTML = _cbWindowToolsInstalling
+        ? `<span class="msi" style="font-size:16px;">hourglass_top</span> ${t('chatbox.window.installing', 'Installing...')}`
+        : `<span class="msi" style="font-size:16px;">download</span> ${t('chatbox.window.install', 'Install Window Activity tools')}`;
+    if (state?.message && typeof showToast === 'function')
+        showToast(!!state.success, state.message);
 }
 
 function _cbChecked(id, fallback) {
