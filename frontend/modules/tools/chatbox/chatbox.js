@@ -177,7 +177,7 @@ function updateChatboxConfig() {
         intervalMs: parseInt(document.getElementById('cbInterval').value, 10) || 5000,
         lineOrder: chatboxLineOrder,
         customLines: chatboxCustomLines.map(l => ({ text: l.text, enabled: l.enabled })),
-        hideBackground: document.getElementById('cbHideBackground').checked,
+        hideBackground: false,
     });
 }
 

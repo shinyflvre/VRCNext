@@ -697,7 +697,6 @@ function loadSettingsToUI(s) {
     document.getElementById('cbShowAfk').checked = s.CbShowAfk ?? s.cbShowAfk ?? false;
     document.getElementById('cbAfkMessage').value = s.CbAfkMessage || s.cbAfkMessage || 'Currently AFK';
     document.getElementById('cbSuppressSound').checked = s.CbSuppressSound ?? s.cbSuppressSound ?? true;
-    document.getElementById('cbHideBackground').checked = s.CbHideBackground ?? s.cbHideBackground ?? false;
     const cbTf = s.CbTimeFormat || s.cbTimeFormat || 'hh:mm tt';
     const cbTfEl = document.getElementById('cbTimeFormat');
     if (cbTfEl) cbTfEl.value = cbTf;

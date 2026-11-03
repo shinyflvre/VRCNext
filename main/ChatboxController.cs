@@ -82,7 +82,7 @@ public class ChatboxController : IDisposable
                     var separator = msg["separator"]?.ToString() ?? " | ";
                     var intervalMs = msg["intervalMs"]?.Value<int>() ?? 5000;
                     var customLines = msg["customLines"]?.ToObject<List<CbCustomLine>>() ?? new();
-                    var hideBackground = msg["hideBackground"]?.Value<bool>() ?? false;
+                    const bool hideBackground = false;
                     var customTemplate = msg["customTemplate"]?.ToString() ?? "";
                     var showAfkTime = msg["showAfkTime"]?.Value<bool>() ?? true;
                     var lineOrder = msg["lineOrder"]?.ToObject<List<string>>() ?? new(ChatboxService.DefaultLineOrder);
