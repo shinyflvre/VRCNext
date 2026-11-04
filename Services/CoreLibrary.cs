@@ -138,8 +138,9 @@ public class CoreLibrary
 
     public Action<int>? OnChatboxPauseRequest { get; set; }
 
-#if WINDOWS
+    // Shared subprocess host also provides Linux SteamVR Space Flight/Turn.
     public VRSubprocessHost? VrOverlay { get; set; }
+#if WINDOWS
     public Action<string, string, string>? SpeakToast { get; set; }
 #endif
     public Action<string, string, string, string>? OnTrayUserUpdate { get; set; } // name, status, statusDesc, imageUrl

@@ -1,4 +1,4 @@
-﻿#if WINDOWS
+#if WINDOWS
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 
@@ -476,12 +476,11 @@ public class VROverlayController : IDisposable
 #else
 namespace VRCNext;
 
-// Stub for non-Windows platforms — all methods are no-ops.
-public class VROverlayController : IDisposable
+// Linux does not expose the Windows VR Overlay implementation.
+public sealed class VROverlayController : IDisposable
 {
     public Action<int>? OnToolToggle { get; set; }
     public Func<(bool discord, bool voice, bool kikitan, bool space, bool relay, bool chatbox, bool frameShot, bool spaceTurn)>? GetToolStates { get; set; }
-
     public VROverlayController(CoreLibrary core, FriendsController friends) { }
     public Task HandleMessage(string action, Newtonsoft.Json.Linq.JObject msg) => Task.CompletedTask;
     public void UpdateToolStates() { }

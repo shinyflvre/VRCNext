@@ -115,7 +115,7 @@ public static class LinuxDesktopHelper
         return TryRun("xdg-open", new[] { dir }, out _, waitForExit: false);
     }
 
-    public static bool PlayNotificationSound(string path, double volume, Action<string> log)
+    public static bool PlayNotificationSound(string path, double volume, Action<string> log, string? eventId = null, bool preview = false)
     {
         var canberraPlayer = FindExecutable("canberra-gtk-play");
         var player = canberraPlayer ?? FindExecutable("gst-play-1.0");
@@ -348,6 +348,7 @@ public static class LinuxNotificationHelper
 
     private const int MaxImageBytes = 5 * 1024 * 1024;
     private const int MaxImageDimension = 256;
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, DateTime> RecentNotifications = new();
     private const int MaxDecodedPixels = 16_000_000;
 
     public static async Task<bool> TrySendAsync(
@@ -360,6 +361,19 @@ public static class LinuxNotificationHelper
     {
         var notifySend = FindExecutable("notify-send");
         if (notifySend == null) return false;
+
+        // Linux forwarding can replay the same frontend event through both the
+        // main window and helper window. KDE coalesces by event id, while other
+        // desktops need a short local guard as well.
+        if (!string.IsNullOrEmpty(eventId))
+        {
+            var now = DateTime.UtcNow;
+            if (RecentNotifications.TryGetValue(eventId, out var previous) && (now - previous).TotalSeconds < 5)
+                return true;
+            RecentNotifications[eventId] = now;
+            foreach (var item in RecentNotifications.Where(x => (now - x.Value).TotalSeconds > 30).ToList())
+                RecentNotifications.TryRemove(item.Key, out _);
+        }
 
         string? imagePath = null;
         if (!string.IsNullOrWhiteSpace(imageUrl))

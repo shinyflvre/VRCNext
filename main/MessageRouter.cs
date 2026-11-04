@@ -1,4 +1,4 @@
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NativeFileDialogSharp;
 using VRCNext.Services;
@@ -482,12 +482,7 @@ public partial class AppShell
 #if !WINDOWS
                     _trayService?.Initialize(_window);
 #endif
-#if WINDOWS
-                    const bool isKdeDesktop = false;
-#else
-                    var isKdeDesktop = LinuxDesktopHelper.IsKde;
-#endif
-                    SendToJS("setPlatform", new { isLinux = !OperatingSystem.IsWindows(), isKde = isKdeDesktop });
+                    SendToJS("setPlatform", new { isLinux = !OperatingSystem.IsWindows() });
                     SendToJS("localHttpInfo", new { port = _core.HttpPort, token = _core.HttpCorsToken });
                     _windowCtrl.InstallChrome();
                     _windowCtrl.RestoreMaximizedState();
@@ -4148,6 +4143,14 @@ public partial class AppShell
                         _ => "",
                     };
                     if (defaultFile.Length == 0) break;
+                    var kdeEventId = slot switch
+                    {
+                        "notify" => "notification",
+                        "message" => "message",
+                        "mediaRelay" => "mediaRelay",
+                        "steamOverlay" => "steamOverlay",
+                        _ => "generic",
+                    };
 
                     var fileName = msg["file"]?.ToString() ?? "";
                     if (fileName.Length > 0
@@ -4162,8 +4165,7 @@ public partial class AppShell
                     var soundPath = fileName.Length == 0
                         ? Path.Combine(soundDirectory, defaultFile)
                         : Path.Combine(soundDirectory, "Notificationsv2", fileName);
-                    var isKdeNotificationSound = LinuxDesktopHelper.IsKde;
-                    if (!isKdeNotificationSound && !File.Exists(soundPath))
+                    if (!File.Exists(soundPath))
                     {
                         SendToJS("log", new { msg = $"[Sound] Notification sound file not found: {fileName}", color = "warn" });
                         break;
@@ -4174,42 +4176,10 @@ public partial class AppShell
                         System.Globalization.CultureInfo.InvariantCulture, out var requestedVolume)
                         && double.IsFinite(requestedVolume))
                         volume = Math.Clamp(requestedVolume, 0, 1);
-                    if (isKdeNotificationSound)
-                    {
-                        var kdeEventId = (msg["slot"]?.ToString() ?? "") switch
-                        {
-                            "notify" => LinuxNotificationHelper.NotificationSoundEvent,
-                            "message" => LinuxNotificationHelper.MessageSoundEvent,
-                            "mediaRelay" => LinuxNotificationHelper.MediaRelaySoundEvent,
-                            _ => null,
-                        };
-                        if (kdeEventId != null)
-                        {
-                            var eventId = msg["eventId"]?.ToString();
-                            var sent = await LinuxNotificationHelper.TrySendAsync(
-                                "VRCNext", "", null, _vrcApi.GetHttpClient(),
-                                message => SendToJS("log", new { msg = message, color = "warn" }),
-                                eventId ?? kdeEventId);
-                            if (!sent && File.Exists(soundPath))
-                                LinuxDesktopHelper.PlayNotificationSound(
-                                    soundPath, volume,
-                                    message => SendToJS("log", new { msg = message, color = "warn" }));
-                            else if (!sent)
-                                SendToJS("log", new { msg = $"[Sound] Notification sound file not found: {fileName}", color = "warn" });
-                        }
-                        else
-                        {
-                            LinuxDesktopHelper.PlayNotificationSound(
-                                soundPath, volume,
-                                message => SendToJS("log", new { msg = message, color = "warn" }));
-                        }
-                    }
-                    else
-                    {
-                        LinuxDesktopHelper.PlayNotificationSound(
-                            soundPath, volume,
-                            message => SendToJS("log", new { msg = message, color = "warn" }));
-                    }
+                    LinuxDesktopHelper.PlayNotificationSound(
+                        soundPath, volume,
+                        message => SendToJS("log", new { msg = message, color = "warn" }),
+                        kdeEventId, msg["preview"]?.Value<bool>() ?? false);
                     break;
                 }
 #endif
@@ -4219,16 +4189,17 @@ public partial class AppShell
                         var tnTitle  = msg["title"]?.ToString()    ?? "";
                         var tnSub   = msg["subtitle"]?.ToString()  ?? "";
                         var tnImage = msg["imageUrl"]?.ToString() ?? "";
+                        var tnEventId = msg["kdeEventId"]?.ToString() ?? "generic";
 #if WINDOWS
                         var tnAccent = msg["accentKey"]?.ToString() ?? "accent";
                         _trayService?.ShowNotification(tnTitle, tnSub, tnImage, tnAccent);
 #else
-                        var tnEventId = msg["eventId"]?.ToString();
                         var sent = await LinuxNotificationHelper.TrySendAsync(
                             tnTitle, tnSub, tnImage, _vrcApi.GetHttpClient(),
                             message => SendToJS("log", new { msg = message, color = "warn" }),
                             tnEventId);
-                        if (!sent) _window?.SendNotification(tnTitle, tnSub);
+                        if (!sent)
+                            _window?.SendNotification(tnTitle, tnSub);
 #endif
                     }
                     break;
@@ -4316,7 +4287,7 @@ public partial class AppShell
 
 #if !WINDOWS
     private static readonly string[] _windowsOnlyActionPrefixes =
-        { "vf", "kxd", "sf", "st", "fs", "vc", "vro", "as" };
+        { "vf", "kxd", "fs", "vc", "vro" };
 
     private static bool IsWindowsOnlyAction(string action)
     {

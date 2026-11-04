@@ -179,9 +179,7 @@ namespace VRCNext.Services
                 OpenVRSession.Acquire();
                 _ownedInit = true;
 
-#if WINDOWS
                 if (VrInputActions.Requested) VrInputActions.Initialize(_log);
-#endif
 
                 if (OpenVR.Overlay != null)
                 {
@@ -219,23 +217,39 @@ namespace VRCNext.Services
         {
             try
             {
-                var dir = AppDomain.CurrentDomain.BaseDirectory;
-                var exe = Path.GetFileName(Environment.ProcessPath ?? "VRCNext.exe");
+                var exePath = Environment.ProcessPath ?? "VRCNext.exe";
+#if WINDOWS
+                var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "vrcnext.vrmanifest");
+                var application = new
+                {
+                    app_key = "vrcnext.spaceflight.overlay",
+                    launch_type = "binary",
+                    binary_path_windows = Path.GetFileName(exePath),
+                    is_dashboard_overlay = true,
+                    strings = new { en_us = new { name = "VRCNext Space Flight" } }
+                };
+#else
+                // AppImage and installed Linux builds are commonly read-only. SteamVR
+                // only needs a user-scoped manifest registration, so keep it in XDG data.
+                var dataHome = Environment.GetEnvironmentVariable("XDG_DATA_HOME");
+                if (string.IsNullOrWhiteSpace(dataHome))
+                    dataHome = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".local", "share");
+                var dir = Path.Combine(dataHome!, "vrcnext");
+                Directory.CreateDirectory(dir);
                 var path = Path.Combine(dir, "vrcnext.vrmanifest");
+                var application = new
+                {
+                    app_key = "vrcnext.spaceflight.overlay",
+                    launch_type = "binary",
+                    binary_path_linux = exePath,
+                    is_dashboard_overlay = true,
+                    strings = new { en_us = new { name = "VRCNext Space Flight" } }
+                };
+#endif
                 var json = JsonSerializer.Serialize(new
                 {
                     source = "builtin",
-                    applications = new[]
-                    {
-                        new
-                        {
-                            app_key = "vrcnext.spaceflight.overlay",
-                            launch_type = "binary",
-                            binary_path_windows = exe,
-                            is_dashboard_overlay = true,
-                            strings = new { en_us = new { name = "VRCNext Space Flight" } }
-                        }
-                    }
+                    applications = new[] { application }
                 }, new JsonSerializerOptions { WriteIndented = true });
                 File.WriteAllText(path, json);
                 if (OpenVR.Applications != null)
@@ -690,10 +704,8 @@ namespace VRCNext.Services
         private ulong ReadButtons(uint deviceIdx)
         {
             if (deviceIdx == OpenVR.k_unTrackedDeviceIndexInvalid) return 0;
-#if WINDOWS
             if (VrInputActions.Active)
                 return VrInputActions.GetButtons(deviceIdx == _leftIdx ? 1 : deviceIdx == _rightIdx ? 2 : 0);
-#endif
 
             if (_vrSystem == null) return 0;
             var s = new VRControllerState_t();

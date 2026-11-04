@@ -88,6 +88,10 @@ function saveSettings() {
     const _sfCur = _vriReady && typeof sfReadBtns === 'function' ? sfReadBtns() : {};
     const _stCur = _vriReady && typeof stReadBtns === 'function' ? stReadBtns() : {};
     const _fsCur = _vriReady && typeof fsReadBtns === 'function' ? fsReadBtns() : {};
+    const _sfLegacy = vrInputMode === 1 ? _sfOtherBtns : _sfCur;
+    const _sfIndex = vrInputMode === 1 ? _sfCur : _sfOtherBtns;
+    const _stLegacy = vrInputMode === 1 ? _stOtherBtns : _stCur;
+    const _stIndex = vrInputMode === 1 ? _stCur : _stOtherBtns;
 
     const payload = {
         action: 'saveSettings',
@@ -181,7 +185,13 @@ function saveSettings() {
             sfLeftDragBtn:        _sfCur.sfLeftDrag,
             sfRightDragBtn:       _sfCur.sfRightDrag,
             sfLeftGravityBtn:     _sfCur.sfLeftGravity,
-            sfRightGravityBtn:    _sfCur.sfRightGravity,
+            sfRightGravityBtn:     _sfLegacy.sfRightGravity,
+            sfIdxLeftResetBtn:     _sfIndex.sfLeftReset,
+            sfIdxRightResetBtn:    _sfIndex.sfRightReset,
+            sfIdxLeftDragBtn:      _sfIndex.sfLeftDrag,
+            sfIdxRightDragBtn:     _sfIndex.sfRightDrag,
+            sfIdxLeftGravityBtn:   _sfIndex.sfLeftGravity,
+            sfIdxRightGravityBtn:  _sfIndex.sfRightGravity,
             ...(_vriReady ? { vrInputMode } : {}),
             sfGravity: parseFloat(document.getElementById('sfGravity')?.value) || 9.8,
             stMultiplier:  parseFloat(document.getElementById('stMultiplier')?.value) || 1,
@@ -191,7 +201,11 @@ function saveSettings() {
             stLeftTurnBtn:   _stCur.stLeftTurn,
             stRightTurnBtn:  _stCur.stRightTurn,
             stLeftResetBtn:  _stCur.stLeftReset,
-            stRightResetBtn: _stCur.stRightReset,
+            stRightResetBtn:  _stLegacy.stRightReset,
+            stIdxLeftTurnBtn:   _stIndex.stLeftTurn,
+            stIdxRightTurnBtn:  _stIndex.stRightTurn,
+            stIdxLeftResetBtn:  _stIndex.stLeftReset,
+            stIdxRightResetBtn: _stIndex.stRightReset,
             stAutoStartVR:   document.getElementById('setStAutoStartVR')?.checked ?? false,
             chatboxAutoStart: false, // legacy
             chatboxAutoStartVR:       document.getElementById('setCbAutoStartVR')?.checked        ?? false,
@@ -783,8 +797,8 @@ function loadSettingsToUI(s) {
             sfLeftGravity:  s.SfIdxLeftGravityButton  ?? s.sfIdxLeftGravityButton  ?? 0,
             sfRightGravity: s.SfIdxRightGravityButton ?? s.sfIdxRightGravityButton ?? 0,
         };
-        _sfOtherBtns = _sfIdx ? _sfLegacySet : _sfIndexSet;
-        if (_sfIdx && typeof sfWriteBtns === 'function') sfWriteBtns(_sfIndexSet);
+        _sfOtherBtns = _sfIdx ? _sfIndexSet : _sfLegacySet;
+        if (typeof sfWriteBtns === 'function') sfWriteBtns(_sfOtherBtns);
     }
     if (typeof sfRenderKeybind === 'function') sfRenderKeybind();
 
@@ -822,8 +836,8 @@ function loadSettingsToUI(s) {
             stLeftReset:  s.StIdxLeftResetButton  ?? s.stIdxLeftResetButton  ?? 0,
             stRightReset: s.StIdxRightResetButton ?? s.stIdxRightResetButton ?? 0,
         };
-        _stOtherBtns = _stIdx ? _stLegacySet : _stIndexSet;
-        if (typeof stWriteBtns === 'function') stWriteBtns(_stIdx ? _stIndexSet : _stLegacySet);
+        _stOtherBtns = _stIdx ? _stIndexSet : _stLegacySet;
+        if (typeof stWriteBtns === 'function') stWriteBtns(_stOtherBtns);
     }
     if (typeof stRenderKeybind === 'function') stRenderKeybind();
 

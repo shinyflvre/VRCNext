@@ -2160,12 +2160,12 @@ public class AuthController
 
             if (vrIdx)
             {
-                _core.Settings.SfIdxLeftResetButton    = SfIn("sfLeftResetBtn",     _core.Settings.SfIdxLeftResetButton);
-                _core.Settings.SfIdxRightResetButton   = SfIn("sfRightResetBtn",    _core.Settings.SfIdxRightResetButton);
-                _core.Settings.SfIdxLeftDragButton     = SfIn("sfLeftDragBtn",      _core.Settings.SfIdxLeftDragButton);
-                _core.Settings.SfIdxRightDragButton    = SfIn("sfRightDragBtn",     _core.Settings.SfIdxRightDragButton);
-                _core.Settings.SfIdxLeftGravityButton  = SfIn("sfLeftGravityBtn",   _core.Settings.SfIdxLeftGravityButton);
-                _core.Settings.SfIdxRightGravityButton = SfIn("sfRightGravityBtn",  _core.Settings.SfIdxRightGravityButton);
+                _core.Settings.SfIdxLeftResetButton    = SfIn("sfIdxLeftResetBtn",     _core.Settings.SfIdxLeftResetButton);
+                _core.Settings.SfIdxRightResetButton   = SfIn("sfIdxRightResetBtn",    _core.Settings.SfIdxRightResetButton);
+                _core.Settings.SfIdxLeftDragButton     = SfIn("sfIdxLeftDragBtn",      _core.Settings.SfIdxLeftDragButton);
+                _core.Settings.SfIdxRightDragButton    = SfIn("sfIdxRightDragBtn",      _core.Settings.SfIdxRightDragButton);
+                _core.Settings.SfIdxLeftGravityButton  = SfIn("sfIdxLeftGravityBtn",   _core.Settings.SfIdxLeftGravityButton);
+                _core.Settings.SfIdxRightGravityButton = SfIn("sfIdxRightGravityBtn",  _core.Settings.SfIdxRightGravityButton);
             }
             else
             {
@@ -2186,10 +2186,10 @@ public class AuthController
             _core.Settings.StAutoStartVR = data["stAutoStartVR"]?.Value<bool>()  ?? _core.Settings.StAutoStartVR;
             if (vrIdx)
             {
-                _core.Settings.StIdxLeftTurnButton   = SfIn("stLeftTurnBtn",   _core.Settings.StIdxLeftTurnButton);
-                _core.Settings.StIdxRightTurnButton  = SfIn("stRightTurnBtn",  _core.Settings.StIdxRightTurnButton);
-                _core.Settings.StIdxLeftResetButton  = SfIn("stLeftResetBtn",  _core.Settings.StIdxLeftResetButton);
-                _core.Settings.StIdxRightResetButton = SfIn("stRightResetBtn", _core.Settings.StIdxRightResetButton);
+                _core.Settings.StIdxLeftTurnButton   = SfIn("stIdxLeftTurnBtn",   _core.Settings.StIdxLeftTurnButton);
+                _core.Settings.StIdxRightTurnButton  = SfIn("stIdxRightTurnBtn",  _core.Settings.StIdxRightTurnButton);
+                _core.Settings.StIdxLeftResetButton  = SfIn("stIdxLeftResetBtn",  _core.Settings.StIdxLeftResetButton);
+                _core.Settings.StIdxRightResetButton = SfIn("stIdxRightResetBtn", _core.Settings.StIdxRightResetButton);
             }
             else
             {
