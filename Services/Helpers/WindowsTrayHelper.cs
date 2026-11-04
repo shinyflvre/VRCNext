@@ -1,7 +1,7 @@
 #if WINDOWS
 using System.Windows.Forms;
 
-namespace VRCNext;
+namespace VRCNext.Services.Helpers;
 
 internal sealed class WindowsTrayHelper
 {

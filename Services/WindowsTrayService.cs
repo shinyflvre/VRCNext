@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using Newtonsoft.Json.Linq;
 using VRCNext.Services;
+using VRCNext.Services.Helpers;
 
 namespace VRCNext;
 
