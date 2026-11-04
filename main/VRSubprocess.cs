@@ -533,7 +533,6 @@ static class VRSubprocess
     private static int    I(JToken t, string k, int    def = 0)     => t[k]?.Value<int>()    ?? def;
     private static float  F(JToken t, string k, float  def = 0f)    => t[k]?.Value<float>()  ?? def;
     private static double D(JToken t, string k, double def = 0)     => t[k]?.Value<double>() ?? def;
-    private static string S(JToken t, string k, string def = "")    => t[k]?.Value<string>() ?? def;
     private static string? SN(JToken t, string k) => t[k]?.Type == JTokenType.Null ? null : t[k]?.Value<string>();
 
     private static List<uint> UList(JToken t, string k)
