@@ -1,0 +1,140 @@
+[Global]
+Name=VRCNext
+Comment=VRChat Companion App
+IconName=vrcnext
+DesktopEntry=vrcnext
+
+[Event/vrchat-notification]
+Name=VRChat notification
+Comment=A new VRChat notification arrived
+Action=Popup
+
+[Event/friend-request]
+Name=Friend request
+Comment=You received a VRChat friend request
+Action=Popup
+
+[Event/invite]
+Name=VRChat invite
+Comment=You received a VRChat invite
+Action=Popup
+
+[Event/invite-request]
+Name=Invite request
+Comment=You received a VRChat invite request
+Action=Popup
+
+[Event/invite-response]
+Name=Invite response
+Comment=Someone responded to your VRChat invite
+Action=Popup
+
+[Event/invite-request-response]
+Name=Invite request response
+Comment=Someone responded to your VRChat invite request
+Action=Popup
+
+[Event/vote-to-kick]
+Name=Vote to kick
+Comment=A vote to kick you was started
+Action=Popup
+
+[Event/group-invite]
+Name=Group invite
+Comment=You received a VRChat group invite
+Action=Popup
+
+[Event/group-join-request]
+Name=Group join request
+Comment=Someone requested to join your group
+Action=Popup
+
+[Event/group-announcement]
+Name=Group announcement
+Comment=A VRChat group announcement arrived
+Action=Popup
+
+[Event/instance-announcement]
+Name=Instance announcement
+Comment=A VRChat instance announcement arrived
+Action=Popup
+
+[Event/friend-online]
+Name=Friend came online
+Comment=A VRChat friend came online
+Action=Popup
+
+[Event/friend-online-sound]
+Name=Friend online sound
+Comment=Sound when a VRChat friend comes online
+Action=Sound
+
+[Event/action-flow]
+Name=Action Flow notification
+Comment=An Action Flow sent a notification
+Action=Popup|Sound
+
+[Event/notification-sound]
+Name=Notification sound
+Comment=Sound for incoming VRChat notifications
+Action=Sound
+
+[Event/notification-friend-request-sound]
+Name=Friend request sound
+Comment=Sound when a VRChat friend request arrives
+Action=Sound
+
+[Event/notification-invite-sound]
+Name=Invite sound
+Comment=Sound when a VRChat invite arrives
+Action=Sound
+
+[Event/notification-invite-request-sound]
+Name=Invite request sound
+Comment=Sound when a VRChat invite request arrives
+Action=Sound
+
+[Event/notification-invite-response-sound]
+Name=Invite response sound
+Comment=Sound when someone responds to your VRChat invite
+Action=Sound
+
+[Event/notification-invite-request-response-sound]
+Name=Invite request response sound
+Comment=Sound when someone responds to your VRChat invite request
+Action=Sound
+
+[Event/notification-vote-to-kick-sound]
+Name=Vote to kick sound
+Comment=Sound when a vote to kick you is started
+Action=Sound
+
+[Event/notification-group-invite-sound]
+Name=Group invite sound
+Comment=Sound when a VRChat group invite arrives
+Action=Sound
+
+[Event/notification-group-join-request-sound]
+Name=Group join request sound
+Comment=Sound when someone requests to join your group
+Action=Sound
+
+[Event/notification-group-announcement-sound]
+Name=Group announcement sound
+Comment=Sound when a VRChat group announcement arrives
+Action=Sound
+
+[Event/notification-instance-announcement-sound]
+Name=Instance announcement sound
+Comment=Sound when a VRChat instance announcement arrives
+Action=Sound
+
+[Event/message-sound]
+Name=Message sound
+Comment=Sound for VRCN Messenger messages
+Action=Sound
+
+[Event/media-relay-sound]
+Name=Media Relay sound
+Comment=Sound after Media Relay sends an image
+Action=Sound

@@ -7,6 +7,8 @@ namespace VRCNext.Services.Helpers;
 
 public static class LinuxDesktopHelper
 {
+    public static bool IsKde => Desktop.Contains("kde", StringComparison.Ordinal);
+
     private static bool IsWayland =>
         !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WAYLAND_DISPLAY"));
 
@@ -113,6 +115,89 @@ public static class LinuxDesktopHelper
         return TryRun("xdg-open", new[] { dir }, out _, waitForExit: false);
     }
 
+    public static bool PlayNotificationSound(string path, double volume, Action<string> log)
+    {
+        var canberraPlayer = FindExecutable("canberra-gtk-play");
+        var player = canberraPlayer ?? FindExecutable("gst-play-1.0");
+        if (player == null)
+        {
+            log("[Sound] No Linux sound player found. Install libcanberra-gtk3 or GStreamer tools to enable notification sounds.");
+            return false;
+        }
+
+        try
+        {
+            var startInfo = new ProcessStartInfo(player)
+            {
+                UseShellExecute = false,
+                RedirectStandardError = true,
+                RedirectStandardOutput = true,
+            };
+            if (canberraPlayer != null)
+            {
+                var normalizedVolume = Math.Clamp(volume, 0, 1);
+                var volumeDb = normalizedVolume == 0 ? -100 : 20 * Math.Log10(normalizedVolume);
+                startInfo.ArgumentList.Add("--name=VRCNext");
+                startInfo.ArgumentList.Add($"--volume={volumeDb.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)}");
+                startInfo.ArgumentList.Add($"--file={path}");
+            }
+            else
+            {
+                startInfo.ArgumentList.Add("--quiet");
+                startInfo.ArgumentList.Add("--no-interactive");
+                startInfo.ArgumentList.Add($"--volume={Math.Clamp(volume, 0, 1).ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+                startInfo.ArgumentList.Add(path);
+            }
+
+            var process = Process.Start(startInfo);
+            if (process == null)
+            {
+                log($"[Sound] Could not start {Path.GetFileName(player)}.");
+                return false;
+            }
+
+            _ = ObserveSoundPlaybackAsync(process, log);
+            return true;
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception or IOException)
+        {
+            log($"[Sound] Could not start notification sound: {ex.Message}");
+            return false;
+        }
+    }
+
+    private static async Task ObserveSoundPlaybackAsync(Process process, Action<string> log)
+    {
+        using (process)
+        {
+            try
+            {
+                var errorTask = process.StandardError.ReadToEndAsync();
+                var outputTask = process.StandardOutput.ReadToEndAsync();
+                await process.WaitForExitAsync();
+                var error = (await errorTask).Trim();
+                var output = (await outputTask).Trim();
+                if (process.ExitCode != 0)
+                    log($"[Sound] {Path.GetFileName(process.StartInfo.FileName)} playback failed: {(error.Length > 0 ? error : output)}");
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception or IOException)
+            {
+                log($"[Sound] Error while playing notification sound: {ex.Message}");
+            }
+        }
+    }
+
+    private static string? FindExecutable(string name)
+    {
+        foreach (var directory in (Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator))
+        {
+            if (string.IsNullOrWhiteSpace(directory)) continue;
+            var path = Path.Combine(directory, name);
+            if (File.Exists(path)) return path;
+        }
+        return null;
+    }
+
     private static bool TryRun(string file, string[] args, out string? error, bool waitForExit = true, int timeoutMs = 15000)
     {
         error = null;
@@ -121,17 +206,25 @@ public static class LinuxDesktopHelper
             var psi = new ProcessStartInfo(file)
             {
                 UseShellExecute = false,
-                RedirectStandardError = true,
-                RedirectStandardOutput = true,
+                RedirectStandardError = waitForExit,
+                RedirectStandardOutput = waitForExit,
             };
             foreach (var a in args) psi.ArgumentList.Add(a);
             using var proc = Process.Start(psi);
             if (proc == null) { error = $"{file} could not be started"; return false; }
             if (!waitForExit) return true;
-            if (!proc.WaitForExit(timeoutMs)) { try { proc.Kill(); } catch { } error = $"{file} timed out"; return false; }
+            var outputTask = proc.StandardOutput.ReadToEndAsync();
+            var errorTask = proc.StandardError.ReadToEndAsync();
+            if (!proc.WaitForExit(timeoutMs))
+            {
+                try { proc.Kill(entireProcessTree: true); } catch { }
+                error = $"{file} timed out";
+                return false;
+            }
+            var err = errorTask.GetAwaiter().GetResult().Trim();
+            _ = outputTask.GetAwaiter().GetResult();
             if (proc.ExitCode != 0)
             {
-                var err = proc.StandardError.ReadToEnd().Trim();
                 error = err.Length > 0 ? err : $"{file} exited with code {proc.ExitCode}";
                 return false;
             }
@@ -153,8 +246,15 @@ public static class LinuxDesktopHelper
             foreach (var a in args) psi.ArgumentList.Add(a);
             using var proc = Process.Start(psi);
             if (proc == null) return null;
-            var output = proc.StandardOutput.ReadToEnd();
-            if (!proc.WaitForExit(timeoutMs)) { try { proc.Kill(); } catch { } return null; }
+            var outputTask = proc.StandardOutput.ReadToEndAsync();
+            var errorTask = proc.StandardError.ReadToEndAsync();
+            if (!proc.WaitForExit(timeoutMs))
+            {
+                try { proc.Kill(entireProcessTree: true); } catch { }
+                return null;
+            }
+            _ = errorTask.GetAwaiter().GetResult();
+            var output = outputTask.GetAwaiter().GetResult();
             return proc.ExitCode == 0 ? output : null;
         }
         catch { return null; }
@@ -184,12 +284,18 @@ public static class LinuxDesktopHelper
             foreach (var a in args) psi.ArgumentList.Add(a);
             using var proc = Process.Start(psi);
             if (proc == null) { error = $"{file} could not be started"; return false; }
+            var errorTask = proc.StandardError.ReadToEndAsync();
             input.CopyTo(proc.StandardInput.BaseStream);
             proc.StandardInput.Close();
-            if (!proc.WaitForExit(15000)) { try { proc.Kill(); } catch { } error = $"{file} timed out"; return false; }
+            if (!proc.WaitForExit(15000))
+            {
+                try { proc.Kill(entireProcessTree: true); } catch { }
+                error = $"{file} timed out";
+                return false;
+            }
+            var err = errorTask.GetAwaiter().GetResult().Trim();
             if (proc.ExitCode != 0)
             {
-                var err = proc.StandardError.ReadToEnd().Trim();
                 error = err.Length > 0 ? err : $"{file} exited with code {proc.ExitCode}";
                 return false;
             }
@@ -201,6 +307,45 @@ public static class LinuxDesktopHelper
 
 public static class LinuxNotificationHelper
 {
+    public const string VrchatNotificationEvent = "vrchat-notification";
+    public const string FriendOnlineEvent = "friend-online";
+    public const string ActionFlowEvent = "action-flow";
+    public const string NotificationSoundEvent = "notification-sound";
+    public const string FriendOnlineSoundEvent = "friend-online-sound";
+    public const string MessageSoundEvent = "message-sound";
+    public const string MediaRelaySoundEvent = "media-relay-sound";
+
+    private static readonly HashSet<string> KnownEventIds = new(StringComparer.Ordinal)
+    {
+        VrchatNotificationEvent,
+        FriendOnlineEvent,
+        ActionFlowEvent,
+        NotificationSoundEvent,
+        FriendOnlineSoundEvent,
+        MessageSoundEvent,
+        MediaRelaySoundEvent,
+        "notification-friend-request-sound",
+        "notification-invite-sound",
+        "notification-invite-request-sound",
+        "notification-invite-response-sound",
+        "notification-invite-request-response-sound",
+        "notification-vote-to-kick-sound",
+        "notification-group-invite-sound",
+        "notification-group-join-request-sound",
+        "notification-group-announcement-sound",
+        "notification-instance-announcement-sound",
+        "friend-request",
+        "invite",
+        "invite-request",
+        "invite-response",
+        "invite-request-response",
+        "vote-to-kick",
+        "group-invite",
+        "group-join-request",
+        "group-announcement",
+        "instance-announcement",
+    };
+
     private const int MaxImageBytes = 5 * 1024 * 1024;
     private const int MaxImageDimension = 256;
     private const int MaxDecodedPixels = 16_000_000;
@@ -210,7 +355,8 @@ public static class LinuxNotificationHelper
         string body,
         string? imageUrl,
         HttpClient http,
-        Action<string> log)
+        Action<string> log,
+        string? eventId = null)
     {
         var notifySend = FindExecutable("notify-send");
         if (notifySend == null) return false;
@@ -232,6 +378,10 @@ public static class LinuxNotificationHelper
         {
             var startInfo = new ProcessStartInfo(notifySend) { UseShellExecute = false };
             startInfo.ArgumentList.Add("--app-name=VRCNext");
+            startInfo.ArgumentList.Add("--hint=string:desktop-entry:vrcnext");
+            startInfo.ArgumentList.Add("--hint=string:x-kde-appname:vrcnext");
+            if (eventId != null && KnownEventIds.Contains(eventId))
+                startInfo.ArgumentList.Add($"--hint=string:x-kde-eventId:{eventId}");
             if (imagePath != null)
             {
                 startInfo.ArgumentList.Add($"--icon={imagePath}");

@@ -12,7 +12,7 @@ namespace VRCNext;
 /// Native Windows system tray icon with a custom GDI+ rendered popup menu.
 /// Runs on its own STA thread with a dedicated Windows message pump.
 /// </summary>
-public class SystemTrayService : IDisposable
+public class WindowsTrayService : IDisposable
 {
     [DllImport("user32.dll")] private static extern bool DestroyIcon(IntPtr hIcon);
     [DllImport("user32.dll")] private static extern IntPtr SetThreadDpiAwarenessContext(IntPtr context);
@@ -35,10 +35,9 @@ public class SystemTrayService : IDisposable
     }
     [StructLayout(LayoutKind.Sequential)] private struct RECT { public int Left, Top, Right, Bottom; }
 
-    private Thread? _trayThread;
+    private WindowsTrayHelper? _trayHelper;
     private NotifyIcon? _trayIcon;
     private TrayPopupForm? _popup;
-    private SynchronizationContext? _syncCtx;
 
     // Cached user data (written from main thread, read from tray thread)
     private readonly object _dataLock = new();
@@ -66,6 +65,11 @@ public class SystemTrayService : IDisposable
     public Action<string>? OnStatusChange;   // VRC status key
     public Action? OnClose;
     public Action<bool>? OnLaunchVRChat;     // bool = vr
+    public Action? OnReady;
+    public Action<string>? OnUnavailable;
+
+    public bool IsReady => _trayHelper?.IsReady == true;
+    public bool HasFailed => _trayHelper?.HasFailed == true;
 
     /// <summary>Called at popup open time to decide whether to show the launch buttons.</summary>
     public Func<bool>? IsVrcRunning;
@@ -75,36 +79,27 @@ public class SystemTrayService : IDisposable
     /// </summary>
     public Func<string, Task<byte[]>>? ImageDownloader;
 
-    private bool _pendingVisible;
+    private volatile bool _pendingVisible;
     private readonly List<TrayNotifForm> _activeNotifForms = new();
 
     // Lifecycle.
 
     public void Initialize()
     {
-        _trayThread = new Thread(TrayThreadProc)
-        {
-            Name = "SystemTray",
-            IsBackground = true,
-        };
-        _trayThread.SetApartmentState(ApartmentState.STA);
-        _trayThread.Start();
+        if (_trayHelper != null) return;
+        _trayHelper = new WindowsTrayHelper(
+            InitializeTray,
+            () => OnReady?.Invoke(),
+            ex =>
+            {
+                CrashHandler.WriteEntry("WindowsTrayService.Initialize", ex);
+                OnUnavailable?.Invoke($"Windows tray unavailable: {ex.Message}");
+            });
+        _trayHelper.Start();
     }
 
-    private void TrayThreadProc()
+    private void InitializeTray()
     {
-        try
-        {
-        System.Windows.Forms.Application.EnableVisualStyles();
-        System.Windows.Forms.Application.SetHighDpiMode(HighDpiMode.SystemAware);
-
-        // Catch exceptions from WinForms message pump (not covered by AppDomain handler)
-        System.Windows.Forms.Application.ThreadException += (_, e) =>
-            CrashHandler.WriteEntry("SystemTray.ThreadException", e.Exception);
-
-        _syncCtx = new WindowsFormsSynchronizationContext();
-        SynchronizationContext.SetSynchronizationContext(_syncCtx);
-
         // Load default icon
         var iconPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logo.ico");
         _defaultIcon = File.Exists(iconPath) ? new Icon(iconPath) : SystemIcons.Application;
@@ -137,13 +132,6 @@ public class SystemTrayService : IDisposable
             else if (e.Button == MouseButtons.Right)
                 ShowPopup();
         };
-
-        System.Windows.Forms.Application.Run();
-        }
-        catch (Exception ex)
-        {
-            CrashHandler.WriteEntry("SystemTray.TrayThreadProc", ex);
-        }
     }
 
     /// <summary>Loads a PNG file and converts it to a 32x32 Icon for the system tray.</summary>
@@ -168,7 +156,7 @@ public class SystemTrayService : IDisposable
     public void SetVisible(bool visible)
     {
         _pendingVisible = visible;
-        _syncCtx?.Post(_ =>
+        _trayHelper?.Post(_ =>
         {
             if (_trayIcon != null) _trayIcon.Visible = visible;
         }, null);
@@ -190,7 +178,7 @@ public class SystemTrayService : IDisposable
                     _ = DownloadAvatarAsync(imageUrl);
             }
         }
-        _syncCtx?.Post(_ =>
+        _trayHelper?.Post(_ =>
         {
             if (_trayIcon != null && (statusChanged || !_loggedIn))
             {
@@ -204,7 +192,7 @@ public class SystemTrayService : IDisposable
 
     public void SetLoggedIn(bool loggedIn)
     {
-        _syncCtx?.Post(_ =>
+        _trayHelper?.Post(_ =>
         {
             _loggedIn = loggedIn;
             if (_trayIcon == null) return;
@@ -261,7 +249,7 @@ public class SystemTrayService : IDisposable
                 old?.Dispose();
             }
             // Repaint popup if open
-            _syncCtx?.Post(_ => _popup?.Invalidate(), null);
+            _trayHelper?.Post(_ => _popup?.Invalidate(), null);
         }
         catch { /* non-critical */ }
     }
@@ -285,7 +273,7 @@ public class SystemTrayService : IDisposable
 
     private void ShowPopup()
     {
-        _syncCtx?.Post(_ =>
+        _trayHelper?.Post(_ =>
         {
             _popup?.Close();
             _popup?.Dispose();
@@ -363,7 +351,7 @@ public class SystemTrayService : IDisposable
     internal void RequestStatusChange(string newStatus)
     {
         // Update popup + tray icon immediately (optimistic), keep popup open
-        _syncCtx?.Post(_ =>
+        _trayHelper?.Post(_ =>
         {
             _popup?.SetStatus(newStatus);
             if (_trayIcon != null)
@@ -374,25 +362,25 @@ public class SystemTrayService : IDisposable
 
     internal void RequestClose()
     {
-        _syncCtx?.Post(_ => _popup?.Close(), null);
+        _trayHelper?.Post(_ => _popup?.Close(), null);
         OnClose?.Invoke();
     }
 
     internal void RequestLaunchVRChat(bool vr)
     {
-        _syncCtx?.Post(_ => _popup?.Close(), null);
+        _trayHelper?.Post(_ => _popup?.Close(), null);
         OnLaunchVRChat?.Invoke(vr);
     }
 
     internal void RequestShowWindow()
     {
-        _syncCtx?.Post(_ => _popup?.Close(), null);
+        _trayHelper?.Post(_ => _popup?.Close(), null);
         OnShowWindow?.Invoke();
     }
 
     public void ShowNotification(string title, string subtitle, string imageUrl, string accentKey)
     {
-        _syncCtx?.Post(_ =>
+        _trayHelper?.Post(_ =>
         {
             TrayTheme theme;
             lock (_dataLock) { theme = _theme; }
@@ -438,7 +426,7 @@ public class SystemTrayService : IDisposable
             if (bytes == null || bytes.Length == 0) return;
             var ms = new MemoryStream(bytes);
             var img = Image.FromStream(ms);
-            _syncCtx?.Post(_ =>
+            _trayHelper?.Post(_ =>
             {
                 if (form.IsDisposed) { img.Dispose(); return; }
                 form.SetAvatar(img);
@@ -451,7 +439,7 @@ public class SystemTrayService : IDisposable
 
     public void Dispose()
     {
-        _syncCtx?.Post(_ =>
+        _trayHelper?.Stop(() =>
         {
             _popup?.Close();
             _popup?.Dispose();
@@ -465,9 +453,8 @@ public class SystemTrayService : IDisposable
             _statusIcons.Clear();
             _warningIcon?.Dispose();
             _warningIcon = null;
-            System.Windows.Forms.Application.ExitThread();
-        }, null);
-        _trayThread?.Join(3000);
+        });
+        _trayHelper = null;
         lock (_dataLock)
         {
             _avatarImage?.Dispose();
@@ -559,7 +546,7 @@ public class SystemTrayService : IDisposable
         private string _status;
         private string _statusDesc;
         private Image? _avatar;
-        private readonly SystemTrayService _owner;
+        private readonly WindowsTrayService _owner;
         private readonly TrayTheme _theme;
 
         private const int DesignWidth      = 264;
@@ -601,7 +588,7 @@ public class SystemTrayService : IDisposable
         private Rectangle _segTrack;
         private Rectangle _closeCard;
 
-        public TrayPopupForm(string name, string status, string statusDesc, Image? avatar, TrayTheme theme, SystemTrayService owner, bool showPlayBtns, uint dpi)
+        public TrayPopupForm(string name, string status, string statusDesc, Image? avatar, TrayTheme theme, WindowsTrayService owner, bool showPlayBtns, uint dpi)
         {
             _scale     = Math.Max(1f, dpi / 96f);
             FormWidth  = S(DesignWidth);

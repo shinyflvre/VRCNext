@@ -106,6 +106,7 @@ rm -rf "$APPDIR"
 mkdir -p "$APPDIR/usr/bin/vrcnext" \
          "$APPDIR/usr/lib" \
          "$APPDIR/usr/share/applications" \
+         "$APPDIR/usr/share/knotifications6" \
          "$APPDIR/usr/share/icons/hicolor/512x512/apps"
 
 cp -a "$STAGE/." "$APPDIR/usr/bin/vrcnext/"
@@ -133,12 +134,26 @@ cp "$APPDIR/vrcnext.desktop" "$APPDIR/usr/share/applications/vrcnext.desktop"
 cp "$REPO/frontend/logo.png" "$APPDIR/vrcnext.png"
 cp "$REPO/frontend/logo.png" "$APPDIR/usr/share/icons/hicolor/512x512/apps/vrcnext.png"
 cp "$REPO/frontend/logo.png" "$APPDIR/.DirIcon"
+cp "$SCRIPT_DIR/linux/vrcnext.notifyrc" "$APPDIR/usr/share/knotifications6/vrcnext.notifyrc"
 
 cat > "$APPDIR/AppRun" <<'EOF'
 #!/bin/bash
 HERE="$(dirname "$(readlink -f "$0")")"
 APP="$HERE/usr/bin/vrcnext/VRCNext"
 export LD_LIBRARY_PATH="$HERE/usr/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+
+if printf '%s' "${XDG_CURRENT_DESKTOP:-}" | grep -qi 'kde'; then
+    DATA_HOME="${XDG_DATA_HOME:-${HOME:-/tmp}/.local/share}"
+    NOTIFYRC_DIR="$DATA_HOME/knotifications6"
+    NOTIFYRC="$NOTIFYRC_DIR/vrcnext.notifyrc"
+    if [ ! -e "$NOTIFYRC" ]; then
+        if mkdir -p "$NOTIFYRC_DIR" && cp "$HERE/usr/share/knotifications6/vrcnext.notifyrc" "$NOTIFYRC"; then
+            echo "Installed VRCNext KDE notification events to $NOTIFYRC" >&2
+        else
+            echo "Warning: Could not install VRCNext KDE notification events to $NOTIFYRC" >&2
+        fi
+    fi
+fi
 
 MISSING="$(ldd "$HERE/usr/bin/vrcnext/Photino.Native.so" 2>&1 | grep -E 'not found' | sed 's|'"$HERE"'/usr/bin/vrcnext/||g' | sort -u)"
 if [ -n "$MISSING" ]; then
@@ -147,9 +162,12 @@ if [ -n "$MISSING" ]; then
 $MISSING
 
 If a library is missing, install the WebKitGTK package of your distribution, e.g.:
-  Arch/CachyOS:  sudo pacman -S webkit2gtk-4.1 gst-plugins-base gst-plugins-good gst-libav
-  Debian/Ubuntu: sudo apt install libwebkit2gtk-4.1-0 gstreamer1.0-plugins-good gstreamer1.0-libav
-  Fedora:        sudo dnf install webkit2gtk4.1 gstreamer1-plugins-good
+  Arch/CachyOS:  sudo pacman -S webkit2gtk-4.1 gst-plugins-base gst-plugins-base-libs gst-plugins-good gst-libav
+  Debian/Ubuntu: sudo apt install libwebkit2gtk-4.1-0 gstreamer1.0-tools gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-libav
+  Fedora:        sudo dnf install webkit2gtk4.1 gstreamer1-plugins-base-tools gstreamer1-plugins-base gstreamer1-plugins-good
+
+GStreamer tools (including gst-play-1.0) are needed for Linux notification sounds.
+On KDE, libcanberra-gtk3 (canberra-gtk-play) is preferred for notification sounds.
 
 If a GLIBC version is reported as missing, your distribution is too old for this build (glibc 2.38 or newer is required)."
     echo "$MSG" >&2

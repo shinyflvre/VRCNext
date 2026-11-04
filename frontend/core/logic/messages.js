@@ -1,4 +1,4 @@
-﻿/* === Photino message handler === */
+/* === Photino message handler === */
 window.external.receiveMessage(rawMsg => {
     const { type, payload } = JSON.parse(rawMsg);
     // Forward every incoming event to Action Flow's websocket-trigger router.
@@ -1104,7 +1104,7 @@ case 'vrcNews':
                     if (typeof _pendingTrayNotifs !== 'undefined' && _pendingTrayNotifs[payload.notifId]) {
                         const p = _pendingTrayNotifs[payload.notifId];
                         delete _pendingTrayNotifs[payload.notifId];
-                        sendToCS({ action: 'trayNotification', title: p.title, subtitle: p.subtitle, imageUrl: payload.image || '', accentKey: p.accentKey });
+                        sendToCS({ action: 'trayNotification', title: p.title, subtitle: p.subtitle, imageUrl: payload.image || '', accentKey: p.accentKey, eventId: p.eventId });
                     }
                 }
                 break;
@@ -1337,6 +1337,9 @@ case 'vrcNews':
                 break;
         case 'setPlatform':
             window._isLinuxUi = !!payload?.isLinux;
+            window._isKdeUi = !!payload?.isKde;
+            document.querySelectorAll('[data-kde-only]').forEach(el => el.style.display = window._isKdeUi ? '' : 'none');
+            document.querySelectorAll('[data-kde-hide]').forEach(el => el.style.display = window._isKdeUi ? 'none' : '');
             if (payload?.isLinux) {
                 sendToCS({ action: 'chatboxWindowToolsCheck' });
                 document.documentElement.classList.add('linux-ui');

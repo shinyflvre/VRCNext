@@ -256,7 +256,7 @@ public sealed class LinuxSystemTrayService : IDisposable
     private string _status = "offline";
     private string _statusDescription = "";
     private bool _loggedIn;
-    private bool _pendingVisible;
+    private volatile bool _pendingVisible;
     private volatile bool _stopping;
     private volatile bool _ready;
 
@@ -526,9 +526,16 @@ public sealed class LinuxSystemTrayService : IDisposable
             {
                 client = _server?.Accept();
                 if (client == null) return;
-                var buffer = new byte[64];
-                var count = client.Receive(buffer);
-                var command = Encoding.UTF8.GetString(buffer, 0, count).Trim();
+                using var buffer = new MemoryStream();
+                var chunk = new byte[1024];
+                int count;
+                while ((count = client.Receive(chunk)) > 0)
+                {
+                    if (buffer.Length + count > 64 * 1024)
+                        throw new InvalidDataException("Linux tray command exceeded the size limit.");
+                    buffer.Write(chunk, 0, count);
+                }
+                var command = Encoding.UTF8.GetString(buffer.GetBuffer(), 0, (int)buffer.Length).Trim();
                 switch (command)
                 {
                     case "ready":

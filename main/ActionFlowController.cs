@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Linq;
 using VRCNext.Services;
 using VRCNext.Services.Helpers;
 
@@ -10,7 +10,7 @@ public class ActionFlowController : IDisposable
     private ActionFlowSettings   _settings;
 
 #if WINDOWS
-    public Func<SystemTrayService?>? TrayServiceProvider { get; set; }
+    public Func<WindowsTrayService?>? TrayServiceProvider { get; set; }
 #endif
 
     public ActionFlowController(CoreLibrary core)
@@ -385,7 +385,8 @@ public class ActionFlowController : IDisposable
         {
             var sent = await LinuxNotificationHelper.TrySendAsync(
                 title, body, imageUrl, _core.VrcApi.GetHttpClient(),
-                message => _core.SendToJS("log", new { msg = message, color = "warn" }));
+                message => _core.SendToJS("log", new { msg = message, color = "warn" }),
+                LinuxNotificationHelper.ActionFlowEvent);
             if (!sent) _core.Window?.SendNotification(title, body);
         }
         catch (Exception ex)

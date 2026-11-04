@@ -1,4 +1,4 @@
-﻿using Photino.NET;
+using Photino.NET;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Diagnostics;
@@ -107,7 +107,7 @@ public partial class AppShell
     }
     private readonly Channel<string> _jsQueue = Channel.CreateUnbounded<string>(new UnboundedChannelOptions { SingleReader = true, AllowSynchronousContinuations = false });
 #if WINDOWS
-    private SystemTrayService? _trayService;
+    private WindowsTrayService? _trayService;
 #else
     private LinuxSystemTrayService? _trayService;
     private int _lastNormalW, _lastNormalH;
@@ -325,7 +325,7 @@ public partial class AppShell
 
 #if WINDOWS
         // System tray
-        _trayService = new SystemTrayService();
+        _trayService = new WindowsTrayService();
         _trayService.OnShowWindow = () => _windowCtrl.ToggleWindowVisibility();
         _trayService.OnStatusChange = status =>
         {
@@ -348,7 +348,18 @@ public partial class AppShell
         {
             return await _vrcApi.GetHttpClient().GetByteArrayAsync(url);
         };
+        _trayService.OnReady = () => ApplyTraySetting(_settings.MinimizeToTray, _settings.MinimizeToTray);
+        _trayService.OnUnavailable = message =>
+        {
+            _windowCtrl.SetHideFromTaskbar(false);
+            if (_windowReady.Task.IsCompleted && _core.Window != null)
+            {
+                try { _windowCtrl.BringToFront(); } catch { }
+            }
+            _core.SendToJS("log", new { msg = $"{message} Closing to tray has been disabled.", color = "warn" });
+        };
         _trayService.Initialize();
+        _trayService.SetVisible(_settings.MinimizeToTray);
         _core.OnTrayUserUpdate = UpdateTrayUser;
         _core.OnTrayLoggedOut = () => _trayService?.SetLoggedIn(false);
         _core.OnTrayThemeUpdate = colors => _trayService?.UpdateTheme(colors);
@@ -633,7 +644,9 @@ public partial class AppShell
         _core.Window = _window;
         _ = RunJsDispatcherAsync();
         _ = RunAutoBackupsAsync();
+    #if !WINDOWS
         EfficiencyModeService.OnLog += message => _core.SendToJS("log", new { msg = message, color = "warn" });
+    #endif
         EfficiencyModeService.Apply(_settings.EfficiencyMode);
 
         if (_minimized) _window.SetMinimized(true);
@@ -994,14 +1007,18 @@ public partial class AppShell
         _trayService?.UpdateLanguage(_settings.Language);
 #endif
         var trayAvailable = true;
-#if !WINDOWS
+#if WINDOWS
+        trayAvailable = !enabled || _trayService?.IsReady == true;
+        if (enabled && _trayService?.HasFailed == true)
+            SendToJS("log", new { msg = "The Windows tray could not be started; VRCNext will remain visible when closed.", color = "warn" });
+    #else
         trayAvailable = !enabled || _trayService?.IsReady == true;
         if (enabled && !trayAvailable)
             SendToJS("log", new { msg = "The Linux tray helper is not ready; VRCNext will remain visible when closed.", color = "warn" });
 #endif
         _windowCtrl.SetHideFromTaskbar(enabled && trayAvailable);
         // On startup, auto-hide the window to tray immediately
-        if (enabled && autoHide && trayAvailable)
+        if (enabled && autoHide && trayAvailable && _windowReady.Task.IsCompleted && _core.Window != null)
             _windowCtrl.HideWindow();
     }
 

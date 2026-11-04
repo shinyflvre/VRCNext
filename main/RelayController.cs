@@ -271,6 +271,7 @@ public class RelayController : IDisposable
         if (_relayRunning) return;
 
         var allFolders = _core.Settings.WatchFolders.Where(Directory.Exists).ToList();
+#if !WINDOWS
         if (OperatingSystem.IsLinux() && VrcPathsHelper.FindProtonPrefix() != null)
         {
             var vrcPhotoDir = VrcPathsHelper.PhotoDir();
@@ -285,6 +286,7 @@ public class RelayController : IDisposable
                 _core.SendToJS("log", new { msg = $"Could not prepare VRChat's Proton photo folder: {ex.Message}", color = "warn" });
             }
         }
+#endif
         var enabledFilter = _core.Settings.RelayEnabledFolders;
         var folders = enabledFilter == null
             ? allFolders

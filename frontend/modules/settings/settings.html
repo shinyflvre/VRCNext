@@ -1,4 +1,4 @@
-﻿                <div class="settings-layout">
+                <div class="settings-layout">
                     <nav class="settings-nav">
                         <div class="search-bar-row settings-search" id="settingsSearchWrap">
                             <span class="msi search-ico">search</span>
@@ -454,7 +454,8 @@
                         <div class="vrcn-panel-card-header"><span class="msi">volume_up</span> <span data-i18n="settings.sounds.title">Sounds</span></div>
                         <div class="sf-toggle-row"><span data-i18n="settings.sounds.notifications">Notification Sounds</span><label class="toggle"><input type="checkbox" id="setNotifySoundEnabled" onchange="autoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
                         <div class="set-desc" data-i18n="settings.sounds.notifications_desc">Plays a sound when you receive a new notification such as friend requests, invites and more.</div>
-                        <div class="snd-picker">
+                        <div class="set-desc" data-kde-only style="display:none;">Configure sounds per event in System Settings &gt; Notifications &gt; Applications &gt; VRCNext. The in-app toggles below enable or disable their corresponding sounds.</div>
+                        <div class="snd-picker" data-kde-hide>
                             <div class="snd-row">
                                 <label class="snd-label" data-i18n="settings.sounds.sound">Sound</label>
                                 <select id="setNotifySoundFile" class="vrcn-dropdown snd-select" data-vn-hover="sndPreviewNotify" onchange="applySoundSettings();autoSave()"></select>
@@ -467,7 +468,7 @@
                         </div>
                         <div class="sf-toggle-row"><span data-i18n="settings.sounds.messages">Message Sounds</span><label class="toggle"><input type="checkbox" id="setMessageSoundEnabled" onchange="autoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
                         <div class="set-desc" data-i18n="settings.sounds.messages_desc">Plays a sound when you get a boop or when someone sends you a message through the VRCN Messenger.</div>
-                        <div class="snd-picker">
+                        <div class="snd-picker" data-kde-hide>
                             <div class="snd-row">
                                 <label class="snd-label" data-i18n="settings.sounds.sound">Sound</label>
                                 <select id="setMessageSoundFile" class="vrcn-dropdown snd-select" data-vn-hover="sndPreviewMessage" onchange="applySoundSettings();autoSave()"></select>
