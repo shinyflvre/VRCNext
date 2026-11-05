@@ -6,7 +6,7 @@ namespace VRCNext.Services;
 
 public class AvatarsAPI(VRChatApiService ctx)
 {
-    private const string UA = AppInfo.UserAgent;
+    private static readonly string UA = AppInfo.UserAgent;
 
     public async Task<JObject?> GetAvatarAsync(string avatarId)
     {

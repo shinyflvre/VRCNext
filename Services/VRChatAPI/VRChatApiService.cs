@@ -10,7 +10,7 @@ public class VRChatApiService
     internal HttpClient _http = null!;
     internal CookieContainer _cookies = new();
     internal const string BASE = "https://api.vrchat.cloud/api/1";
-    private const string UA = AppInfo.UserAgent;
+    private static readonly string UA = AppInfo.UserAgent;
 
     public bool IsLoggedIn { get; internal set; }
     public JObject? CurrentUserRaw { get; internal set; }
