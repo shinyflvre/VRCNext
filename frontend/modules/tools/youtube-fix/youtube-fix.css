@@ -1,0 +1,38 @@
+/* YouTube Fix module styles */
+
+.youtube-fix-module {
+    width: 100%;
+}
+
+.youtube-fix-module .youtube-fix-linux-guide {
+    margin-bottom: 16px;
+}
+
+.youtube-fix-module .youtube-fix-step {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    font-size: calc(12px + var(--fs-off, 0px));
+    color: var(--tx2);
+}
+
+.youtube-fix-module .youtube-fix-step-number {
+    min-width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: calc(11px + var(--fs-off, 0px));
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.youtube-fix-module code {
+    background: var(--bg2);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: monospace;
+}
