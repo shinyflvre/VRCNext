@@ -2,11 +2,6 @@
 
 <a href="https://trendshift.io/repositories/99779?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-99779" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/99779" alt="shinyflvre%2FVRCNext | Trendshift" width="250" height="55"/></a>
 
-> **Fork user-agent notice**
->
-> Modified or forked versions of VRCNext must identify themselves with their own user-agent rather than impersonating the original project.
->
-> Example: `Modified-VRCNext/2026.1.0 (contact@example.com)`
 
 # VRCNext
 
