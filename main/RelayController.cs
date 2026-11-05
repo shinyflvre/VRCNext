@@ -20,6 +20,7 @@ public class RelayController : IDisposable
     private DateTime _relayStart;
     private Process? _vcProcess;
     private bool _linuxH264UnlockApplied;
+    private int _linuxH264UnlockInProgress;
     private VRChatWebSocketService? _wsService;
 
     // VRChat process monitor + startup-app tracking (Close / Start always with VRChat)
@@ -373,7 +374,7 @@ public class RelayController : IDisposable
     {
         if (OperatingSystem.IsLinux())
         {
-            // On Linux, apply H.264 unlock via Steam URI
+            // On Linux, apply H.264 unlock via Steam URI.
             _ = ApplyLinuxH264UnlockAsync();
         }
         else
@@ -493,6 +494,8 @@ public class RelayController : IDisposable
 
     private async Task ApplyLinuxH264UnlockAsync()
     {
+        if (Interlocked.Exchange(ref _linuxH264UnlockInProgress, 1) == 1) return;
+
         try
         {
             // Execute Steam H.264 unlock command on Linux
@@ -516,6 +519,10 @@ public class RelayController : IDisposable
         catch (Exception ex)
         {
             try { Invoke(() => _core.SendToJS("vcState", new { installed = true, running = false, error = ex.Message })); } catch { }
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _linuxH264UnlockInProgress, 0);
         }
     }
 
@@ -665,7 +672,14 @@ public class RelayController : IDisposable
 
     private static bool IsSteamRunning()
     {
-        try { return Process.GetProcessesByName("steam").Length > 0; }
+        if (!OperatingSystem.IsLinux()) return false;
+
+        try
+        {
+            // Steam may appear as either the launcher or its web helper on Linux.
+            return Process.GetProcessesByName("steam").Length > 0
+                || Process.GetProcessesByName("steamwebhelper").Length > 0;
+        }
         catch { return false; }
     }
 
@@ -678,8 +692,8 @@ public class RelayController : IDisposable
             try { (pid, procStart) = GetVrcProcInfo(); }
             catch { return; }
 
-            bool steamRunning = IsSteamRunning();
-            if (OperatingSystem.IsLinux() && steamRunning && _core.Settings.YtAutoStartSteam && !_linuxH264UnlockApplied)
+            bool steamRunning = OperatingSystem.IsLinux() && IsSteamRunning();
+            if (steamRunning && _core.Settings.YtAutoStartSteam && !_linuxH264UnlockApplied)
                 StartVcProcess();
             bool changed = pid != _vrcSessionPid
                 || (pid != 0 && _vrcSessionProcStart != DateTime.MinValue
