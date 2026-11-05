@@ -1,9 +1,26 @@
 $ErrorActionPreference = "Stop"
 
 $APP_NAME = "VRCNext"
-$REPOSITORY = "hollyntt/VRCNext"
+$ORIGINAL_CREATOR = "shinyflvre"
 
 $SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Definition
+
+# Dynamically detect repository from git config (supports forks)
+$REPOSITORY = ""
+if (Test-Path "$SCRIPT_DIR\.git") {
+    try {
+        $gitUrl = & git -C $SCRIPT_DIR config --get remote.origin.url
+        # Extract owner/repo from git URL (handles both https and ssh formats)
+        $REPOSITORY = $gitUrl -replace '.*[:/]([^/]+)/([^/]+?)(\.git)?$', '$1/$2'
+    } catch {
+        # If git command fails, use fallback
+    }
+}
+
+# Fallback to original creator if not in a git repository or extraction failed
+if ([string]::IsNullOrEmpty($REPOSITORY)) {
+    $REPOSITORY = "$ORIGINAL_CREATOR/VRCNext"
+}
 
 if ($PSVersionTable.OS -notlike "*Windows*") {
     Write-Error "This installer supports Windows only."

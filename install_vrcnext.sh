@@ -2,9 +2,20 @@
 set -e
 
 APP_NAME="VRCNext"
-REPOSITORY="hollyntt/VRCNext"
+ORIGINAL_CREATOR="shinyflvre"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Dynamically detect repository from git config (supports forks)
+REPOSITORY=""
+if [ -d "$SCRIPT_DIR/.git" ]; then
+    REPOSITORY="$(cd "$SCRIPT_DIR" && git config --get remote.origin.url | sed -E 's|.*[:/]([^/]+)/([^/]+?)(\.git)?$|\1/\2|')"
+fi
+
+# Fallback to original creator if not in a git repository
+if [ -z "$REPOSITORY" ]; then
+    REPOSITORY="$ORIGINAL_CREATOR/VRCNext"
+fi
 
 if [ "$(uname -s)" != "Linux" ]; then
     echo "Error: This installer supports Linux only."
