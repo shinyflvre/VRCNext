@@ -348,19 +348,39 @@ public class RelayController : IDisposable
 
     // VRCVideoCacher
 
-    public static readonly string VcExePath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "VRCNext", "Tools", "VRCVideoCacher", "VRCVideoCacher.exe");
+    public static readonly string VcExePath = OperatingSystem.IsWindows()
+        ? Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "VRCNext", "Tools", "VRCVideoCacher", "VRCVideoCacher.exe")
+        : "/tmp/vrcnext-h264-unlock"; // Marker for Linux H.264 unlock
+
+    private bool _h264UnlockApplied;
 
     private object GetVcState()
     {
-        bool installed = File.Exists(VcExePath);
-        bool running   = _vcProcess != null && !_vcProcess.HasExited;
-        return new { installed, running };
+        if (OperatingSystem.IsWindows())
+        {
+            bool installed = File.Exists(VcExePath);
+            bool running   = _vcProcess != null && !_vcProcess.HasExited;
+            return new { installed, running };
+        }
+        else
+        {
+            // On Linux, H.264 unlock is a one-time Steam command, not a running process
+            return new { installed = true, running = _h264UnlockApplied };
+        }
     }
 
     private void StartVcProcess()
     {
+        if (OperatingSystem.IsLinux())
+        {
+            // On Linux, trigger Steam H.264 unlock
+            StartLinuxH264Unlock();
+            return;
+        }
+
+        // Windows: Run VRCVideoCacher.exe
         if (!File.Exists(VcExePath)) return;
         if (_vcProcess != null && !_vcProcess.HasExited) return;
 
@@ -385,10 +405,43 @@ public class RelayController : IDisposable
         catch { }
     }
 
+    private void StartLinuxH264Unlock()
+    {
+        // Execute Steam H.264 unlock command for VRChat on Linux
+        try
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = "steam",
+                Arguments = "steam://unlockh264/",
+                UseShellExecute = true,
+                CreateNoWindow = true,
+            };
+
+            using var proc = Process.Start(psi);
+            proc?.WaitForExit(5000); // Wait up to 5 seconds
+
+            _h264UnlockApplied = true;
+            try { Invoke(() => { _core.SendToJS("vcState", GetVcState()); _vroCtrl.UpdateToolStates(); }); } catch { }
+        }
+        catch (Exception ex)
+        {
+            try { Invoke(() => _core.SendToJS("vcState", new { installed = true, running = false, error = $"H.264 unlock failed: {ex.Message}" })); } catch { }
+        }
+    }
+
     private void StopVcProcess()
     {
-        try { _vcProcess?.Kill(entireProcessTree: true); } catch { }
-        _vcProcess = null;
+        if (OperatingSystem.IsWindows())
+        {
+            try { _vcProcess?.Kill(entireProcessTree: true); } catch { }
+            _vcProcess = null;
+        }
+        else
+        {
+            _h264UnlockApplied = false;
+        }
+
         _core.SendToJS("vcState", GetVcState());
         _vroCtrl.UpdateToolStates();
     }
@@ -398,6 +451,13 @@ public class RelayController : IDisposable
 
     private async Task InstallVcAsync()
     {
+        if (OperatingSystem.IsLinux())
+        {
+            // On Linux, H.264 unlock is a one-time command, no installation needed
+            StartLinuxH264Unlock();
+            return;
+        }
+
         try
         {
             Invoke(() => _core.SendToJS("vcState", new { installed = false, running = false, downloading = true, progress = 0 }));
