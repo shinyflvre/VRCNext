@@ -88,7 +88,7 @@ for f in libvosk.so Vosk.dll NAudio.dll NAudio.Vorbis.dll NVorbis.dll DiscordRPC
         LEFTOVERS="$LEFTOVERS $f"
     fi
 done
-for d in voice tray frameshot; do
+for d in voice tray; do # removed frameshot and youtube-fix
     if [ -d "$STAGE/$d" ]; then
         rm -rf "$STAGE/$d"
         LEFTOVERS="$LEFTOVERS $d/"

@@ -2166,6 +2166,7 @@ function handleVcState(d) {
     if (bdYt) bdYt.classList.toggle('tb-active', !!d.running);
     const running    = !!d.running;
     const installed  = !!d.installed;
+    const linux      = document.documentElement.classList.contains('vrcn-linux');
     const dot        = document.getElementById('vcDot');
     const txt        = document.getElementById('vcStatusText');
     const btn        = document.getElementById('btnVc');
@@ -2192,10 +2193,14 @@ function handleVcState(d) {
     if (txt) txt.style.color = '';
 
     if (btn) {
-        btn.disabled = !installed;
-        btn.innerHTML = running
-            ? `<span class="msi" style="font-size:16px;">stop</span> ${t('common.stop', 'Stop')}`
-            : `<span class="msi" style="font-size:16px;">play_arrow</span> ${t('common.start', 'Start')}`;
+        btn.disabled = linux ? running : !installed;
+        btn.innerHTML = linux
+            ? (running
+                ? '<span class="msi" style="font-size:16px;">check_circle</span> Connected'
+                : '<span class="msi" style="font-size:16px;">link</span> Connect')
+            : (running
+                ? `<span class="msi" style="font-size:16px;">stop</span> ${t('common.stop', 'Stop')}`
+                : `<span class="msi" style="font-size:16px;">play_arrow</span> ${t('common.start', 'Start')}`);
     }
     if (dot) dot.className = 'sf-dot ' + (running ? 'online' : 'offline');
     if (txt) txt.textContent = running
