@@ -1,5 +1,17 @@
 /* YouTube Fix Module Styles */
 
+.youtube-launch-card {
+    margin-bottom: 16px;
+}
+
+.youtube-launch-card .sf-toggle-row:first-of-type {
+    margin-top: 4px;
+}
+
+#ytSteamLaunchOption {
+    border-bottom: none;
+}
+
 #vcDot {
     display: inline-block;
     width: 8px;

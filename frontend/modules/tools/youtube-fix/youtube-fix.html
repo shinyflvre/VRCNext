@@ -15,7 +15,7 @@
                             <div style="display:flex;flex-direction:column;gap:8px;">
                                 <div style="display:flex;gap:10px;align-items:flex-start;font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);">
                                     <span style="min-width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:calc(11px + var(--fs-off, 0px));font-weight:700;flex-shrink:0;">1</span>
-                                    <span>Click the <b style="color:var(--tx1);">Start</b> button above to apply the H.264 codec unlock.</span>
+                                    <span>Click the <b style="color:var(--tx1);">Connect</b> button above to apply the H.264 codec unlock.</span>
                                 </div>
                                 <div style="display:flex;gap:10px;align-items:flex-start;font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);">
                                     <span style="min-width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:calc(11px + var(--fs-off, 0px));font-weight:700;flex-shrink:0;">2</span>
@@ -28,12 +28,12 @@
                             </div>
                         </div>
                     </div>
-                    <!-- Windows: VRCVideoCacher Card -->
-                    <div class="vrcn-panel-card" style="margin-bottom:16px;">
+                    <!-- Launch options -->
+                    <div class="vrcn-panel-card youtube-launch-card">
                         <div class="vrcn-panel-card-header"><span class="msi">power_settings_new</span> <span data-i18n="common.launch">Launch</span></div>
                         <div class="sf-toggle-row"><span data-i18n="common.start_with_vrchat_vr">Start when launching VRChat in VR</span><label class="toggle"><input type="checkbox" id="setYtAutoStartVR" onchange="autoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
                         <div class="sf-toggle-row"><span data-i18n="common.start_with_vrchat_desktop">Start when launching VRChat on Desktop</span><label class="toggle"><input type="checkbox" id="setYtAutoStartDesktop" onchange="autoSave()"><div class="toggle-track"><div class="toggle-knob"></div></label></div>
-                        <div class="sf-toggle-row" id="ytSteamLaunchOption" style="display:none;"><span>Start if Steam is open</span><label class="toggle"><input type="checkbox" id="setYtAutoStartSteam" onchange="autoSave()"><div class="toggle-track"><div class="toggle-knob"></div></label></div>
+                            <div class="sf-toggle-row" id="ytSteamLaunchOption" style="display:none;"><span>Start if Steam is open</span><label class="toggle"><input type="checkbox" id="setYtAutoStartSteam" onchange="autoSave()"><div class="toggle-track"><div class="toggle-knob"></div></label></div>
                     </div>
                     <div class="vrcn-panel-card" id="vcInstallCard">
                         <div class="vrcn-panel-card-header"><span class="msi" style="font-size:16px;">smart_display</span> <span data-i18n="youtube_fix.title">VRCVideoCacher</span></div>
