@@ -19,6 +19,8 @@ public class RelayController : IDisposable
     private bool _relayRunning;
     private DateTime _relayStart;
     private Process? _vcProcess;
+    private bool _linuxH264UnlockApplied;
+    private int _linuxH264UnlockInProgress;
     private VRChatWebSocketService? _wsService;
 
     // VRChat process monitor + startup-app tracking (Close / Start always with VRChat)
@@ -348,26 +350,23 @@ public class RelayController : IDisposable
 
     // VRCVideoCacher
 
-    public static readonly string VcExePath = OperatingSystem.IsWindows()
-        ? Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "VRCNext", "Tools", "VRCVideoCacher", "VRCVideoCacher.exe")
-        : "/tmp/vrcnext-h264-unlock"; // Marker for Linux H.264 unlock
-
-    private bool _h264UnlockApplied;
+    public static readonly string VcExePath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        "VRCNext", "Tools", "VRCVideoCacher", "VRCVideoCacher.exe");
 
     private object GetVcState()
     {
-        if (OperatingSystem.IsWindows())
+        if (OperatingSystem.IsLinux())
         {
-            bool installed = File.Exists(VcExePath);
-            bool running   = _vcProcess != null && !_vcProcess.HasExited;
-            return new { installed, running };
+            // On Linux, H.264 unlock is a one-time Steam command
+            return new { installed = true, running = _linuxH264UnlockApplied, state = _linuxH264UnlockApplied ? "running" : "stopped" };
         }
         else
         {
-            // On Linux, H.264 unlock is a one-time Steam command, not a running process
-            return new { installed = true, running = _h264UnlockApplied };
+            // On Windows, VRCVideoCacher is an exe that runs as a process
+            bool installed = File.Exists(VcExePath);
+            bool running = _vcProcess != null && !_vcProcess.HasExited;
+            return new { installed, running, state = running ? "running" : "stopped" };
         }
     }
 
@@ -375,73 +374,50 @@ public class RelayController : IDisposable
     {
         if (OperatingSystem.IsLinux())
         {
-            // On Linux, trigger Steam H.264 unlock
-            StartLinuxH264Unlock();
-            return;
+            // On Linux, apply H.264 unlock via Steam URI.
+            _ = ApplyLinuxH264UnlockAsync();
         }
-
-        // Windows: Run VRCVideoCacher.exe
-        if (!File.Exists(VcExePath)) return;
-        if (_vcProcess != null && !_vcProcess.HasExited) return;
-
-        try
+        else
         {
-            _vcProcess = Process.Start(new ProcessStartInfo
-            {
-                FileName         = VcExePath,
-                WorkingDirectory = Path.GetDirectoryName(VcExePath)!,
-                UseShellExecute  = false,
-                CreateNoWindow   = false,
-            })!;
-            _vcProcess.EnableRaisingEvents = true;
-            _vcProcess.Exited += (_, _) =>
-            {
-                _vcProcess = null;
-                try { Invoke(() => { _core.SendToJS("vcState", GetVcState()); _vroCtrl.UpdateToolStates(); }); } catch { }
-            };
-            _core.SendToJS("vcState", GetVcState());
-            _vroCtrl.UpdateToolStates();
-        }
-        catch { }
-    }
+            // On Windows, start VRCVideoCacher exe
+            if (!File.Exists(VcExePath)) return;
+            if (_vcProcess != null && !_vcProcess.HasExited) return;
 
-    private void StartLinuxH264Unlock()
-    {
-        // Execute Steam H.264 unlock command for VRChat on Linux
-        try
-        {
-            var psi = new ProcessStartInfo
+            try
             {
-                FileName = "steam",
-                Arguments = "steam://unlockh264/",
-                UseShellExecute = true,
-                CreateNoWindow = true,
-            };
-
-            using var proc = Process.Start(psi);
-            proc?.WaitForExit(5000); // Wait up to 5 seconds
-
-            _h264UnlockApplied = true;
-            try { Invoke(() => { _core.SendToJS("vcState", GetVcState()); _vroCtrl.UpdateToolStates(); }); } catch { }
-        }
-        catch (Exception ex)
-        {
-            try { Invoke(() => _core.SendToJS("vcState", new { installed = true, running = false, error = $"H.264 unlock failed: {ex.Message}" })); } catch { }
+                _vcProcess = Process.Start(new ProcessStartInfo
+                {
+                    FileName         = VcExePath,
+                    WorkingDirectory = Path.GetDirectoryName(VcExePath)!,
+                    UseShellExecute  = false,
+                    CreateNoWindow   = false,
+                })!;
+                _vcProcess.EnableRaisingEvents = true;
+                _vcProcess.Exited += (_, _) =>
+                {
+                    _vcProcess = null;
+                    try { Invoke(() => { _core.SendToJS("vcState", GetVcState()); _vroCtrl.UpdateToolStates(); }); } catch { }
+                };
+                _core.SendToJS("vcState", GetVcState());
+                _vroCtrl.UpdateToolStates();
+            }
+            catch { }
         }
     }
 
     private void StopVcProcess()
     {
-        if (OperatingSystem.IsWindows())
+        if (OperatingSystem.IsLinux())
         {
-            try { _vcProcess?.Kill(entireProcessTree: true); } catch { }
-            _vcProcess = null;
+            // On Linux, H.264 unlock is one-time and doesn't need to be stopped
+            _linuxH264UnlockApplied = false;
         }
         else
         {
-            _h264UnlockApplied = false;
+            // On Windows, kill the VRCVideoCacher process
+            try { _vcProcess?.Kill(entireProcessTree: true); } catch { }
+            _vcProcess = null;
         }
-
         _core.SendToJS("vcState", GetVcState());
         _vroCtrl.UpdateToolStates();
     }
@@ -453,64 +429,100 @@ public class RelayController : IDisposable
     {
         if (OperatingSystem.IsLinux())
         {
-            // On Linux, H.264 unlock is a one-time command, no installation needed
-            StartLinuxH264Unlock();
-            return;
+            // On Linux, no installation needed - just mark as ready
+            Invoke(() => _core.SendToJS("vcState", new { installed = true, running = false }));
         }
+        else
+        {
+            // On Windows, download and install VRCVideoCacher
+            try
+            {
+                Invoke(() => _core.SendToJS("vcState", new { installed = false, running = false, downloading = true, progress = 0 }));
+
+                using var http = new System.Net.Http.HttpClient();
+                http.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", AppInfo.UserAgent);
+
+                Directory.CreateDirectory(Path.GetDirectoryName(VcExePath)!);
+
+                using var dlResp = await http.GetAsync(VcExeUrl, System.Net.Http.HttpCompletionOption.ResponseHeadersRead);
+                if (!dlResp.IsSuccessStatusCode)
+                {
+                    Invoke(() => _core.SendToJS("vcState", new { installed = false, running = false, error = $"Download: HTTP {(int)dlResp.StatusCode}" }));
+                    return;
+                }
+
+                var tmpPath = VcExePath + ".part";
+                var total = dlResp.Content.Headers.ContentLength ?? -1L;
+                await using (var stream = await dlResp.Content.ReadAsStreamAsync())
+                await using (var fs = File.Create(tmpPath))
+                {
+                    var buf        = new byte[65536];
+                    long downloaded = 0;
+                    int  read;
+                    while ((read = await stream.ReadAsync(buf)) > 0)
+                    {
+                        await fs.WriteAsync(buf.AsMemory(0, read));
+                        downloaded += read;
+                        if (total > 0)
+                        {
+                            int pct = (int)(downloaded * 100 / total);
+                            try { Invoke(() => _core.SendToJS("vcState", new { installed = false, running = false, downloading = true, progress = pct })); } catch { }
+                        }
+                    }
+                }
+
+                if (!VRCNext.Services.Helpers.PathSafety.Sha256Matches(tmpPath, VcExeSha256))
+                {
+                    try { File.Delete(tmpPath); } catch { }
+                    Invoke(() => _core.SendToJS("vcState", new { installed = false, running = false, error = "Download: checksum mismatch" }));
+                    return;
+                }
+
+                File.Move(tmpPath, VcExePath, overwrite: true);
+
+                Invoke(() =>
+                {
+                    _core.SendToJS("vcState", GetVcState());
+                });
+            }
+            catch (Exception ex)
+            {
+                try { Invoke(() => _core.SendToJS("vcState", new { installed = false, running = false, error = ex.Message })); } catch { }
+            }
+        }
+    }
+
+    private async Task ApplyLinuxH264UnlockAsync()
+    {
+        if (Interlocked.Exchange(ref _linuxH264UnlockInProgress, 1) == 1) return;
 
         try
         {
-            Invoke(() => _core.SendToJS("vcState", new { installed = false, running = false, downloading = true, progress = 0 }));
-
-            using var http = new System.Net.Http.HttpClient();
-            http.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", AppInfo.UserAgent);
-
-            Directory.CreateDirectory(Path.GetDirectoryName(VcExePath)!);
-
-            using var dlResp = await http.GetAsync(VcExeUrl, System.Net.Http.HttpCompletionOption.ResponseHeadersRead);
-            if (!dlResp.IsSuccessStatusCode)
+            // Execute Steam H.264 unlock command on Linux
+            var psi = new ProcessStartInfo
             {
-                Invoke(() => _core.SendToJS("vcState", new { installed = false, running = false, error = $"Download: HTTP {(int)dlResp.StatusCode}" }));
-                return;
-            }
+                FileName = "steam",
+                Arguments = "steam://unlockh264/",
+                UseShellExecute = true,
+                CreateNoWindow = true,
+            };
 
-            var tmpPath = VcExePath + ".part";
-            var total = dlResp.Content.Headers.ContentLength ?? -1L;
-            await using (var stream = await dlResp.Content.ReadAsStreamAsync())
-            await using (var fs = File.Create(tmpPath))
-            {
-                var buf        = new byte[65536];
-                long downloaded = 0;
-                int  read;
-                while ((read = await stream.ReadAsync(buf)) > 0)
-                {
-                    await fs.WriteAsync(buf.AsMemory(0, read));
-                    downloaded += read;
-                    if (total > 0)
-                    {
-                        int pct = (int)(downloaded * 100 / total);
-                        try { Invoke(() => _core.SendToJS("vcState", new { installed = false, running = false, downloading = true, progress = pct })); } catch { }
-                    }
-                }
-            }
+            using var proc = Process.Start(psi);
+            if (proc == null)
+                throw new InvalidOperationException("Steam could not be started.");
 
-            if (!VRCNext.Services.Helpers.PathSafety.Sha256Matches(tmpPath, VcExeSha256))
-            {
-                try { File.Delete(tmpPath); } catch { }
-                Invoke(() => _core.SendToJS("vcState", new { installed = false, running = false, error = "Download: checksum mismatch" }));
-                return;
-            }
-
-            File.Move(tmpPath, VcExePath, overwrite: true);
-
-            Invoke(() =>
-            {
-                _core.SendToJS("vcState", GetVcState());
-            });
+            // Steam handles the URI asynchronously; do not wait for its process to exit.
+            _linuxH264UnlockApplied = true;
+            _core.SendToJS("vcState", GetVcState());
+            _vroCtrl.UpdateToolStates();
         }
         catch (Exception ex)
         {
-            try { Invoke(() => _core.SendToJS("vcState", new { installed = false, running = false, error = ex.Message })); } catch { }
+            try { Invoke(() => _core.SendToJS("vcState", new { installed = true, running = false, error = ex.Message })); } catch { }
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _linuxH264UnlockInProgress, 0);
         }
     }
 
@@ -661,8 +673,10 @@ public class RelayController : IDisposable
     private static bool IsSteamRunning()
     {
         if (!OperatingSystem.IsLinux()) return false;
+
         try
         {
+            // Steam may appear as either the launcher or its web helper on Linux.
             return Process.GetProcessesByName("steam").Length > 0
                 || Process.GetProcessesByName("steamwebhelper").Length > 0;
         }
@@ -678,11 +692,9 @@ public class RelayController : IDisposable
             try { (pid, procStart) = GetVrcProcInfo(); }
             catch { return; }
 
-            if (OperatingSystem.IsLinux() && _core.Settings.YtAutoStartSteam && IsSteamRunning() && !_h264UnlockApplied)
-            {
-                StartLinuxH264Unlock();
-            }
-
+            bool steamRunning = OperatingSystem.IsLinux() && IsSteamRunning();
+            if (steamRunning && _core.Settings.YtAutoStartSteam && !_linuxH264UnlockApplied)
+                StartVcProcess();
             bool changed = pid != _vrcSessionPid
                 || (pid != 0 && _vrcSessionProcStart != DateTime.MinValue
                     && procStart != DateTime.MinValue && procStart != _vrcSessionProcStart);

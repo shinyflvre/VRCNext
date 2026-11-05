@@ -2,7 +2,7 @@
 
 public static class AppInfo
 {
-    public const string Version = "2026.62.3";
+    public const string Version = "2026.62.4";
     public const string ContactEmail = "vrcn@shinyflvres.com";
     public const string Website = "vrcn.shinyflvres.com";
     

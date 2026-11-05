@@ -1,74 +1,84 @@
-                <div class="youtube-fix-module">
-                <div class="vrcn-panel-card status" style="margin-bottom:16px;">
-                    <div class="sf-status-row">
-                        <div class="sf-status"><span class="sf-dot offline" id="vcDot"></span><span id="vcStatusText" data-i18n="youtube_fix.status.not_running">Not running</span></div>
-                        <button class="vrcn-button" id="btnVc" onclick="toggleVc()"><span class="msi" style="font-size:16px;">play_arrow</span> <span data-i18n="common.start">Start</span></button>
-                    </div>
-                </div>
-                <div class="vrcn-panel-card" style="margin-bottom:16px;">
-                    <div class="vrcn-panel-card-header"><span class="msi">power_settings_new</span> <span data-i18n="common.launch">Launch</span></div>
-                    <div class="sf-toggle-row"><span data-i18n="common.start_with_vrchat_vr">Start when launching VRChat in VR</span><label class="toggle"><input type="checkbox" id="setYtAutoStartVR" onchange="autoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
-                    <div class="sf-toggle-row"><span data-i18n="common.start_with_vrchat_desktop">Start when launching VRChat on Desktop</span><label class="toggle"><input type="checkbox" id="setYtAutoStartDesktop" onchange="autoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
-                    <div class="sf-toggle-row" id="ytSteamLaunchOption"><span data-i18n="youtube_fix.start_if_steam_open">Start if Steam is open</span><label class="toggle"><input type="checkbox" id="setYtAutoStartSteam" onchange="autoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
-                </div>
-                <div class="vrcn-panel-card" data-linux-only>
-                    <div class="vrcn-panel-card-header"><span class="msi" style="font-size:16px;">smart_display</span> <span>H.264 Codec Unlock</span></div>
-                    <p style="font-size:calc(13px + var(--fs-off, 0px));color:var(--tx2);margin:0 0 8px;">YouTube Fix on Linux uses Steam to unlock H.264 video playback for VRChat.</p>
-                    <div style="background:var(--bg2);border-radius:8px;padding:12px 14px;">
-                        <div style="font-size:calc(13px + var(--fs-off, 0px));font-weight:600;color:var(--tx0);margin-bottom:10px;">How to use YouTube Fix on Linux</div>
-                        <div style="display:flex;flex-direction:column;gap:8px;">
-                            <div style="display:flex;gap:10px;align-items:flex-start;font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);"><span style="min-width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">1</span><span>Make sure Steam is open and you are signed in.</span></div>
-                            <div style="display:flex;gap:10px;align-items:flex-start;font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);"><span style="min-width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">2</span><span>Click <b style="color:var(--tx1);">Connect</b> above to open Steam's H.264 unlock link.</span></div>
-                            <div style="display:flex;gap:10px;align-items:flex-start;font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);"><span style="min-width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">3</span><span>Enable <b style="color:var(--tx1);">Start if Steam is open</b> in Launch to apply the unlock automatically.</span></div>
-                            <div style="display:flex;gap:10px;align-items:flex-start;font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);"><span style="min-width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">4</span><span>Restart VRChat if a video was already loaded, then try the YouTube video again.</span></div>
+<div class="sf-layout">
+                    <div class="vrcn-panel-card status" style="margin-bottom:16px;">
+                        <div class="sf-status-row">
+                            <div class="sf-status"><span class="sf-dot offline" id="vcDot"></span><span id="vcStatusText" data-i18n="youtube_fix.status.not_running">Not running</span></div>
+                            <button class="vrcn-button" id="btnVc" onclick="toggleVc()"><span class="msi" style="font-size:16px;">play_arrow</span> <span data-i18n="common.start">Start</span></button>
                         </div>
                     </div>
-                </div>
-                <div class="vrcn-panel-card" id="vcInstallCard" data-windows-only>
-                    <div class="vrcn-panel-card-header"><span class="msi" style="font-size:16px;">smart_display</span> <span data-i18n="youtube_fix.title">VRCVideoCacher</span></div>
-                    <p style="font-size:calc(13px + var(--fs-off, 0px));color:var(--tx2);margin:0 0 4px;"><span data-i18n="youtube_fix.info.fixes_prefix">Fixes</span> <b style="color:var(--tx2)" data-i18n="youtube_fix.info.youtube_errors">YouTube video errors</b> <span data-i18n="youtube_fix.info.fixes_suffix">in VRChat by routing requests through a local proxy. Created by</span> <b style="color:var(--tx1)">Elly</b>.</p>
-                    <p style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);margin:0 0 8px;" data-i18n="youtube_fix.info.background">The service runs in the background. When you close VRCNext, the process will be terminated.</p>
-                    <p style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);margin:0 0 12px;padding:8px 10px;background:var(--bg2);border-radius:6px;border-left:3px solid var(--accent);"><span data-i18n="youtube_fix.info.setup_prefix">If you are running this service for the first time, please follow the setup instructions that appear when starting it.</span> <span data-i18n="youtube_fix.info.setup_suffix">Also make sure to read the usage guide on the GitHub page:</span> <a href="#" onclick="sendToCS({action:'openUrl',url:'https://github.com/EllyVR/VRCVideoCacher'});return false;" style="color:var(--accent);">github.com/EllyVR/VRCVideoCacher</a></p>
-                    <div id="vcProgressWrap" style="display:none;margin-bottom:12px;">
-                        <div style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);margin-bottom:6px;" id="vcProgressLabel" data-i18n="youtube_fix.progress.downloading">Downloading...</div>
-                        <div style="background:var(--brd);border-radius:4px;height:6px;overflow:hidden;">
-                            <div id="vcProgressBar" style="height:100%;background:var(--accent);width:0%;transition:width .3s;border-radius:4px;"></div>
-                        </div>
-                    </div>
-                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
-                        <button class="vrcn-button" id="btnVcInstall" onclick="vcInstall()"><span class="msi" style="font-size:16px;">download</span> <span data-i18n="youtube_fix.install_update">Install / Update</span></button>
-                        <button class="vrcn-button" onclick="sendToCS({action:'openUrl',url:'https://chromewebstore.google.com/detail/vrcvideocacher-cookies-ex/kfgelknbegappcajiflgfbjbdpbpokge'})"><span class="msi" style="font-size:16px;">extension</span> <span data-i18n="youtube_fix.install_chrome">Install Chrome Extension</span></button>
-                        <button class="vrcn-button" onclick="sendToCS({action:'openUrl',url:'https://addons.mozilla.org/en-US/firefox/addon/vrcvideocachercookiesexporter/'})"><span class="msi" style="font-size:16px;">extension</span> <span data-i18n="youtube_fix.install_firefox">Install Firefox Extension</span></button>
-                        <span id="vcVersionLabel" style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);"></span>
-                    </div>
-                    <div style="background:var(--bg2);border-radius:8px;padding:12px 14px;">
-                        <div style="font-size:calc(13px + var(--fs-off, 0px));font-weight:600;color:var(--tx0);margin-bottom:10px;" data-i18n="youtube_fix.how_to_title">How to use YouTube Fix?</div>
-                        <div style="display:flex;flex-direction:column;gap:8px;">
-                            <div style="display:flex;gap:10px;align-items:flex-start;font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);">
-                                <span style="min-width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:calc(11px + var(--fs-off, 0px));font-weight:700;flex-shrink:0;">1</span>
-                                <span data-i18n-html="youtube_fix.how_to.step1">Click the <b style="color:var(--tx1);">Install / Update</b> button above to install the YouTube Fix patcher.</span>
-                            </div>
-                            <div style="display:flex;gap:10px;align-items:flex-start;font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);">
-                                <span style="min-width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:calc(11px + var(--fs-off, 0px));font-weight:700;flex-shrink:0;">2</span>
-                                <span data-i18n-html="youtube_fix.how_to.step2">Make sure you create a <b style="color:var(--tx1);">throwaway YouTube account</b>.</span>
-                            </div>
-                            <div style="display:flex;gap:10px;align-items:flex-start;font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);">
-                                <span style="min-width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:calc(11px + var(--fs-off, 0px));font-weight:700;flex-shrink:0;">3</span>
-                                <span data-i18n-html="youtube_fix.how_to.step3">Open <b style="color:var(--tx1);">Google Chrome</b> or <b style="color:var(--tx1);">Mozilla Firefox</b> and log into your throwaway YouTube account.</span>
-                            </div>
-                            <div style="display:flex;gap:10px;align-items:flex-start;font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);">
-                                <span style="min-width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:calc(11px + var(--fs-off, 0px));font-weight:700;flex-shrink:0;">4</span>
-                                <span data-i18n-html="youtube_fix.how_to.step4">Click <b style="color:var(--tx1);">Install Chrome Extension</b> or <b style="color:var(--tx1);">Install Firefox Extension</b> above, you need the browser extension to make YouTube Fix work.</span>
-                            </div>
-                            <div style="display:flex;gap:10px;align-items:flex-start;font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);">
-                                <span style="min-width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:calc(11px + var(--fs-off, 0px));font-weight:700;flex-shrink:0;">5</span>
-                                <span data-i18n-html="youtube_fix.how_to.step5">Once the browser extension is installed, make sure to <b style="color:var(--tx1);">start the YouTube Fix service</b> using the Start button above.</span>
-                            </div>
-                            <div style="display:flex;gap:10px;align-items:flex-start;font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);">
-                                <span style="min-width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:calc(11px + var(--fs-off, 0px));font-weight:700;flex-shrink:0;">6</span>
-                                <span data-i18n-html="youtube_fix.how_to.step6">Refresh the YouTube page until the YouTube Fix (VRCVideoCacher) shows <b style="color:var(--tx1);">"Valid Cookies"</b>.</span>
+                    <!-- Linux: H.264 Unlock Card -->
+                    <div class="vrcn-panel-card" id="vcLinuxCard" style="display:none;margin-bottom:16px;">
+                        <div class="vrcn-panel-card-header"><span class="msi" style="font-size:16px;">smart_display</span> <span>H.264 Codec Unlock</span></div>
+                        <p style="font-size:calc(13px + var(--fs-off, 0px));color:var(--tx2);margin:0 0 4px;"><span>Enables</span> <b style="color:var(--tx2)">H.264 video playback</b> <span>in VRChat on Linux by unlocking the Steam codec. This is a one-time setup.</span></p>
+                        <p style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);margin:0 0 8px;">This applies the Steam command <code style="background:var(--bg2);padding:2px 6px;border-radius:3px;font-family:monospace;">steam://unlockh264/</code> to enable hardware video decoding.</p>
+                        <div style="background:var(--bg2);border-radius:8px;padding:12px 14px;">
+                            <div style="font-size:calc(13px + var(--fs-off, 0px));font-weight:600;color:var(--tx0);margin-bottom:10px;">How to use H.264 Unlock?</div>
+                            <div style="display:flex;flex-direction:column;gap:8px;">
+                                <div style="display:flex;gap:10px;align-items:flex-start;font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);">
+                                    <span style="min-width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:calc(11px + var(--fs-off, 0px));font-weight:700;flex-shrink:0;">1</span>
+                                    <span>Click the <b style="color:var(--tx1);">Connect</b> button above to apply the H.264 codec unlock.</span>
+                                </div>
+                                <div style="display:flex;gap:10px;align-items:flex-start;font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);">
+                                    <span style="min-width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:calc(11px + var(--fs-off, 0px));font-weight:700;flex-shrink:0;">2</span>
+                                    <span>Steam will be launched automatically to complete the unlock process.</span>
+                                </div>
+                                <div style="display:flex;gap:10px;align-items:flex-start;font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);">
+                                    <span style="min-width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:calc(11px + var(--fs-off, 0px));font-weight:700;flex-shrink:0;">3</span>
+                                    <span>YouTube videos in VRChat should now play without errors. Restart VRChat if needed.</span>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                </div>
+                    <!-- Launch options -->
+                    <div class="vrcn-panel-card youtube-launch-card">
+                        <div class="vrcn-panel-card-header"><span class="msi">power_settings_new</span> <span data-i18n="common.launch">Launch</span></div>
+                        <div class="sf-toggle-row"><span data-i18n="common.start_with_vrchat_vr">Start when launching VRChat in VR</span><label class="toggle"><input type="checkbox" id="setYtAutoStartVR" onchange="autoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                        <div class="sf-toggle-row"><span data-i18n="common.start_with_vrchat_desktop">Start when launching VRChat on Desktop</span><label class="toggle"><input type="checkbox" id="setYtAutoStartDesktop" onchange="autoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                        <div class="sf-toggle-row"><span data-i18n="youtube_fix.start_if_steam_open">Start if Steam is open</span><label class="toggle"><input type="checkbox" id="setYtAutoStartSteam" onchange="autoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                    </div>
+                    <div class="vrcn-panel-card" id="vcInstallCard">
+                        <div class="vrcn-panel-card-header"><span class="msi" style="font-size:16px;">smart_display</span> <span data-i18n="youtube_fix.title">VRCVideoCacher</span></div>
+                        <p style="font-size:calc(13px + var(--fs-off, 0px));color:var(--tx2);margin:0 0 4px;"><span data-i18n="youtube_fix.info.fixes_prefix">Fixes</span> <b style="color:var(--tx2)" data-i18n="youtube_fix.info.youtube_errors">YouTube video errors</b> <span data-i18n="youtube_fix.info.fixes_suffix">in VRChat by routing requests through a local proxy. Created by</span> <b style="color:var(--tx1)">Elly</b>.</p>
+                        <p style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);margin:0 0 8px;" data-i18n="youtube_fix.info.background">The service runs in the background. When you close VRCNext, the process will be terminated.</p>
+                        <p style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);margin:0 0 12px;padding:8px 10px;background:var(--bg2);border-radius:6px;border-left:3px solid var(--accent);"><span data-i18n="youtube_fix.info.setup_prefix">If you are running this service for the first time, please follow the setup instructions that appear when starting it.</span> <span data-i18n="youtube_fix.info.setup_suffix">Also make sure to read the usage guide on the GitHub page:</span> <a href="#" onclick="sendToCS({action:'openUrl',url:'https://github.com/EllyVR/VRCVideoCacher'});return false;" style="color:var(--accent);">github.com/EllyVR/VRCVideoCacher</a></p>
+                        <div id="vcProgressWrap" style="display:none;margin-bottom:12px;">
+                            <div style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);margin-bottom:6px;" id="vcProgressLabel" data-i18n="youtube_fix.progress.downloading">Downloading...</div>
+                            <div style="background:var(--brd);border-radius:4px;height:6px;overflow:hidden;">
+                                <div id="vcProgressBar" style="height:100%;background:var(--accent);width:0%;transition:width .3s;border-radius:4px;"></div>
+                            </div>
+                        </div>
+                        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
+                            <button class="vrcn-button" id="btnVcInstall" onclick="vcInstall()"><span class="msi" style="font-size:16px;">download</span> <span data-i18n="youtube_fix.install_update">Install / Update</span></button>
+                            <button class="vrcn-button" onclick="sendToCS({action:'openUrl',url:'https://chromewebstore.google.com/detail/vrcvideocacher-cookies-ex/kfgelknbegappcajiflgfbjbdpbpokge'})"><span class="msi" style="font-size:16px;">extension</span> <span data-i18n="youtube_fix.install_chrome">Install Chrome Extension</span></button>
+                            <button class="vrcn-button" onclick="sendToCS({action:'openUrl',url:'https://addons.mozilla.org/en-US/firefox/addon/vrcvideocachercookiesexporter/'})"><span class="msi" style="font-size:16px;">extension</span> <span data-i18n="youtube_fix.install_firefox">Install Firefox Extension</span></button>
+                            <span id="vcVersionLabel" style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);"></span>
+                        </div>
+                        <div style="background:var(--bg2);border-radius:8px;padding:12px 14px;">
+                            <div style="font-size:calc(13px + var(--fs-off, 0px));font-weight:600;color:var(--tx0);margin-bottom:10px;" data-i18n="youtube_fix.how_to_title">How to use YouTube Fix?</div>
+                            <div style="display:flex;flex-direction:column;gap:8px;">
+                                <div style="display:flex;gap:10px;align-items:flex-start;font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);">
+                                    <span style="min-width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:calc(11px + var(--fs-off, 0px));font-weight:700;flex-shrink:0;">1</span>
+                                    <span data-i18n-html="youtube_fix.how_to.step1">Click the <b style="color:var(--tx1);">Install / Update</b> button above to install the YouTube Fix patcher.</span>
+                                </div>
+                                <div style="display:flex;gap:10px;align-items:flex-start;font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);">
+                                    <span style="min-width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:calc(11px + var(--fs-off, 0px));font-weight:700;flex-shrink:0;">2</span>
+                                    <span data-i18n-html="youtube_fix.how_to.step2">Make sure you create a <b style="color:var(--tx1);">throwaway YouTube account</b>.</span>
+                                </div>
+                                <div style="display:flex;gap:10px;align-items:flex-start;font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);">
+                                    <span style="min-width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:calc(11px + var(--fs-off, 0px));font-weight:700;flex-shrink:0;">3</span>
+                                    <span data-i18n-html="youtube_fix.how_to.step3">Open <b style="color:var(--tx1);">Google Chrome</b> or <b style="color:var(--tx1);">Mozilla Firefox</b> and log into your throwaway YouTube account.</span>
+                                </div>
+                                <div style="display:flex;gap:10px;align-items:flex-start;font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);">
+                                    <span style="min-width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:calc(11px + var(--fs-off, 0px));font-weight:700;flex-shrink:0;">4</span>
+                                    <span data-i18n-html="youtube_fix.how_to.step4">Click <b style="color:var(--tx1);">Install Chrome Extension</b> or <b style="color:var(--tx1);">Install Firefox Extension</b> above, you need the browser extension to make YouTube Fix work.</span>
+                                </div>
+                                <div style="display:flex;gap:10px;align-items:flex-start;font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);">
+                                    <span style="min-width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:calc(11px + var(--fs-off, 0px));font-weight:700;flex-shrink:0;">5</span>
+                                    <span data-i18n-html="youtube_fix.how_to.step5">Once the browser extension is installed, make sure to <b style="color:var(--tx1);">start the YouTube Fix service</b> using the Start button above.</span>
+                                </div>
+                                <div style="display:flex;gap:10px;align-items:flex-start;font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);">
+                                    <span style="min-width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:calc(11px + var(--fs-off, 0px));font-weight:700;flex-shrink:0;">6</span>
+                                    <span data-i18n-html="youtube_fix.how_to.step6">Refresh the YouTube page until the YouTube Fix (VRCVideoCacher) shows <b style="color:var(--tx1);">"Valid Cookies"</b>.</span>
+                                </div>
+                            </div>
+                        </div>
+            </div>
