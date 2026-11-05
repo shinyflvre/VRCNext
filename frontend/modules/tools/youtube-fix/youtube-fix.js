@@ -5,6 +5,7 @@ let vcState = 'stopped'; // stopped, running, installing, error
 let vcVersion = '';
 let vcAutoStartVR = false;
 let vcAutoStartDesktop = false;
+let vcAutoStartSteam = false;
 
 // Detect platform from URL parameter
 let isLinux = new URLSearchParams(location.search).get('vrcnPlatform') === 'linux';
@@ -14,6 +15,8 @@ function initYoutubeFix() {
     requestVcState();
     loadYoutubeFixSettings();
     updateUIForPlatform();
+    const steamOption = document.getElementById('ytSteamLaunchOption');
+    if (steamOption) steamOption.style.display = isLinux ? 'flex' : 'none';
 }
 
 // Update UI elements based on platform
@@ -83,7 +86,10 @@ function loadYoutubeFixSettings() {
             const settings = JSON.parse(saved);
             vcAutoStartVR = settings.autoStartVR || false;
             vcAutoStartDesktop = settings.autoStartDesktop || false;
+            vcAutoStartSteam = settings.autoStartSteam || false;
             
+            const steamEl = document.getElementById('setYtAutoStartSteam');
+            if (steamEl) steamEl.checked = vcAutoStartSteam;
             const vrEl = document.getElementById('setYtAutoStartVR');
             if (vrEl) vrEl.checked = vcAutoStartVR;
             
@@ -235,10 +241,13 @@ function autoSave() {
     
     if (vrEl) vcAutoStartVR = vrEl.checked;
     if (deskEl) vcAutoStartDesktop = deskEl.checked;
+    const steamEl = document.getElementById('setYtAutoStartSteam');
+    if (steamEl) vcAutoStartSteam = steamEl.checked;
     
     const settings = {
         autoStartVR: vcAutoStartVR,
-        autoStartDesktop: vcAutoStartDesktop
+        autoStartDesktop: vcAutoStartDesktop,
+        autoStartSteam: vcAutoStartSteam
     };
     
     try {
@@ -252,7 +261,8 @@ function autoSave() {
     sendToCS({
         action: 'saveSettings',
         ytAutoStartVR: vcAutoStartVR,
-        ytAutoStartDesktop: vcAutoStartDesktop
+        ytAutoStartDesktop: vcAutoStartDesktop,
+        ytAutoStartSteam: vcAutoStartSteam
     });
 }
 

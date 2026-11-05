@@ -233,6 +233,7 @@ function saveSettings() {
             fsAudioKbps:              parseInt(document.getElementById('fsAudioKbps')?.value          ?? '256', 10),
             ytAutoStartVR:            document.getElementById('setYtAutoStartVR')?.checked        ?? false,
             ytAutoStartDesktop:       document.getElementById('setYtAutoStartDesktop')?.checked   ?? false,
+            ytAutoStartSteam:         document.getElementById('setYtAutoStartSteam')?.checked      ?? false,
             vfAutoStartVR:            document.getElementById('setVfAutoStartVR')?.checked        ?? false,
             vfAutoStartDesktop:       document.getElementById('setVfAutoStartDesktop')?.checked   ?? false,
             discordPresenceAutoStart: false, // legacy
@@ -916,6 +917,7 @@ function loadSettingsToUI(s) {
     }
     _set('setYtAutoStartVR',      s.YtAutoStartVR           ?? s.ytAutoStartVR           ?? false);
     _set('setYtAutoStartDesktop', s.YtAutoStartDesktop      ?? s.ytAutoStartDesktop      ?? false);
+    _set('setYtAutoStartSteam', s.YtAutoStartSteam          ?? s.ytAutoStartSteam          ?? false);
     _set('setVfAutoStartVR',      s.VfAutoStartVR           ?? s.vfAutoStartVR           ?? false);
     _set('setVfAutoStartDesktop', s.VfAutoStartDesktop      ?? s.vfAutoStartDesktop      ?? false);
     _set('setDpAutoStartVR',      s.DpAutoStartVR           ?? s.dpAutoStartVR           ?? false);
