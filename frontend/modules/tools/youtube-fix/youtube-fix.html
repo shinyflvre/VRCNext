@@ -1,16 +1,16 @@
                 <div class="vrcn-panel-card status" style="margin-bottom:16px;">
                     <div class="sf-status-row">
                         <div class="sf-status"><span class="sf-dot offline" id="vcDot"></span><span id="vcStatusText" data-i18n="youtube_fix.status.not_running">Not running</span></div>
-                        <button class="vrcn-button" id="btnVc" onclick="toggleVc()" disabled><span class="msi" style="font-size:16px;">play_arrow</span> <span data-i18n="common.start">Start</span></button>
+                        <button class="vrcn-button" id="btnVc" onclick="toggleVc()"><span class="msi" style="font-size:16px;">play_arrow</span> <span data-i18n="common.start">Start</span></button>
                     </div>
                 </div>
                 <div class="vrcn-panel-card" style="margin-bottom:16px;">
                     <div class="vrcn-panel-card-header"><span class="msi">power_settings_new</span> <span data-i18n="common.launch">Launch</span></div>
                     <div class="sf-toggle-row"><span data-i18n="common.start_with_vrchat_vr">Start when launching VRChat in VR</span><label class="toggle"><input type="checkbox" id="setYtAutoStartVR" onchange="autoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
                     <div class="sf-toggle-row"><span data-i18n="common.start_with_vrchat_desktop">Start when launching VRChat on Desktop</span><label class="toggle"><input type="checkbox" id="setYtAutoStartDesktop" onchange="autoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
-                    <div class="sf-toggle-row" id="ytSteamLaunchOption" style="display:none;"><span data-i18n="youtube_fix.start_if_steam_open">Start if Steam is open</span><label class="toggle"><input type="checkbox" id="setYtAutoStartSteam" onchange="autoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                    <div class="sf-toggle-row" id="ytSteamLaunchOption"><span data-i18n="youtube_fix.start_if_steam_open">Start if Steam is open</span><label class="toggle"><input type="checkbox" id="setYtAutoStartSteam" onchange="autoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
                 </div>
-                <div class="vrcn-panel-card" id="vcInstallCard">
+                <div class="vrcn-panel-card" id="vcInstallCard" data-windows-only>
                     <div class="vrcn-panel-card-header"><span class="msi" style="font-size:16px;">smart_display</span> <span data-i18n="youtube_fix.title">VRCVideoCacher</span></div>
                     <p style="font-size:calc(13px + var(--fs-off, 0px));color:var(--tx2);margin:0 0 4px;"><span data-i18n="youtube_fix.info.fixes_prefix">Fixes</span> <b style="color:var(--tx2)" data-i18n="youtube_fix.info.youtube_errors">YouTube video errors</b> <span data-i18n="youtube_fix.info.fixes_suffix">in VRChat by routing requests through a local proxy. Created by</span> <b style="color:var(--tx1)">Elly</b>.</p>
                     <p style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);margin:0 0 8px;" data-i18n="youtube_fix.info.background">The service runs in the background. When you close VRCNext, the process will be terminated.</p>
