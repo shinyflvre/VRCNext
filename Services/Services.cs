@@ -805,6 +805,8 @@ public class AppSettings
 
     public bool SetupComplete { get; set; }
 
+    public string CustomUserAgent { get; set; } = "";
+
     public List<string> InviteMessages { get; set; } = new()
     {
         "Come join us!",
