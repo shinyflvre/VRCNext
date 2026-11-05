@@ -47,7 +47,7 @@ function updateUIForPlatform() {
 
 // Request current VC state from backend
 function requestVcState() {
-    sendToCS({ action: 'getVcState' });
+    sendToCS({ action: 'vcCheck' });
 }
 
 // Handle VC state update from backend
