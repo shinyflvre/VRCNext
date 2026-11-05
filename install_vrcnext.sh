@@ -11,9 +11,9 @@ if [ "$(uname -s)" != "Linux" ]; then
     exit 1
 fi
 
-# Prefer an AppImage bundled beside this script; otherwise fetch the latest Linux release asset.
+# Prefer a local AppImage (beside this script or in publish/linux/); otherwise fetch the latest release.
 APPIMAGE_PATH=""
-for candidate in "$SCRIPT_DIR"/VRCNext*.AppImage; do
+for candidate in "$SCRIPT_DIR"/VRCNext*.AppImage "$SCRIPT_DIR/publish/linux/"VRCNext*.AppImage; do
     if [ -f "$candidate" ]; then
         APPIMAGE_PATH="$candidate"
         break
