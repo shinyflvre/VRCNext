@@ -6,10 +6,43 @@ let vcVersion = '';
 let vcAutoStartVR = false;
 let vcAutoStartDesktop = false;
 
+// Detect platform from URL parameter
+let isLinux = new URLSearchParams(location.search).get('vrcnPlatform') === 'linux';
+
 // Initialize on page load
 function initYoutubeFix() {
     requestVcState();
     loadYoutubeFixSettings();
+    updateUIForPlatform();
+}
+
+// Update UI elements based on platform
+function updateUIForPlatform() {
+    if (isLinux) {
+        // Hide Windows-specific UI on Linux
+        const installCard = document.getElementById('vcInstallCard');
+        if (installCard) {
+            installCard.style.display = 'none';
+        }
+        
+        // Show Linux-specific UI
+        const linuxCard = document.getElementById('vcLinuxCard');
+        if (linuxCard) {
+            linuxCard.style.display = 'block';
+        }
+    } else {
+        // Show Windows-specific UI on Windows
+        const installCard = document.getElementById('vcInstallCard');
+        if (installCard) {
+            installCard.style.display = 'block';
+        }
+        
+        // Hide Linux-specific UI
+        const linuxCard = document.getElementById('vcLinuxCard');
+        if (linuxCard) {
+            linuxCard.style.display = 'none';
+        }
+    }
 }
 
 // Request current VC state from backend
