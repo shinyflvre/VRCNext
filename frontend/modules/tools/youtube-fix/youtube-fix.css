@@ -1,0 +1,207 @@
+/* YouTube Fix Module Styles */
+
+#vcDot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+#vcDot.online {
+    background-color: var(--status-online, #4CAF50);
+    box-shadow: 0 0 8px rgba(76, 175, 80, 0.6);
+}
+
+#vcDot.ask {
+    background-color: var(--status-ask, #FFC107);
+    box-shadow: 0 0 8px rgba(255, 193, 7, 0.6);
+}
+
+#vcDot.offline {
+    background-color: var(--status-offline, #999);
+    box-shadow: none;
+}
+
+.sf-status-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.sf-status {
+    display: flex;
+    align-items: center;
+    font-size: calc(14px + var(--fs-off, 0px));
+    color: var(--tx1);
+    flex: 1;
+}
+
+.sf-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--brd);
+    font-size: calc(13px + var(--fs-off, 0px));
+    color: var(--tx1);
+}
+
+.sf-toggle-row:last-child {
+    border-bottom: none;
+}
+
+.toggle {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.toggle input {
+    display: none;
+}
+
+.toggle-track {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background-color: var(--bg2);
+    border-radius: 12px;
+    transition: background-color 0.3s;
+    border: 1px solid var(--brd);
+}
+
+.toggle input:checked ~ .toggle-track {
+    background-color: var(--accent);
+    border-color: var(--accent);
+}
+
+.toggle-knob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background-color: #fff;
+    border-radius: 50%;
+    transition: left 0.3s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.toggle input:checked ~ .toggle-track .toggle-knob {
+    left: 22px;
+}
+
+#vcProgressWrap {
+    margin-bottom: 12px;
+}
+
+#vcProgressLabel {
+    font-size: calc(12px + var(--fs-off, 0px));
+    color: var(--tx2);
+    margin-bottom: 6px;
+}
+
+#vcProgressBar {
+    height: 6px;
+    background-color: var(--accent);
+    border-radius: 4px;
+    transition: width 0.3s;
+}
+
+.vrcn-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background-color: var(--bg2);
+    border: 1px solid var(--brd);
+    border-radius: 6px;
+    color: var(--tx1);
+    font-size: calc(13px + var(--fs-off, 0px));
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.vrcn-button:hover:not(:disabled) {
+    background-color: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+}
+
+.vrcn-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.vrcn-button:active:not(:disabled) {
+    transform: scale(0.98);
+}
+
+.vrcn-button .msi {
+    display: inline-flex;
+    font-size: 16px;
+}
+
+.vrcn-panel-card {
+    background-color: var(--bg1);
+    border: 1px solid var(--brd);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.vrcn-panel-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: calc(14px + var(--fs-off, 0px));
+    font-weight: 600;
+    color: var(--tx0);
+    margin-bottom: 12px;
+}
+
+.vrcn-panel-card-header .msi {
+    font-size: 18px;
+}
+
+#vcVersionLabel {
+    font-size: calc(12px + var(--fs-off, 0px));
+    color: var(--tx2);
+    font-weight: 500;
+}
+
+a {
+    color: var(--accent);
+    text-decoration: none;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+a:hover {
+    opacity: 0.8;
+}
+
+p {
+    margin: 0;
+    line-height: 1.5;
+}
+
+b {
+    font-weight: 600;
+}
+
+/* Responsive buttons */
+@media (max-width: 768px) {
+    .sf-status-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .vrcn-button {
+        width: 100%;
+        justify-content: center;
+    }
+}
