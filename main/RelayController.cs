@@ -20,7 +20,6 @@ public class RelayController : IDisposable
     private DateTime _relayStart;
     private Process? _vcProcess;
     private bool _linuxH264UnlockApplied;
-    private bool _steamWasRunning;
     private VRChatWebSocketService? _wsService;
 
     // VRChat process monitor + startup-app tracking (Close / Start always with VRChat)
@@ -680,10 +679,8 @@ public class RelayController : IDisposable
             catch { return; }
 
             bool steamRunning = IsSteamRunning();
-            if (steamRunning && !_steamWasRunning && _core.Settings.YtAutoStartSteam)
+            if (OperatingSystem.IsLinux() && steamRunning && _core.Settings.YtAutoStartSteam && !_linuxH264UnlockApplied)
                 StartVcProcess();
-            _steamWasRunning = steamRunning;
-
             bool changed = pid != _vrcSessionPid
                 || (pid != 0 && _vrcSessionProcStart != DateTime.MinValue
                     && procStart != DateTime.MinValue && procStart != _vrcSessionProcStart);
