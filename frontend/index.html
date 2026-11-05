@@ -48,6 +48,7 @@
     <link rel="stylesheet" href="modules/tools/voice-fight/voice-fight.css">
     <link rel="stylesheet" href="modules/tools/discord-presence/discord-presence.css">
     <link rel="stylesheet" href="modules/tools/vr-overlay/vr-overlay.css">
+    <link rel="stylesheet" href="modules/tools/youtube-fix/youtube-fix.css">
     <link rel="stylesheet" href="modules/tools/permini/permini.css">
     <link rel="stylesheet" href="modules/tools/action-flow/action-flow.css">
     <link rel="stylesheet" href="modules/tools/status-schedule/status-schedule.css">
@@ -242,7 +243,7 @@
                             <div class="tb-dd-sep" data-windows-only></div>
                             <div class="tb-dd-item" onclick="showTab(6)"><span class="msi">cell_tower</span><span data-i18n="nav.media_relay">Media Relay</span></div>
                             <div class="tb-dd-item" onclick="showTab(11)"><span class="msi">tune</span><span data-i18n="nav.osc_tool">OSC Tool</span></div>
-                            <div class="tb-dd-item" data-windows-only onclick="showTab(14)"><span class="msi">smart_display</span><span data-i18n="nav.youtube_fix">YouTube Fix</span></div>
+                            <div class="tb-dd-item" onclick="showTab(14)"><span class="msi">smart_display</span><span data-i18n="nav.youtube_fix">YouTube Fix</span></div>
                             <div class="tb-dd-sep"></div>
                             <div class="tb-dd-item" onclick="showTab(8)"><span class="msi">article</span><span data-i18n="nav.activity_log">Activity Log</span></div>
                             <div class="tb-dd-item" onclick="showTab(15)"><span class="msi">hub</span><span data-i18n="nav.mutual_network">Mutual Network</span></div>
@@ -308,7 +309,7 @@
                     <button class="tb-sidebar-btn" id="badgeFrameShot" data-windows-only title="FrameShot" data-i18n-title="nav.frame_shot" onclick="fsConnect()"><span class="msi">photo_camera</span></button>
                     <button class="tb-sidebar-btn" id="badgeVoice" data-windows-only title="Voice Fight" data-i18n-title="nav.voice_fight" onclick="if(!vfRunning)vfOnTabOpen();vfConnect()"><span class="msi">mic</span></button>
                     <button class="tb-sidebar-btn" id="badgeDp" title="Discord Presence" data-i18n-title="nav.discord_presence" onclick="dpToggle()"><span class="msi">sensors</span></button>
-                    <button class="tb-sidebar-btn" id="badgeYt" data-windows-only title="YouTube Fix" data-i18n-title="nav.youtube_fix" onclick="toggleVc()"><span class="msi">smart_display</span></button>
+                    <button class="tb-sidebar-btn" id="badgeYt" title="YouTube Fix" data-i18n-title="nav.youtube_fix" onclick="toggleVc()"><span class="msi">smart_display</span></button>
                     <button class="tb-sidebar-btn" id="badgeKxd" data-windows-only title="Kikitan XD" data-i18n-title="nav.kikitan_xd" onclick="kxdConnect()"><span class="msi">translate</span></button>
                     <button class="tb-sidebar-btn" id="badgeVroTop" title="VR Overlay" data-i18n-title="nav.vr_overlay" onclick="vroConnect()"><span class="msi">watch</span></button>
                     <div class="tb-sep"></div>
@@ -417,7 +418,7 @@
             <!-- Tab 13: Inventory -->
             <div class="tab" id="tab13"></div>
             <!-- Tab 14: YouTube Fix / VRCVideoCacher -->
-            <div class="tab" id="tab14" data-windows-only></div>
+            <div class="tab" id="tab14"></div>
 
             <!-- Tab 15: Mutual Network -->
             <div class="tab" id="tab15"></div>
@@ -916,6 +917,7 @@
             'modules/tools/space-turn/space-turn.js',
             'modules/tools/frame-shot/frame-shot.js',
             'modules/tools/osc-tool/osc-tool.js',
+            'modules/tools/youtube-fix/youtube-fix.js',
             'modules/timeline/list-table.js',
             'modules/timeline/timeline.js',
             'modules/timeline/timeline-search.js',
