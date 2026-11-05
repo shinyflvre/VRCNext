@@ -30,6 +30,9 @@ function updateUIForPlatform() {
         if (linuxCard) {
             linuxCard.style.display = 'block';
         }
+        // Linux does not require a downloaded VRCVideoCacher installation.
+        const btn = document.getElementById('btnVc');
+        if (btn) btn.disabled = false;
     } else {
         // Show Windows-specific UI on Windows
         const installCard = document.getElementById('vcInstallCard');
@@ -94,9 +97,11 @@ function loadYoutubeFixSettings() {
 
 // Toggle VC start/stop
 function toggleVc() {
-    if (vcState === 'running') {
+    // Use the rendered backend state because the shared message handler owns vcState updates.
+    const running = document.getElementById('vcDot')?.classList.contains('online');
+    if (running) {
         stopVc();
-    } else if (vcState === 'stopped' || vcState === 'error') {
+    } else {
         startVc();
     }
 }
