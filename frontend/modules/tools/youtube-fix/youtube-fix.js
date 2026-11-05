@@ -103,13 +103,13 @@ function toggleVc() {
 
 // Start VC process
 function startVc() {
-    sendToCS({ action: 'startVc' });
+    sendToCS({ action: 'vcStart' });
     updateVcUI();
 }
 
 // Stop VCs process
 function stopVc() {
-    sendToCS({ action: 'stopVc' });
+    sendToCS({ action: 'vcStop' });
     updateVcUI();
 }
 
