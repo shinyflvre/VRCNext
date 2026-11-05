@@ -247,10 +247,12 @@ function autoSave() {
         console.error('Failed to save YouTube Fix settings:', e);
     }
     
+    // Persist through the same settings endpoint used by the Settings page.
+    // setYoutubeFixSettings is not a backend action and is silently ignored.
     sendToCS({
-        action: 'setYoutubeFixSettings',
-        autoStartVR: vcAutoStartVR,
-        autoStartDesktop: vcAutoStartDesktop
+        action: 'saveSettings',
+        ytAutoStartVR: vcAutoStartVR,
+        ytAutoStartDesktop: vcAutoStartDesktop
     });
 }
 
