@@ -572,6 +572,7 @@ public class AppSettings
     public bool RelayAutoStartDesktop    { get; set; }
     public bool YtAutoStartVR            { get; set; }
     public bool YtAutoStartDesktop       { get; set; }
+    public bool YtAutoStartSteam         { get; set; }
     public bool VfAutoStartVR            { get; set; }
     public bool VfAutoStartDesktop       { get; set; }
     public bool DpAutoStartVR            { get; set; }

@@ -658,6 +658,17 @@ public class RelayController : IDisposable
 
     private const int VrDetectGraceSec = 15;
 
+    private static bool IsSteamRunning()
+    {
+        if (!OperatingSystem.IsLinux()) return false;
+        try
+        {
+            return Process.GetProcessesByName("steam").Length > 0
+                || Process.GetProcessesByName("steamwebhelper").Length > 0;
+        }
+        catch { return false; }
+    }
+
     private void CheckVrcState()
     {
         if (System.Threading.Interlocked.Exchange(ref _vrcCheckBusy, 1) == 1) return;
@@ -666,6 +677,11 @@ public class RelayController : IDisposable
             int pid; DateTime procStart;
             try { (pid, procStart) = GetVrcProcInfo(); }
             catch { return; }
+
+            if (OperatingSystem.IsLinux() && _core.Settings.YtAutoStartSteam && IsSteamRunning() && !_h264UnlockApplied)
+            {
+                StartLinuxH264Unlock();
+            }
 
             bool changed = pid != _vrcSessionPid
                 || (pid != 0 && _vrcSessionProcStart != DateTime.MinValue

@@ -2265,6 +2265,7 @@ public class AuthController
             _core.Settings.RelayAutoStartDesktop   = data["relayAutoStartDesktop"]?.Value<bool>()   ?? false;
             _core.Settings.YtAutoStartVR           = data["ytAutoStartVR"]?.Value<bool>()           ?? false;
             _core.Settings.YtAutoStartDesktop      = data["ytAutoStartDesktop"]?.Value<bool>()      ?? false;
+            _core.Settings.YtAutoStartSteam        = data["ytAutoStartSteam"]?.Value<bool>()        ?? false;
             _core.Settings.VfAutoStartVR           = data["vfAutoStartVR"]?.Value<bool>()           ?? false;
             _core.Settings.VfAutoStartDesktop      = data["vfAutoStartDesktop"]?.Value<bool>()      ?? false;
             _core.Settings.DpAutoStartVR           = data["dpAutoStartVR"]?.Value<bool>()           ?? false;
