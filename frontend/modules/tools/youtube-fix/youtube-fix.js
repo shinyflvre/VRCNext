@@ -97,13 +97,14 @@ function loadYoutubeFixSettings() {
 
 // Toggle VC start/stop
 function toggleVc() {
-    // Use the rendered backend state because the shared message handler owns vcState updates.
+    // Linux uses a one-shot Steam connection; it has no stop operation.
     const running = document.getElementById('vcDot')?.classList.contains('online');
-    if (running) {
-        stopVc();
-    } else {
-        startVc();
+    if (isLinux) {
+        if (!running) startVc();
+        return;
     }
+    if (running) stopVc();
+    else startVc();
 }
 
 // Start VC process
@@ -200,8 +201,12 @@ function updateVcUI() {
     statusText.textContent = t(statusKey);
     
     // Update button state
-    btn.disabled = vcState === 'installing';
-    if (vcState === 'running') {
+    btn.disabled = vcState === 'installing' || (isLinux && vcState === 'running');
+    if (isLinux) {
+        btn.innerHTML = vcState === 'running'
+            ? '<span class="msi" style="font-size:16px;">check_circle</span> <span>Connected</span>'
+            : '<span class="msi" style="font-size:16px;">link</span> <span>Connect</span>';
+    } else if (vcState === 'running') {
         btn.innerHTML = '<span class="msi" style="font-size:16px;">stop</span> <span data-i18n="common.stop">Stop</span>';
     } else {
         btn.innerHTML = '<span class="msi" style="font-size:16px;">play_arrow</span> <span data-i18n="common.start">Start</span>';

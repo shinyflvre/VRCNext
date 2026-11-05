@@ -505,16 +505,13 @@ public class RelayController : IDisposable
             };
 
             using var proc = Process.Start(psi);
-            if (proc != null)
-            {
-                await proc.WaitForExitAsync();
-                _linuxH264UnlockApplied = true;
-                Invoke(() =>
-                {
-                    _core.SendToJS("vcState", GetVcState());
-                    _vroCtrl.UpdateToolStates();
-                });
-            }
+            if (proc == null)
+                throw new InvalidOperationException("Steam could not be started.");
+
+            // Steam handles the URI asynchronously; do not wait for its process to exit.
+            _linuxH264UnlockApplied = true;
+            _core.SendToJS("vcState", GetVcState());
+            _vroCtrl.UpdateToolStates();
         }
         catch (Exception ex)
         {
