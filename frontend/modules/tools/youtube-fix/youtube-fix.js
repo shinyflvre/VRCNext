@@ -109,14 +109,15 @@ function toggleVc() {
 
 // Start VC process
 function startVc() {
-    sendToCS({ action: 'vcStart' });
+    // Linux has no long-running process; show the one-shot connection immediately.
+    vcState = 'running';
     updateVcUI();
+    sendToCS({ action: 'vcStart' });
 }
 
 // Stop VCs process
 function stopVc() {
     sendToCS({ action: 'vcStop' });
-    updateVcUI();
 }
 
 // Install/Update VRCVideoCacher
