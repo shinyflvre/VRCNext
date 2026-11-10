@@ -57,17 +57,19 @@ install_deps() {
     local PKGS_ZYPPER="libwebkit2gtk-4_1-0 gtk3 glib2 libcanberra-gtk3-0 zenity gstreamer-plugins-base gstreamer-plugins-good gstreamer-plugins-libav"
 
     if command -v apt-get &>/dev/null; then
-        echo "[1/4] Installing dependencies via apt..."
+        echo "[1/3] Installing dependencies via apt..."
         sudo apt-get update
         sudo apt-get install -y $PKGS_APT
     elif command -v pacman &>/dev/null; then
-        echo "[1/4] Installing dependencies via pacman..."
-        sudo pacman -Sy --noconfirm $PKGS_ARCH
+        echo "[1/3] Installing dependencies via pacman..."
+        # Arch-based systems require a full sync+upgrade to avoid partial-upgrade
+        # conflicts when GStreamer packages in the repositories have advanced.
+        sudo pacman -Syu --needed --noconfirm $PKGS_ARCH
     elif command -v dnf &>/dev/null; then
-        echo "[1/4] Installing dependencies via dnf..."
+        echo "[1/3] Installing dependencies via dnf..."
         sudo dnf install -y $PKGS_DNF
     elif command -v zypper &>/dev/null; then
-        echo "[1/4] Installing dependencies via zypper..."
+        echo "[1/3] Installing dependencies via zypper..."
         sudo zypper install -y $PKGS_ZYPPER
     else
         echo "Warning: Could not detect package manager. Please install manually:"
@@ -78,7 +80,7 @@ install_deps() {
 install_deps
 
 # Install AppImage with Shelly
-echo "[2/4] Installing $APP_NAME via Shelly..."
+echo "[2/3] Installing $APP_NAME via Shelly..."
 if command -v shelly &>/dev/null; then
     shelly -Ii "$APPIMAGE_PATH"
 else

@@ -38,6 +38,7 @@
     <PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="4.155.0-preview.2.26479.13" Condition="'$(_LinuxBuild)'!='true'" />
     <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.155.0-preview.2.26479.13" Condition="'$(_LinuxBuild)'=='true'" />
     <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="10.0.12" Condition="'$(_LinuxBuild)'!='true'" />
+    <PackageReference Include="System.Drawing.Common" Version="10.0.12" Condition="'$(_LinuxBuild)'!='true'" />
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.12" Condition="'$(_LinuxBuild)'!='true'" />
     <PackageReference Include="Vortice.Direct3D11" Version="3.8.3" Condition="'$(_LinuxBuild)'!='true'" />
     <PackageReference Include="Vortice.Direct2D1" Version="3.8.3" Condition="'$(_LinuxBuild)'!='true'" />
