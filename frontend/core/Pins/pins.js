@@ -36,7 +36,8 @@ function _pinsSources(type) {
     const S = {
         user:   ['vrcFriendsData', 'searchState.people.results', 'currentInstanceData.users'],
         world:  ['favWorldsData', '_visitedWorldsData', '_myWorldsData', 'dashWorldCache',
-                 'searchState.worlds.results', '_popularCache.worlds', '_activeCache.worlds', '_recentCache.worlds'],
+                 'searchState.worlds.results', '_popularCache.worlds', '_activeCache.worlds', '_recentCache.worlds',
+                 '_worldDiscoverData.popular', '_worldDiscoverData.discover'],
         group:  ['myGroups', 'searchState.groups.results'],
         avatar: ['avatarsData', 'favAvatarsData', 'avatarFavData', 'hiddenAvatarData',
                  '_recentAvatarsData', 'avatarSearchResults'],

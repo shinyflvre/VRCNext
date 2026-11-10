@@ -1,0 +1,23 @@
+        <div class="modal-box" style="width:660px;max-width:92%;">
+            <div class="fd-modal-bar">
+                <div class="fd-modal-bar-crumbs"><span class="fd-modal-bar-title" data-i18n="my_reports.title">My Reports</span></div>
+                <div class="fd-modal-bar-actions">
+                    <button class="btn-notif fd-action-btn" title="Refresh" data-i18n-title="common.refresh" onclick="mrLoad(_mrPage)"><span class="msi" style="font-size:20px;">refresh</span></button>
+                    <button class="btn-notif fd-action-btn" title="Close" data-i18n-title="common.close" onclick="closeMyReportsModal()"><span class="msi" style="font-size:20px;">close</span></button>
+                </div>
+            </div>
+            <div class="modal-card">
+                <div class="modal-msg" style="margin:0 0 14px;" data-i18n="my_reports.desc">Reports you have submitted to VRChat.</div>
+
+                <div class="lgv-toolbar" style="margin-bottom:14px;">
+                    <div class="fd-tabs fd-tabs-toolbar">
+                        <button class="fd-tab active" id="mrTabOpen" onclick="mrSetStatus('open')" data-i18n="my_reports.tab.open">Open</button>
+                        <button class="fd-tab" id="mrTabClosed" onclick="mrSetStatus('closed')" data-i18n="my_reports.tab.closed">Closed</button>
+                    </div>
+                    <select id="mrTypeFilter" class="wd-create-select" style="width:150px;flex-shrink:0;" onchange="mrSetType(this.value)"></select>
+                </div>
+
+                <div id="mrList" class="mt-list"></div>
+                <div id="mrPaginatorBar" class="mini-paginator"></div>
+            </div>
+        </div>

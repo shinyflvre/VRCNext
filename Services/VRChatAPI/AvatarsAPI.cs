@@ -104,6 +104,31 @@ public class AvatarsAPI(VRChatApiService ctx)
         return impostor?["impostorizerVersion"]?.ToString() ?? "";
     }
 
+    public async Task<bool> EnqueueImpostorAsync(string avatarId)
+    {
+        if (!ctx.IsLoggedIn) return false;
+        try
+        {
+            var content = new StringContent("{}", Encoding.UTF8, "application/json");
+            var resp = await ctx._http.PostAsync($"{VRChatApiService.BASE}/avatars/{avatarId}/impostor/enqueue", content);
+            ctx.Log($"EnqueueImpostor {avatarId}: {(int)resp.StatusCode}");
+            return resp.IsSuccessStatusCode;
+        }
+        catch (Exception ex) { ctx.Log($"EnqueueImpostor exception: {ex.Message}"); return false; }
+    }
+
+    public async Task<bool> DeleteImpostorAsync(string avatarId)
+    {
+        if (!ctx.IsLoggedIn) return false;
+        try
+        {
+            var resp = await ctx._http.DeleteAsync($"{VRChatApiService.BASE}/avatars/{avatarId}/impostor");
+            ctx.Log($"DeleteImpostor {avatarId}: {(int)resp.StatusCode}");
+            return resp.IsSuccessStatusCode;
+        }
+        catch (Exception ex) { ctx.Log($"DeleteImpostor exception: {ex.Message}"); return false; }
+    }
+
     public async Task<bool> SelectAvatarAsync(string avatarId)
     {
         if (!ctx.IsLoggedIn) return false;

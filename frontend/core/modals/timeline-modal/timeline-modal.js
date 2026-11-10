@@ -11,6 +11,7 @@ function openTlDetail(id, stacked) {
              || _tlSearchEvents.find(e => e.id === id)
              || _fdTimelineEvents.find(e => e.id === id)
              || (typeof _wdInstanceHistory !== 'undefined' ? _wdInstanceHistory.find(e => e.id === id) : null)
+             || (typeof _gdInstanceHistory !== 'undefined' ? _gdInstanceHistory.find(e => e.id === id) : null)
              || (typeof _icData !== 'undefined' ? _icData.find(e => e.id === id) : null);
     if (!ev) return;
 
@@ -945,6 +946,22 @@ function _tlListPlayerAvatars(players, max) {
     if (rest > 0) html += `<span class="tl-list-av tl-list-av-more">+${rest}</span>`;
     html += '</span>';
     return html;
+}
+
+function tlMiniRowsHtml(events) {
+    return events.map(ev => {
+        const meta   = typeof tlTypeMeta === 'function' ? tlTypeMeta(ev.type) : { icon: 'event', label: ev.type };
+        const color  = { instance_join:'var(--accent)', photo:'var(--ok)', first_meet:'var(--cyan)', meet_again:'#6554FF', notification:'var(--warn)', avatar_switch:'#FF7043', video_url:'#29B6F6' }[ev.type] || 'var(--tx3)';
+        const d      = new Date(ev.timestamp);
+        const dt     = `${fmtShortDate(d)} | ${fmtTime(d)}`;
+        const ei     = ev.id.replace(/'/g, "\\'");
+        const detail = typeof _tlListData === 'function' ? (_tlListData(ev).detail || '') : '';
+        return `<tr class="tl-list-row" onclick="openTlDetail('${ei}', true)">
+            <td class="tl-list-dt">${esc(dt)}</td>
+            <td class="tl-list-type"><span class="msi tl-list-icon" style="color:${color}">${meta.icon}</span><span>${esc(meta.label)}</span></td>
+            <td class="tl-list-detail">${detail || (typeof tlListNaHtml === 'function' ? tlListNaHtml() : '')}</td>
+        </tr>`;
+    }).join('');
 }
 
 function tlMiniListHtml(rowsHtml, moreOnclick) {

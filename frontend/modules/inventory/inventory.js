@@ -71,12 +71,28 @@ function invCountText(kind, count) {
 }
 
 let _invPrintsLoaded = false;
-let _invInventoryLoaded = false;
+let invActiveCategory = 'all';
+const invCategoryCache = {};
+
+function setInvCategory(category) {
+    invActiveCategory = category;
+    document.querySelectorAll('#invCategoryBar [data-inv-category]').forEach(btn => btn.classList.toggle('active', btn.dataset.invCategory === category));
+    const cached = invCategoryCache[category];
+    if (Array.isArray(cached)) renderInvInventory(cached);
+    else refreshInventory();
+}
+
+function invResetInventoryItems() {
+    Object.keys(invCategoryCache).forEach(key => delete invCategoryCache[key]);
+    invInventoryCache = [];
+    if (activeInvTab === 'inventory' && document.getElementById('tab13')?.classList.contains('active')) refreshInventory(true);
+    else _invUpdateCounts();
+}
 
 function _invUpdateCounts() {
     const counts = {
         photos: invFilesCache['gallery'], icons: invFilesCache['icon'], emojis: invFilesCache['emoji'], stickers: invFilesCache['sticker'],
-        prints: _invPrintsLoaded ? invPrintsCache : null, inventory: _invInventoryLoaded ? invInventoryCache : null
+        prints: _invPrintsLoaded ? invPrintsCache : null, inventory: invCategoryCache.all || null
     };
     Object.keys(INV_TABS).forEach(key => {
         const el = document.getElementById('invF' + key.charAt(0).toUpperCase() + key.slice(1) + 'Count');
@@ -123,10 +139,14 @@ function switchInvTab(tab) {
     const uploadBtn = document.getElementById('invUploadBtn');
     if (uploadBtn) uploadBtn.style.display = info?.canUpload ? '' : 'none';
 
+    const categoryBar = document.getElementById('invCategoryBar');
+    if (categoryBar) categoryBar.style.display = tab === 'inventory' ? '' : 'none';
+    document.querySelector('.inv-topbar')?.classList.toggle('tt-split', tab === 'inventory');
+
     const cached = tab === 'prints'
         ? invPrintsCache
         : tab === 'inventory'
-            ? invInventoryCache
+            ? invCategoryCache[invActiveCategory]
             : (invFilesCache[info?.tag] || null);
 
     if (Array.isArray(cached) && cached.length > 0) {
@@ -152,7 +172,7 @@ function refreshInventory(force = false) {
     if (tab === 'prints') {
         sendToCS({ action: 'invGetPrints', force });
     } else if (tab === 'inventory') {
-        sendToCS({ action: 'invGetInventory', force });
+        sendToCS({ action: 'invGetInventory', category: invActiveCategory, force });
     } else if (info?.tag) {
         sendToCS({ action: 'invGetFiles', tag: info.tag, force });
     }
@@ -303,7 +323,6 @@ function buildInvPrintCard(print) {
 
 function renderInvInventory(items) {
     invInventoryCache = items;
-    _invInventoryLoaded = true;
 
     const grid = document.getElementById('invGrid');
     if (!grid) return;
@@ -311,7 +330,9 @@ function renderInvInventory(items) {
     _invUpdateCounts();
 
     if (!items.length) {
-        grid.innerHTML = `<div class="empty-msg">${t('inventory.empty.inventory', 'No inventory items found.')}<br><span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);">${esc(t('inventory.empty.inventory_desc', 'Items you own appear here (props, emojis, stickers from bundles).'))}</span></div>`;
+        grid.innerHTML = invActiveCategory === 'all'
+            ? `<div class="empty-msg">${t('inventory.empty.inventory', 'No inventory items found.')}<br><span style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);">${esc(t('inventory.empty.inventory_desc', 'Items you own appear here (props, emojis, stickers from bundles).'))}</span></div>`
+            : `<div class="empty-msg">${esc(t('inventory.empty.category', 'No items in this category.'))}</div>`;
         return;
     }
 
@@ -345,11 +366,15 @@ function buildInvItemCard(item) {
 }
 
 function handleInvInventoryResult(payload) {
+    const category = payload.category || 'all';
+    const showing = activeInvTab === 'inventory' && category === invActiveCategory;
     if (payload.error) {
-        renderInvFetchError(payload.error);
+        if (showing) renderInvFetchError(payload.error);
         return;
     }
-    renderInvInventory(payload.items || []);
+    invCategoryCache[category] = payload.items || [];
+    if (showing) renderInvInventory(invCategoryCache[category]);
+    else _invUpdateCounts();
 }
 
 function invBrowseUpload() {

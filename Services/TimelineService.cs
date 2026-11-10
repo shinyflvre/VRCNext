@@ -1721,15 +1721,25 @@ public class TimelineService : IDisposable
     public List<TimelineEvent> GetInstanceVisitsForWorld(string worldId, int limit = 10)
     {
         if (string.IsNullOrEmpty(worldId)) return new List<TimelineEvent>();
+        return LoadInstanceVisits("world_id=$key", worldId, limit);
+    }
 
+    public List<TimelineEvent> GetInstanceVisitsForGroup(string groupId, int limit = 10)
+    {
+        if (string.IsNullOrEmpty(groupId)) return new List<TimelineEvent>();
+        return LoadInstanceVisits("instr(location,$key)>0", $"~group({groupId})", limit);
+    }
+
+    private List<TimelineEvent> LoadInstanceVisits(string filter, string key, int limit)
+    {
         var ids = new List<string>();
         try
         {
             using var cmd = _db.CreateCommand();
-            cmd.CommandText = @"SELECT id FROM events
-                WHERE type='instance_join' AND world_id=$wid
+            cmd.CommandText = $@"SELECT id FROM events
+                WHERE type='instance_join' AND {filter}
                 ORDER BY timestamp DESC LIMIT $limit";
-            cmd.Parameters.AddWithValue("$wid",   worldId);
+            cmd.Parameters.AddWithValue("$key",   key);
             cmd.Parameters.AddWithValue("$limit", limit);
             using var r = cmd.ExecuteReader();
             while (r.Read()) ids.Add(r.GetString(0));

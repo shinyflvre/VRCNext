@@ -804,7 +804,7 @@ public class FriendsController
                 var uid = msg["userId"]?.ToString() ?? _core.VrcApi.CurrentUserId;
                 if (!string.IsNullOrEmpty(uid))
                 {
-                    var msgs = await _core.Invite.GetInviteMessagesAsync(uid);
+                    var msgs = await _core.Invite.GetInviteMessagesAsync(uid, msg["messageType"]?.ToString() ?? "message");
                     _core.SendToJS("vrcInviteMessages", msgs ?? new JArray());
                 }
                 break;
@@ -817,7 +817,7 @@ public class FriendsController
                 var text = msg["message"]?.ToString() ?? "";
                 if (!string.IsNullOrEmpty(uid) && slot >= 0 && !string.IsNullOrEmpty(text))
                 {
-                    var (ok, arr, cooldown) = await _core.Invite.UpdateInviteMessageAsync(uid, slot, text);
+                    var (ok, arr, cooldown) = await _core.Invite.UpdateInviteMessageAsync(uid, slot, text, msg["messageType"]?.ToString() ?? "message");
                     if (ok && arr != null)
                         _core.SendToJS("vrcInviteMessages", arr);
                     else
@@ -829,13 +829,33 @@ public class FriendsController
             case "vrcRequestInvite":
             {
                 var uid = msg["userId"]?.ToString();
+                var slot = msg["requestSlot"]?.Value<int?>();
                 if (!string.IsNullOrEmpty(uid))
                 {
-                    var ok = await _core.Invite.RequestInviteAsync(uid);
+                    var ok = await _core.Invite.RequestInviteAsync(uid, slot);
                     _core.SendToJS("vrcActionResult", new
                     {
                         action = "requestInvite", success = ok,
-                        message = ok ? "Invite request sent!" : "Failed to request invite."
+                        message = ok ? "Invite request sent!" : "Failed to request invite.",
+                        messageKey = ok ? "profiles.request_invite.sent" : "profiles.request_invite.failed"
+                    });
+                }
+                break;
+            }
+
+            case "vrcRequestInviteWithPhoto":
+            {
+                var uid = msg["userId"]?.ToString();
+                var fileUrl = msg["fileUrl"]?.ToString();
+                var slot = msg["requestSlot"]?.Value<int?>();
+                if (!string.IsNullOrEmpty(uid) && !string.IsNullOrEmpty(fileUrl))
+                {
+                    var ok = await _core.Invite.RequestInviteWithPhotoAsync(uid, fileUrl, slot);
+                    _core.SendToJS("vrcActionResult", new
+                    {
+                        action = "requestInvite", success = ok,
+                        message = ok ? "Invite request sent!" : "Failed to request invite.",
+                        messageKey = ok ? "profiles.request_invite.sent" : "profiles.request_invite.failed"
                     });
                 }
                 break;

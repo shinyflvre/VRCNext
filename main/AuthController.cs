@@ -1415,6 +1415,8 @@ public class AuthController
             vrcRunning        = _core.IsVrcRunning?.Invoke() ?? false,
             allowAvatarCopying = user["allowAvatarCopying"]?.Value<bool>() ?? false,
             isBoopingEnabled  = user["isBoopingEnabled"]?.Value<bool>() ?? false,
+            hasSharedConnectionsOptOut = user["hasSharedConnectionsOptOut"]?.Value<bool>() ?? false,
+            hasDiscordFriendsOptOut    = user["hasDiscordFriendsOptOut"]?.Value<bool>() ?? false,
             homeLocation      = user["homeLocation"]?.ToString() ?? "",
             rawJson = user,
         });

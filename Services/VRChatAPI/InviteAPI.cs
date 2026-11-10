@@ -63,16 +63,7 @@ public class InviteAPI(VRChatApiService ctx)
             if (string.IsNullOrEmpty(loc) || loc == "offline" || loc == "traveling")
             { ctx.Log("InviteWithPhoto: no valid instance"); return false; }
 
-            byte[] imgBytes;
-            if (imageUrl.StartsWith("data:image", StringComparison.OrdinalIgnoreCase))
-            {
-                var comma = imageUrl.IndexOf(',');
-                imgBytes = Convert.FromBase64String(imageUrl[(comma + 1)..]);
-            }
-            else
-            {
-                imgBytes = await ctx._http.GetByteArrayAsync(imageUrl);
-            }
+            var imgBytes = await ReadPhotoBytesAsync(imageUrl);
 
             var dataObj = new JObject { ["instanceId"] = loc };
             if (messageSlot.HasValue) dataObj["messageSlot"] = messageSlot.Value;
@@ -91,12 +82,47 @@ public class InviteAPI(VRChatApiService ctx)
         catch (Exception ex) { ctx.Log($"InviteWithPhoto exception: {ex.Message}"); return false; }
     }
 
-    public async Task<bool> RequestInviteAsync(string userId)
+    private async Task<byte[]> ReadPhotoBytesAsync(string imageUrl)
+    {
+        if (imageUrl.StartsWith("data:image", StringComparison.OrdinalIgnoreCase))
+        {
+            var comma = imageUrl.IndexOf(',');
+            return Convert.FromBase64String(imageUrl[(comma + 1)..]);
+        }
+        return await ctx._http.GetByteArrayAsync(imageUrl);
+    }
+
+    public async Task<bool> RequestInviteWithPhotoAsync(string userId, string imageUrl, int? requestSlot = null)
     {
         if (!ctx.IsLoggedIn) return false;
         try
         {
-            var payload = new JObject { ["instanceId"] = "" };
+            var imgBytes = await ReadPhotoBytesAsync(imageUrl);
+            var dataObj = new JObject();
+            if (requestSlot.HasValue) dataObj["requestSlot"] = requestSlot.Value;
+
+            using var form = new MultipartFormDataContent();
+            var imgContent = new ByteArrayContent(imgBytes);
+            imgContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/png");
+            form.Add(imgContent, "image", "photo.png");
+            form.Add(new StringContent(dataObj.ToString(Newtonsoft.Json.Formatting.None)), "data");
+
+            var resp = await ctx._http.PostAsync($"{VRChatApiService.BASE}/requestInvite/{userId}/photo", form);
+            var body = await resp.Content.ReadAsStringAsync();
+            ctx.Log($"RequestInviteWithPhoto response: {(int)resp.StatusCode} body: {body[..Math.Min(200, body.Length)]}");
+            return resp.IsSuccessStatusCode;
+        }
+        catch (Exception ex) { ctx.Log($"RequestInviteWithPhoto exception: {ex.Message}"); return false; }
+    }
+
+    public async Task<bool> RequestInviteAsync(string userId, int? requestSlot = null)
+    {
+        if (!ctx.IsLoggedIn) return false;
+        try
+        {
+            var payload = requestSlot.HasValue
+                ? new JObject { ["requestSlot"] = requestSlot.Value }
+                : new JObject { ["instanceId"] = "" };
             var content = new StringContent(payload.ToString(), Encoding.UTF8, "application/json");
             var resp = await ctx._http.PostAsync($"{VRChatApiService.BASE}/requestInvite/{userId}", content);
             var body = await resp.Content.ReadAsStringAsync();

@@ -712,3 +712,393 @@ function lgvCopy() {
     if (!_lgvEntries.length) return;
     lgvCopyText(_lgvEntries.map(lgvEntryText).join('\n'));
 }
+
+function _toolFillFilter(id, rows, value) {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    sel.innerHTML = rows.map(([v, key, fallback]) => `<option value="${v}">${esc(t(key, fallback))}</option>`).join('');
+    sel.value = value;
+    initVnSelect(sel);
+    if (sel._vnRefresh) sel._vnRefresh();
+}
+
+function _toolHumanize(value) {
+    const text = String(value || '').replace(/[_-]+/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').trim();
+    return text ? text.charAt(0).toUpperCase() + text.slice(1) : '';
+}
+
+function _toolDate(value) {
+    return value ? fmtShortDate(new Date(value)) : '';
+}
+
+function _toolThumbHtml(url, icon, round) {
+    if (url) return `<img class="fd-group-icon"${round ? ' style="border-radius:50%;"' : ''} src="${esc(imgThumb(url, 96))}" loading="lazy" onerror="this.style.display='none'">`;
+    return `<div class="fd-group-icon fd-group-icon-empty" style="display:flex;align-items:center;justify-content:center;"><span class="msi" style="font-size:18px;">${icon}</span></div>`;
+}
+
+const MR_PAGE_SIZE = 25;
+const MR_FILTERS = [
+    ['', 'my_reports.filter.all', 'All'],
+    ['user', 'my_reports.filter.users', 'Users'],
+    ['world', 'my_reports.filter.worlds', 'Worlds'],
+    ['avatar', 'my_reports.filter.avatars', 'Avatars'],
+    ['group', 'my_reports.filter.groups', 'Groups'],
+];
+const MR_OPENERS = { user: 'openFriendDetail', world: 'openWorldDetail', avatar: 'openAvatarDetail', group: 'openGroupDetail' };
+let _mrStatus = 'open';
+let _mrType = '';
+let _mrPage = 0;
+let _mrTotal = 0;
+let _mrHasNext = false;
+let _mrRows = [];
+let _mrRequestId = 0;
+
+function openMyReportsModal() {
+    const overlay = document.getElementById('modalMyReports');
+    if (!overlay) return;
+    overlay.style.display = 'flex';
+    _toolFillFilter('mrTypeFilter', MR_FILTERS, _mrType);
+    mrLoad(0);
+}
+
+function closeMyReportsModal() {
+    const overlay = document.getElementById('modalMyReports');
+    if (overlay) overlay.style.display = 'none';
+}
+
+function mrSetStatus(status) {
+    _mrStatus = status === 'closed' ? 'closed' : 'open';
+    document.getElementById('mrTabOpen')?.classList.toggle('active', _mrStatus === 'open');
+    document.getElementById('mrTabClosed')?.classList.toggle('active', _mrStatus === 'closed');
+    mrLoad(0);
+}
+
+function mrSetType(type) {
+    _mrType = type || '';
+    mrLoad(0);
+}
+
+function mrGoPage(page) {
+    mrLoad(page);
+}
+
+function mrLoad(page) {
+    _mrPage = Math.max(0, page || 0);
+    const list = document.getElementById('mrList');
+    if (list) list.innerHTML = `<div class="mt-empty">${esc(t('common.loading', 'Loading...'))}</div>`;
+    setMiniPaginator('mrPaginatorBar', '');
+    sendToCS({ action: 'vrcGetMyReports', requestId: ++_mrRequestId, n: MR_PAGE_SIZE, offset: _mrPage * MR_PAGE_SIZE, closedOnly: _mrStatus === 'closed', type: _mrType });
+}
+
+function onMyReports(payload) {
+    if (payload?.requestId !== _mrRequestId) return;
+    const list = document.getElementById('mrList');
+    if (!list) return;
+    if (!payload.ok) {
+        list.innerHTML = `<div class="mt-empty">${esc(t('my_reports.load_failed', 'Could not load reports'))}</div>`;
+        return;
+    }
+    _mrRows = payload.results || [];
+    _mrTotal = payload.totalCount || 0;
+    _mrHasNext = !!payload.hasNext;
+    mrRender();
+}
+
+function _mrRowHtml(report) {
+    const type = report.type || '';
+    const opener = MR_OPENERS[type];
+    const click = opener && report.contentId ? ` onclick="closeMyReportsModal();${opener}('${jsq(report.contentId)}')"` : '';
+    const typeLabel = opener ? t(`my_reports.type.${type}`, _toolHumanize(type)) : _toolHumanize(type);
+    const meta = [typeLabel, _toolHumanize(report.reason), _toolDate(report.created)].filter(Boolean).join(' · ');
+    return `<div class="fd-group-card" style="margin-bottom:0;${click ? '' : 'cursor:default;'}"${click}>
+        ${_toolThumbHtml(report.contentThumbnailImageUrl, 'gavel', type === 'user')}
+        <div class="fd-group-card-info">
+            <div class="fd-group-card-name">${esc(report.contentName || report.contentId || '')}</div>
+            <div class="fd-group-card-meta">${esc(meta)}</div>
+            ${report.description ? `<div class="fd-group-card-meta">${esc(report.description)}</div>` : ''}
+        </div>
+    </div>`;
+}
+
+function mrRender() {
+    const list = document.getElementById('mrList');
+    if (!list) return;
+    if (!_mrRows.length) {
+        const empty = _mrStatus === 'closed' ? t('my_reports.empty_closed', 'No closed reports') : t('my_reports.empty_open', 'No open reports');
+        list.innerHTML = `<div class="mt-empty">${esc(empty)}</div>`;
+        setMiniPaginator('mrPaginatorBar', '');
+        return;
+    }
+    list.innerHTML = _mrRows.map(_mrRowHtml).join('');
+    const totalPages = Math.max(Math.ceil(_mrTotal / MR_PAGE_SIZE), _mrPage + (_mrHasNext ? 2 : 1));
+    setMiniPaginator('mrPaginatorBar', buildMiniPaginator(_mrPage, totalPages, 'mrGoPage'));
+}
+
+let _ruUserId = '';
+let _ruCategories = null;
+
+function openReportUserModal(userId, displayName) {
+    const overlay = document.getElementById('modalReportUser');
+    if (!overlay || !userId) return;
+    _ruUserId = userId;
+    const desc = document.getElementById('ruDesc');
+    if (desc) desc.textContent = displayName
+        ? tf('report_user.desc', { name: displayName }, 'Report {name} to VRChat.')
+        : t('report_user.desc_generic', 'Report this user to VRChat.');
+    const details = document.getElementById('ruDetails');
+    if (details) details.value = '';
+    const send = document.getElementById('ruSendBtn');
+    if (send) send.disabled = !_ruCategories;
+    overlay.style.display = 'flex';
+    if (_ruCategories) _ruRenderCategories();
+    else sendToCS({ action: 'vrcGetReportOptions' });
+}
+
+function closeReportUserModal() {
+    const overlay = document.getElementById('modalReportUser');
+    if (overlay) overlay.style.display = 'none';
+}
+
+function onReportOptions(payload) {
+    if (!payload?.ok || !(payload.categories || []).length) {
+        closeReportUserModal();
+        showToast(false, t('report_user.load_failed', 'Could not load report options'));
+        return;
+    }
+    _ruCategories = payload.categories;
+    const send = document.getElementById('ruSendBtn');
+    if (send) send.disabled = false;
+    _ruRenderCategories();
+}
+
+function _ruSelectHtml(id, rows, onchange) {
+    return `<select id="${id}" class="wd-create-select" style="width:100%;"${onchange ? ` onchange="${onchange}"` : ''}>${rows.map(r => `<option value="${esc(r.value)}">${esc(r.label)}</option>`).join('')}</select>`;
+}
+
+function _ruRenderCategories() {
+    const wrap = document.getElementById('ruCategoryWrap');
+    if (!wrap || !_ruCategories) return;
+    wrap.innerHTML = _ruSelectHtml('ruCategory', _ruCategories.map(c => ({ value: c.id, label: t(`report_user.category_option.${c.id}`, c.text) })), 'ruRenderReasons()');
+    initVnSelect(document.getElementById('ruCategory'));
+    ruRenderReasons();
+}
+
+function ruRenderReasons() {
+    const wrap = document.getElementById('ruReasonWrap');
+    const categoryId = document.getElementById('ruCategory')?.value;
+    const category = (_ruCategories || []).find(c => c.id === categoryId);
+    if (!wrap || !category) return;
+    wrap.innerHTML = _ruSelectHtml('ruReason', category.reasons.map(r => ({ value: r.id, label: t(`report_user.reason_option.${r.id}`, r.text) })));
+    initVnSelect(document.getElementById('ruReason'));
+}
+
+function ruSubmit() {
+    const category = document.getElementById('ruCategory')?.value;
+    const reason = document.getElementById('ruReason')?.value;
+    if (!_ruUserId || !category || !reason) return;
+    const send = document.getElementById('ruSendBtn');
+    if (send) send.disabled = true;
+    sendToCS({ action: 'vrcSubmitUserReport', userId: _ruUserId, category, reason, description: document.getElementById('ruDetails')?.value || '' });
+}
+
+function onUserReportResult(payload) {
+    const send = document.getElementById('ruSendBtn');
+    if (send) send.disabled = false;
+    if (payload?.ok) {
+        closeReportUserModal();
+        showToast(true, t('report_user.sent', 'Report sent'));
+        return;
+    }
+    showToast(false, t('report_user.failed', 'Could not send report'));
+}
+
+function openRewardCodeModal() {
+    const overlay = document.getElementById('modalRewardCode');
+    if (!overlay) return;
+    const input = document.getElementById('rcCode');
+    if (input) input.value = '';
+    rcSyncButton();
+    overlay.style.display = 'flex';
+    input?.focus();
+}
+
+function closeRewardCodeModal() {
+    const overlay = document.getElementById('modalRewardCode');
+    if (overlay) overlay.style.display = 'none';
+}
+
+function rcSyncButton() {
+    const btn = document.getElementById('rcRedeemBtn');
+    if (btn) btn.disabled = !(document.getElementById('rcCode')?.value || '').trim();
+}
+
+function rcSubmit() {
+    const code = (document.getElementById('rcCode')?.value || '').trim();
+    const btn = document.getElementById('rcRedeemBtn');
+    if (!code || !btn || btn.disabled) return;
+    btn.disabled = true;
+    sendToCS({ action: 'vrcRedeemReward', code });
+}
+
+function onRedeemRewardResult(payload) {
+    if (payload?.ok) {
+        closeRewardCodeModal();
+        showToast(true, t('reward_code.success', 'Code redeemed'));
+        if (typeof invResetInventoryItems === 'function') invResetInventoryItems();
+        return;
+    }
+    rcSyncButton();
+    showToast(false, t('reward_code.failed', 'This code could not be redeemed'));
+}
+
+const PH_PAGE_SIZE = 20;
+const PH_FILTERS = [
+    ['all', 'purchase_history.filter.all_types', 'All types'],
+    ['permanent', 'purchase_history.type.permanent', 'Permanent'],
+    ['instant', 'purchase_history.type.instant', 'Instant'],
+];
+const PH_KNOWN_TYPES = ['permanent', 'instant', 'duration', 'subscription'];
+let _phTab = 'purchases';
+let _phType = 'all';
+let _phPage = 0;
+let _phPurchases = null;
+let _phCredits = null;
+
+function openPurchaseHistoryModal() {
+    const overlay = document.getElementById('modalPurchaseHistory');
+    if (!overlay) return;
+    overlay.style.display = 'flex';
+    _toolFillFilter('phTypeFilter', PH_FILTERS, _phType);
+    phSetTab(_phTab);
+}
+
+function closePurchaseHistoryModal() {
+    const overlay = document.getElementById('modalPurchaseHistory');
+    if (overlay) overlay.style.display = 'none';
+}
+
+function phSetTab(tab) {
+    _phTab = tab === 'credits' ? 'credits' : 'purchases';
+    _phPage = 0;
+    document.getElementById('phTabPurchases')?.classList.toggle('active', _phTab === 'purchases');
+    document.getElementById('phTabCredits')?.classList.toggle('active', _phTab === 'credits');
+    const filter = document.getElementById('phFilterWrap');
+    if (filter) filter.style.display = _phTab === 'purchases' ? 'flex' : 'none';
+    if ((_phTab === 'purchases' ? _phPurchases : _phCredits) === null) phLoad();
+    else phRender();
+}
+
+function phSetType(type) {
+    _phType = type || 'all';
+    _phPage = 0;
+    phRender();
+}
+
+function phGoPage(page) {
+    _phPage = Math.max(0, page || 0);
+    phRender();
+}
+
+function phLoad(force) {
+    if (force) {
+        if (_phTab === 'purchases') _phPurchases = null;
+        else _phCredits = null;
+        _phPage = 0;
+    }
+    const list = document.getElementById('phList');
+    if (list) list.innerHTML = `<div class="mt-empty">${esc(t('common.loading', 'Loading...'))}</div>`;
+    setMiniPaginator('phPaginatorBar', '');
+    sendToCS({ action: _phTab === 'purchases' ? 'vrcGetPurchaseHistory' : 'vrcGetCreditActivity' });
+}
+
+function _phShowFailed() {
+    const list = document.getElementById('phList');
+    if (list) list.innerHTML = `<div class="mt-empty">${esc(t('purchase_history.load_failed', 'Could not load purchase history'))}</div>`;
+}
+
+function onPurchaseHistory(payload) {
+    if (!payload?.ok) {
+        if (_phTab === 'purchases') _phShowFailed();
+        return;
+    }
+    _phPurchases = payload.purchases || [];
+    if (_phTab === 'purchases') phRender();
+}
+
+function onCreditActivity(payload) {
+    if (!payload?.ok) {
+        if (_phTab === 'credits') _phShowFailed();
+        return;
+    }
+    _phCredits = payload.transactions || [];
+    if (_phTab === 'credits') phRender();
+}
+
+function _phFormatCredits(value) {
+    return `${Number(value || 0).toLocaleString()}V`;
+}
+
+function _phPriceHtml(primary, secondary) {
+    return `<div style="margin-left:auto;flex-shrink:0;text-align:right;font-size:calc(12px + var(--fs-off, 0px));font-weight:600;color:var(--tx0);">${esc(primary)}${secondary ? `<div style="font-weight:400;font-size:calc(10px + var(--fs-off, 0px));color:var(--tx2);">${esc(secondary)}</div>` : ''}</div>`;
+}
+
+function _phPurchaseRowHtml(purchase) {
+    const price = Number(purchase.purchasePrice) || 0;
+    const type = purchase.listingType || '';
+    const typeLabel = PH_KNOWN_TYPES.includes(type) ? t(`purchase_history.type.${type}`, _toolHumanize(type)) : _toolHumanize(type);
+    const details = [
+        typeLabel,
+        purchase.isGift ? t('purchase_history.gift', 'Gift') : '',
+        purchase.purchaseActive === false ? t('purchase_history.expired', 'Expired') : '',
+        purchase.sellerDisplayName ? tf('purchase_history.seller', { name: purchase.sellerDisplayName }, 'Seller {name}') : '',
+    ].filter(Boolean).join(' · ');
+    const dates = [
+        _toolDate(purchase.purchaseDate),
+        purchase.purchaseEndDate && type !== 'permanent' ? tf('purchase_history.ends', { date: _toolDate(purchase.purchaseEndDate) }, 'Ends {date}') : '',
+    ].filter(Boolean).join(' · ');
+    return `<div class="fd-group-card" style="margin-bottom:0;cursor:default;">
+        ${_toolThumbHtml(purchase.imageUrl, 'sell', false)}
+        <div class="fd-group-card-info">
+            <div class="fd-group-card-name">${esc(purchase.listingDisplayName || purchase.listingId || '')}</div>
+            <div class="fd-group-card-meta">${esc(details)}</div>
+            <div class="fd-group-card-meta">${esc(dates)}</div>
+        </div>
+        ${_phPriceHtml(price > 0 ? _phFormatCredits(price) : t('purchase_history.free', 'Free'))}
+    </div>`;
+}
+
+function _phCreditRowHtml(entry) {
+    const amount = Number(entry.amount) || 0;
+    const balance = Number(entry.balance);
+    const meta = [
+        entry.fromUserDisplayName ? tf('purchase_history.from', { name: entry.fromUserDisplayName }, 'From {name}') : '',
+        _toolDate(entry.date),
+        entry.platform || '',
+    ].filter(Boolean).join(' · ');
+    return `<div class="fd-group-card" style="margin-bottom:0;cursor:default;">
+        <div class="fd-group-card-info">
+            <div class="fd-group-card-name">${esc(entry.listingDisplayName || entry.reasonLabel || '')}</div>
+            <div class="fd-group-card-meta">${esc(meta)}</div>
+        </div>
+        ${_phPriceHtml(`${amount > 0 ? '+' : ''}${_phFormatCredits(amount)}`, Number.isFinite(balance) ? tf('purchase_history.balance', { value: _phFormatCredits(balance) }, 'Balance {value}') : '')}
+    </div>`;
+}
+
+function phRender() {
+    const list = document.getElementById('phList');
+    if (!list) return;
+    const isPurchases = _phTab === 'purchases';
+    const source = (isPurchases ? _phPurchases : _phCredits) || [];
+    const rows = isPurchases && _phType !== 'all' ? source.filter(p => p.listingType === _phType) : source;
+    if (!rows.length) {
+        const empty = isPurchases ? t('purchase_history.empty_purchases', 'No purchases yet') : t('purchase_history.empty_credits', 'No Credits activity yet');
+        list.innerHTML = `<div class="mt-empty">${esc(empty)}</div>`;
+        setMiniPaginator('phPaginatorBar', '');
+        return;
+    }
+    const totalPages = Math.ceil(rows.length / PH_PAGE_SIZE);
+    if (_phPage >= totalPages) _phPage = totalPages - 1;
+    const pageRows = rows.slice(_phPage * PH_PAGE_SIZE, (_phPage + 1) * PH_PAGE_SIZE);
+    list.innerHTML = pageRows.map(isPurchases ? _phPurchaseRowHtml : _phCreditRowHtml).join('');
+    setMiniPaginator('phPaginatorBar', buildMiniPaginator(_phPage, totalPages, 'phGoPage'));
+}

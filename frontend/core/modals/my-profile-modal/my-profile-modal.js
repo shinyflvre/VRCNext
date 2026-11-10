@@ -357,6 +357,78 @@ function onMypAvatarInfo(payload) {
     _mypUpdateAvatarCard();
 }
 
+const _MYP_PRIVACY_FIELDS = [
+    ['allowAvatarCopying', 'profiles.meta.avatar_cloning', 'Avatar Cloning', false],
+    ['isBoopingEnabled', 'profiles.meta.booping', 'Booping', false],
+    ['hasSharedConnectionsOptOut', 'profiles.privacy.shared_connections', 'Shared Connections', true],
+    ['hasDiscordFriendsOptOut', 'profiles.privacy.discord_connections', 'Discord Connections', true],
+];
+
+function _mypPrivacyOn(u, field, inverted) {
+    return inverted ? !u[field] : !!u[field];
+}
+
+function mypInfosEditHtml() {
+    const cells = _MYP_PRIVACY_FIELDS.map(([field, key, fallback]) => `<div style="display:flex;flex-direction:column;min-width:0;">
+        <div class="sf-section-label" style="margin-top:0;">${esc(t(key, fallback))}</div>
+        <select id="mypPrivacy_${field}" class="wd-create-select" style="width:100%;">
+            <option value="1">${esc(t('common.on', 'On'))}</option>
+            <option value="0">${esc(t('common.off', 'Off'))}</option>
+        </select>
+    </div>`).join('');
+    return `<div id="mypInfosEdit" style="display:none;">
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 8px;">${cells}</div>
+        <div class="myp-edit-actions">
+            <button class="vrcn-button" onclick="cancelMyField('infos')">${esc(t('common.cancel', 'Cancel'))}</button>
+            <button class="vrcn-button vrcn-btn-primary" id="mypInfosSaveBtn" onclick="saveMyField('infos')">${esc(t('common.save', 'Save'))}</button>
+        </div>
+    </div>`;
+}
+
+function _mypInitPrivacySelects(u) {
+    _MYP_PRIVACY_FIELDS.forEach(([field, , , inverted]) => {
+        const sel = document.getElementById(`mypPrivacy_${field}`);
+        if (!sel) return;
+        sel.value = _mypPrivacyOn(u, field, inverted) ? '1' : '0';
+        if (!sel._vnSelect) initVnSelect(sel);
+        sel._vnRefresh?.();
+    });
+}
+
+function mypSaveInfos(u) {
+    const fields = {};
+    _MYP_PRIVACY_FIELDS.forEach(([field, , , inverted]) => {
+        const sel = document.getElementById(`mypPrivacy_${field}`);
+        if (!sel) return;
+        const value = inverted ? sel.value !== '1' : sel.value === '1';
+        if (value !== !!u[field]) fields[field] = value;
+    });
+    if (!Object.keys(fields).length) {
+        cancelMyField('infos');
+        return;
+    }
+    const saveBtn = document.getElementById('mypInfosSaveBtn');
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = t('common.saving', 'Saving...');
+    }
+    sendToCS({ action: 'vrcSetPrivacySettings', fields });
+}
+
+function onPrivacySettingResult(payload) {
+    if (payload.ok) {
+        if (currentVrcUser) Object.assign(currentVrcUser, payload.fields || {});
+        renderMyProfileContent();
+        return;
+    }
+    const saveBtn = document.getElementById('mypInfosSaveBtn');
+    if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = t('common.save', 'Save');
+    }
+    showToast(false, t('profiles.privacy.save_failed', 'Could not save setting'));
+}
+
 function renderMyProfileContent() {
     const u = currentVrcUser;
     const box = document.getElementById('mypBox');
@@ -517,8 +589,7 @@ function renderMyProfileContent() {
         _mr(t('profiles.meta.platform',      'Platform'),       esc(getPlatformLabel(u.platform || u.lastPlatform) || '—')),
         _mr(t('profiles.meta.last_platform', 'Last Platform'),  esc(getPlatformLabel(u.lastPlatform) || '—')),
         _mr(t('profiles.meta.age_verified',  'Age Verified'),   u.ageVerified       ? t('common.yes','Yes') : t('common.no','No')),
-        _mr(t('profiles.meta.avatar_cloning','Avatar Cloning'), u.allowAvatarCopying ? t('common.on','On')  : t('common.off','Off')),
-        _mr(t('profiles.meta.booping',       'Booping'),        u.isBoopingEnabled   ? t('common.on','On')  : t('common.off','Off')),
+        ..._MYP_PRIVACY_FIELDS.map(([field, key, fallback, inverted]) => _mr(t(key, fallback), _mypPrivacyOn(u, field, inverted) ? t('common.on','On') : t('common.off','Off'))),
     ].join('');
     const _pronounsSection = `<div class="myp-section-header">
             <span class="myp-section-title">${t('profiles.my_profile.sections.pronouns', 'Pronouns')}</span>
@@ -534,8 +605,12 @@ function renderMyProfileContent() {
         </div>`;
 
     const _infosCard = `<div class="fd-info-card">
-        <div class="fd-group-rep-label">${t('profiles.meta.infos_title', 'Infos')}</div>
-        <div style="display:grid;gap:6px;">${_infosRows}</div>
+        <div class="myp-section-header">
+            <span class="myp-section-title">${t('profiles.meta.infos_title', 'Infos')}</span>
+            <button class="myp-edit-btn" onclick="editMyField('infos')"><span class="msi" style="font-size:14px;">edit</span></button>
+        </div>
+        <div id="mypInfosView"><div style="display:grid;gap:6px;">${_infosRows}</div></div>
+        ${mypInfosEditHtml()}
     </div>`;
 
     const _pronounsCard = `<div class="fd-info-card">${_pronounsSection}</div>`;
@@ -766,8 +841,8 @@ function toggleMyBadge(badgeId) {
 }
 
 function editMyField(field) {
-    const VIEWS = { pronouns: 'mypPronounsView', bio: 'mypBioView', links: 'mypLinksView', languages: 'mypLangsView' };
-    const EDITS = { pronouns: 'mypPronounsEdit', bio: 'mypBioEdit', links: 'mypLinksEdit', languages: 'mypLangsEdit' };
+    const VIEWS = { pronouns: 'mypPronounsView', bio: 'mypBioView', links: 'mypLinksView', languages: 'mypLangsView', infos: 'mypInfosView' };
+    const EDITS = { pronouns: 'mypPronounsEdit', bio: 'mypBioEdit', links: 'mypLinksEdit', languages: 'mypLangsEdit', infos: 'mypInfosEdit' };
     // Close other open edit panels
     Object.keys(VIEWS).forEach(f => {
         if (f !== field) {
@@ -790,12 +865,14 @@ function editMyField(field) {
         _renderMyLinksInputs();
     } else if (field === 'languages') {
         _renderMyLangsEdit();
+    } else if (field === 'infos') {
+        _mypInitPrivacySelects(currentVrcUser);
     }
 }
 
 function cancelMyField(field) {
-    const VIEWS = { pronouns: 'mypPronounsView', bio: 'mypBioView', links: 'mypLinksView', languages: 'mypLangsView' };
-    const EDITS = { pronouns: 'mypPronounsEdit', bio: 'mypBioEdit', links: 'mypLinksEdit', languages: 'mypLangsEdit' };
+    const VIEWS = { pronouns: 'mypPronounsView', bio: 'mypBioView', links: 'mypLinksView', languages: 'mypLangsView', infos: 'mypInfosView' };
+    const EDITS = { pronouns: 'mypPronounsEdit', bio: 'mypBioEdit', links: 'mypLinksEdit', languages: 'mypLangsEdit', infos: 'mypInfosEdit' };
     const v = document.getElementById(VIEWS[field]); if (v) v.style.display = '';
     const e = document.getElementById(EDITS[field]); if (e) e.style.display = 'none';
 }
@@ -803,7 +880,11 @@ function cancelMyField(field) {
 function saveMyField(field) {
     const u = currentVrcUser;
     if (!u) return;
-    const EDITS = { pronouns: 'mypPronounsEdit', bio: 'mypBioEdit', links: 'mypLinksEdit', languages: 'mypLangsEdit' };
+    if (field === 'infos') {
+        mypSaveInfos(u);
+        return;
+    }
+    const EDITS = { pronouns: 'mypPronounsEdit', bio: 'mypBioEdit', links: 'mypLinksEdit', languages: 'mypLangsEdit', infos: 'mypInfosEdit' };
     const saveBtn = document.querySelector(`#${EDITS[field]} .vrcn-btn-primary`);
     if (saveBtn) saveBtn.disabled = true;
 

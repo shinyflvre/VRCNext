@@ -468,15 +468,15 @@ window.external.receiveMessage(rawMsg => {
                     break;
                 }
                 if (payload.action === 'createInstance') {
-                    showToast(payload.success, payload.message);
+                    showToast(payload.success, payload.messageKey ? t(payload.messageKey, payload.message) : payload.message);
                     if (payload.success) {
                         loadMyInstances();
                         closeCreateInstanceModal();
                     } else {
                         const cb = document.getElementById('ciCreateBtn');
                         const jb = document.getElementById('ciCreateJoinBtn');
-                        if (cb) { cb.disabled = false; cb.innerHTML = `<span class="msi" style="font-size:14px;">add_circle_outline</span> Create Instance`; }
-                        if (jb) { jb.disabled = false; jb.innerHTML = `<span class="msi" style="font-size:14px;">play_circle</span> Create &amp; Join`; }
+                        if (cb) { cb.disabled = false; cb.innerHTML = `<span class="msi" style="font-size:14px;">add_circle_outline</span> ${t('worlds.instances.create_only', 'Create Instance')}`; }
+                        if (jb) { jb.disabled = false; jb.innerHTML = `<span class="msi" style="font-size:14px;">play_circle</span> ${t('worlds.instances.create_join', 'Create & Join')}`; }
                     }
                     break;
                 }
@@ -539,7 +539,7 @@ window.external.receiveMessage(rawMsg => {
                 } else {
                     if (payload.action === 'leaveGroup' && typeof groupBulkLeaveConsume === 'function'
                         && groupBulkLeaveConsume(payload.success)) break;
-                    showToast(payload.success, payload.message);
+                    showToast(payload.success, payload.messageKey ? t(payload.messageKey, payload.message) : payload.message);
                     // Auto-refresh groups list on join/leave (from anywhere in the app)
                     if (payload.success && (payload.action === 'joinGroup' || payload.action === 'leaveGroup' || payload.groupJoined)) {
                         loadMyGroups();
@@ -1047,6 +1047,9 @@ case 'vrcNews':
             case 'visitedWorlds':
                 if (typeof renderVisitedWorlds === 'function') renderVisitedWorlds(payload.worlds);
                 break;
+            case 'vrcWorldDiscover':
+                if (typeof onWorldDiscover === 'function') onWorldDiscover(payload);
+                break;
             case 'recentSeenPlayers':
                 if (typeof renderRecentSeen === 'function') renderRecentSeen(payload.players);
                 break;
@@ -1291,6 +1294,51 @@ case 'vrcNews':
             case 'invPrintUploadResult': handleInvPrintUploadResult(payload); break;
             case 'vrcMessageTemplates':
                 if (typeof onMessageTemplates === 'function') onMessageTemplates(payload);
+                break;
+            case 'timelineForGroup':
+                if (typeof renderGdInstanceHistory === 'function') renderGdInstanceHistory(payload.groupId, payload.events);
+                break;
+            case 'vrcPrivacySettingResult':
+                if (typeof onPrivacySettingResult === 'function') onPrivacySettingResult(payload);
+                break;
+            case 'vrcReportOptions':
+                if (typeof onReportOptions === 'function') onReportOptions(payload);
+                break;
+            case 'vrcUserReportResult':
+                if (typeof onUserReportResult === 'function') onUserReportResult(payload);
+                break;
+            case 'vrcRedeemRewardResult':
+                if (typeof onRedeemRewardResult === 'function') onRedeemRewardResult(payload);
+                break;
+            case 'vrcFriendStatus':
+                if (typeof onFriendStatus === 'function') onFriendStatus(payload);
+                break;
+            case 'vrcFriendRequestResult':
+                if (typeof onFriendRequestResult === 'function') onFriendRequestResult(payload);
+                break;
+            case 'vrcAvatarImpostorResult':
+                if (typeof onAvatarImpostorResult === 'function') onAvatarImpostorResult(payload);
+                break;
+            case 'vrcWorldManageInfo':
+                if (typeof onWorldManageInfo === 'function') onWorldManageInfo(payload);
+                break;
+            case 'vrcWorldPublishResult':
+                if (typeof onWorldPublishResult === 'function') onWorldPublishResult(payload);
+                break;
+            case 'vrcWorldPersistResult':
+                if (typeof onWorldPersistResult === 'function') onWorldPersistResult(payload);
+                break;
+            case 'vrcInstanceCreateOptions':
+                if (typeof onInstanceCreateOptions === 'function') onInstanceCreateOptions(payload);
+                break;
+            case 'vrcMyReports':
+                if (typeof onMyReports === 'function') onMyReports(payload);
+                break;
+            case 'vrcPurchaseHistory':
+                if (typeof onPurchaseHistory === 'function') onPurchaseHistory(payload);
+                break;
+            case 'vrcCreditActivity':
+                if (typeof onCreditActivity === 'function') onCreditActivity(payload);
                 break;
             case 'vrcMessageTemplateResult':
                 if (typeof onMessageTemplateResult === 'function') onMessageTemplateResult(payload);

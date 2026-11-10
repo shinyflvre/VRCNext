@@ -22,6 +22,7 @@ public class InstanceController
     private string _cachedInstOwnerGroup = "";
     private string _cachedInstDisplayName = "";
     private string _cachedInstMinAvatarPerf = "";
+    private object? _cachedInstMeta;
 
     private readonly Dictionary<string, (string displayName, string image)> _cumulativeInstancePlayers = new();
     private readonly Dictionary<string, List<string>> _playerJoinTimes = new();
@@ -357,6 +358,7 @@ public class InstanceController
                             var fullLoc = inst["location"]?.ToString() ?? loc;
                             var pl      = inst["platforms"];
                             var cs      = inst["contentSettings"];
+                            var instMeta = await _core.Instances.BuildInstanceMetaAsync(inst);
 
                             results.Add(new
                             {
@@ -370,6 +372,7 @@ public class InstanceController
                                 displayName  = inst["displayName"]?.ToString() ?? "",
                                 ageGate      = fullLoc.Contains("~ageGate"),
                                 minAvatarPerf = inst["minimumAvatarPerformance"]?.ToString() ?? "",
+                                meta         = instMeta,
                                 ownerId      = apiOwnerId,
                                 ownerName,
                                 ownerGroup,
@@ -513,33 +516,52 @@ public class InstanceController
                 break;
             }
 
+            case "vrcGetInstanceCreateOptions":
+                _ = Task.Run(async () =>
+                {
+                    var (icoCategories, icoVibes) = await _core.Instances.GetInstanceCreateOptionsAsync();
+                    Invoke(() => _core.SendToJS("vrcInstanceCreateOptions", new { categories = icoCategories, vibes = icoVibes }));
+                });
+                break;
+
             case "vrcCreateInstance":
                 var ciWorldId = msg["worldId"]?.ToString() ?? "";
                 var ciType = msg["type"]?.ToString() ?? "public";
                 var ciRegion = msg["region"]?.ToString() ?? "eu";
                 var ciAndJoin = msg["andJoin"]?.ToObject<bool>() ?? true;
+                var ciExtras = InstanceCreateExtras.FromMessage(msg);
                 if (!string.IsNullOrEmpty(ciWorldId))
                 {
                     _ = Task.Run(async () =>
                     {
-                        var location = _core.Instances.BuildInstanceLocation(ciWorldId, ciType, ciRegion);
+                        var location = await _core.Instances.CreateInstanceAsync(ciWorldId, ciType, ciRegion, ciExtras) ?? "";
                         bool ok;
                         string message;
+                        string messageKey;
                         var ciVrcRunning = _core.IsVrcRunning?.Invoke() ?? false;
-                        if (ciAndJoin && !ciVrcRunning)
+                        if (string.IsNullOrEmpty(location))
+                        {
+                            ok = false;
+                            message = "Failed to create instance.";
+                            messageKey = "worlds.instances.toast.create_failed";
+                        }
+                        else if (ciAndJoin && !ciVrcRunning)
                         {
                             ok = true;
                             message = "Instance created! Launching VRChat...";
+                            messageKey = "worlds.instances.toast.created_launching";
                         }
                         else if (ciAndJoin)
                         {
                             ok = await _core.Instances.InviteSelfAsync(location);
-                            message = ok ? "Instance created! Self-invite sent." : "Failed to create instance.";
+                            message = ok ? "Instance created! Self-invite sent." : "Instance created but invite failed.";
+                            messageKey = ok ? "worlds.instances.toast.created_invited" : "worlds.instances.toast.invite_failed";
                         }
                         else
                         {
                             ok = true;
                             message = "Instance created.";
+                            messageKey = "worlds.instances.toast.created";
                         }
                         if (ok)
                         {
@@ -554,6 +576,7 @@ public class InstanceController
                                 action = "createInstance",
                                 success = ok,
                                 message,
+                                messageKey,
                                 location
                             });
                             if (ok && ciAndJoin && !ciVrcRunning)
@@ -907,6 +930,7 @@ public class InstanceController
                 _cachedInstOwnerGroup = "";
                 _cachedInstDisplayName = "";
                 _cachedInstMinAvatarPerf = "";
+                _cachedInstMeta = null;
                 Invoke(() =>
                 {
                     _core.PushDiscordPresence?.Invoke();
@@ -921,6 +945,7 @@ public class InstanceController
             // Player count comes from LogWatcher — no need to poll the instance endpoint repeatedly.
             string worldName, worldThumb, ownerId, ownerName, ownerGroup, displayName, minAvatarPerf;
             int worldCapacity;
+            object? instMeta;
 
             bool locationChanged = _cachedInstLocation != loc || string.IsNullOrEmpty(_cachedInstWorldName);
             if (locationChanged)
@@ -931,6 +956,7 @@ public class InstanceController
                 worldCapacity = inst?["world"]?["capacity"]?.Value<int>() ?? inst?["capacity"]?.Value<int>() ?? 0;
                 displayName   = inst?["displayName"]?.ToString() ?? "";
                 minAvatarPerf = inst?["minimumAvatarPerformance"]?.ToString() ?? "";
+                instMeta      = await _core.Instances.BuildInstanceMetaAsync(inst);
 
                 // Resolve instance owner / group
                 ownerId = inst?["ownerId"]?.ToString() ?? "";
@@ -980,6 +1006,7 @@ public class InstanceController
                 ownerGroup    = _cachedInstOwnerGroup;
                 displayName   = _cachedInstDisplayName;
                 minAvatarPerf = _cachedInstMinAvatarPerf;
+                instMeta      = _cachedInstMeta;
             }
 
             // Step 4: Build player list. Prefer LogWatcher (reads VRChat logs),
@@ -1077,6 +1104,7 @@ public class InstanceController
             _cachedInstOwnerGroup = ownerGroup;
             _cachedInstDisplayName = displayName;
             _cachedInstMinAvatarPerf = minAvatarPerf;
+            _cachedInstMeta = instMeta;
 
             Invoke(() =>
             {
@@ -1090,6 +1118,7 @@ public class InstanceController
                     ownerId, ownerName, ownerGroup, displayName,
                     ageGate = loc.Contains("~ageGate"),
                     minAvatarPerf,
+                    meta = instMeta,
                 });
             });
 
@@ -1242,6 +1271,7 @@ public class InstanceController
             displayName  = _cachedInstDisplayName,
             ageGate      = _cachedInstLocation.Contains("~ageGate"),
             minAvatarPerf = _cachedInstMinAvatarPerf,
+            meta         = _cachedInstMeta,
         });
     }
 

@@ -43,6 +43,7 @@ const _avFieldIds = {
     visibility: { view: 'avfVisView',        edit: 'avfVisEdit'        },
     tags:       { view: 'avfTagsView',       edit: 'avfTagsEdit'       },
     styles:     { view: 'avfInfoView',       edit: 'avfStylesEdit'     },
+    impostor:   { view: 'avfImpostorView',   edit: 'avfImpostorEdit'   },
 };
 let _avStyles = null;
 let _avSavingField = '';
@@ -232,7 +233,7 @@ function renderAvatarDetail(a) {
             ${_mr(t('avatars.detail.meta.created_at', 'Created'), fmtDate(a.created_at))}
             ${_mr(t('avatars.detail.meta.updated_at', 'Updated'), fmtDate(a.updated_at))}
             ${a.version ? _mr(t('avatars.detail.meta.version', 'Version'), `v${a.version}`) : ''}
-            ${_mr(t('avatars.detail.meta.impostor', 'Impostor'), impostorText)}
+            ${isOwn ? '' : _mr(t('avatars.detail.meta.impostor', 'Impostor'), impostorText)}
             ${_mr(t('avatars.detail.meta.primary_style', 'Primary Style'), a.stylePrimary ? esc(a.stylePrimary) : noneText)}
             ${_mr(t('avatars.detail.meta.secondary_style', 'Secondary Style'), a.styleSecondary ? esc(a.styleSecondary) : noneText)}
             ${platPerfRows}
@@ -245,6 +246,7 @@ function renderAvatarDetail(a) {
                 <button class="vrcn-button vrcn-btn-primary" onclick="saveAvField('styles','${aid}')">${t('common.save', 'Save')}</button>
             </div>
         </div>` : ''}
+        ${isOwn ? avImpostorSectionHtml(a, impostorText) : ''}
         <div class="myp-section-header">
             <span class="myp-section-title">${t('avatars.detail.sections.visibility', 'Visibility')}</span>
             ${isOwn ? `<button class="myp-edit-btn" onclick="editAvField('visibility')"><span class="msi" style="font-size:14px;">edit</span></button>` : ''}
@@ -542,6 +544,60 @@ function saveAvField(field, avatarId) {
     sendToCS(msg);
 }
 
+
+function avImpostorSectionHtml(a, statusHtml) {
+    const aid = jsq(a.id || '');
+    const button = (icon, label, onclick) => `<button class="vrcn-button-round" onclick="${onclick}"><span class="msi" style="font-size:14px;">${icon}</span> ${esc(label)}</button>`;
+    const actions = a.hasImpostor
+        ? button('refresh', t('avatars.impostor.regenerate', 'Regenerate Impostor'), `avImpostorAction('${aid}','generate')`)
+            + button('delete', t('common.delete', 'Delete'), `avConfirmDeleteImpostor('${aid}')`)
+        : button('add', t('avatars.impostor.generate', 'Generate Impostor'), `avImpostorAction('${aid}','generate')`);
+    return `<div class="myp-section-header">
+            <span class="myp-section-title">${esc(t('avatars.detail.meta.impostor', 'Impostor'))}</span>
+            <button class="myp-edit-btn" onclick="editAvField('impostor')"><span class="msi" style="font-size:14px;">edit</span></button>
+        </div>
+        <div id="avfImpostorView" style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx1);margin-bottom:10px;">${statusHtml}</div>
+        <div id="avfImpostorEdit" style="display:none;margin-bottom:10px;">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">${actions}</div>
+            <div class="myp-edit-actions">
+                <button class="vrcn-button" onclick="cancelAvField('impostor')">${esc(t('common.cancel', 'Cancel'))}</button>
+            </div>
+        </div>`;
+}
+
+function avImpostorAction(avatarId, op) {
+    sendToCS({ action: 'vrcAvatarImpostor', avatarId, op });
+}
+
+function avConfirmDeleteImpostor(avatarId) {
+    const name = (_avDetailData && _avDetailData.id === avatarId && _avDetailData.name) || avatarId;
+    vrcnConfirmDelete({
+        id: 'avatarImpostorDeleteModal',
+        title: t('avatars.impostor.delete', 'Delete Impostor'),
+        icon: 'delete',
+        message: tf('avatars.impostor.delete_confirm', { name }, 'Delete the impostor of "{name}"?'),
+        confirmLabel: t('common.delete', 'Delete'),
+        onConfirm: () => avImpostorAction(avatarId, 'delete'),
+    });
+}
+
+function onAvatarImpostorResult(data) {
+    if (!data.ok) {
+        showToast(false, t('avatars.impostor.toast.failed', 'Impostor action failed'));
+        return;
+    }
+    if (data.op !== 'delete') {
+        showToast(true, t('avatars.impostor.toast.queued', 'Impostor generation started'));
+        if (_avDetailData && _avDetailData.id === data.avatarId) cancelAvField('impostor');
+        return;
+    }
+    showToast(true, t('avatars.impostor.toast.deleted', 'Impostor deleted'));
+    if (_avDetailData && _avDetailData.id === data.avatarId) {
+        _avDetailData.hasImpostor = false;
+        _avDetailData.impostorVersion = '';
+        renderAvatarDetail(_avDetailData);
+    }
+}
 
 function onAvatarUpdateResult(data) {
     const fieldLabels = {

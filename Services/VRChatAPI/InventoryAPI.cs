@@ -146,12 +146,44 @@ public class InventoryAPI(VRChatApiService ctx)
         catch (Exception ex) { ctx.Log($"ResolveDecoration exception: {ex.Message}"); }
     }
 
-    public async Task<(JArray items, int totalCount)> GetInventoryItemsAsync(int n = 100, int offset = 0)
+    private const int InventoryPageSize = 100;
+    private const int InventoryMaxPages = 100;
+
+    private static readonly Dictionary<string, string> InventoryCategoryFilters = new()
+    {
+        ["all"]         = "archived=false",
+        ["emojis"]      = "types=emoji&notFlags=ugc&archived=false",
+        ["stickers"]    = "types=sticker&notFlags=ugc&archived=false",
+        ["items"]       = "types=bundle,prop&notFlags=ugc&archived=false",
+        ["decorations"] = "types=iconFrame,profileEffect,nameplateEffect&notFlags=ugc&archived=false",
+        ["drones"]      = "types=droneskin&notFlags=ugc&archived=false",
+        ["portals"]     = "types=portalskin&notFlags=ugc&archived=false",
+        ["warp"]        = "types=warpeffect&notFlags=ugc&archived=false",
+        ["archived"]    = "archived=true",
+    };
+
+    public static string NormalizeInventoryCategory(string? category) =>
+        category != null && InventoryCategoryFilters.ContainsKey(category) ? category : "all";
+
+    public async Task<JArray> GetInventoryCategoryAsync(string category)
+    {
+        var items = new JArray();
+        var filter = "order=newest&" + InventoryCategoryFilters[NormalizeInventoryCategory(category)];
+        for (var page = 0; page < InventoryMaxPages; page++)
+        {
+            var (pageItems, _) = await GetInventoryItemsAsync(InventoryPageSize, page * InventoryPageSize, filter);
+            foreach (var item in pageItems) items.Add(item);
+            if (pageItems.Count < InventoryPageSize) break;
+        }
+        return items;
+    }
+
+    public async Task<(JArray items, int totalCount)> GetInventoryItemsAsync(int n = 100, int offset = 0, string filter = "")
     {
         if (!ctx.IsLoggedIn) return (new JArray(), 0);
         try
         {
-            var url = $"{VRChatApiService.BASE}/inventory?n={n}&offset={offset}";
+            var url = $"{VRChatApiService.BASE}/inventory?n={n}&offset={offset}{(filter.Length > 0 ? "&" + filter : "")}";
             ctx.Log($"GetInventoryItems n={n} offset={offset}");
             var resp = await ctx._http.GetAsync(url);
             var body = await resp.Content.ReadAsStringAsync();
@@ -171,6 +203,19 @@ public class InventoryAPI(VRChatApiService ctx)
         }
         catch (Exception ex) { ctx.Log($"GetInventoryItems exception: {ex.Message}"); }
         return (new JArray(), 0);
+    }
+
+    public async Task<bool> RedeemRewardAsync(string code)
+    {
+        if (!ctx.IsLoggedIn || string.IsNullOrWhiteSpace(code)) return false;
+        try
+        {
+            var content = new StringContent(new JObject { ["code"] = code.Trim() }.ToString(), Encoding.UTF8, "application/json");
+            var resp = await ctx._http.PostAsync($"{VRChatApiService.BASE}/reward/redeem", content);
+            ctx.Log($"RedeemReward: {(int)resp.StatusCode}");
+            return resp.IsSuccessStatusCode;
+        }
+        catch (Exception ex) { ctx.Log($"RedeemReward exception: {ex.Message}"); return false; }
     }
 
     public async Task<JArray> GetUserPrintsAsync(string userId)

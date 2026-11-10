@@ -112,6 +112,8 @@ function formatLastSeen(apiLastLogin, localLastSeen) {
 function getTrustRank(tags) {
     if (!tags || !Array.isArray(tags) || tags.length === 0) return null;
     // Order matters: check highest first
+    if (tags.includes('admin_moderator')) return { label: t('profiles.trust.vrchat_team', 'VRChat Team'), color: 'var(--accent)', cls: 'accent' };
+    if (tags.includes('system_troll') || tags.includes('system_probable_troll')) return { label: t('profiles.trust.nuisance', 'Nuisance'), color: 'var(--err)', cls: 'err' };
     if (tags.includes('system_trust_legend')) return { label: t('profiles.trust.trusted', 'Trusted User'), color: 'var(--bdg-rank-trusted)', cls: 'rank-trusted' };
     if (tags.includes('system_trust_veteran')) return { label: t('profiles.trust.trusted', 'Trusted User'), color: 'var(--bdg-rank-trusted)', cls: 'rank-trusted' };
     if (tags.includes('system_trust_trusted')) return { label: t('profiles.trust.known', 'Known User'), color: 'var(--bdg-rank-known)', cls: 'rank-known' };
@@ -626,7 +628,7 @@ function _plSortValue(f, field) {
     }
 }
 
-const _PL_RANK_ORDER = ['rank-visitor', 'rank-new', 'rank-user', 'rank-known', 'rank-trusted'];
+const _PL_RANK_ORDER = ['err', 'rank-visitor', 'rank-new', 'rank-user', 'rank-known', 'rank-trusted', 'accent'];
 
 function _peopleListMode() {
     return peopleViewMode === 'list' && typeof tlTableHtml === 'function' && typeof tlTableRow === 'function';

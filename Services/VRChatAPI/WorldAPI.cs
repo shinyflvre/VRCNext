@@ -408,12 +408,63 @@ public class WorldAPI
         return new JArray();
     }
 
-    public async Task<(bool ok, string error)> UpdateWorldAsync(string worldId, string name, string description, List<string> tags)
+    public async Task<(bool canPublish, bool hasPersistentData)> GetWorldManageInfoAsync(string worldId, bool ownWorld)
+    {
+        if (!ctx.IsLoggedIn || string.IsNullOrEmpty(ctx.CurrentUserId)) return (false, false);
+        var canPublish = false;
+        var hasPersistentData = false;
+        try
+        {
+            if (ownWorld)
+            {
+                var publishResp = await ctx._http.GetAsync($"{VRChatApiService.BASE}/worlds/{worldId}/publish");
+                if (publishResp.IsSuccessStatusCode)
+                    canPublish = JObject.Parse(await publishResp.Content.ReadAsStringAsync())["canPublish"]?.Value<bool>() ?? false;
+            }
+            var persistResp = await ctx._http.GetAsync($"{VRChatApiService.BASE}/users/{ctx.CurrentUserId}/{worldId}/persist/exists");
+            hasPersistentData = persistResp.IsSuccessStatusCode;
+        }
+        catch (Exception ex) { ctx.Log($"GetWorldManageInfo exception: {ex.Message}"); }
+        return (canPublish, hasPersistentData);
+    }
+
+    public async Task<bool> SetWorldPublishedAsync(string worldId, bool publish)
+    {
+        if (!ctx.IsLoggedIn) return false;
+        try
+        {
+            var url = $"{VRChatApiService.BASE}/worlds/{worldId}/publish";
+            var resp = publish
+                ? await ctx._http.PutAsync(url, new StringContent("{}", Encoding.UTF8, "application/json"))
+                : await ctx._http.DeleteAsync(url);
+            ctx.Log($"SetWorldPublished {worldId} {publish}: {(int)resp.StatusCode}");
+            return resp.IsSuccessStatusCode;
+        }
+        catch (Exception ex) { ctx.Log($"SetWorldPublished exception: {ex.Message}"); return false; }
+    }
+
+    public async Task<bool> DeleteWorldPersistentDataAsync(string worldId)
+    {
+        if (!ctx.IsLoggedIn || string.IsNullOrEmpty(ctx.CurrentUserId)) return false;
+        try
+        {
+            var resp = await ctx._http.DeleteAsync($"{VRChatApiService.BASE}/users/{ctx.CurrentUserId}/{worldId}/persist");
+            ctx.Log($"DeleteWorldPersistentData {worldId}: {(int)resp.StatusCode}");
+            return resp.IsSuccessStatusCode;
+        }
+        catch (Exception ex) { ctx.Log($"DeleteWorldPersistentData exception: {ex.Message}"); return false; }
+    }
+
+    public async Task<(bool ok, string error)> UpdateWorldAsync(string worldId, string name, string description, List<string> tags,
+        int? capacity = null, int? recommendedCapacity = null)
     {
         if (!ctx.IsLoggedIn) return (false, "Not logged in");
         try
         {
-            var body = JsonConvert.SerializeObject(new { name, description, tags });
+            var payload = new JObject { ["name"] = name, ["description"] = description, ["tags"] = JArray.FromObject(tags) };
+            if (capacity.HasValue) payload["capacity"] = capacity.Value;
+            if (recommendedCapacity.HasValue) payload["recommendedCapacity"] = recommendedCapacity.Value;
+            var body = payload.ToString(Formatting.None);
             var content = new StringContent(body, Encoding.UTF8, "application/json");
             var resp = await ctx._http.PutAsync($"{VRChatApiService.BASE}/worlds/{worldId}", content);
             var respBody = await resp.Content.ReadAsStringAsync();

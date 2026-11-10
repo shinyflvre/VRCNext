@@ -173,8 +173,7 @@
                             <div class="tb-dd-item" onclick="resetSidebarWidths()"><span class="msi">restart_alt</span><span data-i18n="tb.app.view.reset_sidebars">Reset Sidebars</span></div>
                             <div class="tb-dd-sep"></div>
                             <div class="tb-dd-item" data-keep-modal onclick="openDashLayoutEditor()"><span class="msi">dashboard_customize</span><span data-i18n="context_menu.dash_layout">Edit Dashboard</span></div>
-                            <div class="tb-dd-item" data-keep-modal onclick="openNavEditor()"><span class="msi">tune</span><span data-i18n="context_menu.nav_edit">Edit Navigation</span></div>
-                            <div class="tb-dd-sep"></div>
+                            <div class="tb-dd-item" data-keep-modal onclick="openNavEditor()"><span class="msi">tune</span><span data-i18n="context_menu.nav_edit">Edit Navigation</span></div>                            <div class="tb-dd-sep"></div>
                             <div class="tb-dd-scale-row">
                                 <span class="msi">aspect_ratio</span>
                                 <span data-i18n="tb.app.view.scale">Scale</span>
@@ -195,6 +194,9 @@
                                     <button class="tb-dd-item" data-keep-modal onclick="openVrcLaunchOptionsModal()"><span class="msi">terminal</span><span data-i18n="tb.vrchat.launch_options">VRChat Launch Options</span></button>
                                     <button class="tb-dd-item" data-keep-modal onclick="openMessageTemplatesModal()"><span class="msi">edit_note</span><span data-i18n="tb.vrchat.message_templates">Message Templates</span></button>
                                     <button class="tb-dd-item" data-keep-modal onclick="openLogViewerModal()"><span class="msi">description</span><span data-i18n="tb.vrchat.log_viewer">Log Viewer</span></button>
+                                    <button class="tb-dd-item" data-keep-modal onclick="openMyReportsModal()"><span class="msi">gavel</span><span data-i18n="tb.vrchat.my_reports">My Reports</span></button>
+                                    <button class="tb-dd-item" data-keep-modal onclick="openPurchaseHistoryModal()"><span class="msi">sell</span><span data-i18n="tb.vrchat.purchase_history">Purchase History</span></button>
+                                    <button class="tb-dd-item" data-keep-modal onclick="openRewardCodeModal()"><span class="msi">redeem</span><span data-i18n="tb.vrchat.reward_code">Reward Code</span></button>
                                 </div>
                             </div>
                             <div class="tb-dd-submenu">
@@ -652,6 +654,10 @@
     <div class="modal-overlay" id="modalVrcLaunchOptions" style="display:none;" onclick="if(event.target===this)this.style.display='none'"></div>
     <div class="modal-overlay" id="modalMessageTemplates" style="display:none;" onclick="if(event.target===this)closeMessageTemplatesModal()"></div>
     <div class="modal-overlay" id="modalLogViewer" style="display:none;" onclick="if(event.target===this)closeLogViewerModal()"></div>
+    <div class="modal-overlay" id="modalMyReports" style="display:none;" onclick="if(event.target===this)closeMyReportsModal()"></div>
+    <div class="modal-overlay" id="modalPurchaseHistory" style="display:none;" onclick="if(event.target===this)closePurchaseHistoryModal()"></div>
+    <div class="modal-overlay" id="modalRewardCode" style="display:none;" onclick="if(event.target===this)closeRewardCodeModal()"></div>
+    <div class="modal-overlay" id="modalReportUser" style="display:none;z-index:10010;" onclick="if(event.target===this)closeReportUserModal()"></div>
 
     <!-- Notification Toast (top-right, action feedback) -->
     <div id="notifToastArea" class="notif-toast-area"></div>
@@ -851,6 +857,10 @@
             modalVrcLaunchOptions: 'core/modals/vrc-tools-modal/vrc-launch-options-modal.html',
             modalMessageTemplates: 'core/modals/vrc-tools-modal/message-templates-modal.html',
             modalLogViewer:        'core/modals/vrc-tools-modal/log-viewer-modal.html',
+            modalMyReports:        'core/modals/vrc-tools-modal/my-reports-modal.html',
+            modalPurchaseHistory:  'core/modals/vrc-tools-modal/purchase-history-modal.html',
+            modalRewardCode:       'core/modals/vrc-tools-modal/reward-code-modal.html',
+            modalReportUser:       'core/modals/vrc-tools-modal/report-user-modal.html',
             dashLayoutModal:    'modules/dashboard/dash-layout.html',
             avFavPickerPanel:   'modules/avatars/fav-picker.html',
             themeEditorPanel:   'modules/settings/theme-editor.html',
