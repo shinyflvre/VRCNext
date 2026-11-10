@@ -780,6 +780,33 @@ public partial class AppShell
                     });
                     break;
 
+                case "vrcGetWorldDiscover":
+                {
+                    var wdvMode = msg["mode"]?.ToString() == "discover" ? "discover" : "popular";
+                    _ = Task.Run(async () =>
+                    {
+                        var wdvInstances = wdvMode == "discover"
+                            ? await _core.Instances.DiscoverInstancesAsync()
+                            : await _core.Instances.GetActiveInstancesAsync();
+                        var wdvWorlds = InstancesAPI.GroupInstancesByWorld(wdvInstances ?? new JArray());
+                        foreach (var wdvWorld in wdvWorlds.OfType<JObject>())
+                        {
+                            var wdvId = wdvWorld["id"]?.ToString() ?? "";
+                            var wdvUrl = ImageCacheHelper.GetWorldUrl(wdvId, wdvWorld["imageUrl"]?.ToString() ?? wdvWorld["thumbnailImageUrl"]?.ToString());
+                            wdvWorld["imageUrl"] = wdvUrl; wdvWorld["thumbnailImageUrl"] = wdvUrl;
+                            EnrichWorldDatesFromCache(_core.TimeEngine, wdvWorld, wdvId);
+                            wdvWorld["created_at"] = DateTimeHelper.Iso(wdvWorld["created_at"]);
+                            wdvWorld["updated_at"] = DateTimeHelper.Iso(wdvWorld["updated_at"]);
+                            var wdvStats = _core.TimeEngine.GetWorldStats(wdvId);
+                            wdvWorld["worldTimeSeconds"] = wdvStats.totalSeconds;
+                            wdvWorld["worldVisitCount"] = wdvStats.visitCount;
+                            wdvWorld["worldLastVisited"] = wdvStats.lastVisited;
+                        }
+                        Invoke(() => SendToJS("vrcWorldDiscover", new { mode = wdvMode, ok = wdvInstances != null, worlds = wdvWorlds }));
+                    });
+                    break;
+                }
+
 
                 case "playVRChat":
                     _relayCtrl.HandleMessage(action, msg);
@@ -1071,11 +1098,13 @@ public partial class AppShell
                 case "vrcGetInviteMessages":
                 case "vrcUpdateInviteMessage":
                 case "vrcRequestInvite":
+                case "vrcRequestInviteWithPhoto":
                 case "vrcGetUserAvatars":
                 case "vrcGetUserFavWorlds":
                     await _friends.HandleMessage(action, msg);
                     break;
 
+                case "vrcGetInstanceCreateOptions":
                 case "vrcCreateInstance":
                 case "vrcSelfInvite":
                 case "vrcOpenInGame":
@@ -2117,39 +2146,15 @@ public partial class AppShell
                     var wuName = msg["name"]?.ToString()                  ?? "";
                     var wuDesc = msg["description"]?.ToString()           ?? "";
                     var wuTags = msg["tags"]?.ToObject<List<string>>()    ?? new();
+                    var wuCapacity = msg["capacity"]?.Value<int?>();
+                    var wuRecommended = msg["recommendedCapacity"]?.Value<int?>();
                     if (!string.IsNullOrEmpty(wuId))
                         _ = Task.Run(async () =>
                         {
-                            var (ok, error) = await _core.World.UpdateWorldAsync(wuId, wuName, wuDesc, wuTags);
+                            var (ok, error) = await _core.World.UpdateWorldAsync(wuId, wuName, wuDesc, wuTags, wuCapacity, wuRecommended);
                             if (ok)
                             {
-                                var ex = _core.TimeEngine.GetWorldDetail(wuId);
-                                if (ex != null)
-                                {
-                                    _core.TimeEngine.SaveWorldDetail(
-                                        worldId:             wuId,
-                                        name:                wuName,
-                                        thumb:               ex.WorldThumb,
-                                        description:         wuDesc,
-                                        imageUrl:            ex.ImageUrl,
-                                        authorName:          ex.AuthorName,
-                                        authorId:            ex.AuthorId,
-                                        published:           ex.Published,
-                                        updated:             ex.Updated,
-                                        capacity:            ex.Capacity,
-                                        recommendedCapacity: ex.RecommendedCapacity,
-                                        tags:                wuTags,
-                                        favorites:           ex.Favorites,
-                                        visits:              ex.Visits,
-                                        pcSize:              ex.PcSize,
-                                        androidSize:         ex.AndroidSize,
-                                        iosSize:             ex.IosSize,
-                                        heat:                ex.Heat,
-                                        popularity:          ex.Popularity,
-                                        publicOccupants:     ex.PublicOccupants,
-                                        privateOccupants:    ex.PrivateOccupants,
-                                        version:             ex.Version);
-                                }
+                                UpdateSavedWorldDetail(wuId, name: wuName, description: wuDesc, tags: wuTags, capacity: wuCapacity, recommendedCapacity: wuRecommended);
                                 ModalCacheHelper.Invalidate(wuId);
                             }
                             Invoke(() => SendToJS("vrcWorldUpdateResult", new
@@ -2160,6 +2165,8 @@ public partial class AppShell
                                 name        = ok ? wuName : (string?)null,
                                 description = ok ? wuDesc : (string?)null,
                                 tags        = ok ? wuTags : (List<string>?)null,
+                                capacity    = ok ? wuCapacity : null,
+                                recommendedCapacity = ok ? wuRecommended : null,
                             }));
                         });
                     break;
@@ -2186,7 +2193,13 @@ public partial class AppShell
                                 var imgRaw = wImgDataB64.Contains(",") ? wImgDataB64.Split(',')[1] : wImgDataB64;
                                 var bytes = Convert.FromBase64String(imgRaw);
                                 var (ok, imageUrl, error) = await _core.World.UploadWorldMainImageAsync(wImgId, rawImageUrl, bytes);
-                                if (ok) ModalCacheHelper.Invalidate(wImgId);
+                                if (ok)
+                                {
+                                    ModalCacheHelper.Invalidate(wImgId);
+                                    UpdateSavedWorldDetail(wImgId, imageUrl: imageUrl);
+                                    await ImageCacheHelper.CacheWorldAsync(wImgId, imageUrl, forceRefresh: true);
+                                    await _core.World.GetWorldFreshAsync(wImgId);
+                                }
                                 Invoke(() => SendToJS("vrcWorldImageResult", new { ok, worldId = wImgId, imageUrl, error }));
                             }
                             catch (Exception ex)
@@ -3429,6 +3442,193 @@ public partial class AppShell
                     break;
                 }
 
+                case "vrcGetFriendStatus":
+                {
+                    var fsUserId = msg["userId"]?.ToString() ?? "";
+                    if (!string.IsNullOrEmpty(fsUserId))
+                        _ = Task.Run(async () =>
+                        {
+                            var fsStatus = await _core.Friends.GetFriendStatusAsync(fsUserId);
+                            Invoke(() => SendToJS("vrcFriendStatus", new
+                            {
+                                userId   = fsUserId,
+                                ok       = fsStatus != null,
+                                incoming = fsStatus?["incomingRequest"]?.Value<bool>() ?? false,
+                                outgoing = fsStatus?["outgoingRequest"]?.Value<bool>() ?? false,
+                            }));
+                        });
+                    break;
+                }
+
+                case "vrcFriendRequestAction":
+                {
+                    var frUserId = msg["userId"]?.ToString() ?? "";
+                    var frOp     = msg["op"]?.ToString() ?? "";
+                    if (!string.IsNullOrEmpty(frUserId))
+                        _ = Task.Run(async () =>
+                        {
+                            var frOk = false;
+                            var frGone = false;
+                            if (frOp == "send") frOk = await _core.Friends.SendFriendRequestAsync(frUserId);
+                            else if (frOp == "cancel") frOk = await _core.Friends.CancelFriendRequestAsync(frUserId);
+                            else
+                            {
+                                var frNotifId = await _core.Notifications.FindFriendRequestIdAsync(frUserId);
+                                if (string.IsNullOrEmpty(frNotifId)) frGone = true;
+                                else frOk = frOp == "accept"
+                                    ? await _core.Notifications.AcceptNotificationAsync(frNotifId)
+                                    : await _core.Notifications.HideNotificationAsync(frNotifId);
+                            }
+                            Invoke(() => SendToJS("vrcFriendRequestResult", new { userId = frUserId, op = frOp, ok = frOk, gone = frGone }));
+                        });
+                    break;
+                }
+
+                case "vrcAvatarImpostor":
+                {
+                    var aiId = msg["avatarId"]?.ToString() ?? "";
+                    var aiOp = msg["op"]?.ToString() ?? "";
+                    if (!string.IsNullOrEmpty(aiId))
+                        _ = Task.Run(async () =>
+                        {
+                            var aiOk = aiOp == "delete"
+                                ? await _core.Avatars.DeleteImpostorAsync(aiId)
+                                : await _core.Avatars.EnqueueImpostorAsync(aiId);
+                            if (aiOk) ModalCacheHelper.Invalidate(aiId);
+                            Invoke(() => SendToJS("vrcAvatarImpostorResult", new { ok = aiOk, op = aiOp, avatarId = aiId }));
+                        });
+                    break;
+                }
+
+                case "vrcGetWorldManageInfo":
+                {
+                    var wmId = msg["worldId"]?.ToString() ?? "";
+                    var wmOwn = msg["own"]?.Value<bool>() ?? false;
+                    if (!string.IsNullOrEmpty(wmId))
+                        _ = Task.Run(async () =>
+                        {
+                            var (wmCanPublish, wmHasData) = await _core.World.GetWorldManageInfoAsync(wmId, wmOwn);
+                            Invoke(() => SendToJS("vrcWorldManageInfo", new { worldId = wmId, canPublish = wmCanPublish, hasPersistentData = wmHasData }));
+                        });
+                    break;
+                }
+
+                case "vrcSetWorldPublished":
+                {
+                    var wpId = msg["worldId"]?.ToString() ?? "";
+                    var wpPublish = msg["publish"]?.Value<bool>() ?? false;
+                    if (!string.IsNullOrEmpty(wpId))
+                        _ = Task.Run(async () =>
+                        {
+                            var wpOk = await _core.World.SetWorldPublishedAsync(wpId, wpPublish);
+                            List<string>? wpTags = null;
+                            if (wpOk)
+                            {
+                                var wpFresh = await _core.World.GetWorldFreshAsync(wpId);
+                                wpTags = wpFresh?["tags"]?.ToObject<List<string>>();
+                                if (wpTags != null) UpdateSavedWorldDetail(wpId, tags: wpTags);
+                                ModalCacheHelper.Invalidate(wpId);
+                            }
+                            Invoke(() => SendToJS("vrcWorldPublishResult", new { ok = wpOk, worldId = wpId, publish = wpPublish, tags = wpTags }));
+                        });
+                    break;
+                }
+
+                case "vrcDeleteWorldPersistentData":
+                {
+                    var wdpId = msg["worldId"]?.ToString() ?? "";
+                    if (!string.IsNullOrEmpty(wdpId))
+                        _ = Task.Run(async () =>
+                        {
+                            var wdpOk = await _core.World.DeleteWorldPersistentDataAsync(wdpId);
+                            Invoke(() => SendToJS("vrcWorldPersistResult", new { ok = wdpOk, worldId = wdpId }));
+                        });
+                    break;
+                }
+
+                case "vrcSetPrivacySettings":
+                {
+                    var psFields = msg["fields"]?.ToObject<Dictionary<string, bool>>() ?? new();
+                    _ = Task.Run(async () =>
+                    {
+                        var psOk = await _core.Users.UpdatePrivacyFlagsAsync(psFields);
+                        Invoke(() => SendToJS("vrcPrivacySettingResult", new { ok = psOk, fields = psFields }));
+                    });
+                    break;
+                }
+
+                case "vrcGetReportOptions":
+                    _ = Task.Run(async () =>
+                    {
+                        var roCategories = await _core.Users.GetUserReportOptionsAsync();
+                        Invoke(() => SendToJS("vrcReportOptions", new { ok = roCategories != null, categories = roCategories ?? new JArray() }));
+                    });
+                    break;
+
+                case "vrcRedeemReward":
+                {
+                    var rrCode = msg["code"]?.ToString() ?? "";
+                    _ = Task.Run(async () =>
+                    {
+                        var rrOk = await _core.Inventory.RedeemRewardAsync(rrCode);
+                        if (rrOk) _cache.Delete(CacheHandler.KeyInventory);
+                        Invoke(() => SendToJS("vrcRedeemRewardResult", new { ok = rrOk }));
+                    });
+                    break;
+                }
+
+                case "vrcSubmitUserReport":
+                {
+                    var urUserId      = msg["userId"]?.ToString() ?? "";
+                    var urCategory    = msg["category"]?.ToString() ?? "";
+                    var urReason      = msg["reason"]?.ToString() ?? "";
+                    var urDescription = msg["description"]?.ToString() ?? "";
+                    _ = Task.Run(async () =>
+                    {
+                        var urOk = await _core.Users.SubmitUserReportAsync(urUserId, urCategory, urReason, urDescription);
+                        Invoke(() => SendToJS("vrcUserReportResult", new { ok = urOk }));
+                    });
+                    break;
+                }
+
+                case "vrcGetMyReports":
+                {
+                    var mrRequestId = msg["requestId"]?.Value<int>() ?? 0;
+                    var mrCount     = Math.Clamp(msg["n"]?.Value<int>() ?? 25, 1, 100);
+                    var mrOffset    = Math.Max(msg["offset"]?.Value<int>() ?? 0, 0);
+                    var mrClosed    = msg["closedOnly"]?.Value<bool>() ?? false;
+                    var mrType      = msg["type"]?.ToString() ?? "";
+                    _ = Task.Run(async () =>
+                    {
+                        var mrPage = await _core.PlayerModeration.GetMyReportsAsync(mrCount, mrOffset, mrClosed, mrType);
+                        Invoke(() => SendToJS("vrcMyReports", new
+                        {
+                            requestId  = mrRequestId,
+                            ok         = mrPage != null,
+                            results    = mrPage?["results"] as JArray ?? new JArray(),
+                            hasNext    = mrPage?["hasNext"]?.Value<bool>() ?? false,
+                            totalCount = mrPage?["totalCount"]?.Value<int>() ?? 0,
+                        }));
+                    });
+                    break;
+                }
+
+                case "vrcGetPurchaseHistory":
+                    _ = Task.Run(async () =>
+                    {
+                        var phPurchases = await _core.Economy.GetPurchasesAsync();
+                        Invoke(() => SendToJS("vrcPurchaseHistory", new { ok = phPurchases != null, purchases = phPurchases ?? new JArray() }));
+                    });
+                    break;
+
+                case "vrcGetCreditActivity":
+                    _ = Task.Run(async () =>
+                    {
+                        var phCredits = await _core.Economy.GetCreditTransactionsAsync();
+                        Invoke(() => SendToJS("vrcCreditActivity", new { ok = phCredits != null, transactions = phCredits ?? new JArray() }));
+                    });
+                    break;
+
                 case "vrcGetMessageTemplates":
                 case "vrcUpdateMessageTemplate":
                 case "vrcRespondToNotification":
@@ -3463,6 +3663,7 @@ public partial class AppShell
                 case "getTimelineByDate":
                 case "getFriendTimelineByDate":
                 case "getTimelineForUser":
+                case "getTimelineForGroup":
                 case "getTimelineForWorld":
                 case "getProfileInsights":
                 case "getUserOnlineHeatmap":
@@ -3768,6 +3969,8 @@ public partial class AppShell
                 case "invGetInventory":
                 {
                     var invItemsForce = msg["force"]?.Value<bool>() ?? false;
+                    var invItemsCategory = InventoryAPI.NormalizeInventoryCategory(msg["category"]?.ToString());
+                    var invItemsSection = invItemsCategory == "all" ? "inventory" : "inventory_" + invItemsCategory;
                     _ = Task.Run(async () =>
                     {
                         try
@@ -3776,7 +3979,7 @@ public partial class AppShell
                             if (!invItemsForce && _settings.FfcEnabled && _cache.IsFresh(CacheHandler.KeyInventory, TimeSpan.FromHours(12)))
                             {
                                 var cached = _cache.LoadRaw(CacheHandler.KeyInventory) as JObject;
-                                var cachedSection = cached?["inventory"] as JObject;
+                                var cachedSection = cached?[invItemsSection] as JObject;
                                 if (cachedSection != null)
                                 {
                                     Invoke(() => SendToJS("invInventory", cachedSection));
@@ -3784,7 +3987,8 @@ public partial class AppShell
                                 }
                             }
 
-                            var (items, total) = await _core.Inventory.GetInventoryItemsAsync();
+                            var items = await _core.Inventory.GetInventoryCategoryAsync(invItemsCategory);
+                            var total = items.Count;
                             var list = items.OfType<JObject>().Select(item => new
                             {
                                 id          = item["id"]?.ToString() ?? "",
@@ -3795,13 +3999,13 @@ public partial class AppShell
                                 isArchived  = item["isArchived"]?.Value<bool>() ?? false,
                                 createdAt   = IsoDate(item["created_at"]),
                             }).ToList();
-                            var payload = new { items = list, totalCount = total };
-                            if (_settings.FfcEnabled) InvCacheSaveSection("inventory", payload);
+                            var payload = new { category = invItemsCategory, items = list, totalCount = total };
+                            if (_settings.FfcEnabled) InvCacheSaveSection(invItemsSection, payload);
                             Invoke(() => SendToJS("invInventory", payload));
                         }
                         catch (Exception ex)
                         {
-                            Invoke(() => SendToJS("invInventory", new { items = new object[0], error = ex.Message }));
+                            Invoke(() => SendToJS("invInventory", new { category = invItemsCategory, items = new object[0], error = ex.Message }));
                         }
                     });
                     break;
@@ -4507,6 +4711,36 @@ public partial class AppShell
     {
         var k = new string((v ?? "").ToLowerInvariant().Where(char.IsLetter).ToArray());
         return Array.IndexOf(PerfOrder, k) >= 0 ? v! : "";
+    }
+
+    private void UpdateSavedWorldDetail(string worldId, string? name = null, string? description = null, List<string>? tags = null,
+        string? imageUrl = null, int? capacity = null, int? recommendedCapacity = null)
+    {
+        var ex = _core.TimeEngine.GetWorldDetail(worldId);
+        if (ex == null) return;
+        _core.TimeEngine.SaveWorldDetail(
+            worldId:             worldId,
+            name:                name ?? ex.WorldName,
+            thumb:               imageUrl ?? ex.WorldThumb,
+            description:         description ?? ex.Description,
+            imageUrl:            imageUrl ?? ex.ImageUrl,
+            authorName:          ex.AuthorName,
+            authorId:            ex.AuthorId,
+            published:           ex.Published,
+            updated:             ex.Updated,
+            capacity:            capacity ?? ex.Capacity,
+            recommendedCapacity: recommendedCapacity ?? ex.RecommendedCapacity,
+            tags:                tags ?? ex.Tags,
+            favorites:           ex.Favorites,
+            visits:              ex.Visits,
+            pcSize:              ex.PcSize,
+            androidSize:         ex.AndroidSize,
+            iosSize:             ex.IosSize,
+            heat:                ex.Heat,
+            popularity:          ex.Popularity,
+            publicOccupants:     ex.PublicOccupants,
+            privateOccupants:    ex.PrivateOccupants,
+            version:             ex.Version);
     }
 
     private static int PerfRank(string v)

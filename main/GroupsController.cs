@@ -1250,31 +1250,34 @@ public class GroupsController
                 var cgiGroupId = msg["groupId"]?.ToString() ?? "";
                 var cgiAccessType = msg["groupAccessType"]?.ToString() ?? "members";
                 var cgiRegion = msg["region"]?.ToString() ?? "eu";
-                var cgiInstanceName = msg["instanceName"]?.ToString() ?? "";
                 var cgiQueueEnabled = msg["queueEnabled"]?.ToObject<bool>() ?? false;
                 var cgiAgeGateEnabled = msg["ageGateEnabled"]?.ToObject<bool>() ?? false;
                 var cgiMinPerf = msg["minAvatarPerf"]?.ToString() ?? "";
                 var cgiAndJoin = msg["andJoin"]?.ToObject<bool>() ?? true;
+                var cgiExtras = InstanceCreateExtras.FromMessage(msg);
                 if (!string.IsNullOrEmpty(cgiWorldId) && !string.IsNullOrEmpty(cgiGroupId))
                 {
                     _ = Task.Run(async () =>
                     {
                         var location = await _core.Instances.CreateGroupInstanceAsync(
                             cgiWorldId, cgiGroupId, cgiAccessType, cgiRegion,
-                            cgiInstanceName, cgiQueueEnabled, cgiAgeGateEnabled, cgiMinPerf);
+                            cgiExtras, cgiQueueEnabled, cgiAgeGateEnabled, cgiMinPerf);
                         if (!string.IsNullOrEmpty(location))
                         {
                             bool ok;
                             string message;
+                            string messageKey;
                             if (cgiAndJoin)
                             {
                                 ok = await _core.Instances.InviteSelfAsync(location);
                                 message = ok ? "Group instance created! Self-invite sent." : "Instance created but invite failed.";
+                                messageKey = ok ? "worlds.instances.toast.created_invited" : "worlds.instances.toast.invite_failed";
                             }
                             else
                             {
                                 ok = true;
                                 message = "Group instance created.";
+                                messageKey = "worlds.instances.toast.created";
                             }
                             if (ok)
                             {
@@ -1287,6 +1290,7 @@ public class GroupsController
                                 action = "createInstance",
                                 success = ok,
                                 message,
+                                messageKey,
                                 location
                             });
                         }
@@ -1296,7 +1300,8 @@ public class GroupsController
                             {
                                 action = "createInstance",
                                 success = false,
-                                message = "Failed to create group instance."
+                                message = "Failed to create group instance.",
+                                messageKey = "worlds.instances.toast.create_failed"
                             });
                         }
                     });

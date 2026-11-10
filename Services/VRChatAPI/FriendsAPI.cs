@@ -105,6 +105,31 @@ public class FriendsAPI(VRChatApiService ctx)
         catch (Exception ex) { ctx.Log($"FriendRequest exception: {ex.Message}"); return false; }
     }
 
+    public async Task<JObject?> GetFriendStatusAsync(string userId)
+    {
+        if (!ctx.IsLoggedIn) return null;
+        try
+        {
+            var resp = await ctx._http.GetAsync($"{VRChatApiService.BASE}/user/{userId}/friendStatus");
+            if (resp.IsSuccessStatusCode) return JObject.Parse(await resp.Content.ReadAsStringAsync());
+            ctx.Log($"GetFriendStatus {userId}: {(int)resp.StatusCode}");
+        }
+        catch (Exception ex) { ctx.Log($"GetFriendStatus exception: {ex.Message}"); }
+        return null;
+    }
+
+    public async Task<bool> CancelFriendRequestAsync(string userId)
+    {
+        if (!ctx.IsLoggedIn) return false;
+        try
+        {
+            var resp = await ctx._http.DeleteAsync($"{VRChatApiService.BASE}/user/{userId}/friendRequest");
+            ctx.Log($"CancelFriendRequest {userId}: {(int)resp.StatusCode}");
+            return resp.IsSuccessStatusCode;
+        }
+        catch (Exception ex) { ctx.Log($"CancelFriendRequest exception: {ex.Message}"); return false; }
+    }
+
     public async Task<bool> UnfriendAsync(string userId)
     {
         if (!ctx.IsLoggedIn) return false;

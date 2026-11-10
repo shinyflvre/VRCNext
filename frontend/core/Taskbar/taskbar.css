@@ -16,6 +16,8 @@
     -webkit-user-select: none;
 }
 
+#taskbar > * { --sidebar-glass-t: initial; }
+
 #taskbar::after {
     content: '';
     position: absolute;

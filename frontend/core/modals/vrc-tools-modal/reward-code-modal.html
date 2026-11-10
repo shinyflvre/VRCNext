@@ -1,0 +1,17 @@
+        <div class="modal-box" style="width:420px;max-width:90%;">
+            <div class="fd-modal-bar">
+                <div class="fd-modal-bar-crumbs"><span class="fd-modal-bar-title" data-i18n="reward_code.title">Redeem Reward Code</span></div>
+                <div class="fd-modal-bar-actions">
+                    <button class="btn-notif fd-action-btn" title="Close" data-i18n-title="common.close" onclick="closeRewardCodeModal()"><span class="msi" style="font-size:20px;">close</span></button>
+                </div>
+            </div>
+            <div class="modal-card">
+                <div class="modal-msg" style="margin:0 0 14px;" data-i18n="reward_code.desc">Enter your code to redeem it on your VRChat account.</div>
+                <input type="text" id="rcCode" class="vrcn-edit-field" style="width:100%;" maxlength="64" autocomplete="off" spellcheck="false" placeholder="Code" data-i18n-placeholder="reward_code.placeholder" oninput="rcSyncButton()" onkeydown="if(event.key==='Enter')rcSubmit()">
+            </div>
+            <div class="modal-foot">
+                <div class="modal-foot-spacer"></div>
+                <button class="vrcn-button" onclick="closeRewardCodeModal()" data-i18n="common.cancel">Cancel</button>
+                <button class="vrcn-button vrcn-btn-primary" id="rcRedeemBtn" onclick="rcSubmit()" data-i18n="reward_code.redeem">Redeem</button>
+            </div>
+        </div>

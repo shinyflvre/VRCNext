@@ -7,9 +7,35 @@ let _invModalTab         = 'direct';
 let _invModalPhotoFileId = null;
 let _invModalPhotoUrl    = null;  
 let _invModalDisplayName = '';
+let _invModalMode        = 'invite';
 
-function openFriendInviteModal(userId, displayName, initialTab) {
+function _invModalIsRequest() {
+    return _invModalMode === 'request';
+}
+
+function _invModalPool() {
+    return _invModalIsRequest() ? 'request' : 'message';
+}
+
+function _invModalDirectText() {
+    return _invModalIsRequest()
+        ? t('profiles.request_invite.direct_description', 'Send a request with no message.')
+        : t('profiles.invite.direct_description', 'Send a direct invite with no message.');
+}
+
+function _invModalSendText() {
+    return _invModalIsRequest()
+        ? t('profiles.actions.request_invite', 'Request Invite')
+        : t('profiles.invite.send', 'Send Invite');
+}
+
+function _invModalRequestTitle() {
+    return tf('profiles.request_invite.title', { name: _invModalDisplayName }, 'Request an invite from {name}');
+}
+
+function openFriendInviteModal(userId, displayName, initialTab, mode) {
     closeFriendInviteModal();
+    _invModalMode        = mode === 'request' ? 'request' : 'invite';
     _invModalUserId      = userId;
     _invModalApiMsgs     = [];
     _invModalSelected    = -1;
@@ -31,13 +57,13 @@ function openFriendInviteModal(userId, displayName, initialTab) {
     el.innerHTML = `
         <div class="modal-box inv-single-modal">
             ${renderModalBar(_invModalDisplayName, [modalCloseAction('closeFriendInviteModal()')], { flush: true })}
-            <div class="inv-world-banner" style="${thumb ? `background-image:url('${cssUrl(thumb)}')` : ''}">
+            ${_invModalIsRequest() ? `<div class="modal-msg" id="invRequestTitle" style="margin:14px 16px 0;">${esc(_invModalRequestTitle())}</div>` : `<div class="inv-world-banner" style="${thumb ? `background-image:url('${cssUrl(thumb)}')` : ''}">
                 <div class="inv-world-fade"></div>
                 <div class="inv-world-info">
                     <div style="font-size:calc(11px + var(--fs-off, 0px));color:rgba(255,255,255,.65);margin-bottom:2px;">${inviteTitle}</div>
                     <div class="inv-world-name">${esc(worldName)}</div>
                 </div>
-            </div>
+            </div>`}
             <div class="fd-tabs" style="margin:14px 16px 0;flex-shrink:0;">
                 <button class="fd-tab active" id="invTab_direct"  onclick="_invModalSetTab('direct')">${t('profiles.invite.tab.direct', 'Directly')}</button>
                 <button class="fd-tab"         id="invTab_message" onclick="_invModalSetTab('message')">${t('profiles.invite.tab.message', 'With Message')}</button>
@@ -45,7 +71,7 @@ function openFriendInviteModal(userId, displayName, initialTab) {
             </div>
             <div class="inv-single-body">
                 <div id="invContent_direct">
-                    <div class="fd-info-card" style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);" id="invDirectDesc">${t('profiles.invite.direct_description', 'Send a direct invite with no message.')}</div>
+                    <div class="fd-info-card" style="font-size:calc(12px + var(--fs-off, 0px));color:var(--tx2);" id="invDirectDesc">${esc(_invModalDirectText())}</div>
                 </div>
                 <div id="invMsgSection" style="display:none;">
                     <div class="fd-info-card">
@@ -59,7 +85,7 @@ function openFriendInviteModal(userId, displayName, initialTab) {
                         <div id="invLibraryGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px;max-height:180px;overflow-y:auto;padding:4px 0;"></div>
                     </div>
                 </div>
-                <button id="invSendBtn" class="vrcn-button vrcn-btn-primary inv-action-full" onclick="_invModalSend()">${t('profiles.invite.send', 'Send Invite')}</button>
+                <button id="invSendBtn" class="vrcn-button vrcn-btn-primary inv-action-full" onclick="_invModalSend()">${esc(_invModalSendText())}</button>
             </div>
         </div>`;
     el.addEventListener('click', e => { if (e.target === el) closeFriendInviteModal(); });
@@ -73,6 +99,8 @@ function refreshFriendInviteModalTranslations() {
     if (!el) return;
     const titleEl = el.querySelector('.inv-world-info > div:first-child');
     if (titleEl) titleEl.textContent = tf('profiles.invite.to', { name: _invModalDisplayName }, 'Invite {name} to');
+    const requestTitleEl = document.getElementById('invRequestTitle');
+    if (requestTitleEl) requestTitleEl.textContent = _invModalRequestTitle();
     const directTab = document.getElementById('invTab_direct');
     if (directTab) directTab.textContent = t('profiles.invite.tab.direct', 'Directly');
     const messageTab = document.getElementById('invTab_message');
@@ -80,7 +108,7 @@ function refreshFriendInviteModalTranslations() {
     const photoTab = document.getElementById('invTab_photo');
     if (photoTab) photoTab.textContent = t('profiles.invite.tab.photo', 'With Image');
     const directDesc = document.getElementById('invDirectDesc');
-    if (directDesc) directDesc.textContent = t('profiles.invite.direct_description', 'Send a direct invite with no message.');
+    if (directDesc) directDesc.textContent = _invModalDirectText();
     const optionalLabel = document.getElementById('invMsgOptLabel');
     if (optionalLabel) optionalLabel.textContent = _invModalTab === 'photo'
         ? t('profiles.invite.optional_message', 'Optional message')
@@ -88,7 +116,7 @@ function refreshFriendInviteModalTranslations() {
     const photoLabel = document.getElementById('invPhotoLabel');
     if (photoLabel) photoLabel.innerHTML = `${t('profiles.invite.image_label', 'Image')} <span style="font-weight:400;text-transform:none;letter-spacing:normal;">(${t('common.required', 'required')})</span>`;
     const sendBtn = document.getElementById('invSendBtn');
-    if (sendBtn) sendBtn.textContent = t('profiles.invite.send', 'Send Invite');
+    if (sendBtn) sendBtn.textContent = _invModalSendText();
     _invModalRenderMsgs();
     if (_invModalTab === 'photo') {
         const cached = (typeof invFilesCache !== 'undefined') ? invFilesCache['gallery'] : null;
@@ -114,7 +142,7 @@ function _invModalSetTab(tab) {
     if (photoSect) photoSect.style.display = tab === 'photo'   ? '' : 'none';
     // Load messages on first switch to a tab that needs them
     if ((tab === 'message' || tab === 'photo') && !_invModalApiMsgs.length) {
-        sendToCS({ action: 'vrcGetInviteMessages' });
+        sendToCS({ action: 'vrcGetInviteMessages', messageType: _invModalPool() });
     } else if (tab === 'message' || tab === 'photo') {
         _invModalRenderMsgs();
     }
@@ -190,7 +218,7 @@ function _invModalSaveMsg(idx, input) {
     const m = _invModalApiMsgs.find(x => x.slot === idx);
     const newText = input.value.trim();
     if (!input.dataset.cancel && newText && m && newText !== m.message) {
-        sendToCS({ action: 'vrcUpdateInviteMessage', slot: idx, message: newText });
+        sendToCS({ action: 'vrcUpdateInviteMessage', slot: idx, message: newText, messageType: _invModalPool() });
         m.message = newText;
         m.canBeUpdated = false;
         m.remainingCooldownMinutes = 60;
@@ -242,8 +270,23 @@ function _invModalUpdateSendBtn() {
                 || (_invModalTab === 'photo'   && !_invModalPhotoUrl);
 }
 
+function _invModalSendRequest() {
+    const slot = _invModalSelected >= 0 ? { requestSlot: _invModalSelected } : {};
+    if (_invModalTab === 'direct') {
+        sendToCS({ action: 'vrcRequestInvite', userId: _invModalUserId });
+    } else if (_invModalTab === 'message') {
+        if (_invModalSelected < 0) return;
+        sendToCS({ action: 'vrcRequestInvite', userId: _invModalUserId, ...slot });
+    } else if (_invModalTab === 'photo') {
+        if (!_invModalPhotoUrl) return;
+        sendToCS({ action: 'vrcRequestInviteWithPhoto', userId: _invModalUserId, fileUrl: _invModalPhotoUrl, ...slot });
+    }
+    closeFriendInviteModal();
+}
+
 function _invModalSend() {
     if (!_invModalUserId) return;
+    if (_invModalIsRequest()) { _invModalSendRequest(); return; }
     if (_invModalTab === 'direct') {
         sendToCS({ action: 'vrcInviteFriend', userId: _invModalUserId });
     } else if (_invModalTab === 'message') {

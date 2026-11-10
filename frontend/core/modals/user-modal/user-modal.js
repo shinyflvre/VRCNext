@@ -214,6 +214,7 @@ function closeFriendDetail(fromNav = false) {
     if (_fdLiveTimer) { clearInterval(_fdLiveTimer); _fdLiveTimer = null; }
     document.getElementById('modalFriendDetail').style.display = 'none';
     currentFriendDetail = null;
+    _fdFriendRequest = null;
     window._fdAllMutuals = null;
     _fdLoadedAvatarKey = '';
     _fdLastAvatarPayload = null;
@@ -669,6 +670,7 @@ function renderFriendDetail(d) {
     if (d.id && d.rawJson) _fdRawJsonCache[d.id] = d.rawJson;
     if (d.id && d.rawProfileJson) _fdRawProfileJsonCache[d.id] = d.rawProfileJson;
     currentFriendDetail = d;
+    if (!d.isFriend && d.id && d.id !== currentVrcUser?.id && _fdFriendRequest?.userId !== d.id) sendToCS({ action: 'vrcGetFriendStatus', userId: d.id });
     _fdApplyCachedCounts(d);
     if (typeof vrcnPlusOnProfileOpened === 'function' && d.id) vrcnPlusOnProfileOpened(d.id);
     if (typeof navUpdateLabel === 'function') navUpdateLabel(d.displayName || '');
@@ -809,12 +811,12 @@ function renderFriendDetail(d) {
     const uid = (d.id || '').replace(/'/g, "\\'");
     if (d.isFriend) {
         if (d.canJoin) actionsHtml += `<button class="vrcn-button-round vrcn-btn-join" onclick="friendAction('join','${loc}','${uid}')" title="${esc(t('common.join', 'Join'))}"><span class="msi" style="font-size:16px;">login</span></button>`;
-        if (d.canRequestInvite) actionsHtml += `<button class="vrcn-button-round" onclick="friendAction('requestInvite','${loc}','${uid}')" title="${esc(t('profiles.actions.request_invite', 'Request Invite'))}"><span class="msi" style="font-size:16px;">outbox</span></button>`;
+        if (d.canRequestInvite) actionsHtml += `<button class="vrcn-button-round" onclick="openFriendInviteModal('${uid}','${esc(d.displayName).replace(/'/g, "\\'")}','direct','request')" title="${esc(t('profiles.actions.request_invite', 'Request Invite'))}"><span class="msi" style="font-size:16px;">outbox</span></button>`;
         const myInInstance = currentInstanceData && currentInstanceData.location && !currentInstanceData.empty && !currentInstanceData.error;
         if (myInInstance) actionsHtml += `<button class="vrcn-button-round" onclick="openFriendInviteModal('${uid}','${esc(d.displayName).replace(/'/g, "\\'")}')" title="${esc(t('instance.actions.invite', 'Invite'))}"><span class="msi" style="font-size:16px;">mail</span></button>`;
         actionsHtml += `<button class="vrcn-button-round${d.isFavorited ? ' active' : ''}" id="fdFavBtn" onclick="toggleFriendFavPicker('${uid}')" title="${d.isFavorited ? t('profiles.actions.unfavorite', 'Unfavorite') : t('profiles.actions.favorite', 'Favorite')}"><span class="msi" style="font-size:16px;">${d.isFavorited ? 'favorite' : 'favorite_border'}</span></button>`;
     } else {
-        actionsHtml += `<button class="vrcn-button-round vrcn-btn-primary" id="fdAddFriend" onclick="sendToCS({action:'vrcSendFriendRequest',userId:'${uid}'});this.disabled=true;this.textContent='${esc(t('profiles.actions.request_sent', 'Request Sent'))}';">${t('profiles.actions.add_friend', 'Add Friend')}</button>`;
+        actionsHtml += _fdFriendRequestHtml(d.id || '');
     }
     actionsHtml += _fdMoreButtonHtml();
     actionsHtml += '</div>';
@@ -1900,6 +1902,64 @@ function drawStatusHeatmap(payload, ids, view) {
     axis += '</div></div>';
 
     wrap.innerHTML = `<div class="fd-hm-grid">${rowsHtml}</div>${axis}`;
+}
+
+let _fdFriendRequest = null;
+
+function _fdFriendRequestHtml(userId) {
+    const state = _fdFriendRequest?.userId === userId ? _fdFriendRequest : null;
+    const id = jsq(userId);
+    if (state?.incoming) {
+        return `<button class="vrcn-button-round vrcn-btn-primary" data-fd-friend-request onclick="friendRequestAction('${id}','accept')">${esc(t('notifications.actions.accept', 'Accept'))}</button>
+            <button class="vrcn-button-round" data-fd-friend-request onclick="friendRequestAction('${id}','decline')">${esc(t('notifications.actions.decline', 'Decline'))}</button>`;
+    }
+    if (state?.outgoing) return `<button class="vrcn-button-round" data-fd-friend-request onclick="friendRequestAction('${id}','cancel')">${esc(t('profiles.friend_request.cancel', 'Cancel Request'))}</button>`;
+    return `<button class="vrcn-button-round vrcn-btn-primary" id="fdAddFriend" data-fd-friend-request onclick="friendRequestAction('${id}','send')">${esc(t('profiles.actions.add_friend', 'Add Friend'))}</button>`;
+}
+
+function _fdRenderFriendRequest() {
+    const buttons = document.querySelectorAll('.fd-actions [data-fd-friend-request]');
+    if (!buttons.length || !currentFriendDetail?.id) return;
+    buttons[0].insertAdjacentHTML('beforebegin', _fdFriendRequestHtml(currentFriendDetail.id));
+    buttons.forEach(button => button.remove());
+}
+
+function onFriendStatus(payload) {
+    if (!payload?.ok || currentFriendDetail?.id !== payload.userId) return;
+    _fdFriendRequest = { userId: payload.userId, incoming: !!payload.incoming, outgoing: !!payload.outgoing };
+    _fdRenderFriendRequest();
+}
+
+function friendRequestAction(userId, op) {
+    document.querySelectorAll('.fd-actions [data-fd-friend-request]').forEach(button => { button.disabled = true; });
+    sendToCS({ action: 'vrcFriendRequestAction', userId, op });
+}
+
+function onFriendRequestResult(payload) {
+    const isCurrent = currentFriendDetail?.id === payload.userId;
+    if (!payload.ok) {
+        showToast(false, payload.gone
+            ? t('profiles.friend_request.gone', 'This friend request is no longer active')
+            : t('profiles.friend_request.failed', 'Could not update the friend request'));
+        if (isCurrent) {
+            if (payload.gone) _fdFriendRequest = { userId: payload.userId, incoming: false, outgoing: false };
+            _fdRenderFriendRequest();
+        }
+        return;
+    }
+    const done = {
+        send: t('profiles.friend_request.sent', 'Friend request sent'),
+        accept: t('profiles.friend_request.accepted', 'Friend request accepted'),
+        decline: t('profiles.friend_request.declined', 'Friend request declined'),
+        cancel: t('profiles.friend_request.canceled', 'Friend request canceled'),
+    };
+    showToast(true, done[payload.op] || '');
+    if (isCurrent) {
+        _fdFriendRequest = { userId: payload.userId, incoming: false, outgoing: payload.op === 'send' };
+        _fdRenderFriendRequest();
+    }
+    if (payload.op === 'accept' || payload.op === 'decline') refreshNotifications();
+    if (payload.op === 'accept' && isCurrent) sendToCS({ action: 'vrcGetFriendDetail', userId: payload.userId, force: true });
 }
 
 function friendAction(action, location, userId) {

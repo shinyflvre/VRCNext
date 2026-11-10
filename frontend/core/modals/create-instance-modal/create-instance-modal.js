@@ -65,6 +65,117 @@ function createInstance(worldId) {
 let _ciWorldId = '';
 let _ciWorld = null;
 
+const CI_PICK_LIMIT = 3;
+let _ciLanguages = [];
+let _ciVibes = [];
+let _ciOptions = null;
+
+function onInstanceCreateOptions(payload) {
+    const categories = payload?.categories || [];
+    const vibes = payload?.vibes || [];
+    _ciOptions = (categories.length || vibes.length) ? { categories, vibes } : null;
+    _ciRenderCategory();
+    _ciRenderVibes();
+}
+
+function _ciRenderCategory() {
+    const wrap = document.getElementById('ciCategoryWrap');
+    if (!wrap) return;
+    const current = document.getElementById('ciCategory')?.value || '';
+    const rows = _ciOptions?.categories || [];
+    wrap.innerHTML = `<select id="ciCategory" class="wd-create-select" style="width:100%;">
+        <option value="">${esc(t('worlds.instances.category_none', 'None'))}</option>
+        ${rows.map(c => `<option value="${esc(c.id)}">${esc(instanceCategoryLabel(c.name))}</option>`).join('')}
+    </select>`;
+    const sel = document.getElementById('ciCategory');
+    sel.value = current;
+    initVnSelect(sel);
+}
+
+function _ciChipsHtml(items, removeFn) {
+    return items.map(item =>
+        `<span class="myp-lang-chip">${esc(item.label)}<button class="myp-lang-remove" onclick="${removeFn}('${jsq(item.value)}')"><span class="msi" style="font-size:11px;">close</span></button></span>`
+    ).join('');
+}
+
+function _ciFillPicker(selectId, rowId, placeholder, options, count) {
+    const sel = document.getElementById(selectId);
+    const row = document.getElementById(rowId);
+    if (!sel) return;
+    sel.innerHTML = `<option value="">${esc(placeholder)}</option>` +
+        options.map(o => `<option value="${esc(o.value)}">${esc(o.label)}</option>`).join('');
+    sel.value = '';
+    if (!sel._vnSelect) initVnSelect(sel);
+    sel._vnRefresh?.();
+    if (row) row.style.display = count >= CI_PICK_LIMIT ? 'none' : '';
+}
+
+function _ciLanguageLabel(code) {
+    return LANG_MAP['language_' + code] || code.toUpperCase();
+}
+
+function _ciRenderLanguages() {
+    const chips = document.getElementById('ciLangChips');
+    if (!chips) return;
+    chips.innerHTML = _ciChipsHtml(_ciLanguages.map(value => ({ value, label: _ciLanguageLabel(value) })), 'ciRemoveLanguage');
+    chips.style.display = _ciLanguages.length ? '' : 'none';
+    const options = Object.keys(LANG_MAP)
+        .map(key => key.replace('language_', ''))
+        .filter(code => !_ciLanguages.includes(code))
+        .map(code => ({ value: code, label: _ciLanguageLabel(code) }))
+        .sort((a, b) => a.label.localeCompare(b.label));
+    _ciFillPicker('ciLangSelect', 'ciLangAddRow', t('worlds.instances.add_language', 'Add language...'), options, _ciLanguages.length);
+}
+
+function ciAddLanguage() {
+    const code = document.getElementById('ciLangSelect')?.value;
+    if (!code || _ciLanguages.includes(code) || _ciLanguages.length >= CI_PICK_LIMIT) return;
+    _ciLanguages.push(code);
+    _ciRenderLanguages();
+}
+
+function ciRemoveLanguage(code) {
+    _ciLanguages = _ciLanguages.filter(c => c !== code);
+    _ciRenderLanguages();
+}
+
+function _ciVibeLabel(id) {
+    const vibe = (_ciOptions?.vibes || []).find(v => v.id === id);
+    return vibe ? instanceVibeLabel(vibe.title) : id;
+}
+
+function _ciRenderVibes() {
+    const chips = document.getElementById('ciVibeChips');
+    if (!chips) return;
+    chips.innerHTML = _ciChipsHtml(_ciVibes.map(value => ({ value, label: _ciVibeLabel(value) })), 'ciRemoveVibe');
+    chips.style.display = _ciVibes.length ? '' : 'none';
+    const options = (_ciOptions?.vibes || [])
+        .filter(v => !_ciVibes.includes(v.id))
+        .map(v => ({ value: v.id, label: instanceVibeLabel(v.title) }));
+    _ciFillPicker('ciVibeSelect', 'ciVibeAddRow', t('worlds.instances.add_vibe', 'Add vibe...'), options, _ciVibes.length);
+}
+
+function ciAddVibe() {
+    const id = document.getElementById('ciVibeSelect')?.value;
+    if (!id || _ciVibes.includes(id) || _ciVibes.length >= CI_PICK_LIMIT) return;
+    _ciVibes.push(id);
+    _ciRenderVibes();
+}
+
+function ciRemoveVibe(id) {
+    _ciVibes = _ciVibes.filter(v => v !== id);
+    _ciRenderVibes();
+}
+
+function _ciCollectExtras() {
+    return {
+        description: (document.getElementById('ciDescription')?.value || '').trim(),
+        categoryId: document.getElementById('ciCategory')?.value || '',
+        vibeIds: _ciVibes.slice(),
+        languages: _ciLanguages.slice(),
+    };
+}
+
 function openCreateInstanceModal() {
     if (!_ciWorld) return;
     _ciWorldId = _ciWorld.id;
@@ -136,6 +247,26 @@ function openCreateInstanceModal() {
                     </select>
                 </div>
             </div>
+
+            <div class="sf-section-label">${t('worlds.instances.description', 'Description')}</div>
+            <textarea id="ciDescription" class="vrcn-edit-field" rows="2" maxlength="256" placeholder="${esc(t('worlds.instances.description_placeholder', 'Optional description...'))}" style="width:100%;height:auto;padding:8px 10px;font-family:inherit;resize:vertical;"></textarea>
+
+            <div class="sf-section-label">${t('worlds.instances.category', 'Category')}</div>
+            <div id="ciCategoryWrap" style="display:flex;"></div>
+
+            <div class="sf-section-label">${t('worlds.instances.languages', 'Languages')} <span style="font-weight:400;text-transform:none;letter-spacing:normal;">(${t('worlds.instances.up_to_three', 'up to 3')})</span></div>
+            <div id="ciLangChips" class="myp-lang-chips"></div>
+            <div class="myp-lang-add-row" id="ciLangAddRow">
+                <select id="ciLangSelect" class="myp-lang-select"></select>
+                <button class="myp-add-lang-btn" onclick="ciAddLanguage()"><span class="msi" style="font-size:15px;">add</span></button>
+            </div>
+
+            <div class="sf-section-label">${t('worlds.instances.vibes', 'Vibes')} <span style="font-weight:400;text-transform:none;letter-spacing:normal;">(${t('worlds.instances.up_to_three', 'up to 3')})</span></div>
+            <div id="ciVibeChips" class="myp-lang-chips"></div>
+            <div class="myp-lang-add-row" id="ciVibeAddRow">
+                <select id="ciVibeSelect" class="myp-lang-select"></select>
+                <button class="myp-add-lang-btn" onclick="ciAddVibe()"><span class="msi" style="font-size:15px;">add</span></button>
+            </div>
             </div>
 
             <div id="ciGroupRow" class="ci-col-group">
@@ -160,6 +291,12 @@ function openCreateInstanceModal() {
         </div>`;
 
     initVnSelect(document.getElementById('ciRegion'));
+    _ciLanguages = [];
+    _ciVibes = [];
+    _ciRenderCategory();
+    _ciRenderLanguages();
+    _ciRenderVibes();
+    if (!_ciOptions) sendToCS({ action: 'vrcGetInstanceCreateOptions' });
     onCiTypeChange();
     document.getElementById('modalCreateInstance').style.display = 'flex';
 }
@@ -214,9 +351,9 @@ function doCreateInstance(andJoin) {
             return;
         }
         const accessType = groupSubType === 'group_public' ? 'public' : groupSubType === 'group_plus' ? 'plus' : 'members';
-        sendToCS({ action: 'vrcCreateGroupInstance', worldId, groupId, groupAccessType: accessType, region, instanceName, queueEnabled, ageGateEnabled, minAvatarPerf, andJoin });
+        sendToCS({ action: 'vrcCreateGroupInstance', worldId, groupId, groupAccessType: accessType, region, instanceName, queueEnabled, ageGateEnabled, minAvatarPerf, andJoin, ..._ciCollectExtras() });
     } else {
-        sendToCS({ action: 'vrcCreateInstance', worldId, type, region, instanceName, andJoin });
+        sendToCS({ action: 'vrcCreateInstance', worldId, type, region, instanceName: _hasVrcPlus ? instanceName : '', andJoin, ..._ciCollectExtras() });
     }
 }
 

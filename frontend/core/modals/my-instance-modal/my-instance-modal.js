@@ -127,6 +127,9 @@ function _miApplyEnrichedData(inst) {
         }
     }
 
+    const metaEl = card.querySelector('.mi-inst-meta');
+    if (metaEl) metaEl.innerHTML = instanceMetaHtml(inst.meta);
+
     // Display name
     if (inst.displayName) {
         const dnEl = card.querySelector('.mi-inst-display-name');
@@ -275,6 +278,7 @@ function _buildInstanceCard(locBase, g, isMyInstance) {
             ${occHtml}
             <div class="mi-header-actions">${actionsHtml}</div>
         </div>
+        <div class="mi-inst-meta">${instanceMetaHtml(enriched.meta)}</div>
         <div class="mi-inst-stats"${!statsHtml ? ' style="display:none"' : ''}>${statsHtml}</div>
         <div class="mi-friends-list">${friendsHtml}</div>
     </div>`;

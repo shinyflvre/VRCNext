@@ -1,0 +1,25 @@
+        <div class="modal-box" style="width:660px;max-width:92%;">
+            <div class="fd-modal-bar">
+                <div class="fd-modal-bar-crumbs"><span class="fd-modal-bar-title" data-i18n="purchase_history.title">Purchase History</span></div>
+                <div class="fd-modal-bar-actions">
+                    <button class="btn-notif fd-action-btn" title="Refresh" data-i18n-title="common.refresh" onclick="phLoad(true)"><span class="msi" style="font-size:20px;">refresh</span></button>
+                    <button class="btn-notif fd-action-btn" title="Close" data-i18n-title="common.close" onclick="closePurchaseHistoryModal()"><span class="msi" style="font-size:20px;">close</span></button>
+                </div>
+            </div>
+            <div class="modal-card">
+                <div class="modal-msg" style="margin:0 0 14px;" data-i18n="purchase_history.desc">Items you bought and your VRChat Credits activity.</div>
+
+                <div class="lgv-toolbar" style="margin-bottom:14px;">
+                    <div class="fd-tabs fd-tabs-toolbar">
+                        <button class="fd-tab active" id="phTabPurchases" onclick="phSetTab('purchases')" data-i18n="purchase_history.tab.purchases">Purchases</button>
+                        <button class="fd-tab" id="phTabCredits" onclick="phSetTab('credits')" data-i18n="purchase_history.tab.credits">Credits Activity</button>
+                    </div>
+                    <div id="phFilterWrap" style="display:flex;flex-shrink:0;">
+                        <select id="phTypeFilter" class="wd-create-select" style="width:150px;" onchange="phSetType(this.value)"></select>
+                    </div>
+                </div>
+
+                <div id="phList" class="mt-list"></div>
+                <div id="phPaginatorBar" class="mini-paginator"></div>
+            </div>
+        </div>

@@ -13,6 +13,8 @@
     transition: margin-left .22s ease, margin-right .22s ease;
 }
 
+body:has(#tab0.active) .content { background: var(--bg-base); }
+
 body:has(.sidebar.collapsed) .dash-hero,
 body:has(.sidebar.collapsing) .dash-hero { margin-left:  calc(-1 * (var(--sidebar-c)  + 14px)); }
 body:has(.rsidebar.collapsed) .dash-hero { margin-right: calc(-1 * (var(--rsidebar-c) + 14px)); }
