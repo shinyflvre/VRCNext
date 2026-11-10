@@ -1,4 +1,4 @@
-﻿# **2026.70.0**
+﻿# **2027.0.0**
 
 **New**
 - Added **My Reports** under Tools > VRChat to see the reports you sent
