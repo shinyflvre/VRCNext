@@ -1,10 +1,6 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" class="vrcn-scrollbar">
 <head>
-    <script>
-        if (new URLSearchParams(location.search).get('vrcnPlatform') === 'linux')
-            document.documentElement.classList.add('vrcn-linux');
-    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VRCNext</title>
@@ -48,7 +44,6 @@
     <link rel="stylesheet" href="modules/tools/voice-fight/voice-fight.css">
     <link rel="stylesheet" href="modules/tools/discord-presence/discord-presence.css">
     <link rel="stylesheet" href="modules/tools/vr-overlay/vr-overlay.css">
-    <link rel="stylesheet" href="modules/tools/youtube-fix/youtube-fix.css">
     <link rel="stylesheet" href="modules/tools/permini/permini.css">
     <link rel="stylesheet" href="modules/tools/action-flow/action-flow.css">
     <link rel="stylesheet" href="modules/tools/status-schedule/status-schedule.css">
@@ -134,7 +129,7 @@
     <div class="sidebar" id="sidebarEl">
         <div class="sidebar-resizer" id="sidebarResizer" data-side="left"></div>
         <div class="sidebar-sep"></div>
-        <div class="logo"><div class="logo-icon" id="logoIcon">V</div><div class="logo-txt"><div class="logo-text-row"><div class="logo-text">VRCNext</div></div><div class="logo-sub">v2026.62.4</div></div></div>
+        <div class="logo"><div class="logo-icon" id="logoIcon">V</div><div class="logo-txt"><div class="logo-text-row"><div class="logo-text">VRCNext</div></div><div class="logo-sub">v2026.70.0</div></div></div>
         <div class="nav vrcn-scrollbar" id="navEl"></div>
         <div class="play-area"><button class="btn-play" onclick="playVRChat()" data-i18n-title="sidebar.play_vrchat" title="Play VRChat"><span class="play-icon-wrap"><span class="msi play-icon">play_arrow</span></span><span class="play-copy pl"><strong class="play-title" data-i18n="sidebar.play_vrchat">Play VRChat</strong><span class="play-sub" id="playSubText"></span></span><span class="msi play-arrow pl">chevron_right</span></button></div>
     </div>
@@ -223,16 +218,16 @@
                                     <button class="tb-dd-item" data-keep-modal onclick="openImportModal('avatars')"><span class="msi">checkroom</span><span data-i18n="import.avatars">Avatars</span></button>
                                 </div>
                             </div>
-                            <div class="tb-dd-submenu">
+                            <div class="tb-dd-submenu" data-windows-only>
                                 <button class="tb-dd-item"><span class="msi">view_in_ar</span><span data-i18n="tb.tools.vr_tools">VR Tools</span><span class="msi tb-dd-arrow">chevron_right</span></button>
                                 <div class="tb-dd-sub-drop">
-                                    <div class="tb-dd-item" data-windows-only onclick="showTab(26)"><span class="msi">photo_camera</span><span data-i18n="nav.frame_shot">FrameShot</span></div>
-                                    <div class="tb-dd-item" data-windows-only onclick="showTab(20)"><span class="msi">watch</span><span data-i18n="nav.vr_overlay">VR Overlay</span></div>
+                                    <div class="tb-dd-item" onclick="showTab(26)"><span class="msi">photo_camera</span><span data-i18n="nav.frame_shot">FrameShot</span></div>
+                                    <div class="tb-dd-item" onclick="showTab(20)"><span class="msi">watch</span><span data-i18n="nav.vr_overlay">VR Overlay</span></div>
                                     <div class="tb-dd-item" onclick="showTab(10)"><span class="msi">rocket_launch</span><span data-i18n="nav.space_flight">Space Flight</span></div>
                                     <div class="tb-dd-item" onclick="showTab(28)"><span class="msi">rotate_right</span><span data-i18n="nav.space_turn">Space Turn</span></div>
+                                    <div class="tb-dd-item" onclick="showTab(5)"><span class="msi">chat</span><span data-i18n="nav.custom_chatbox">Custom Chatbox</span></div>
                                 </div>
                             </div>
-                            <div class="tb-dd-item" onclick="showTab(5)"><span class="msi">chat</span><span data-i18n="nav.custom_chatbox">Custom Chatbox</span></div>
                             <div class="tb-dd-submenu">
                                 <button class="tb-dd-item"><span class="msi">bolt</span><span data-i18n="tb.tools.automation">Automation</span><span class="msi tb-dd-arrow">chevron_right</span></button>
                                 <div class="tb-dd-sub-drop">
@@ -243,9 +238,9 @@
                                 </div>
                             </div>
                             <div class="tb-dd-sep" data-windows-only></div>
-                            <div class="tb-dd-item" onclick="showTab(6)"><span class="msi">cell_tower</span><span data-i18n="nav.media_relay">Media Relay</span></div>
-                            <div class="tb-dd-item" onclick="showTab(11)"><span class="msi">tune</span><span data-i18n="nav.osc_tool">OSC Tool</span></div>
-                            <div class="tb-dd-item" onclick="showTab(14)"><span class="msi">smart_display</span><span data-i18n="nav.youtube_fix">YouTube Fix</span></div>
+                            <div class="tb-dd-item" data-windows-only onclick="showTab(6)"><span class="msi">cell_tower</span><span data-i18n="nav.media_relay">Media Relay</span></div>
+                            <div class="tb-dd-item" data-windows-only onclick="showTab(11)"><span class="msi">tune</span><span data-i18n="nav.osc_tool">OSC Tool</span></div>
+                            <div class="tb-dd-item" data-windows-only onclick="showTab(14)"><span class="msi">smart_display</span><span data-i18n="nav.youtube_fix">YouTube Fix</span></div>
                             <div class="tb-dd-sep"></div>
                             <div class="tb-dd-item" onclick="showTab(8)"><span class="msi">article</span><span data-i18n="nav.activity_log">Activity Log</span></div>
                             <div class="tb-dd-item" onclick="showTab(15)"><span class="msi">hub</span><span data-i18n="nav.mutual_network">Mutual Network</span></div>
@@ -253,9 +248,9 @@
                             <div class="tb-dd-item" onclick="showTab(16)"><span class="msi">schedule</span><span data-i18n="nav.time_spent">Time Spent</span></div>
                             <div class="tb-dd-sep" data-windows-only></div>
                             <div class="tb-dd-item" data-windows-only onclick="showTab(18)"><span class="msi">mic</span><span data-i18n="nav.voice_fight">Voice Fight</span></div>
-                            <div class="tb-dd-item" onclick="showTab(19)"><span class="msi">sensors</span><span data-i18n="nav.discord_presence">Discord Presence</span></div>
+                            <div class="tb-dd-item" data-windows-only onclick="showTab(19)"><span class="msi">sensors</span><span data-i18n="nav.discord_presence">Discord Presence</span></div>
                             <div class="tb-dd-item" data-windows-only onclick="showTab(22)"><span class="msi">translate</span><span data-i18n="nav.kikitan_xd">Kikitan XD</span></div>
-                            <div class="tb-dd-item" onclick="showTab(24)"><span class="msi">height</span><span data-i18n="nav.avatar_scaling">Avatar Scaling</span></div>
+                            <div class="tb-dd-item" data-windows-only onclick="showTab(24)"><span class="msi">height</span><span data-i18n="nav.avatar_scaling">Avatar Scaling</span></div>
                         </div>
                     </div>
                     <div class="tb-menu-item" id="tbMenuPins"><span data-i18n="tb.pins">Pins</span>
@@ -303,16 +298,16 @@
                     </div>
                 </div>
                 <button class="tb-sidebar-btn" id="tbApiHealth" style="display:none;" title="VRChat API Status" data-i18n-title="apihealth.title" onclick="toggleApiHealthPanel()"><span class="msi tbah-icon" id="tbApiHealthDot">database</span></button>
-                <div id="tbToolsGroup">
+                <div id="tbToolsGroup" data-windows-only>
                     <button class="tb-sidebar-btn" id="badgeRelay" title="Media Relay" data-i18n-title="nav.media_relay" onclick="toggleRelay()"><span class="msi">cell_tower</span></button>
                     <button class="tb-sidebar-btn" id="badgeChatbox" title="Custom Chatbox" data-i18n-title="nav.custom_chatbox" onclick="toggleChatbox()"><span class="msi">chat</span></button>
                     <button class="tb-sidebar-btn" id="badgeSpace" title="Space Flight" data-i18n-title="nav.space_flight" onclick="sfConnect()"><span class="msi">rocket_launch</span></button>
                     <button class="tb-sidebar-btn" id="badgeSpaceTurn" title="Space Turn" data-i18n-title="nav.space_turn" onclick="stConnect()"><span class="msi">rotate_right</span></button>
-                    <button class="tb-sidebar-btn" id="badgeFrameShot" data-windows-only title="FrameShot" data-i18n-title="nav.frame_shot" onclick="fsConnect()"><span class="msi">photo_camera</span></button>
-                    <button class="tb-sidebar-btn" id="badgeVoice" data-windows-only title="Voice Fight" data-i18n-title="nav.voice_fight" onclick="if(!vfRunning)vfOnTabOpen();vfConnect()"><span class="msi">mic</span></button>
+                    <button class="tb-sidebar-btn" id="badgeFrameShot" title="FrameShot" data-i18n-title="nav.frame_shot" onclick="fsConnect()"><span class="msi">photo_camera</span></button>
+                    <button class="tb-sidebar-btn" id="badgeVoice" title="Voice Fight" data-i18n-title="nav.voice_fight" onclick="if(!vfRunning)vfOnTabOpen();vfConnect()"><span class="msi">mic</span></button>
                     <button class="tb-sidebar-btn" id="badgeDp" title="Discord Presence" data-i18n-title="nav.discord_presence" onclick="dpToggle()"><span class="msi">sensors</span></button>
                     <button class="tb-sidebar-btn" id="badgeYt" title="YouTube Fix" data-i18n-title="nav.youtube_fix" onclick="toggleVc()"><span class="msi">smart_display</span></button>
-                    <button class="tb-sidebar-btn" id="badgeKxd" data-windows-only title="Kikitan XD" data-i18n-title="nav.kikitan_xd" onclick="kxdConnect()"><span class="msi">translate</span></button>
+                    <button class="tb-sidebar-btn" id="badgeKxd" title="Kikitan XD" data-i18n-title="nav.kikitan_xd" onclick="kxdConnect()"><span class="msi">translate</span></button>
                     <button class="tb-sidebar-btn" id="badgeVroTop" title="VR Overlay" data-i18n-title="nav.vr_overlay" onclick="vroConnect()"><span class="msi">watch</span></button>
                     <div class="tb-sep"></div>
                 </div>
@@ -402,9 +397,9 @@
             <!-- Tab 4: Avatars -->
             <div class="tab" id="tab4"></div>
             <!-- Tab 5: Custom Chatbox -->
-            <div class="tab" id="tab5"></div>
+            <div class="tab" id="tab5" data-windows-only></div>
             <!-- Tab 6: Media Relay -->
-            <div class="tab" id="tab6"></div>
+            <div class="tab" id="tab6" data-windows-only></div>
             <!-- Tab 7: Media Library -->
             <div class="tab" id="tab7"></div>
             <!-- Tab 8: Activity Log -->
@@ -412,15 +407,15 @@
             <!-- Tab 9: Settings -->
             <div class="tab" id="tab9"></div>
             <!-- Tab 10: Space Flight -->
-            <div class="tab" id="tab10"></div>
+            <div class="tab" id="tab10" data-windows-only></div>
             <!-- Tab 11: OSC Tool -->
-            <div class="tab" id="tab11"></div>
+            <div class="tab" id="tab11" data-windows-only></div>
             <!-- Tab 12: Timeline -->
             <div class="tab" id="tab12"></div>
             <!-- Tab 13: Inventory -->
             <div class="tab" id="tab13"></div>
             <!-- Tab 14: YouTube Fix / VRCVideoCacher -->
-            <div class="tab" id="tab14"></div>
+            <div class="tab" id="tab14" data-windows-only></div>
 
             <!-- Tab 15: Mutual Network -->
             <div class="tab" id="tab15"></div>
@@ -434,9 +429,9 @@
             <div class="tab" id="tab18" data-windows-only></div>
 
             <!-- Tab 19: Discord Presence -->
-            <div class="tab" id="tab19"></div>
+            <div class="tab" id="tab19" data-windows-only></div>
             <!-- Tab 20: VR Wrist Overlay -->
-            <div class="tab" id="tab20"></div>
+            <div class="tab" id="tab20" data-windows-only></div>
 
             <!-- Tab 21: Permini -->
             <div class="tab" id="tab21"></div>
@@ -448,7 +443,7 @@
             <div class="tab" id="tab23"></div>
 
             <!-- Tab 24: Avatar Scaling -->
-            <div class="tab" id="tab24"></div>
+            <div class="tab" id="tab24" data-windows-only></div>
 
             <!-- Tab 25: Action Flow -->
             <div class="tab" id="tab25"></div>
@@ -459,7 +454,7 @@
             <!-- Tab 27: Status Schedule -->
             <div class="tab" id="tab27"></div>
             <!-- Tab 28: Space Turn -->
-            <div class="tab" id="tab28"></div>
+            <div class="tab" id="tab28" data-windows-only></div>
 
             <!-- Tab 29: Meet Network -->
             <div class="tab" id="tab29"></div>
@@ -709,91 +704,7 @@
 
     <script>
     (async function () {
-        const loaderTimeoutMs = 30000;
-        let startupDiagnosticSequence = 0;
-        const startupDiagnosticStartedAt = performance.now();
-        let startupLoaderComplete = false;
-
-        function startupDiagnostic(message) {
-            const elapsed = (performance.now() - startupDiagnosticStartedAt).toFixed(1);
-            const record = `${++startupDiagnosticSequence} +${elapsed}ms ${message}`;
-            try { navigator.sendBeacon('/startup-diagnostics', record); } catch {}
-        }
-        window.__vrcnStartupDiagnostic = startupDiagnostic;
-        let startupUiInputRecorded = false;
-        const recordStartupUiInput = event => {
-            if (!startupLoaderComplete || startupUiInputRecorded) return;
-            startupUiInputRecorded = true;
-            startupDiagnostic(`post-loader input received type=${event.type}`);
-            window.removeEventListener('keydown', recordStartupUiInput, true);
-            window.removeEventListener('pointerdown', recordStartupUiInput, true);
-        };
-        window.addEventListener('keydown', recordStartupUiInput, true);
-        window.addEventListener('pointerdown', recordStartupUiInput, true);
-
-        window.addEventListener('error', event => {
-            startupDiagnostic(`javascript ${startupLoaderComplete ? 'post-loader' : 'loader'} error: ${event.message} at ${event.filename}:${event.lineno}:${event.colno}`);
-        });
-        window.addEventListener('unhandledrejection', event => {
-            const reason = event.reason?.stack || event.reason?.message || String(event.reason);
-            startupDiagnostic(`${startupLoaderComplete ? 'post-loader' : 'loader'} unhandled rejection: ${reason}`);
-        });
-        startupDiagnostic(`loader start url=${location.href}`);
-
-        function startupUiSnapshot(sample, timerDelayMs) {
-            const describe = element => {
-                if (!element) return 'missing';
-                const style = getComputedStyle(element);
-                const rect = element.getBoundingClientRect();
-                return `${element.id || element.className || element.tagName}[${Math.round(rect.width)}x${Math.round(rect.height)}@${Math.round(rect.left)},${Math.round(rect.top)};display=${style.display};opacity=${style.opacity};visibility=${style.visibility}]`;
-            };
-            const tab = document.getElementById('tab0');
-            const heroCard = document.querySelector(
-                '.dash-hero-widgets .dash-hw-card, .dash-hero-slot .dash-flocs-card, ' +
-                '.dash-hero-widgets .dash-hw-event, .dash-hero-widgets .dash-hw-news'
-            );
-            const ancestors = [];
-            for (let element = tab, depth = 0; element && depth < 5; element = element.parentElement, depth++)
-                ancestors.push(describe(element));
-            const activeTabs = Array.from(document.querySelectorAll('.tab.active'), element => element.id).join(',') || 'none';
-            startupDiagnostic(
-                `post-loader-ui-heartbeat sample=${sample} timerDelay=${timerDelayMs.toFixed(1)}ms ` +
-                `readyState=${document.readyState} path=${location.pathname} activeTabs=${activeTabs} ` +
-                `navigation=${window.__vrcnStartupNavigationState || 'not-recorded'} ` +
-                `render=${window.__vrcnStartupRenderDashboardState || 'not-recorded'} ` +
-                `linuxUiClass=${document.documentElement.classList.contains('vrcn-linux')} ` +
-                `heroBackdropFilter=${heroCard ? getComputedStyle(heroCard).backdropFilter : 'no-card'} ` +
-                `heroLists=${document.querySelectorAll('.dash-hw-friends').length} ` +
-                `heroCards=${document.querySelectorAll('.dash-hw-friends > *, .dash-hero-slot .dash-flocs-card').length} ` +
-                `dashboard=${describe(tab)} hero=${describe(document.getElementById('dashHero'))} ` +
-                `ancestors=${ancestors.join('>')}`
-            );
-        }
-
-        if (typeof PerformanceObserver !== 'undefined' &&
-            PerformanceObserver.supportedEntryTypes?.includes('longtask')) {
-            let longTaskCount = 0;
-            const longTaskObserver = new PerformanceObserver(list => {
-                for (const entry of list.getEntries()) {
-                    if (longTaskCount >= 8) break;
-                    longTaskCount++;
-                    const source = entry.attribution?.[0];
-                    startupDiagnostic(
-                        `post-loader longtask #${longTaskCount} start=${entry.startTime.toFixed(1)}ms ` +
-                        `duration=${entry.duration.toFixed(1)}ms source=${source?.name?.slice(0, 100) || entry.name}`
-                    );
-                }
-                if (longTaskCount >= 8) longTaskObserver.disconnect();
-            });
-            longTaskObserver.observe({ entryTypes: ['longtask'] });
-            setTimeout(() => longTaskObserver.disconnect(), 45000);
-            startupDiagnostic('post-loader longtask observer enabled');
-        } else {
-            startupDiagnostic('post-loader longtask observer unavailable');
-        }
-
         function showFatalError(msg, detail) {
-            startupDiagnostic(`loader fatal: ${msg}`);
             console.error('[FRAGMENT LOADER]', msg, detail || '');
             const sp = document.getElementById('vrcnSplash');
             if (sp) sp.remove();
@@ -927,7 +838,6 @@
             'modules/tools/space-turn/space-turn.js',
             'modules/tools/frame-shot/frame-shot.js',
             'modules/tools/osc-tool/osc-tool.js',
-            'modules/tools/youtube-fix/youtube-fix.js',
             'modules/timeline/list-table.js',
             'modules/timeline/timeline.js',
             'modules/timeline/timeline-search.js',
@@ -979,28 +889,11 @@
                 if (bar) bar.style.width = Math.min(100, Math.round(_splashDone / _splashTotal * 100)) + '%';
             };
             const htmls = await Promise.all(entries.map(async ([tabId, p]) => {
-                const startedAt = performance.now();
-                startupDiagnostic(`fragment start ${tabId} ${p}`);
-                const controller = new AbortController();
-                let timedOut = false;
-                const timeout = setTimeout(() => {
-                    timedOut = true;
-                    controller.abort();
-                }, loaderTimeoutMs);
-                try {
-                    const r = await fetch(p, { signal: controller.signal });
-                    if (!r.ok) throw new Error('fetch ' + p + ' -> HTTP ' + r.status);
-                    const txt = await r.text();
-                    startupDiagnostic(`fragment complete ${tabId} ${p} status=${r.status} elapsed=${(performance.now() - startedAt).toFixed(1)}ms`);
-                    _splashTick();
-                    return [tabId, txt];
-                } catch (err) {
-                    startupDiagnostic(`fragment error ${tabId} ${p}: ${err?.message || err}`);
-                    if (timedOut) throw new Error('fetch ' + p + ' timed out after ' + loaderTimeoutMs + 'ms');
-                    throw err;
-                } finally {
-                    clearTimeout(timeout);
-                }
+                const r = await fetch(p);
+                if (!r.ok) throw new Error('fetch ' + p + ' -> HTTP ' + r.status);
+                const txt = await r.text();
+                _splashTick();
+                return [tabId, txt];
             }));
             for (const [tabId, html] of htmls) {
                 const host = document.getElementById(tabId);
@@ -1009,27 +902,11 @@
             }
             for (const src of scripts) {
                 await new Promise((resolve, reject) => {
-                    const startedAt = performance.now();
-                    startupDiagnostic(`script start ${src}`);
                     const s = document.createElement('script');
                     s.src = src;
                     s.async = false;
-                    const timeout = setTimeout(() => {
-                        s.onload = null;
-                        s.onerror = null;
-                        s.remove();
-                        reject(new Error('script ' + src + ' timed out after ' + loaderTimeoutMs + 'ms'));
-                    }, loaderTimeoutMs);
-                    s.onload = () => {
-                        clearTimeout(timeout);
-                        startupDiagnostic(`script complete ${src} elapsed=${(performance.now() - startedAt).toFixed(1)}ms`);
-                        resolve();
-                    };
-                    s.onerror = () => {
-                        clearTimeout(timeout);
-                        startupDiagnostic(`script error ${src}`);
-                        reject(new Error('script ' + src + ' failed to load'));
-                    };
+                    s.onload = resolve;
+                    s.onerror = () => reject(new Error('script ' + src + ' failed to load'));
                     document.body.appendChild(s);
                 });
                 _splashTick();
@@ -1038,55 +915,19 @@
             // Must run AFTER init.js so that the backend's loadSettings response
             // doesn't overwrite UI state that init.js will populate (e.g. webhooks).
             if (typeof sendToCS === 'function') {
-                startupDiagnostic('backend ready send');
                 sendToCS({ action: 'ready' });
                 sendToCS({ action: 'kxdGetDevices' });
                 sendToCS({ action: 'vfGetDevices' });
             }
-            startupLoaderComplete = true;
             if (typeof navApplyStartPage === 'function') navApplyStartPage();
-            else startupDiagnostic('startup navigation unavailable');
-            startupDiagnostic('loader complete; splash hide scheduled');
             const _splashBar = document.getElementById('vrcnSplashBar');
             if (_splashBar) _splashBar.style.width = '100%';
-            startupDiagnostic('splash hide timer scheduled delay=2000ms');
             setTimeout(() => {
                 const sp = document.getElementById('vrcnSplash');
-                startupDiagnostic(`splash hide callback entered exists=${!!sp} class=${sp?.className || 'missing'}`);
-                const before = sp
-                    ? `exists=true class=${sp.className} opacity=${getComputedStyle(sp).opacity} transition=${getComputedStyle(sp).transition}`
-                    : 'exists=false';
-                startupDiagnostic(`splash hide callback state before ${before}`);
                 if (!sp) return;
-                sp.addEventListener('transitionend', event => {
-                    if (event.target === sp && event.propertyName === 'opacity')
-                        startupDiagnostic(`splash opacity transitionend elapsed=${event.elapsedTime}s class=${sp.className} opacity=${getComputedStyle(sp).opacity}`);
-                }, { once: true });
                 sp.classList.add('vrcn-splash-hide');
-                startupDiagnostic(`splash hide class applied exists=${document.getElementById('vrcnSplash') === sp} class=${sp.className}`);
-                const after = `exists=${document.getElementById('vrcnSplash') === sp} class=${sp.className} opacity=${getComputedStyle(sp).opacity} transition=${getComputedStyle(sp).transition}`;
-                startupDiagnostic(`splash hide callback after ${after}`);
-                setTimeout(() => {
-                    const current = document.getElementById('vrcnSplash');
-                    startupDiagnostic(`splash removal callback before exists=${!!current} class=${current?.className || 'missing'} opacity=${current ? getComputedStyle(current).opacity : 'missing'}`);
-                    current?.remove();
-                    startupDiagnostic(`splash removal callback after exists=${!!document.getElementById('vrcnSplash')}`);
-                }, 550);
+                setTimeout(() => sp.remove(), 550);
             }, 2000);
-            let uiSample = 0;
-            let nextUiSampleAt = performance.now() + 5000;
-            const scheduleUiSample = () => {
-                setTimeout(() => {
-                    uiSample++;
-                    const now = performance.now();
-                    startupUiSnapshot(uiSample, Math.max(0, now - nextUiSampleAt));
-                    if (uiSample < 13) {
-                        nextUiSampleAt = now + 5000;
-                        scheduleUiSample();
-                    }
-                }, Math.max(0, nextUiSampleAt - performance.now()));
-            };
-            scheduleUiSample();
         } catch (err) {
             showFatalError(err.message, err.stack);
             throw err;
