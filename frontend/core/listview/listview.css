@@ -70,7 +70,7 @@
 #tab2.active > .tab-toolbar,
 #tab4.active > .tab-toolbar { flex-shrink: 0; }
 
-#worldFavArea, #worldMineArea, #worldRecentArea, #worldSearchArea,
+#worldFavArea, #worldDiscoverArea, #worldMineArea, #worldRecentArea, #worldSearchArea,
 #groupMineArea, #groupSearchArea, #groupInstancesArea,
 #avatarOwnArea, #avatarFavArea, #avatarRecentArea, #avatarRoseArea, #avatarSearchArea {
     flex: 1;
@@ -78,14 +78,14 @@
     display: flex;
     flex-direction: column;
 }
-#worldFavArea > .tab-toolbar-body, #worldSearchArea > .tab-toolbar-body,
+#worldFavArea > .tab-toolbar-body, #worldSearchArea > .tab-toolbar-body, #worldDiscoverArea > .tab-toolbar-body,
 #groupMineArea > .tab-toolbar-body, #groupSearchArea > .tab-toolbar-body,
 #groupInstancesArea > .tab-toolbar-body,
 #avatarOwnArea > .tab-toolbar-body, #avatarFavArea > .tab-toolbar-body,
 #avatarRecentArea > .tab-toolbar-body, #avatarRoseArea > .tab-toolbar-body,
 #avatarSearchArea > .tab-toolbar-body { flex-shrink: 0; }
 
-#favWorldsGrid, #worldMineGrid, #worldRecentGrid, #searchWorldsResults,
+#favWorldsGrid, #worldDiscoverGrid, #worldMineGrid, #worldRecentGrid, #searchWorldsResults,
 #myGroupsGrid, #searchGroupsResults, #groupInstancesGrid {
     flex: 1;
     overflow-y: auto;
@@ -99,7 +99,7 @@
     min-height: 0;
 }
 
-#favWorldsGrid:has(.lv-scroll), #worldMineGrid:has(.lv-scroll),
+#favWorldsGrid:has(.lv-scroll), #worldDiscoverGrid:has(.lv-scroll), #worldMineGrid:has(.lv-scroll),
 #worldRecentGrid:has(.lv-scroll), #searchWorldsResults:has(.lv-scroll),
 #myGroupsGrid:has(.lv-scroll), #searchGroupsResults:has(.lv-scroll), #groupInstancesGrid:has(.lv-scroll),
 .lv-tab-scroll:has(.lv-scroll) {
@@ -116,6 +116,7 @@
     height: 100%;
 }
 #tab13.active > .tab-toolbar,
+#tab13.active > .tab-toolbar-body,
 #tab13.active > .inv-topbar { flex-shrink: 0; }
 .lv-tab-scroll > .inv-grid {
     flex: none;
@@ -138,13 +139,13 @@
 #tab17.active #calDayPanel[style*="display: none"],
 #tab17.active #calDayPanel[style*="display:none"] { flex: 0; }
 
-#favWorldsGrid:has(.lv-scroll), #worldMineGrid:has(.lv-scroll),
+#favWorldsGrid:has(.lv-scroll), #worldDiscoverGrid:has(.lv-scroll), #worldMineGrid:has(.lv-scroll),
 #worldRecentGrid:has(.lv-scroll), #searchWorldsResults:has(.lv-scroll),
 #myGroupsGrid:has(.lv-scroll), #searchGroupsResults:has(.lv-scroll), #groupInstancesGrid:has(.lv-scroll),
 .lv-tab-scroll:has(.lv-scroll) { margin-bottom: 8px; }
 
 /* === v2 content panel — matches the Calendar card === */
-#favWorldsGrid, #worldMineGrid, #worldRecentGrid, #searchWorldsResults,
+#favWorldsGrid, #worldDiscoverGrid, #worldMineGrid, #worldRecentGrid, #searchWorldsResults,
 #myGroupsGrid, #searchGroupsResults, #groupInstancesGrid,
 #allFriendsGrid, #favFriendsGrid, #recentSeenGrid,
 #blockedList, #mutedList, #searchPeopleResults, #instancePlayersGrid,
@@ -162,7 +163,7 @@
 .tl-paginator-bar { margin-top: -28px; z-index: 3; }
 #tab13 .lv-tab-scroll { margin-bottom: 0; }
 
-#favWorldsGrid:has(.tl-list-wrap), #worldMineGrid:has(.tl-list-wrap),
+#favWorldsGrid:has(.tl-list-wrap), #worldDiscoverGrid:has(.tl-list-wrap), #worldMineGrid:has(.tl-list-wrap),
 #worldRecentGrid:has(.tl-list-wrap), #searchWorldsResults:has(.tl-list-wrap),
 #myGroupsGrid:has(.tl-list-wrap), #searchGroupsResults:has(.tl-list-wrap),
 #groupInstancesGrid:has(.tl-list-wrap),
@@ -200,7 +201,7 @@
 .tl-list-hbar::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
 .lv-scroll .tl-list-wrap,
-#favWorldsGrid .tl-list-wrap, #worldMineGrid .tl-list-wrap,
+#favWorldsGrid .tl-list-wrap, #worldDiscoverGrid .tl-list-wrap, #worldMineGrid .tl-list-wrap,
 #worldRecentGrid .tl-list-wrap, #searchWorldsResults .tl-list-wrap,
 #myGroupsGrid .tl-list-wrap, #searchGroupsResults .tl-list-wrap,
 #groupInstancesGrid .tl-list-wrap,

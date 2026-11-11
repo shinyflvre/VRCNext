@@ -890,7 +890,7 @@
             if (id) return buildWorldItems(id);
         }
 
-        const worldCard = el.closest('#favWorldsGrid .vrcn-content-card, #worldSearchArea .vrcn-content-card, #worldMineGrid .vrcn-content-card, #worldRecentGrid .vrcn-content-card, #fdContentWorlds .vrcn-content-card, #fdTabFavs .vrcn-world-card-small, .tl-list-table[data-tl-list="worldsList"] .tl-list-row');
+        const worldCard = el.closest('#favWorldsGrid .vrcn-content-card, #worldSearchArea .vrcn-content-card, #worldMineGrid .vrcn-content-card, #worldRecentGrid .vrcn-content-card, #worldDiscoverGrid .vrcn-content-card, #fdContentWorlds .vrcn-content-card, #fdTabFavs .vrcn-world-card-small, .tl-list-table[data-tl-list="worldsList"] .tl-list-row');
         if (worldCard) {
             const id = extractWorldId(worldCard);
             if (id) return buildWorldItems(id);
@@ -1326,6 +1326,19 @@
             { icon: 'forward_to_inbox',  key: 'friend.invite_message', fb: 'Invite with Message', action: () => openFriendInviteModal(userId, displayName, 'message') },
         ];
         if (hasVrcPlus) opts.push({ icon: 'add_photo_alternate', key: 'friend.invite_image', fb: 'Invite with Image', action: () => openFriendInviteModal(userId, displayName, 'photo') });
+        renderInviteSubmenu(opts, parentBtn);
+    }
+
+    function showRequestInviteSubmenu(userId, displayName, hasVrcPlus, location, parentBtn) {
+        const opts = [
+            { icon: 'mail',              key: 'friend.request_invite',         fb: 'Request Invite',              action: () => friendAction('requestInvite', location, userId) },
+            { icon: 'forward_to_inbox',  key: 'friend.request_invite_message', fb: 'Request Invite with Message', action: () => openFriendInviteModal(userId, displayName, 'message', 'request') },
+        ];
+        if (hasVrcPlus) opts.push({ icon: 'add_photo_alternate', key: 'friend.request_invite_image', fb: 'Request Invite with Image', action: () => openFriendInviteModal(userId, displayName, 'photo', 'request') });
+        renderInviteSubmenu(opts, parentBtn);
+    }
+
+    function renderInviteSubmenu(opts, parentBtn) {
         submenu.innerHTML = opts.map(o => `
             <button class="vn-ctx-item" data-opt="${esc(o.key)}">
                 <span class="msi" style="font-size:14px;">${o.icon}</span>
@@ -1664,7 +1677,10 @@
 
             const actionItems = [];
             if (canJoin) actionItems.push({ icon: 'login', label: cm('friend.join', 'Join'), action: () => friendAction('join', loc, id) });
-            if (canRequestInvite) actionItems.push({ icon: 'mail', label: cm('friend.request_invite', 'Request Invite'), action: () => friendAction('requestInvite', loc, id) });
+            if (canRequestInvite) {
+                const requestHasVrcPlus = Array.isArray(currentVrcUser?.tags) && currentVrcUser.tags.includes('system_supporter');
+                actionItems.push({ icon: 'mail', label: cm('friend.request_invite', 'Request Invite'), submenuFn: btn => showRequestInviteSubmenu(id, f.displayName || id, requestHasVrcPlus, loc, btn) });
+            }
             if (myInInstance) {
                 const hasVrcPlus = Array.isArray(currentVrcUser?.tags) && currentVrcUser.tags.includes('system_supporter');
                 actionItems.push({ icon: 'send', label: cm('friend.invite', 'Invite'), submenuFn: btn => showFriendInviteSubmenu(id, f.displayName || id, hasVrcPlus, btn) });
@@ -1701,12 +1717,22 @@
             items.push('sep');
             if (settings?.friendOnlineToastEnabled) items.push({ icon: 'notifications', label: cm('friend.toast', 'Toast'), submenuFn: btn => showToastAlertSubmenu(id, btn) });
             items.push({ icon: 'shield_person', label: cm('friend.moderate', 'Moderate'), submenuFn: btn => showModerateSubmenu(id, btn) });
+            items.push({ icon: 'gavel', label: cm('friend.report', 'Report User'), action: () => openReportUserModal(id, f.displayName || '') });
             items.push({ icon: 'person_remove', label: cm('friend.unfriend', 'Unfriend'), action: () => confirmUnfriend(id, f.displayName || ''), danger: true });
         } else {
             items.push('sep');
-            items.push({ icon: 'person_add', label: cm('friend.send_request', 'Send Friend Request'), action: () => sendToCS({ action: 'vrcSendFriendRequest', userId: id }) });
+            const friendRequestState = (typeof _fdFriendRequest !== 'undefined' && _fdFriendRequest?.userId === id) ? _fdFriendRequest : null;
+            if (friendRequestState?.incoming) {
+                items.push({ icon: 'person_add', label: cm('friend.accept_request', 'Accept Friend Request'), action: () => friendRequestAction(id, 'accept') });
+                items.push({ icon: 'person_remove', label: cm('friend.decline_request', 'Decline Friend Request'), action: () => friendRequestAction(id, 'decline') });
+            } else if (friendRequestState?.outgoing) {
+                items.push({ icon: 'person_remove', label: cm('friend.cancel_request', 'Cancel Friend Request'), action: () => friendRequestAction(id, 'cancel') });
+            } else {
+                items.push({ icon: 'person_add', label: cm('friend.send_request', 'Send Friend Request'), action: () => friendRequestAction(id, 'send') });
+            }
             items.push('sep');
             items.push({ icon: 'shield_person', label: cm('friend.moderate', 'Moderate'), submenuFn: btn => showModerateSubmenu(id, btn) });
+            items.push({ icon: 'gavel', label: cm('friend.report', 'Report User'), action: () => openReportUserModal(id, currentFriendDetail?.id === id ? currentFriendDetail.displayName : '') });
         }
         tools.push(copyItem('friend', id, 'https://vrchat.com/home/user/' + id, 'Copy User ID', 'Copy User Link', 'User ID copied to clipboard', 'Profile link copied to clipboard'));
         const _pinUser = (typeof pinsContextItem === 'function') ? pinsContextItem('user', id) : null;

@@ -51,6 +51,86 @@ public class UsersAPI(VRChatApiService ctx)
         return (null, 0);
     }
 
+    private static readonly HashSet<string> PrivacyFlags = new()
+    {
+        "allowAvatarCopying", "isBoopingEnabled", "hasSharedConnectionsOptOut", "hasDiscordFriendsOptOut",
+    };
+
+    public async Task<bool> UpdatePrivacyFlagsAsync(Dictionary<string, bool> flags)
+    {
+        if (!ctx.IsLoggedIn || ctx.CurrentUserId == null || flags.Count == 0 || !flags.Keys.All(PrivacyFlags.Contains)) return false;
+        try
+        {
+            var payload = JObject.FromObject(flags);
+            var content = new StringContent(payload.ToString(), Encoding.UTF8, "application/json");
+            var resp = await ctx._http.PutAsync($"{VRChatApiService.BASE}/users/{ctx.CurrentUserId}", content);
+            var body = await resp.Content.ReadAsStringAsync();
+            ctx.Log($"UpdatePrivacyFlags: {(int)resp.StatusCode}");
+            if (!resp.IsSuccessStatusCode) return false;
+            ctx.CurrentUserRaw = JObject.Parse(body);
+            return true;
+        }
+        catch (Exception ex) { ctx.Log($"UpdatePrivacyFlags exception: {ex.Message}"); return false; }
+    }
+
+    private JObject? _config;
+
+    private async Task<JObject?> GetConfigAsync()
+    {
+        if (_config != null) return _config;
+        try
+        {
+            var resp = await ctx._http.GetAsync($"{VRChatApiService.BASE}/config");
+            var body = await resp.Content.ReadAsStringAsync();
+            if (resp.IsSuccessStatusCode) return _config = JObject.Parse(body);
+            ctx.Log($"GetConfig {(int)resp.StatusCode}");
+        }
+        catch (Exception ex) { ctx.Log($"GetConfig exception: {ex.Message}"); }
+        return null;
+    }
+
+    public async Task<JArray?> GetUserReportOptionsAsync()
+    {
+        var config = await GetConfigAsync();
+        if (config?["reportOptions"]?["user"] is not JObject options) return null;
+        var categoryTexts = config["reportCategories"];
+        var reasonTexts = config["reportReasons"];
+        var rows = options.Properties()
+            .OrderBy(p => categoryTexts?[p.Name]?["order"]?.Value<int>() ?? 0)
+            .Select(p => new JObject
+            {
+                ["id"]      = p.Name,
+                ["text"]    = categoryTexts?[p.Name]?["text"]?.ToString() ?? p.Name,
+                ["reasons"] = new JArray((p.Value as JArray ?? new JArray()).Select(r => new JObject
+                {
+                    ["id"]   = r.ToString(),
+                    ["text"] = reasonTexts?[r.ToString()]?["text"]?.ToString() ?? r.ToString(),
+                })),
+            });
+        return new JArray(rows);
+    }
+
+    public async Task<bool> SubmitUserReportAsync(string userId, string category, string reason, string description)
+    {
+        if (!ctx.IsLoggedIn || string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(category) || string.IsNullOrEmpty(reason)) return false;
+        try
+        {
+            var payload = new JObject
+            {
+                ["type"]      = "user",
+                ["category"]  = category,
+                ["reason"]    = reason,
+                ["contentId"] = userId,
+            };
+            if (!string.IsNullOrWhiteSpace(description)) payload["description"] = description.Trim();
+            var content = new StringContent(payload.ToString(), Encoding.UTF8, "application/json");
+            var resp = await ctx._http.PostAsync($"{VRChatApiService.BASE}/moderationReports", content);
+            ctx.Log($"SubmitUserReport: {(int)resp.StatusCode}");
+            return resp.IsSuccessStatusCode;
+        }
+        catch (Exception ex) { ctx.Log($"SubmitUserReport exception: {ex.Message}"); return false; }
+    }
+
     public async Task<JObject?> UpdateStatusAsync(string status, string statusDescription)
     {
         if (!ctx.IsLoggedIn || ctx.CurrentUserId == null) return null;

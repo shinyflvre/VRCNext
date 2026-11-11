@@ -280,6 +280,7 @@ function renderWorldSearchDetail(w) {
     const wdInfosRows = [
         w.recommendedCapacity ? _wmr(t('worlds.meta.recommended', 'Recommended'), esc(getWorldPlayersLabel(w.recommendedCapacity))) : '',
         _wmr(t('worlds.meta.max_capacity', 'Max Capacity'), esc(getWorldPlayersLabel(w.capacity))),
+        _wmr(t('avatars.labels.public', 'Public'), esc(_wdPublicLabel(_wdPublicState(w)))),
         w.createdAt ? _wmr(t('worlds.meta.published', 'Published'), fmtShortDate(new Date(w.createdAt + 'T00:00:00'))) : '',
         w.updatedAt ? _wmr(t('worlds.meta.updated', 'Updated'), fmtShortDate(new Date(w.updatedAt + 'T00:00:00'))) : '',
         w.pcSize > 0 ? _wmr(t('avatars.list.header.pc', 'PC'), esc(formatFileSize(w.pcSize))) : '',
@@ -321,7 +322,7 @@ function renderWorldSearchDetail(w) {
             <div class="ci-group-list" id="wdFavGroupList"><div style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx3);padding:8px 0;">${t('worlds.favorites.loading_groups', 'Loading groups...')}</div></div>
         </div>`;
     const wdTagsCard = (tagsHtml || isOwnWorld) ? `<div class="fd-info-card">
-            <div class="fd-group-rep-label">${t('worlds.meta.tags_title', 'Tags')}${isOwnWorld ? `<button class="myp-edit-btn" onclick="editWdField('tags')"><span class="msi" style="font-size:14px;">edit</span></button>` : ''}</div>
+            <div class="fd-group-rep-label">${t('worlds.meta.tags_title', 'Tags')}${isOwnWorld ? `<button class="myp-edit-btn" style="margin-left:auto;" onclick="editWdField('tags')"><span class="msi" style="font-size:14px;">edit</span></button>` : ''}</div>
             <div id="wdfTagsView">${tagsHtml || `<div class="myp-empty">${t('worlds.detail.no_tags', 'No tags')}</div>`}</div>
             ${isOwnWorld ? `<div id="wdfTagsEdit" style="display:none;">
                 <div id="wdTagsChips" class="myp-lang-chips" style="margin-bottom:6px;"></div>
@@ -336,7 +337,7 @@ function renderWorldSearchDetail(w) {
             </div>` : ''}
         </div>` : '';
     const wdTimeCard = (w.worldTimeSeconds > 0 || currentInstanceData?.worldId === wid) ? `<div class="fd-info-card"><div class="wd-your-time"><span class="msi" style="font-size:15px;">schedule</span><div><div style="font-size:calc(12px + var(--fs-off, 0px));font-weight:600;color:var(--tx2);">${t('worlds.time_spent.label', 'Your Time Spent')}</div><div style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);"><span id="wdTimeSpent">${formatDuration(w.worldTimeSeconds || 0)}</span>${w.worldVisitCount > 0 ? ' &middot; ' + getWorldVisitCountLabel(w.worldVisitCount) : ''}</div></div></div></div>` : '';
-    const wdInfosCard = `<div class="fd-info-card"><div class="fd-group-rep-label">${t('worlds.meta.infos_title', 'Infos')}</div><div style="display:grid;gap:6px;">${wdInfosRows}</div></div>`;
+    const wdInfosCard = `<div class="fd-info-card"><div class="fd-group-rep-label">${t('worlds.meta.infos_title', 'Infos')}${isOwnWorld ? `<button class="myp-edit-btn" style="margin-left:auto;" onclick="editWdField('infos')"><span class="msi" style="font-size:14px;">edit</span></button>` : ''}</div><div id="wdfInfosView"><div style="display:grid;gap:6px;">${wdInfosRows}</div></div>${isOwnWorld ? wdInfosEditHtml(w) : ''}</div>`;
     const wdCommunityCard = wdCommunityRows ? `<div class="fd-info-card"><div class="fd-group-rep-label">${t('worlds.meta.community_title', 'Community')}</div><div style="display:grid;gap:6px;">${wdCommunityRows}</div></div>` : '';
     const wdPopularityCard = wdPopularityRows ? `<div class="fd-info-card"><div class="fd-group-rep-label">${t('worlds.meta.popularity_title', 'Popularity')}</div><div style="display:grid;gap:6px;">${wdPopularityRows}</div></div>` : '';
     const wdHistoryInner = `<div class="fd-group-rep-label">${t('worlds.instance_history.title', 'Instance History')}</div>
@@ -374,7 +375,7 @@ function renderWorldSearchDetail(w) {
     const wdComPopRow = (wdCommunityCard && wdPopularityCard)
         ? `<div class="wd-compact-row">${wdCommunityCard}${wdPopularityCard}</div>`
         : `${wdCommunityCard}${wdPopularityCard}`;
-    const wdInfoCompactRight = `<div class="fd-info-wrap">${wdDescCardCompact}${wdComPopRow}<div class="fd-info-card">${wdHistoryInner}</div></div>`;
+    const wdInfoCompactRight = `<div class="fd-info-wrap">${wdDescCardCompact}${wdComPopRow}${wdPersistCardHtml(w)}<div class="fd-info-card">${wdHistoryInner}</div></div>`;
 
     const wdInstToolbar = `<div class="search-bar-row" style="margin-top:4px;margin-bottom:8px;">
             <span class="msi search-ico">search</span>
@@ -426,6 +427,7 @@ function renderWorldSearchDetail(w) {
     if (wdInstSortSel && typeof initVnSelect === 'function') initVnSelect(wdInstSortSel);
     if (hasWorldPhotos) { _wdPreloadPhotos(wid); _wdLoadPhotos(wid); }
     if (wid) { _wdInstanceHistory = []; sendToCS({ action: 'getTimelineForWorld', worldId: wid }); }
+    if (wid) sendToCS({ action: 'vrcGetWorldManageInfo', worldId: wid, own: !!isOwnWorld });
     if (_wdCurrentTab !== 'info') {
         if (_wdCurrentTab === 'photos' && !hasWorldPhotos) {
             _wdCurrentTab = 'info';
@@ -459,19 +461,7 @@ function renderWdInstanceHistory(worldId, events) {
         return;
     }
 
-    el.innerHTML = tlMiniListHtml(_wdInstanceHistory.map(ev => {
-        const meta   = typeof tlTypeMeta === 'function' ? tlTypeMeta(ev.type) : { icon: 'event', label: ev.type };
-        const color  = { instance_join:'var(--accent)', photo:'var(--ok)', first_meet:'var(--cyan)', meet_again:'#6554FF', notification:'var(--warn)', avatar_switch:'#FF7043', video_url:'#29B6F6' }[ev.type] || 'var(--tx3)';
-        const d      = new Date(ev.timestamp);
-        const dt     = `${fmtShortDate(d)} | ${fmtTime(d)}`;
-        const ei     = ev.id.replace(/'/g, "\\'");
-        const detail = typeof _tlListData === 'function' ? (_tlListData(ev).detail || '') : '';
-        return `<tr class="tl-list-row" onclick="openTlDetail('${ei}', true)">
-            <td class="tl-list-dt">${esc(dt)}</td>
-            <td class="tl-list-type"><span class="msi tl-list-icon" style="color:${color}">${meta.icon}</span><span>${esc(meta.label)}</span></td>
-            <td class="tl-list-detail">${detail || (typeof tlListNaHtml === 'function' ? tlListNaHtml() : '')}</td>
-        </tr>`;
-    }).join(''), `openTimelineWithChip('personal','worlds','${jsq(worldId || '')}','${jsq((_wdCurrentWorld && _wdCurrentWorld.name) || '')}','${jsq((_wdCurrentWorld && (_wdCurrentWorld.thumbnailImageUrl || _wdCurrentWorld.imageUrl)) || '')}','closeWorldDetail')`);
+    el.innerHTML = tlMiniListHtml(tlMiniRowsHtml(_wdInstanceHistory), `openTimelineWithChip('personal','worlds','${jsq(worldId || '')}','${jsq((_wdCurrentWorld && _wdCurrentWorld.name) || '')}','${jsq((_wdCurrentWorld && (_wdCurrentWorld.thumbnailImageUrl || _wdCurrentWorld.imageUrl)) || '')}','closeWorldDetail')`);
 }
 
 let _wdCurrentWorldId = '';
@@ -1533,6 +1523,7 @@ const _wdFieldIds = {
     name: { view: 'wdfNameView', edit: 'wdfNameEdit' },
     desc: { view: 'wdfDescView', edit: 'wdfDescEdit' },
     tags: { view: 'wdfTagsView', edit: 'wdfTagsEdit' },
+    infos: { view: 'wdfInfosView', edit: 'wdfInfosEdit' },
 };
 let _wdEditTags = [];
 let _wdSavingField = '';
@@ -1541,6 +1532,7 @@ function wdFieldLabel(field) {
     if (field === 'name') return t('worlds.detail.fields.name', 'Name');
     if (field === 'desc') return t('worlds.detail.fields.desc', 'Description');
     if (field === 'tags') return t('worlds.detail.fields.tags', 'Tags');
+    if (field === 'infos') return t('worlds.detail.fields.capacity', 'Capacity');
     return '';
 }
 
@@ -1559,6 +1551,7 @@ function editWdField(field) {
     const v = document.getElementById(ids.view); if (v) v.style.display = 'none';
     const e = document.getElementById(ids.edit); if (e) e.style.display = '';
 
+    if (field === 'infos') _wdRenderPublicSelect();
     if (field === 'name') {
         document.getElementById('wdNameInput')?.focus();
     } else if (field === 'desc') {
@@ -1603,9 +1596,15 @@ function wdRenderTagChips() {
         : `<span class="myp-empty">${t('worlds.detail.no_tags', 'No tags')}</span>`;
 }
 
-function saveWdField(field, worldId) {
+function saveWdField(field, worldId, publishConfirmed) {
     const w = window._currentWorldDetailFull;
     if (!w) return;
+    const targetPublic = field === 'infos' ? (document.getElementById('wdPublicSelect')?.value || _wdPublicState(w)) : '';
+    const publicChanged = field === 'infos' && targetPublic !== _wdPublicState(w);
+    if (publicChanged && !publishConfirmed) {
+        wdConfirmPublish(worldId, targetPublic !== 'none', () => saveWdField(field, worldId, true));
+        return;
+    }
     _wdSavingField = field;
     const ids = _wdFieldIds[field];
     const saveBtn = document.querySelector(`#${ids.edit} .vrcn-btn-primary`);
@@ -1626,7 +1625,25 @@ function saveWdField(field, worldId) {
         ? [..._wdEditTags.map(x => 'author_tag_' + x), ...preserved]
         : (w.tags || []);
 
-    sendToCS({ action: 'vrcUpdateWorld', worldId, name, description, tags });
+    const capacityFields = {};
+    if (field === 'infos') {
+        const capacity = Math.min(40, Math.max(1, parseInt(document.getElementById('wdCapacityInput')?.value, 10) || w.capacity || 1));
+        capacityFields.capacity = capacity;
+        capacityFields.recommendedCapacity = Math.min(capacity, Math.max(1, parseInt(document.getElementById('wdRecommendedInput')?.value, 10) || capacity));
+    }
+    const needsUpdate = field !== 'infos'
+        || capacityFields.capacity !== w.capacity
+        || capacityFields.recommendedCapacity !== w.recommendedCapacity;
+    const publishRequest = publicChanged ? { worldId, publish: targetPublic !== 'none' } : null;
+
+    if (needsUpdate) {
+        _wdPendingPublish = publishRequest;
+        sendToCS({ action: 'vrcUpdateWorld', worldId, name, description, tags, ...capacityFields });
+    } else if (publishRequest) {
+        sendToCS({ action: 'vrcSetWorldPublished', ...publishRequest });
+    } else {
+        renderWorldSearchDetail(w);
+    }
 }
 
 function onWorldUpdateResult(data) {
@@ -1636,11 +1653,20 @@ function onWorldUpdateResult(data) {
             if (data.name != null) w.name = data.name;
             if (data.description != null) w.description = data.description;
             if (data.tags != null) w.tags = data.tags;
-            renderWorldDetail(w);
+            if (data.capacity != null) w.capacity = data.capacity;
+            if (data.recommendedCapacity != null) w.recommendedCapacity = data.recommendedCapacity;
+            renderWorldSearchDetail(w);
+        }
+        const myWorld = (typeof _myWorldsData !== 'undefined') ? _myWorldsData.find(x => x.id === data.worldId) : null;
+        if (myWorld && data.name != null) myWorld.name = data.name;
+        if (_wdPendingPublish) {
+            sendToCS({ action: 'vrcSetWorldPublished', ..._wdPendingPublish });
+            _wdPendingPublish = null;
         }
         showToast(true, tf('worlds.detail.toast.saved', { field: wdFieldLabel(_wdSavingField) }, '{field} saved'));
         if (typeof renderWorldsListView === 'function') renderWorldsListView();
     } else {
+        _wdPendingPublish = null;
         showToast(false, data.error || t('worlds.detail.toast.update_failed', 'Update failed'));
         const ids = _wdSavingField ? _wdFieldIds[_wdSavingField] : null;
         const saveBtn = ids ? document.querySelector(`#${ids.edit} .vrcn-btn-primary`) : null;
@@ -1666,11 +1692,141 @@ function onWorldImageResult(data) {
         if (data.imageUrl && w) {
             w.imageUrl = data.imageUrl;
             w.thumbnailImageUrl = data.imageUrl;
-            renderWorldDetail(w);
+            renderWorldSearchDetail(w);
+        }
+        const myWorld = (typeof _myWorldsData !== 'undefined') ? _myWorldsData.find(x => x.id === data.worldId) : null;
+        if (myWorld && data.imageUrl) {
+            myWorld.imageUrl = data.imageUrl;
+            myWorld.thumbnailImageUrl = data.imageUrl;
+            if (typeof renderWorldsListView === 'function') renderWorldsListView();
         }
     } else {
         showToast(false, data.error || t('worlds.detail.toast.image_update_failed', 'Image update failed'));
     }
+}
+
+let _wdCanPublish = false;
+let _wdPendingPublish = null;
+
+function _wdPublicState(w) {
+    const tags = w?.tags || [];
+    if (tags.includes('system_approved')) return 'published';
+    if (tags.includes('system_labs')) return 'labs';
+    return 'none';
+}
+
+function _wdPublicLabel(state) {
+    if (state === 'published') return t('worlds.manage.published', 'Published');
+    if (state === 'labs') return t('worlds.manage.labs', 'Community Labs');
+    return t('common.none', 'None');
+}
+
+function wdInfosEditHtml(w) {
+    const wid = jsq(w.id || '');
+    const inputHtml = (id, label, value) => `<div style="flex:1;min-width:0;">
+        <div class="sf-section-label" style="margin-top:0;">${esc(label)}</div>
+        <input id="${id}" type="number" min="1" max="40" class="vrcn-edit-field" value="${esc(value)}" style="width:100%;">
+    </div>`;
+    return `<div id="wdfInfosEdit" style="display:none;">
+        <div style="display:flex;gap:8px;">
+            ${inputHtml('wdRecommendedInput', t('worlds.meta.recommended', 'Recommended'), w.recommendedCapacity || '')}
+            ${inputHtml('wdCapacityInput', t('worlds.meta.max_capacity', 'Max Capacity'), w.capacity ?? '')}
+        </div>
+        <div class="sf-section-label">${esc(t('avatars.labels.public', 'Public'))}</div>
+        <div id="wdPublicWrap" style="display:flex;"></div>
+        <div class="set-desc" id="wdPublicHint" style="display:none;margin:6px 0 0;">${esc(t('worlds.manage.publish_hint', 'You can publish one world every 7 days.'))}</div>
+        <div class="myp-edit-actions">
+            <button class="vrcn-button" onclick="cancelWdField('infos')">${esc(t('common.cancel', 'Cancel'))}</button>
+            <button class="vrcn-button vrcn-btn-primary" onclick="saveWdField('infos','${wid}')">${esc(t('common.save', 'Save'))}</button>
+        </div>
+    </div>`;
+}
+
+function _wdRenderPublicSelect() {
+    const wrap = document.getElementById('wdPublicWrap');
+    const w = window._currentWorldDetailFull;
+    if (!wrap || !w) return;
+    const current = _wdPublicState(w);
+    const states = current === 'none' ? (_wdCanPublish ? ['none', 'labs'] : ['none']) : ['none', current];
+    wrap.innerHTML = `<select id="wdPublicSelect" class="wd-create-select" style="width:100%;">${states.map(state => `<option value="${state}"${state === current ? ' selected' : ''}>${esc(_wdPublicLabel(state))}</option>`).join('')}</select>`;
+    initVnSelect(document.getElementById('wdPublicSelect'));
+    const hint = document.getElementById('wdPublicHint');
+    if (hint) hint.style.display = current === 'none' && !_wdCanPublish ? '' : 'none';
+}
+
+function wdPersistCardHtml(w) {
+    return `<div class="fd-info-card">
+        <div class="myp-section-header">
+            <span class="myp-section-title">${esc(t('worlds.manage.persistent', 'Persistent Data'))}</span>
+            <button class="myp-edit-btn" id="wdPersistDeleteBtn" style="visibility:hidden;" title="${esc(t('common.delete', 'Delete'))}" onclick="wdConfirmDeletePersist('${jsq(w.id || '')}')"><span class="msi" style="font-size:14px;">delete</span></button>
+        </div>
+        <div id="wdPersistStatus" class="myp-empty">${esc(t('common.loading', 'Loading...'))}</div>
+    </div>`;
+}
+
+function onWorldManageInfo(data) {
+    if (data.worldId !== _wdCurrentWorldId) return;
+    _wdCanPublish = !!data.canPublish;
+    if (document.getElementById('wdfInfosEdit')?.style.display === '') _wdRenderPublicSelect();
+    const status = document.getElementById('wdPersistStatus');
+    if (status) {
+        status.textContent = data.hasPersistentData ? t('worlds.manage.persistent_stored', 'Stored') : t('worlds.manage.persistent_none', 'None');
+        status.className = data.hasPersistentData ? '' : 'myp-empty';
+        status.style.cssText = data.hasPersistentData ? 'font-size:calc(12px + var(--fs-off, 0px));color:var(--tx1);' : '';
+    }
+    const deleteBtn = document.getElementById('wdPersistDeleteBtn');
+    if (deleteBtn) deleteBtn.style.visibility = data.hasPersistentData ? 'visible' : 'hidden';
+}
+
+function wdConfirmPublish(worldId, publish, onConfirm) {
+    const name = window._currentWorldDetailFull?.name || worldId;
+    vrcnConfirmDelete({
+        id: 'worldPublishModal',
+        title: publish ? t('worlds.manage.publish', 'Publish to Labs') : t('worlds.manage.unpublish', 'Unpublish'),
+        icon: 'cloud_upload',
+        message: publish
+            ? tf('worlds.manage.publish_confirm', { name }, 'Publish "{name}" to Community Labs? You can publish one world every 7 days.')
+            : tf('worlds.manage.unpublish_confirm', { name }, 'Remove "{name}" from Community Labs?'),
+        confirmLabel: publish ? t('worlds.manage.publish', 'Publish to Labs') : t('worlds.manage.unpublish', 'Unpublish'),
+        primary: publish,
+        onConfirm,
+    });
+}
+
+function onWorldPublishResult(data) {
+    const w = window._currentWorldDetailFull;
+    if (!data.ok) {
+        showToast(false, t('worlds.manage.toast.publish_failed', 'Could not change the publish state'));
+        if (w && w.id === data.worldId) renderWorldSearchDetail(w);
+        return;
+    }
+    showToast(true, data.publish ? t('worlds.manage.toast.published', 'World published') : t('worlds.manage.toast.unpublished', 'World unpublished'));
+    if (w && w.id === data.worldId) {
+        if (data.tags) w.tags = data.tags;
+        else w.tags = data.publish ? [...(w.tags || []), 'system_labs'] : (w.tags || []).filter(tag => tag !== 'system_labs' && tag !== 'system_approved');
+        renderWorldSearchDetail(w);
+    }
+}
+
+function wdConfirmDeletePersist(worldId) {
+    const name = window._currentWorldDetailFull?.name || worldId;
+    vrcnConfirmDelete({
+        id: 'worldPersistDeleteModal',
+        title: t('worlds.manage.persistent', 'Persistent Data'),
+        icon: 'delete',
+        message: tf('worlds.manage.persistent_confirm', { name }, 'Delete your saved data for "{name}"? This cannot be undone.'),
+        confirmLabel: t('common.delete', 'Delete'),
+        onConfirm: () => sendToCS({ action: 'vrcDeleteWorldPersistentData', worldId }),
+    });
+}
+
+function onWorldPersistResult(data) {
+    if (!data.ok) {
+        showToast(false, t('worlds.manage.toast.persistent_failed', 'Could not delete persistent data'));
+        return;
+    }
+    showToast(true, t('worlds.manage.toast.persistent_deleted', 'Persistent data deleted'));
+    onWorldManageInfo({ worldId: data.worldId, canPublish: _wdCanPublish, hasPersistentData: false });
 }
 
 function confirmDeleteWorld(worldId, worldName) {

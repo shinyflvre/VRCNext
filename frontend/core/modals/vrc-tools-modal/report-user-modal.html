@@ -1,0 +1,25 @@
+        <div class="modal-box" style="width:506px;max-width:90%;">
+            <div class="fd-modal-bar">
+                <div class="fd-modal-bar-crumbs"><span class="fd-modal-bar-title" data-i18n="report_user.title">Report User</span></div>
+                <div class="fd-modal-bar-actions">
+                    <button class="btn-notif fd-action-btn" title="Close" data-i18n-title="common.close" onclick="closeReportUserModal()"><span class="msi" style="font-size:20px;">close</span></button>
+                </div>
+            </div>
+            <div class="modal-card">
+                <div class="modal-msg" id="ruDesc" style="margin:0 0 14px;"></div>
+
+                <div class="sf-section-label" style="margin-top:0;" data-i18n="report_user.category">Category</div>
+                <div id="ruCategoryWrap" style="display:flex;"></div>
+
+                <div class="sf-section-label" data-i18n="report_user.reason">Reason</div>
+                <div id="ruReasonWrap" style="display:flex;"></div>
+
+                <div class="sf-section-label" data-i18n="report_user.details">Details</div>
+                <textarea id="ruDetails" class="vrcn-edit-field" rows="3" maxlength="1000" data-i18n-placeholder="report_user.details_placeholder" placeholder="Optional details..." style="width:100%;height:auto;padding:8px 10px;font-family:inherit;resize:vertical;"></textarea>
+            </div>
+            <div class="modal-foot">
+                <div class="modal-foot-spacer"></div>
+                <button class="vrcn-button" onclick="closeReportUserModal()" data-i18n="common.cancel">Cancel</button>
+                <button class="vrcn-button vrcn-btn-danger" id="ruSendBtn" onclick="ruSubmit()" data-i18n="report_user.send">Send Report</button>
+            </div>
+        </div>

@@ -19,6 +19,75 @@ public class InstancesAPI(VRChatApiService ctx)
         return null;
     }
 
+    private const int InstanceListPageSize = 50;
+    private const int ActiveInstanceMaxPages = 4;
+    private const int InstanceListSpacingMs = 333;
+
+    public async Task<JArray?> GetActiveInstancesAsync()
+    {
+        if (!ctx.IsLoggedIn) return null;
+        var rows = new JArray();
+        for (var page = 0; page < ActiveInstanceMaxPages; page++)
+        {
+            if (page > 0) await Task.Delay(InstanceListSpacingMs);
+            try
+            {
+                var resp = await ctx._http.GetAsync($"{VRChatApiService.BASE}/instances/active?n={InstanceListPageSize}&offset={page * InstanceListPageSize}");
+                var body = await resp.Content.ReadAsStringAsync();
+                if (!resp.IsSuccessStatusCode)
+                {
+                    ctx.Log($"GetActiveInstances {(int)resp.StatusCode}: {body[..Math.Min(200, body.Length)]}");
+                    return page == 0 ? null : rows;
+                }
+                var pageRows = JArray.Parse(body);
+                foreach (var row in pageRows) rows.Add(row);
+                if (pageRows.Count < InstanceListPageSize) break;
+            }
+            catch (Exception ex)
+            {
+                ctx.Log($"GetActiveInstances exception: {ex.Message}");
+                return page == 0 ? null : rows;
+            }
+        }
+        return rows;
+    }
+
+    public async Task<JArray?> DiscoverInstancesAsync()
+    {
+        if (!ctx.IsLoggedIn) return null;
+        try
+        {
+            var resp = await ctx._http.GetAsync($"{VRChatApiService.BASE}/instances/discover?n={InstanceListPageSize}");
+            var body = await resp.Content.ReadAsStringAsync();
+            if (resp.IsSuccessStatusCode) return JObject.Parse(body)["instances"] as JArray ?? new JArray();
+            ctx.Log($"DiscoverInstances {(int)resp.StatusCode}: {body[..Math.Min(200, body.Length)]}");
+        }
+        catch (Exception ex) { ctx.Log($"DiscoverInstances exception: {ex.Message}"); }
+        return null;
+    }
+
+    public static JArray GroupInstancesByWorld(JArray instances)
+    {
+        var worlds = new Dictionary<string, (JObject world, int users)>();
+        foreach (var instance in instances.OfType<JObject>())
+        {
+            if (instance["world"] is not JObject world) continue;
+            var id = world["id"]?.ToString();
+            if (string.IsNullOrEmpty(id)) continue;
+            var users = instance["userCount"]?.Value<int?>() ?? instance["n_users"]?.Value<int?>() ?? 0;
+            worlds[id] = worlds.TryGetValue(id, out var entry) ? (entry.world, entry.users + users) : (world, users);
+        }
+        var result = new JArray();
+        foreach (var entry in worlds.Values
+            .Select(e => (e.world, players: Math.Max(e.world["occupants"]?.Value<int?>() ?? 0, e.users)))
+            .OrderByDescending(e => e.players))
+        {
+            entry.world["occupants"] = entry.players;
+            result.Add(entry.world);
+        }
+        return result;
+    }
+
     public async Task<bool> CloseInstanceAsync(string location)
     {
         if (!ctx.IsLoggedIn || string.IsNullOrEmpty(location)) return false;
@@ -92,49 +161,59 @@ public class InstancesAPI(VRChatApiService ctx)
     public static string BuildLaunchUri(string location) =>
         $"vrchat://launch?ref=vrchat.com&id={location}";
 
-    public string BuildInstanceLocation(string worldId, string type, string region)
+    public async Task<string?> CreateInstanceAsync(string worldId, string type, string region, InstanceCreateExtras extras)
     {
-        var rng = new Random();
-        var instanceNum = rng.Next(10000, 99999);
-        var nonce = Guid.NewGuid().ToString();
-        var userId = ctx.CurrentUserId ?? "";
-
-        string instanceId = type switch
+        if (!ctx.IsLoggedIn) return null;
+        var apiType = type == "invite_plus" ? "private" : type;
+        var body = new JObject
         {
-            "friends"     => $"{instanceNum}~friends({userId})~region({region})~nonce({nonce})",
-            "hidden"      => $"{instanceNum}~hidden({userId})~region({region})~nonce({nonce})",
-            "invite_plus" => $"{instanceNum}~private({userId})~canRequestInvite~region({region})~nonce({nonce})",
-            "private"     => $"{instanceNum}~private({userId})~region({region})~nonce({nonce})",
-            _             => $"{instanceNum}~region({region})",
+            ["worldId"] = worldId,
+            ["type"]    = apiType,
+            ["region"]  = region,
         };
-
-        return $"{worldId}:{instanceId}";
+        if (apiType != "public") body["ownerId"] = ctx.CurrentUserId;
+        if (type == "invite_plus") body["canRequestInvite"] = true;
+        ApplyCreateExtras(body, extras);
+        return await PostInstanceAsync(body, worldId);
     }
 
     public async Task<string?> CreateGroupInstanceAsync(string worldId, string groupId, string groupAccessType, string region,
-        string instanceName = "", bool queueEnabled = false, bool ageGateEnabled = false, string minAvatarPerf = "")
+        InstanceCreateExtras extras, bool queueEnabled = false, bool ageGateEnabled = false, string minAvatarPerf = "")
     {
         if (!ctx.IsLoggedIn) return null;
+        var body = new JObject
+        {
+            ["worldId"]         = worldId,
+            ["type"]            = "group",
+            ["ownerId"]         = groupId,
+            ["groupAccessType"] = groupAccessType,
+            ["region"]          = region,
+            ["queueEnabled"]    = queueEnabled,
+            ["ageGate"]         = ageGateEnabled,
+        };
+        ApplyCreateExtras(body, extras);
+        if (minAvatarPerf == "Good" || minAvatarPerf == "Medium" || minAvatarPerf == "Poor")
+            body["minimumAvatarPerformance"] = minAvatarPerf;
+        return await PostInstanceAsync(body, worldId);
+    }
+
+    private static void ApplyCreateExtras(JObject body, InstanceCreateExtras extras)
+    {
+        if (!string.IsNullOrWhiteSpace(extras.InstanceName)) body["displayName"] = extras.InstanceName;
+        if (!string.IsNullOrWhiteSpace(extras.Description)) body["description"] = extras.Description;
+        if (!string.IsNullOrWhiteSpace(extras.CategoryId)) body["categoryId"] = extras.CategoryId;
+        if (extras.VibeIds.Count > 0) body["vibeIds"] = new JArray(extras.VibeIds);
+        if (extras.Languages.Count > 0) body["languages"] = new JArray(extras.Languages);
+    }
+
+    private async Task<string?> PostInstanceAsync(JObject body, string worldId)
+    {
         try
         {
-            var body = new JObject
-            {
-                ["worldId"]         = worldId,
-                ["type"]            = "group",
-                ["ownerId"]         = groupId,
-                ["groupAccessType"] = groupAccessType,
-                ["region"]          = region,
-                ["queueEnabled"]    = queueEnabled,
-                ["ageGate"]         = ageGateEnabled,
-            };
-            if (!string.IsNullOrWhiteSpace(instanceName))
-                body["displayName"] = instanceName;
-            if (minAvatarPerf == "Good" || minAvatarPerf == "Medium" || minAvatarPerf == "Poor")
-                body["minimumAvatarPerformance"] = minAvatarPerf;
             var resp = await ctx._http.PostAsync($"{VRChatApiService.BASE}/instances",
                 new StringContent(body.ToString(Newtonsoft.Json.Formatting.None), Encoding.UTF8, "application/json"));
             var respBody = await resp.Content.ReadAsStringAsync();
-            ctx.Log($"CreateGroupInstance: {(int)resp.StatusCode} {respBody[..Math.Min(600, respBody.Length)]}");
+            ctx.Log($"CreateInstance: {(int)resp.StatusCode} {respBody[..Math.Min(600, respBody.Length)]}");
             if (resp.IsSuccessStatusCode)
             {
                 var obj = JObject.Parse(respBody);
@@ -144,8 +223,60 @@ public class InstancesAPI(VRChatApiService ctx)
                 if (!string.IsNullOrEmpty(instanceId)) return $"{worldId}:{instanceId}";
             }
         }
-        catch (Exception ex) { ctx.Log($"CreateGroupInstance exception: {ex.Message}"); }
+        catch (Exception ex) { ctx.Log($"CreateInstance exception: {ex.Message}"); }
         return null;
+    }
+
+    private JArray? _instanceCategories;
+    private JArray? _instanceVibes;
+
+    public async Task<(JArray categories, JArray vibes)> GetInstanceCreateOptionsAsync()
+    {
+        _instanceCategories ??= await FetchCreateOptionsAsync("instanceCategories");
+        _instanceVibes ??= await FetchCreateOptionsAsync("instanceVibes");
+        return (_instanceCategories ?? new JArray(), _instanceVibes ?? new JArray());
+    }
+
+    private async Task<JArray?> FetchCreateOptionsAsync(string path)
+    {
+        try
+        {
+            var resp = await ctx._http.GetAsync($"{VRChatApiService.BASE}/{path}");
+            var body = await resp.Content.ReadAsStringAsync();
+            if (!resp.IsSuccessStatusCode)
+            {
+                ctx.Log($"{path} {(int)resp.StatusCode}: {body[..Math.Min(200, body.Length)]}");
+                return null;
+            }
+            var live = JArray.Parse(body)
+                .Where(row => row["deleted"]?.Value<bool>() != true)
+                .OrderBy(row => row["order"]?.Value<int>() ?? 0);
+            return new JArray(live);
+        }
+        catch (Exception ex) { ctx.Log($"{path} exception: {ex.Message}"); }
+        return null;
+    }
+
+    public async Task<object> BuildInstanceMetaAsync(JObject? inst)
+    {
+        var (categories, vibes) = await GetInstanceCreateOptionsAsync();
+        var categoryId = inst?["categoryId"]?.ToString() ?? "";
+        var vibeTitles = (inst?["vibeIds"] as JArray)?
+            .Select(id => vibes.FirstOrDefault(v => v["id"]?.ToString() == id.ToString())?["title"]?.ToString() ?? "")
+            .Where(title => title.Length > 0)
+            .ToArray() ?? Array.Empty<string>();
+        var languages = (inst?["languagesIso639"] as JArray)?
+            .Select(code => code.ToString())
+            .Where(code => code.Length > 0)
+            .Take(3)
+            .ToArray() ?? Array.Empty<string>();
+        return new
+        {
+            description  = inst?["description"]?.ToString() ?? "",
+            categoryName = categories.FirstOrDefault(c => c["id"]?.ToString() == categoryId)?["name"]?.ToString() ?? "",
+            vibes        = vibeTitles,
+            languages,
+        };
     }
 
     public async Task<JArray> GetAllGroupInstancesAsync()
@@ -166,4 +297,14 @@ public class InstancesAPI(VRChatApiService ctx)
         catch (Exception ex) { ctx.Log($"GetAllGroupInstances exception: {ex.Message}"); }
         return new JArray();
     }
+}
+
+public record InstanceCreateExtras(string InstanceName, string Description, string CategoryId, List<string> VibeIds, List<string> Languages)
+{
+    public static InstanceCreateExtras FromMessage(JObject msg) => new(
+        msg["instanceName"]?.ToString() ?? "",
+        msg["description"]?.ToString() ?? "",
+        msg["categoryId"]?.ToString() ?? "",
+        msg["vibeIds"]?.ToObject<List<string>>() ?? new List<string>(),
+        msg["languages"]?.ToObject<List<string>>() ?? new List<string>());
 }

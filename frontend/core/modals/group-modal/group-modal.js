@@ -333,7 +333,11 @@ function renderGroupDetail(g) {
                     </button>`;
                 }).join('')}
             </div>
-        </div>` : ''}`;
+        </div>` : ''}
+        <div class="fd-info-card" style="margin-top:10px;">
+            <div class="fd-group-rep-label">${t('worlds.instance_history.title', 'Instance History')}</div>
+            <div id="gdInstanceHistory" style="max-height:160px;overflow-y:auto;"><div style="padding:4px 0;font-size:calc(12px + var(--fs-off, 0px));color:var(--tx3);">${t('profiles.insights.loading', 'Loading...')}</div></div>
+        </div>`;
 
     // Tab: Posts
     const posts = g.posts || [];
@@ -511,6 +515,8 @@ function renderGroupDetail(g) {
     }
     applyGroupDetailTranslations(g);
     _gdCompactReflow(g);
+    if (_gdHistoryGroupId === g.id) _gdPaintInstanceHistory();
+    sendToCS({ action: 'getTimelineForGroup', groupId: g.id });
 
     if (_gdPrevTab && _gdPrevTab !== 'info' && _gdPrevId === g.id) {
         const _gdRestoreBtn = el.querySelector(`.fd-tab[onclick^="switchGdTab('${_gdPrevTab}'"]`);
@@ -837,6 +843,24 @@ function searchGroupMembers() {
     const lm = document.getElementById('gdMembersLoadMore');
     if (lm) lm.innerHTML = '';
     sendToCS({ action: 'vrcSearchGroupMembers', groupId: window._gdMembersGroupId, query: q });
+}
+
+let _gdInstanceHistory = [];
+let _gdHistoryGroupId = '';
+
+function renderGdInstanceHistory(groupId, events) {
+    if (window._currentGroupDetail?.id !== groupId) return;
+    _gdInstanceHistory = events || [];
+    _gdHistoryGroupId = groupId;
+    _gdPaintInstanceHistory();
+}
+
+function _gdPaintInstanceHistory() {
+    const el = document.getElementById('gdInstanceHistory');
+    if (!el) return;
+    el.innerHTML = _gdInstanceHistory.length
+        ? tlMiniListHtml(tlMiniRowsHtml(_gdInstanceHistory))
+        : `<div style="padding:4px 0;font-size:calc(12px + var(--fs-off, 0px));color:var(--tx3);">${t('timeline.empty.initial', 'No events yet')}</div>`;
 }
 
 function switchGdTab(tab, btn) {
@@ -2118,6 +2142,8 @@ function _gdWmState(s) {
         logsLoaded:     window._gdLogsLoaded,
         logsOffset:     window._gdLogsOffset,
         logRows:        window._gdLogRows,
+        instanceHistory: _gdInstanceHistory,
+        historyGroupId:  _gdHistoryGroupId,
     };
     s = s || {};
     window._currentGroupDetail     = s.detail         ?? null;
@@ -2130,6 +2156,8 @@ function _gdWmState(s) {
     window._gdLogsLoaded           = s.logsLoaded     ?? false;
     window._gdLogsOffset           = s.logsOffset     ?? 0;
     window._gdLogRows              = s.logRows        ?? null;
+    _gdInstanceHistory             = s.instanceHistory ?? [];
+    _gdHistoryGroupId              = s.historyGroupId  ?? '';
 }
 
 function confirmDeleteGroup(groupId, groupName) {

@@ -81,6 +81,9 @@ const SmartSearch = (() => {
         openVrcLaunchOptionsModal: 'modalVrcLaunchOptions',
         openMessageTemplatesModal: 'modalMessageTemplates',
         openLogViewerModal:        'modalLogViewer',
+        openMyReportsModal:        'modalMyReports',
+        openPurchaseHistoryModal:  'modalPurchaseHistory',
+        openRewardCodeModal:       'modalRewardCode',
     };
     const TOOL_CONTROL_SEL = 'input[type="checkbox"], input[type="range"], select, input[type="text"], input[type="number"], input[type="password"], textarea';
     const TOOL_STOP_SEL = '.vrcn-panel-card, .modal-card, .modal-box, .tab';
@@ -1070,8 +1073,7 @@ const SmartSearch = (() => {
         modalCreateInstance: () => typeof closeCreateInstanceModal === 'function' && closeCreateInstanceModal(),
         modalFriendPicker: () => typeof closeFriendPicker === 'function' && closeFriendPicker(),
         dashLayoutModal: () => typeof closeDashLayoutEditor === 'function' && closeDashLayoutEditor(),
-        navEditorOverlay: () => typeof closeNavEditor === 'function' && closeNavEditor(),
-        invUploadModal: () => typeof closeInvUploadModal === 'function' && closeInvUploadModal(),
+        navEditorOverlay: () => typeof closeNavEditor === 'function' && closeNavEditor(),        invUploadModal: () => typeof closeInvUploadModal === 'function' && closeInvUploadModal(),
         invDeleteModal: () => typeof closeInvDeleteModal === 'function' && closeInvDeleteModal(),
         deleteModal: () => typeof closeDeleteModal === 'function' && closeDeleteModal(),
         imagePickerOverlay: () => typeof closeImagePicker === 'function' && closeImagePicker(),

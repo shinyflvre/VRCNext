@@ -661,7 +661,7 @@ function vrcnConfirmDelete(opts) {
         ${opts.listHtml ? `<div class="gr-bulk-list">${opts.listHtml}</div>` : ''}
         <div class="modal-btns">
             <button class="vrcn-button-round" id="${id}Cancel">${_esc(typeof t === 'function' ? t('common.cancel', 'Cancel') : 'Cancel')}</button>
-            <button class="vrcn-button-round vrcn-btn-danger" id="${id}Ok">${_esc(opts.confirmLabel || 'Delete')}</button>
+            <button class="vrcn-button-round ${opts.primary ? 'vrcn-btn-primary' : 'vrcn-btn-danger'}" id="${id}Ok">${_esc(opts.confirmLabel || 'Delete')}</button>
         </div></div>`;
     document.body.appendChild(o);
     document.getElementById(id + 'Cancel').onclick = () => o.remove();

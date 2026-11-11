@@ -63,6 +63,24 @@ public class NotificationsAPI(VRChatApiService ctx)
         return new JArray();
     }
 
+    public async Task<string?> FindFriendRequestIdAsync(string senderUserId)
+    {
+        if (!ctx.IsLoggedIn) return null;
+        try
+        {
+            foreach (var hidden in new[] { "false", "true" })
+            {
+                var resp = await ctx._http.GetAsync($"{VRChatApiService.BASE}/auth/user/notifications?type=friendRequest&hidden={hidden}&n=100");
+                if (!resp.IsSuccessStatusCode) continue;
+                var match = JArray.Parse(await resp.Content.ReadAsStringAsync())
+                    .FirstOrDefault(n => n["senderUserId"]?.ToString() == senderUserId);
+                if (match != null) return match["id"]?.ToString();
+            }
+        }
+        catch (Exception ex) { ctx.Log($"FindFriendRequestId exception: {ex.Message}"); }
+        return null;
+    }
+
     public async Task<bool> AcceptNotificationAsync(string notifId)
     {
         if (!ctx.IsLoggedIn) return false;

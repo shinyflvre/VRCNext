@@ -53,4 +53,21 @@ public class PlayerModerationAPI(VRChatApiService ctx)
         }
         catch (Exception ex) { ctx.Log($"UnmoderateUser({userId},{type}) exception: {ex.Message}"); return false; }
     }
+
+    public async Task<JObject?> GetMyReportsAsync(int n, int offset, bool closedOnly, string type)
+    {
+        if (!ctx.IsLoggedIn || string.IsNullOrEmpty(ctx.CurrentUserId)) return null;
+        try
+        {
+            var url = $"{VRChatApiService.BASE}/moderationReports?reportingUserId={ctx.CurrentUserId}&n={n}&offset={offset}";
+            if (closedOnly) url += "&status=closed";
+            if (!string.IsNullOrEmpty(type)) url += $"&type={Uri.EscapeDataString(type)}";
+            var resp = await ctx._http.GetAsync(url);
+            var body = await resp.Content.ReadAsStringAsync();
+            if (resp.IsSuccessStatusCode) return JObject.Parse(body);
+            ctx.Log($"GetMyReports {(int)resp.StatusCode}: {body[..Math.Min(200, body.Length)]}");
+        }
+        catch (Exception ex) { ctx.Log($"GetMyReports exception: {ex.Message}"); }
+        return null;
+    }
 }

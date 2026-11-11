@@ -96,6 +96,10 @@ public class TimelineController
                 HandleGetTimelineForWorld(msg);
                 break;
 
+            case "getTimelineForGroup":
+                HandleGetTimelineForGroup(msg);
+                break;
+
             case "getProfileInsights":
                 HandleGetProfileInsights(msg);
                 break;
@@ -1547,6 +1551,18 @@ public class TimelineController
                 };
             }).ToList();
             _core.SendToJS("meetNetworkWorlds", new { userId, worlds });
+        });
+    }
+
+    private void HandleGetTimelineForGroup(JObject msg)
+    {
+        var groupId = msg["groupId"]?.ToString() ?? "";
+        if (string.IsNullOrEmpty(groupId)) return;
+        _ = Task.Run(() =>
+        {
+            var events  = _core.Timeline.GetInstanceVisitsForGroup(groupId, 10);
+            var payload = events.Select(e => _instance.BuildTimelinePayload(e)).ToList();
+            _core.SendToJS("timelineForGroup", new { groupId, events = payload });
         });
     }
 

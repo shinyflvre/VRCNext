@@ -65,6 +65,7 @@ body.sidebar-resizing .content {
     pointer-events: none;
     z-index: 55;
 }
+#sidebarEl > :not(.sidebar-sep), #rsidebar > :not(.sidebar-sep) { --sidebar-glass-t: initial; }
 .sidebar .sidebar-sep { right: 0; }
 .rsidebar .sidebar-sep { left: 0; }
 

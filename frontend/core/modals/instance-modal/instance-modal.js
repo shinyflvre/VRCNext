@@ -185,7 +185,7 @@ function openInstanceInfoModal() {
         ? `<div class="iim-list${hasTimers ? ' has-timers' : ''}" style="${iimGridStyle}">${listHead}<div class="iim-list-body">${bodyRows}</div></div>`
         : `<div style="padding:14px;color:var(--tx3);font-size:calc(12px + var(--fs-off, 0px));">${t('instance.no_player_data_available', 'No player data available.')}</div>`;
 
-    const rightHtml = `<div class="mi-right"><div class="mi-right-scroll" style="overflow:auto;"><div class="mi-instance-list"><div class="mi-instance-card">${cardHeader}${playersHtml}</div></div></div></div>`;
+    const rightHtml = `<div class="mi-right"><div class="mi-right-scroll" style="overflow:auto;"><div class="mi-instance-list"><div class="mi-instance-card">${cardHeader}${instanceMetaHtml(data.meta)}${playersHtml}</div></div></div></div>`;
 
     const leftHidden = _iimLeftHidden();
     c.classList.toggle('iim-no-left', leftHidden);

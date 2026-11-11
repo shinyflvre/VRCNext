@@ -12,4 +12,17 @@
                         <button class="vrcn-button" onclick="refreshInventory(true)"><span class="msi" style="font-size:16px;">refresh</span> <span data-i18n="common.refresh">Refresh</span></button>
                     </div>
                 </div>
+                <div class="tab-toolbar-body" id="invCategoryBar" style="display:none;">
+                    <div class="inv-filter-row tt-scroll">
+                        <button class="vrcn-button sub-tab-btn active" data-inv-category="all" onclick="setInvCategory('all')"><span class="msi" style="font-size:14px;">apps</span> <span data-i18n="inventory.category.all">All</span></button>
+                        <button class="vrcn-button sub-tab-btn" data-inv-category="emojis" onclick="setInvCategory('emojis')"><span class="msi" style="font-size:14px;">emoji_emotions</span> <span data-i18n="inventory.tabs.emojis">Emojis</span></button>
+                        <button class="vrcn-button sub-tab-btn" data-inv-category="stickers" onclick="setInvCategory('stickers')"><span class="msi" style="font-size:14px;">sticky_note_2</span> <span data-i18n="inventory.tabs.stickers">Stickers</span></button>
+                        <button class="vrcn-button sub-tab-btn" data-inv-category="items" onclick="setInvCategory('items')"><span class="msi" style="font-size:14px;">widgets</span> <span data-i18n="inventory.category.items">Items</span></button>
+                        <button class="vrcn-button sub-tab-btn" data-inv-category="decorations" onclick="setInvCategory('decorations')"><span class="msi" style="font-size:14px;">auto_awesome</span> <span data-i18n="inventory.category.decorations">Profile Decorations</span></button>
+                        <button class="vrcn-button sub-tab-btn" data-inv-category="drones" onclick="setInvCategory('drones')"><span class="msi" style="font-size:14px;">flight</span> <span data-i18n="inventory.category.drones">Drones</span></button>
+                        <button class="vrcn-button sub-tab-btn" data-inv-category="portals" onclick="setInvCategory('portals')"><span class="msi" style="font-size:14px;">blur_on</span> <span data-i18n="inventory.category.portals">Portals</span></button>
+                        <button class="vrcn-button sub-tab-btn" data-inv-category="warp" onclick="setInvCategory('warp')"><span class="msi" style="font-size:14px;">air</span> <span data-i18n="inventory.category.warp_effects">Warp Effects</span></button>
+                        <button class="vrcn-button sub-tab-btn" data-inv-category="archived" onclick="setInvCategory('archived')"><span class="msi" style="font-size:14px;">inventory</span> <span data-i18n="inventory.category.archived">Archived</span></button>
+                    </div>
+                </div>
                 <div class="lv-tab-scroll"><div id="invGrid" class="inv-grid"><div class="empty-msg" data-i18n="inventory.select_category">Select a category above</div></div></div>

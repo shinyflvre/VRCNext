@@ -1,6 +1,7 @@
                 <div class="tab-toolbar tt-split" id="worldToolbar" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:nowrap;gap:8px;">
                     <div id="worldFilterBtns" class="tt-scroll">
                         <button class="vrcn-button sub-tab-btn active" id="worldFilterFav" onclick="setWorldFilter('favorites')"><span class="msi" style="font-size:16px;">favorite</span> <span data-i18n="worlds.filters.favorites">Favorites</span> <span class="vrcn-badge fd-tab-badge" id="worldFilterFavCount">X</span></button>
+                        <button class="vrcn-button sub-tab-btn" id="worldFilterDiscover" onclick="setWorldFilter('discover')"><span class="msi" style="font-size:16px;">explore</span> <span data-i18n="worlds.filters.discover">Discover</span></button>
                         <button class="vrcn-button sub-tab-btn" id="worldFilterRecent" onclick="setWorldFilter('recent')"><span class="msi" style="font-size:16px;">history</span> <span data-i18n="worlds.filters.recent">Recently Visited</span> <span class="vrcn-badge fd-tab-badge" id="worldFilterRecentCount">X</span></button>
                         <button class="vrcn-button sub-tab-btn" id="worldFilterMine" onclick="setWorldFilter('mine')"><span class="msi" style="font-size:16px;">cloud_upload</span> <span data-i18n="worlds.filters.mine">My Worlds</span> <span class="vrcn-badge fd-tab-badge" id="worldFilterMineCount">X</span></button>
                         <button class="vrcn-button sub-tab-btn" id="worldFilterSearch" onclick="setWorldFilter('search')"><span class="msi" style="font-size:16px;">search</span> <span data-i18n="worlds.filters.search">Search</span></button>
@@ -15,6 +16,17 @@
                 <div id="worldMineArea" style="display:none;">
                     <div id="worldMineGrid" class="search-grid"><div class="empty-msg" data-i18n="worlds.mine.loading">Loading your worlds...</div></div>
                     <div id="worldMinePaginatorBar" class="tl-paginator-bar"></div>
+                </div>
+                <div id="worldDiscoverArea" style="display:none;">
+                    <div class="tab-toolbar-body">
+                    <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+                        <button class="vrcn-button sub-tab-btn active" id="worldDiscoverPopular" onclick="setWorldDiscoverMode('popular')"><span class="msi" style="font-size:16px;">local_fire_department</span> <span data-i18n="worlds.discover.popular">Popular Worlds</span></button>
+                        <button class="vrcn-button sub-tab-btn" id="worldDiscoverWorlds" onclick="setWorldDiscoverMode('discover')"><span class="msi" style="font-size:16px;">travel_explore</span> <span data-i18n="worlds.discover.discover">Discover Worlds</span></button>
+                        <button id="worldDiscoverRefreshBtn" class="vrcn-button" style="margin-left:auto;" onclick="loadWorldDiscover()"><span class="msi" style="font-size:16px;">refresh</span> <span id="worldDiscoverRefreshLabel" data-i18n="common.refresh">Refresh</span></button>
+                    </div>
+                    </div>
+                    <div id="worldDiscoverGrid" class="search-grid"><div class="empty-msg" data-i18n="common.loading">Loading...</div></div>
+                    <div id="worldDiscoverPaginatorBar" class="tl-paginator-bar"></div>
                 </div>
                 <div id="worldRecentArea" style="display:none;">
                     <div id="worldRecentGrid" class="search-grid"><div class="empty-msg" data-i18n="common.loading">Loading...</div></div>

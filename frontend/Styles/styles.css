@@ -810,6 +810,15 @@ html.deco-dashboard-on.nameplate-deco-on .dash-flocs-card > .dash-flocs-world-th
     text-align: center;
 }
 
+.fd-tabs.fd-tabs-toolbar {
+    flex: 1;
+    min-width: 0;
+    height: 32px;
+    margin-bottom: 0;
+    box-sizing: border-box;
+    border-radius: 7px;
+}
+
 .fd-tab.active {
     background: var(--ui-input-active-bg);
     color: #fff;

@@ -1,4 +1,33 @@
-﻿function _selfInstanceMember() {
+﻿function _instanceOptionSlug(name) {
+    return String(name || '').toLowerCase().replace(/\+/g, ' plus').replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+}
+
+function _instanceOptionFallback(name) {
+    const text = String(name || '');
+    return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+function instanceCategoryLabel(name) {
+    return t(`worlds.instances.category_options.${_instanceOptionSlug(name)}`, _instanceOptionFallback(name));
+}
+
+function instanceVibeLabel(title) {
+    return t(`worlds.instances.vibe_options.${_instanceOptionSlug(title)}`, _instanceOptionFallback(title));
+}
+
+function instanceMetaHtml(meta) {
+    if (!meta) return '';
+    const parts = [];
+    if (meta.categoryName) parts.push(instanceCategoryLabel(meta.categoryName));
+    if (meta.vibes && meta.vibes.length) parts.push(meta.vibes.map(instanceVibeLabel).join(', '));
+    if (meta.languages && meta.languages.length) parts.push(meta.languages.map(code => LANG_MAP['language_' + code] || code.toUpperCase()).join(', '));
+    if (!meta.description && !parts.length) return '';
+    const description = meta.description ? `<div style="white-space:pre-wrap;word-break:break-word;">${esc(meta.description)}</div>` : '';
+    const line = parts.length ? `<div>${esc(parts.join(' · '))}</div>` : '';
+    return `<div style="display:grid;gap:4px;padding:0 12px 8px;font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);">${description}${line}</div>`;
+}
+
+function _selfInstanceMember() {
     const self = (typeof currentVrcUser !== 'undefined') ? currentVrcUser : null;
     if (!self || !self.id) return null;
     let loc = self.location || '';
