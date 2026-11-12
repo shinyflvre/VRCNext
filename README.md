@@ -8,16 +8,9 @@
 VRCNext is a VRChat Launcher and Management system that aims for simplicity and performance.
 With VRCNext you can check the status of your friends, watch their profiles, see in what world they are and ask them to send you an invite or send them one yourself. You can create an instance before even starting VRChat, manage your friends, remove or add new ones. You can search for worlds and groups, change your avatar before even starting VRChat, and set up a Media Library so all of your VRChat images are in one place. Send images directly to Discord using the Media Relay webhook system. See actual instance information such as which players are currently in your instance. Start VRChat directly through VRCNext and configure other apps to launch alongside it like SlimeVR, VRCVideoCacher, and VRCFaceTracking.
 
-**AI NOTES:**
-
-1. Parts of the backend contain AI-assisted code, including the SteamVR Overlay, SQLite handling, Watchdog Handler, Crash Reporter, and Relay Handler. <- many of the rewritten through updates.
-2. Parts of the frontend used AI-assisted design concepts during the early stages of development.
-3. For API Research making research faster than postman everything every single day due to plenty VRC API changes.
-
-If AI assisted code is a problem for you, please simply refrain from using VRCNext.
-I personally review all AI assisted code and manually adjust, improve, or approve it before implementation. AI is used as a development tool, not as a replacement for my own programming skills or decision makings.
-Not everything in VRCNext is written with AI assistance. A significant portion of the project is developed entirely by myself and friends or contributors. I simply want to be transparent about where and how AI has been used in my project here.
-I believe in being open about AI usage rather than hiding it, which is why I'm including this disclaimer.
+# Performance
+About 60-80% less memory usage compared to VRCX
+About 20-40% less memory usage compared to VRCX-0 (Rust rewrite of VRCX)
 
 ---
 
@@ -403,10 +396,16 @@ See [LICENSE](LICENSE) for the full license text.
 
 ---
 
-## Disclaimer
+**AI NOTES:**
 
-AI Disclaimer: The frontend (the visual interface you see) was partially created with AI assistance. AI helped with parts of the frontend, mainly CSS and JavaScript such as styling and animations, because design is not really my strength. It did not write the whole frontend. The communication between the frontend and backend, as well as the backend itself, was written entirely by a human.
-"and yes i did use DeepL to translate from german to english because english is not my first language, so is this whole descirption translated except this part here :D"
+1. Parts of the backend contain AI-assisted code, including the SteamVR Overlay, SQLite handling, Watchdog Handler, Crash Reporter, and Relay Handler. <- many of the rewritten through updates.
+2. Parts of the frontend used AI-assisted design concepts during the early stages of development.
+3. For API Research making research faster than postman everything every single day due to plenty VRC API changes.
+
+If AI assisted code is a problem for you, please simply refrain from using VRCNext.
+I personally review all AI assisted code and manually adjust, improve, or approve it before implementation. AI is used as a development tool, not as a replacement for my own programming skills or decision makings.
+Not everything in VRCNext is written with AI assistance. A significant portion of the project is developed entirely by myself and friends or contributors. I simply want to be transparent about where and how AI has been used in my project here.
+I believe in being open about AI usage rather than hiding it, which is why I'm including this disclaimer.
 
 > [!WARNING]
 > **VRCNext requires you to log in to VRChat in order to function.**
