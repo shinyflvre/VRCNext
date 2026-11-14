@@ -18,7 +18,7 @@
 
   <ItemGroup>
     <PackageReference Include="Photino.NET"      Version="4.0.16" />
-    <PackageReference Include="Newtonsoft.Json"  Version="13.0.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
 
   <!-- Frontend files bundled as embedded resources (works in single-file publish) -->

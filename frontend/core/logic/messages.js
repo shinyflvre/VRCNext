@@ -75,7 +75,6 @@ window.external.receiveMessage(rawMsg => {
             case 'customThemes': _localHttpPort = payload.port || _localHttpPort; _customThemes = payload.themes || []; applyCustomThemesFromSettings([..._activeCustomThemes]); break;
             case 'vrcLaunched': {
                 // Fired when a VRChat session starts (VRCNext launch or detected externally)
-                if (window._isLinuxUi) break;
                 const vr = !!payload.vr;
                 const chk = id => !!document.getElementById(id)?.checked;
                 const session = (window._autoStartToken = (window._autoStartToken || 0) + 1);
@@ -214,7 +213,18 @@ window.external.receiveMessage(rawMsg => {
                 document.getElementById('winMaxIcon').textContent = payload ? 'close_fullscreen' : 'open_in_full';
                 document.body.classList.toggle('maximized', !!payload);
                 break;
-            case 'filePosted': addFileToList(payload); playMediaRelaySound(); break;
+            case 'filePosted':
+                addFileToList(payload);
+                playMediaRelaySound();
+                if (window._isLinuxUi) {
+                    sendToCS({
+                        action: 'trayNotification',
+                        title: 'Media Relay',
+                        subtitle: `${payload.name} sent to ${payload.channel}`,
+                        kdeEventId: 'mediaRelay'
+                    });
+                }
+                break;
             case 'deleteResult':
                 if (payload.success) {
                     postedFiles = postedFiles.filter(f => f.messageId !== payload.messageId);
@@ -1111,7 +1121,7 @@ case 'vrcNews':
                     if (typeof _pendingTrayNotifs !== 'undefined' && _pendingTrayNotifs[payload.notifId]) {
                         const p = _pendingTrayNotifs[payload.notifId];
                         delete _pendingTrayNotifs[payload.notifId];
-                        sendToCS({ action: 'trayNotification', title: p.title, subtitle: p.subtitle, imageUrl: payload.image || '', accentKey: p.accentKey });
+                        sendToCS({ action: 'trayNotification', title: p.title, subtitle: p.subtitle, imageUrl: payload.image || '', accentKey: p.accentKey, kdeEventId: p.kdeEventId });
                     }
                 }
                 break;
@@ -1169,6 +1179,10 @@ case 'vrcNews':
                 break;
             case 'chatboxUpdate':
                 handleChatboxUpdate(payload);
+                break;
+            case 'chatboxWindowToolsState':
+                if (typeof handleChatboxWindowToolsState === 'function')
+                    handleChatboxWindowToolsState(payload);
                 break;
             case 'sfUpdate':
                 handleSfUpdate(payload);
@@ -1389,6 +1403,8 @@ case 'vrcNews':
         case 'setPlatform':
             window._isLinuxUi = !!payload?.isLinux;
             if (payload?.isLinux) {
+                if (typeof vriSetMode === 'function') vriSetMode(0);
+                sendToCS({ action: 'chatboxWindowToolsCheck' });
                 document.documentElement.classList.add('linux-ui');
                 window._kxdProfileTranslationEnabled = false;
                 if (typeof navSetLinux === 'function') navSetLinux(true);
@@ -1405,7 +1421,7 @@ case 'vrcNews':
                     lblDesc.textContent = t('settings.launch.auto_start_linux_desc', 'VRCNext launches automatically when Linux starts. It will open minimized.');
                 }
                 const vrcPathInput = document.getElementById('setVrcPath');
-                if (vrcPathInput) { vrcPathInput.value = 'steam://rungameid/438100'; vrcPathInput.readOnly = true; vrcPathInput.style.opacity = '0.5'; }
+                if (vrcPathInput) { vrcPathInput.readOnly = false; vrcPathInput.placeholder = `${window._homeDir || '/home/<username>'}/.local/share/Steam/steamapps/common/VRChat/VRChat.exe`; vrcPathInput.style.opacity = ''; }
                 const browseVrcBtn = document.getElementById('browseVrcBtn');
                 if (browseVrcBtn) browseVrcBtn.style.display = 'none';
                 const dbHint = document.getElementById('dbPathHint');
@@ -1486,4 +1502,3 @@ case 'vrcNews':
 // index.html, AFTER all scripts have loaded. Sending them here would cause the
 // backend's loadSettings response to arrive before init.js runs, and init.js's
 // renderWebhookCards([{},{},{},{}]) would overwrite the loaded webhook data.
-

@@ -10,6 +10,7 @@ public class DiscordController : IDisposable
     private readonly CoreLibrary _core;
     private readonly InstanceController _instance;
     private readonly VROverlayController _vroCtrl;
+    private DateTime _nextConnectAttempt = DateTime.MinValue;
 
     // Field (moved from MainForm.Fields.cs)
     private DiscordPresenceService? _discordPresence;
@@ -33,9 +34,9 @@ public class DiscordController : IDisposable
             case "dpStart":
                 {
                     _discordPresence?.Dispose();
-                    _discordPresence = new DiscordPresenceService("1480822566854852762");
-                    _discordPresence.OnLog += s => Invoke(() => _core.SendToJS("log", new { msg = s, color = "sec" }));
-                    bool ok = _discordPresence.Connect();
+                    _discordPresence = CreatePresenceService();
+                    _nextConnectAttempt = DateTime.MinValue;
+                    bool ok = ConnectPresence();
                     _core.SendToJS("dpState", new { running = ok });
                     if (ok) PushPresence();
                     _vroCtrl.UpdateToolStates();
@@ -56,7 +57,7 @@ public class DiscordController : IDisposable
 
     public void PushPresence()
     {
-        if (_discordPresence?.IsConnected != true) return;
+        if (_discordPresence == null || !ConnectPresence()) return;
         if (string.IsNullOrEmpty(_instance.CachedInstWorldName)) { _discordPresence.ClearPresence(); return; }
 
         var (_, rawInstanceId, instanceType) = VRChatApiService.ParseLocation(_instance.CachedInstLocation);
@@ -127,16 +128,35 @@ public class DiscordController : IDisposable
             _discordPresence.Disconnect();
             _discordPresence.Dispose();
             _discordPresence = null;
+            _nextConnectAttempt = DateTime.MinValue;
             _core.SendToJS("dpState", new { running = false });
         }
         else
         {
-            _discordPresence = new DiscordPresenceService("1480822566854852762");
-            _discordPresence.OnLog += s => Invoke(() => _core.SendToJS("log", new { msg = s, color = "sec" }));
-            bool ok = _discordPresence.Connect();
+            _discordPresence = CreatePresenceService();
+            _nextConnectAttempt = DateTime.MinValue;
+            bool ok = ConnectPresence();
             _core.SendToJS("dpState", new { running = ok });
             if (ok) PushPresence();
         }
+    }
+
+    private DiscordPresenceService CreatePresenceService()
+    {
+        var service = new DiscordPresenceService("1480822566854852762");
+        service.OnLog += message => Invoke(() => _core.SendToJS("log", new { msg = message, color = "sec" }));
+        return service;
+    }
+
+    private bool ConnectPresence()
+    {
+        if (_discordPresence?.IsConnected == true) return true;
+        if (_discordPresence == null || DateTime.UtcNow < _nextConnectAttempt) return false;
+        _nextConnectAttempt = DateTime.UtcNow.AddSeconds(15);
+        var connected = _discordPresence.Connect();
+        _core.SendToJS("dpState", new { running = connected });
+        _vroCtrl.UpdateToolStates();
+        return connected;
     }
 
     // Disposal

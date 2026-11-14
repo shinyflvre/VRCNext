@@ -13,11 +13,7 @@ public class SpaceTurnController : IDisposable
     private VRSubprocessHost? _stWiredHost;
     private JObject? _stLastState;
 
-#if WINDOWS
     public bool IsConnected => _core.VrOverlay?.StConnected ?? false;
-#else
-    public bool IsConnected => false;
-#endif
 
     public SpaceTurnController(CoreLibrary core, VROverlayController vroCtrl)
     {
@@ -25,7 +21,6 @@ public class SpaceTurnController : IDisposable
         _vroCtrl = vroCtrl;
     }
 
-#if WINDOWS
     private VRSubprocessHost EnsureHost()
     {
         if (_core.VrOverlay == null)
@@ -88,13 +83,10 @@ public class SpaceTurnController : IDisposable
         }
         _core.SendToJS("stUpdate", DisconnectedState());
     }
-#endif
-
     public void HandleMessage(string action, JObject msg)
     {
         switch (action)
         {
-#if WINDOWS
             case "stConnect":
                 Connect();
                 _vroCtrl.UpdateToolStates();
@@ -122,26 +114,24 @@ public class SpaceTurnController : IDisposable
                 _core.VrOverlay?.StConfig(mult, snap, inv, smo, lt, rt, lr, rr);
                 break;
             }
-#endif
         }
     }
 
     public void ResendState()
     {
-#if WINDOWS
         if (_core.VrOverlay?.StConnected != true) return;
         if (_stLastState != null) _core.SendToJS("stUpdate", _stLastState);
-#endif
     }
 
-    private uint StBtn(uint legacy, uint index) => _core.Settings.VrInputMode == 1 ? index : legacy;
+    private uint StBtn(uint legacy, uint index)
+    {
+        return _core.Settings.VrInputMode == 1 ? index : legacy;
+    }
 
     public void Toggle()
     {
-#if WINDOWS
         if (_core.VrOverlay?.StConnected == true) Disconnect();
         else Connect();
-#endif
     }
 
     public void Dispose()

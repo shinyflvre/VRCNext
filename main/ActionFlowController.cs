@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Linq;
 using VRCNext.Services;
 using VRCNext.Services.Helpers;
 
@@ -10,7 +10,7 @@ public class ActionFlowController : IDisposable
     private ActionFlowSettings   _settings;
 
 #if WINDOWS
-    public Func<SystemTrayService?>? TrayServiceProvider { get; set; }
+    public Func<WindowsTrayService?>? TrayServiceProvider { get; set; }
 #endif
 
     public ActionFlowController(CoreLibrary core)
@@ -103,7 +103,13 @@ public class ActionFlowController : IDisposable
 #if WINDOWS
                 var tray = TrayServiceProvider?.Invoke();
                 tray?.ShowNotification(title, subtitle, imageUrl, accent);
-
+#else
+                if (string.IsNullOrWhiteSpace(imageUrl))
+                    _core.Window?.SendNotification(title, subtitle);
+                else
+                    _ = SendLinuxNotificationAsync(title, subtitle, imageUrl);
+#endif
+#if WINDOWS
                 var notifTime = DateTimeHelper.FormatTime(DateTime.Now);
                 _core.VrOverlay?.AddNotification("notif_actionflow", title, subtitle, notifTime, imageUrl, friendId);
                 _core.VrOverlay?.EnqueueToast("notif_actionflow", title, subtitle, notifTime, imageUrl, false, friendId);
@@ -371,6 +377,25 @@ public class ActionFlowController : IDisposable
             }
         }
     }
+
+#if !WINDOWS
+    private async Task SendLinuxNotificationAsync(string title, string body, string imageUrl)
+    {
+        try
+        {
+            var sent = await LinuxNotificationHelper.TrySendAsync(
+                title, body, imageUrl, _core.VrcApi.GetHttpClient(),
+                message => _core.SendToJS("log", new { msg = message, color = "warn" }),
+                LinuxNotificationHelper.ActionFlowEvent);
+            if (!sent) _core.Window?.SendNotification(title, body);
+        }
+        catch (Exception ex)
+        {
+            _core.SendToJS("log", new { msg = "[Notifications] " + ex.Message, color = "warn" });
+            _core.Window?.SendNotification(title, body);
+        }
+    }
+#endif
 
     public void Dispose()
     {

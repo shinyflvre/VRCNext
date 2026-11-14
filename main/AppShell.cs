@@ -1,4 +1,4 @@
-﻿using Photino.NET;
+using Photino.NET;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Diagnostics;
@@ -17,6 +17,13 @@ public partial class AppShell
     private string _customThemesDir = "";
     private int _httpPort;
     private System.Net.HttpListener? _httpListener;
+    private readonly object _startupDiagnosticLock = new();
+    private string _startupDiagnosticPath = "";
+    private sealed class StartupTrafficCounter { public long Count; }
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, StartupTrafficCounter> _startupTraffic = new();
+    private System.Threading.Timer? _startupTrafficTimer;
+    private int _startupTrafficEnabled;
+    private long _startupLastHeartbeatUtcTicks;
     private System.Threading.Timer? _uptimeTimer2;
     private System.Threading.Timer? _worldStatsTimer;
     private System.Threading.Timer? _apiHealthTimer;
@@ -101,8 +108,9 @@ public partial class AppShell
     }
     private readonly Channel<string> _jsQueue = Channel.CreateUnbounded<string>(new UnboundedChannelOptions { SingleReader = true, AllowSynchronousContinuations = false });
 #if WINDOWS
-    private SystemTrayService? _trayService;
+    private WindowsTrayService? _trayService;
 #else
+    private LinuxSystemTrayService? _trayService;
     private int _lastNormalW, _lastNormalH;
     private int _lastNormalX = -1, _lastNormalY = -1;
     private bool _lastMaximized;
@@ -277,6 +285,7 @@ public partial class AppShell
 #if WINDOWS
         WindowController.OnMinimized = () => _memTrim.TrimNow();
 #endif
+        _core.OnTraySettingChanged = (enabled, autoHide) => ApplyTraySetting(enabled, autoHide);
         _authCtrl = new AuthController(_core, _friends, _instance, _photos, _relayCtrl, _groups, _discordCtrl);
         _core.LogSelfProfile = (kind, oldValue, newValue, timestamp) => _authCtrl.LogSelfProfileEvent(kind, oldValue, newValue, timestamp);
         _relayCtrl.OnOwnUserUpdated = user =>
@@ -319,7 +328,7 @@ public partial class AppShell
 
 #if WINDOWS
         // System tray
-        _trayService = new SystemTrayService();
+        _trayService = new WindowsTrayService();
         _trayService.OnShowWindow = () => _windowCtrl.ToggleWindowVisibility();
         _trayService.OnStatusChange = status =>
         {
@@ -342,11 +351,51 @@ public partial class AppShell
         {
             return await _vrcApi.GetHttpClient().GetByteArrayAsync(url);
         };
+        _trayService.OnReady = () => ApplyTraySetting(_settings.MinimizeToTray, _settings.MinimizeToTray);
+        _trayService.OnUnavailable = message =>
+        {
+            _windowCtrl.SetHideFromTaskbar(false);
+            if (_windowReady.Task.IsCompleted && _core.Window != null)
+            {
+                try { _windowCtrl.BringToFront(); } catch { }
+            }
+            _core.SendToJS("log", new { msg = $"{message} Closing to tray has been disabled.", color = "warn" });
+        };
         _trayService.Initialize();
-        _core.OnTraySettingChanged = (enabled, autoHide) => ApplyTraySetting(enabled, autoHide);
+        _trayService.SetVisible(_settings.MinimizeToTray);
         _core.OnTrayUserUpdate = UpdateTrayUser;
         _core.OnTrayLoggedOut = () => _trayService?.SetLoggedIn(false);
         _core.OnTrayThemeUpdate = colors => _trayService?.UpdateTheme(colors);
+#else
+        _trayService = new LinuxSystemTrayService();
+        _trayService.OnShowWindow = () => _windowCtrl.ToggleWindowVisibility();
+        _trayService.OnStatusChange = status =>
+        {
+            var currentDesc = _vrcApi.CurrentUserRaw?["statusDescription"]?.ToString() ?? "";
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(new { action = "vrcUpdateStatus", status, statusDescription = currentDesc });
+            _ = OnWebMessage(json);
+        };
+        _trayService.OnLaunchVRChat = vr =>
+        {
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(new { action = "vrcLaunchAndJoin", location = "", vr });
+            _ = OnWebMessage(json);
+        };
+        _trayService.IsVrcRunning = RelayController.IsVrcRunning;
+        _core.OnTrayUserUpdate = UpdateTrayUser;
+        _core.OnTrayLoggedOut = () => _trayService?.SetLoggedIn(false);
+        _trayService.OnReady = () => ApplyTraySetting(_settings.MinimizeToTray, _settings.MinimizeToTray);
+        _trayService.OnStatus = message => _core.SendToJS("log", new { msg = message, color = "warn" });
+        _trayService.OnUnavailable = message =>
+        {
+            _windowCtrl.SetHideFromTaskbar(false);
+            _windowCtrl.ShowWindow();
+            _core.SendToJS("log", new { msg = $"{message} Closing to tray has been disabled.", color = "warn" });
+        };
+        _trayService.OnClose = () =>
+        {
+            WindowController.AllowNextClose();
+            try { _window.Close(); } catch { }
+        };
 #endif
     }
 
@@ -376,6 +425,9 @@ public partial class AppShell
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "VRCNext", "Logs");
         Directory.CreateDirectory(_activityLogDir);
+        _startupDiagnosticPath = Path.Combine(
+            _activityLogDir, $"vrcn-startup-diagnostics-{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.log");
+        WriteStartupDiagnostic("TEMP startup diagnostics enabled");
         _customThemesDir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "VRCNext", "custom-themes");
@@ -504,7 +556,7 @@ public partial class AppShell
 
 #if !WINDOWS
         // Auto-install missing GStreamer plugins required by WebKit2GTK (blank window without them)
-        EnsureLinuxGstreamer();
+        _ = Task.Run(EnsureLinuxGstreamer);
 
         // WebKit2GTK on systems without proper GPU (VMs, Hyper-V, missing Vulkan):
         // Force Mesa software rendering so EGL/OpenGL never fails in the WebKit child process.
@@ -551,6 +603,9 @@ public partial class AppShell
                 ? Photino.NET.PhotinoSuspendableResources.Rendering | Photino.NET.PhotinoSuspendableResources.Gpu
                 : Photino.NET.PhotinoSuspendableResources.None)
 #endif
+#if !WINDOWS
+            .RegisterWindowClosingHandler((_, _) => _windowCtrl.HandleWindowClosing())
+#endif
             .RegisterWindowCreatedHandler((_, _) => _windowReady.TrySetResult())
             .RegisterWebMessageReceivedHandler((_, message) => { _ = OnWebMessage(message); });
         if (File.Exists(iconPath)) windowBuilder.SetIconFile(iconPath);
@@ -592,6 +647,9 @@ public partial class AppShell
         _core.Window = _window;
         _ = RunJsDispatcherAsync();
         _ = RunAutoBackupsAsync();
+    #if !WINDOWS
+        EfficiencyModeService.OnLog += message => _core.SendToJS("log", new { msg = message, color = "warn" });
+    #endif
         EfficiencyModeService.Apply(_settings.EfficiencyMode);
 
         if (_minimized) _window.SetMinimized(true);
@@ -615,20 +673,29 @@ public partial class AppShell
 #if !WINDOWS
     private static void EnsureLinuxGstreamer()
     {
-        // Check if autoaudiosink is available — its absence crashes WebKitWebProcess (blank window)
-        try
+        // WebKitGTK needs both an audio sink and Vorbis/Ogg decoders for notification sounds.
+        var requiredElements = new[] { "autoaudiosink", "vorbisdec", "oggdemux" };
+        var missingElements = new List<string>();
+        foreach (var element in requiredElements)
         {
-            var check = Process.Start(new ProcessStartInfo("gst-inspect-1.0")
+            try
             {
-                Arguments = "autoaudiosink",
-                RedirectStandardOutput = true,
-                RedirectStandardError  = true,
-                UseShellExecute        = false,
-            });
-            check?.WaitForExit(3000);
-            if (check?.ExitCode == 0) return; // already installed
+                using var check = Process.Start(new ProcessStartInfo("gst-inspect-1.0")
+                {
+                    Arguments = element,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                });
+                if (check == null || !check.WaitForExit(3000) || check.ExitCode != 0)
+                    missingElements.Add(element);
+            }
+            catch (System.ComponentModel.Win32Exception)
+            {
+                missingElements.Add(element);
+            }
         }
-        catch { return; } // gst-inspect-1.0 not on PATH — nothing we can do
+        if (missingElements.Count == 0) return;
 
         // Determine install command for the running distro
         string pkgs = "";
@@ -638,7 +705,11 @@ public partial class AppShell
             pkgs = "gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-libav";
         else if (File.Exists("/usr/bin/dnf"))
             pkgs = "gstreamer1-plugins-base gstreamer1-plugins-good";
-        if (string.IsNullOrEmpty(pkgs)) return;
+        if (string.IsNullOrEmpty(pkgs))
+        {
+            Console.Error.WriteLine($"Missing GStreamer elements ({string.Join(", ", missingElements)}); install the GStreamer base and good plugin packages.");
+            return;
+        }
 
         string pm  = File.Exists("/usr/bin/pacman") || File.Exists("/bin/pacman") ? "pacman -S --noconfirm"
                    : File.Exists("/usr/bin/apt-get")                               ? "apt-get install -y"
@@ -909,6 +980,7 @@ public partial class AppShell
         _worldStatsTimer?.Dispose();
         _apiHealthTimer?.Dispose();
         _memDiagTimer?.Dispose();
+        _startupTrafficTimer?.Dispose();
         _sfCtrl?.Dispose();
         _stCtrl?.Dispose();
         _swCtrl?.Dispose();
@@ -929,29 +1001,39 @@ public partial class AppShell
         _memTrim.Dispose();
         _httpListener?.Stop();
         _activityLogWriter?.Dispose();
-#if WINDOWS
         _trayService?.Dispose();
-#endif
     }
 
-#if WINDOWS
     private void ApplyTraySetting(bool enabled, bool autoHide)
     {
         _trayService?.SetVisible(enabled);
+#if WINDOWS
         _trayService?.UpdateLanguage(_settings.Language);
-        _windowCtrl.SetHideFromTaskbar(enabled);
+#endif
+        var trayAvailable = true;
+#if WINDOWS
+        trayAvailable = !enabled || _trayService?.IsReady == true;
+        if (enabled && _trayService?.HasFailed == true)
+            SendToJS("log", new { msg = "The Windows tray could not be started; VRCNext will remain visible when closed.", color = "warn" });
+    #else
+        trayAvailable = !enabled || _trayService?.IsReady == true;
+        if (enabled && !trayAvailable)
+            SendToJS("log", new { msg = "The Linux tray helper is not ready; VRCNext will remain visible when closed.", color = "warn" });
+#endif
+        _windowCtrl.SetHideFromTaskbar(enabled && trayAvailable);
         // On startup, auto-hide the window to tray immediately
-        if (enabled && autoHide)
+        if (enabled && autoHide && trayAvailable && _windowReady.Task.IsCompleted && _core.Window != null)
             _windowCtrl.HideWindow();
     }
 
     private void UpdateTrayUser(string name, string status, string statusDesc, string imageUrl)
     {
         _trayService?.UpdateUserInfo(name, status, statusDesc, imageUrl);
+#if WINDOWS
         var id = _core.VrcApi.CurrentUserRaw?["id"]?.ToString() ?? "";
         _core.VrOverlay?.SetSelfUser(id, ImageCacheHelper.GetUserUrl(id, imageUrl), status);
-    }
 #endif
+    }
 
 
     // Deep links (vrcn://)
@@ -1065,6 +1147,7 @@ public partial class AppShell
 
     private void SendToJS(string type, object? payload = null)
     {
+        TrackStartupTraffic("CS->JS", type);
         if (type == "log" && payload != null && _activityLogWriter != null)
         {
             try
@@ -1238,7 +1321,8 @@ public partial class AppShell
         catch { rel = "index.html"; }
         if (rel.StartsWith("..") || Path.IsPathRooted(rel)) rel = "index.html";
         rel = rel.Replace(Path.DirectorySeparatorChar, '/');
-        return $"http://localhost:{_httpPort}/app/{rel}";
+        var url = $"http://localhost:{_httpPort}/app/{rel}";
+        return OperatingSystem.IsLinux() ? url + "?vrcnPlatform=linux" : url;
     }
 #endif
 
@@ -1271,6 +1355,45 @@ public partial class AppShell
         [".md"]   = "text/plain; charset=utf-8",
         [".map"]  = "application/json; charset=utf-8",
     };
+
+    private void WriteStartupDiagnostic(string message)
+    {
+        var path = _startupDiagnosticPath;
+        if (string.IsNullOrEmpty(path)) return;
+
+        lock (_startupDiagnosticLock)
+        {
+            File.AppendAllText(path, $"{DateTimeOffset.Now:O} {message}{Environment.NewLine}");
+        }
+    }
+
+    private void TrackStartupTraffic(string direction, string name)
+    {
+        if (Volatile.Read(ref _startupTrafficEnabled) == 0) return;
+        var key = $"{direction} {name}";
+        var counter = _startupTraffic.GetOrAdd(key, static _ => new StartupTrafficCounter());
+        Interlocked.Increment(ref counter.Count);
+    }
+
+    private void StartStartupTrafficDiagnostics()
+    {
+        if (Interlocked.Exchange(ref _startupTrafficEnabled, 1) != 0) return;
+        _startupTrafficTimer = new System.Threading.Timer(_ =>
+        {
+            var counts = new List<string>();
+            foreach (var (name, counter) in _startupTraffic)
+            {
+                var count = Interlocked.Exchange(ref counter.Count, 0);
+                if (count > 0) counts.Add($"{name}={count}");
+            }
+
+            var heartbeatTicks = Interlocked.Read(ref _startupLastHeartbeatUtcTicks);
+            var heartbeatAge = heartbeatTicks == 0
+                ? "none"
+                : $"{TimeSpan.FromTicks(DateTime.UtcNow.Ticks - heartbeatTicks).TotalSeconds:F1}s";
+            WriteStartupDiagnostic($"traffic window=5s webviewHeartbeatAge={heartbeatAge} messages={(counts.Count == 0 ? "none" : string.Join(",", counts))}");
+        }, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+    }
 
     private static async Task ServeFrontendAsync(System.Net.HttpListenerContext ctx, string rel)
     {
@@ -1317,6 +1440,14 @@ public partial class AppShell
     {
         var path    = ctx.Request.Url?.AbsolutePath ?? "/";
         var isThumb = ctx.Request.Url?.Query?.Contains("thumb=1") == true;
+        var isFrontendRequest = path.StartsWith("/app/", StringComparison.Ordinal);
+        var frontendExtension = Path.GetExtension(path);
+        var isStartupResource = isFrontendRequest &&
+            (frontendExtension.Equals(".html", StringComparison.OrdinalIgnoreCase) ||
+             frontendExtension.Equals(".js", StringComparison.OrdinalIgnoreCase));
+        var frontendRequestTimer = isStartupResource ? Stopwatch.StartNew() : null;
+        if (isStartupResource)
+            WriteStartupDiagnostic($"http start {ctx.Request.HttpMethod} {path}");
         try
         {
             if (ctx.Request.HttpMethod == "OPTIONS")
@@ -1332,7 +1463,23 @@ public partial class AppShell
                 return;
             }
 
-            if (path.StartsWith("/app/"))
+            if (path == "/startup-diagnostics")
+            {
+                if (ctx.Request.HttpMethod != "POST" || ctx.Request.ContentLength64 > 4096)
+                {
+                    ctx.Response.StatusCode = ctx.Request.ContentLength64 > 4096 ? 413 : 405;
+                    return;
+                }
+
+                using var reader = new StreamReader(ctx.Request.InputStream, ctx.Request.ContentEncoding);
+                var message = await reader.ReadToEndAsync();
+                message = message.Replace('\r', ' ').Replace('\n', ' ');
+                if (message.Contains("post-loader-ui-heartbeat ", StringComparison.Ordinal))
+                    Interlocked.Exchange(ref _startupLastHeartbeatUtcTicks, DateTime.UtcNow.Ticks);
+                WriteStartupDiagnostic($"webview {message[..Math.Min(message.Length, 2048)]}");
+                ctx.Response.StatusCode = 204;
+            }
+            else if (isFrontendRequest)
             {
                 await ServeFrontendAsync(ctx, Uri.UnescapeDataString(path["/app/".Length..]));
             }
@@ -1429,8 +1576,18 @@ public partial class AppShell
             }
             else ctx.Response.StatusCode = 404;
         }
-        catch { ctx.Response.StatusCode = 500; }
-        finally { try { ctx.Response.Close(); } catch { } }
+        catch (Exception ex)
+        {
+            if (isStartupResource)
+                WriteStartupDiagnostic($"http error {path}: {ex.GetType().Name}: {ex.Message}");
+            ctx.Response.StatusCode = 500;
+        }
+        finally
+        {
+            if (isStartupResource)
+                WriteStartupDiagnostic($"http end {path} status={ctx.Response.StatusCode} elapsed={frontendRequestTimer!.ElapsedMilliseconds}ms");
+            try { ctx.Response.Close(); } catch { }
+        }
     }
 
     private static string? ResolveUnder(string baseDir, string rel)
@@ -1629,7 +1786,7 @@ public partial class AppShell
         using var src = SkiaSharp.SKBitmap.Decode(codec);
         if (src == null) return false;
         using var dst = new SkiaSharp.SKBitmap(w, h, SkiaSharp.SKColorType.Rgba8888, SkiaSharp.SKAlphaType.Premul);
-        src.ScalePixels(dst, SkiaSharp.SKFilterQuality.High);
+        src.ScalePixels( dst, new SkiaSharp.SKSamplingOptions(SkiaSharp.SKFilterMode.Nearest) );
         using var img  = SkiaSharp.SKImage.FromBitmap(dst);
         using var data = img.Encode(keepAlpha ? SkiaSharp.SKEncodedImageFormat.Png : SkiaSharp.SKEncodedImageFormat.Jpeg, 88);
         if (data == null) return false;
@@ -1844,7 +2001,10 @@ public partial class AppShell
                         using var src = SkiaSharp.SKBitmap.Decode(codec);
                         if (src == null) throw new InvalidOperationException("Image decode failed");
                         using var dst = new SkiaSharp.SKBitmap(w, h, SkiaSharp.SKColorType.Rgba8888, SkiaSharp.SKAlphaType.Premul);
-                        src.ScalePixels(dst, SkiaSharp.SKFilterQuality.Medium);
+                        src.ScalePixels(
+                            dst,
+                            new SkiaSharp.SKSamplingOptions(SkiaSharp.SKFilterMode.Linear)
+                        );
                         using var img  = SkiaSharp.SKImage.FromBitmap(dst);
                         using var data = img.Encode(SkiaSharp.SKEncodedImageFormat.Jpeg, 72);
                         using (var fsOut = File.Create(tmpPath))

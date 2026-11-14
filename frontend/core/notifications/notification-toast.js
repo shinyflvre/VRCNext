@@ -6,12 +6,44 @@
 const _shownNotifCardIds = new Set();
 const _pendingTrayNotifs = {};
 
+function _kdeNotificationEventId(type) {
+    switch (type) {
+        case 'friendRequest': return 'friend-request';
+        case 'invite': return 'invite';
+        case 'requestInvite': return 'invite-request';
+        case 'inviteResponse': return 'invite-response';
+        case 'requestInviteResponse': return 'invite-request-response';
+        case 'votetokick': return 'vote-to-kick';
+        case 'group.invite': return 'group-invite';
+        case 'group.joinRequest': return 'group-join-request';
+        case 'group.announcement': return 'group-announcement';
+        case 'instance.announcement': return 'instance-announcement';
+        default: return 'vrchat-notification';
+    }
+}
+
+function _kdeNotificationSoundEventId(type) {
+    switch (type) {
+        case 'friendRequest': return 'notification-friend-request-sound';
+        case 'invite': return 'notification-invite-sound';
+        case 'requestInvite': return 'notification-invite-request-sound';
+        case 'inviteResponse': return 'notification-invite-response-sound';
+        case 'requestInviteResponse': return 'notification-invite-request-response-sound';
+        case 'votetokick': return 'notification-vote-to-kick-sound';
+        case 'group.invite': return 'notification-group-invite-sound';
+        case 'group.joinRequest': return 'notification-group-join-request-sound';
+        case 'group.announcement': return 'notification-group-announcement-sound';
+        case 'instance.announcement': return 'notification-instance-announcement-sound';
+        default: return 'notification-sound';
+    }
+}
+
 function showNotificationToasts(notifList) {
     const all = (notifList || []).filter(n => !n.seen && !_shownNotifCardIds.has(n.id));
     const boops = all.filter(n => n.type === 'boop');
     const fresh = all.filter(n => n.type !== 'boop'); // boops only in messenger
     if (boops.length) playMessageSound();
-    if (fresh.length) playNotificationSound();
+    if (fresh.length) playNotificationSound(_kdeNotificationSoundEventId(fresh[0].type));
     fresh.forEach(n => {
         _shownNotifCardIds.add(n.id);
         _showNotifCard(n);
@@ -141,12 +173,13 @@ function _showNotifCard(n) {
             plainTitle = n.senderUsername || notifToastLabel(n.type);
         }
         const accentKey = accentColor === 'var(--ok)' ? 'ok' : accentColor === 'var(--err)' ? 'err' : 'accent';
-        _pendingTrayNotifs[n.id] = { title: plainTitle, subtitle: subText, accentKey };
+        _pendingTrayNotifs[n.id] = { title: plainTitle, subtitle: subText, accentKey, eventId: _kdeNotificationEventId(n.type) };
         // Fallback: fire after 5s with whatever image is available if vrcNotifImageUpdate never arrives
         setTimeout(() => {
             if (!_pendingTrayNotifs[n.id]) return;
+            const eventId = _pendingTrayNotifs[n.id].eventId;
             delete _pendingTrayNotifs[n.id];
-            sendToCS({ action: 'trayNotification', title: plainTitle, subtitle: subText, imageUrl: nImg, accentKey });
+            sendToCS({ action: 'trayNotification', title: plainTitle, subtitle: subText, imageUrl: nImg, accentKey, eventId });
         }, 5000);
     }
 }
@@ -247,7 +280,7 @@ function _showFriendOnlineCard(data) {
     card.addEventListener('contextmenu', ev => _fotShowCtx(card, uid, data.displayName || uid, parseInt(card.dataset.alertLevel ?? '0'), ev));
 
     area.appendChild(card);
-    playNotificationSound();
+    playNotificationSound('friend-online-sound');
 
     requestAnimationFrame(() => {
         card.classList.add('nc-visible');
@@ -259,7 +292,7 @@ function _showFriendOnlineCard(data) {
     card._ncTimer = setTimeout(() => _dismissNotifCard(card), 5200);
 
     if (document.getElementById('setMinimizeToTray')?.checked && document.getElementById('setTrayNotifications')?.checked) {
-        sendToCS({ action: 'trayNotification', title: data.displayName || uid, subtitle: t('notifications.friend_toast.came_online', 'came online'), imageUrl: img, accentKey: 'ok' });
+        sendToCS({ action: 'trayNotification', title: data.displayName || uid, subtitle: t('notifications.friend_toast.came_online', 'came online'), imageUrl: img, accentKey: 'ok', eventId: 'friend-online' });
     }
 }
 

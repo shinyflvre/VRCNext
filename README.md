@@ -2,9 +2,6 @@
 
 <a href="https://trendshift.io/repositories/99779?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-99779" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/99779" alt="shinyflvre%2FVRCNext | Trendshift" width="250" height="55"/></a>
 
-IMPORTANT: IF YOU MODIFY VRCN / CREATE A FORK OF IT YOU ARE NOT ALLOWED TO USE MY USER AGENT!
-PLEASE IDENTIFY YOURSELF WITH YOUR OWN USER AGENT! EXAMPLE Modified-VRCNext/0000.00.00(your contact adress)
-That should look like this: Nano-VRCNext/2026.1.0(max@musterman.com)
 
 # VRCNext
 

@@ -66,6 +66,11 @@ public sealed class VRSubprocessHost : IDisposable
     public void EnsureRunning(string cacheDir, int httpPort, string? authCookie, string? tfaCookie)
     {
         if (_process is { HasExited: false }) return;
+        if (_process != null)
+        {
+            _process.Dispose();
+            _process = null;
+        }
 
         _readCts?.Cancel();
         _readCts = new CancellationTokenSource();
@@ -509,11 +514,23 @@ public sealed class VRSubprocessHost : IDisposable
     }
 }
 #else
+using System.Diagnostics;
+using System.Text;
+using Newtonsoft.Json.Linq;
+using VRCNext.Services.Helpers;
+
 namespace VRCNext;
 
 public sealed class VRSubprocessHost : IDisposable
 {
+    private readonly Action<string> _log;
+    private readonly object _stdinLock = new();
+    private Process? _process;
+    private StreamWriter? _stdin;
+
     public bool VroConnected { get; private set; }
+    public event Action<JObject>? OnVroState;
+    public event Action? OnVroQuit;
     public bool SfConnected  { get; private set; }
     public bool StConnected  { get; private set; }
     public bool SwConnected  { get; private set; }
@@ -521,50 +538,233 @@ public sealed class VRSubprocessHost : IDisposable
     public bool AnyConnected => VroConnected || SfConnected || StConnected || SwConnected || FsConnected;
 
     public int InputMode { get; set; }
-    public void ApplyInputMode(int mode) { }
+    public void ApplyInputMode(int mode)
+    {
+        InputMode = mode;
+        Send(new JObject { ["t"] = "vr_input_mode", ["mode"] = mode });
+    }
 
-    public VRSubprocessHost(Action<string> log) { }
-    public void EnsureRunning(string c, int p, string? a, string? t) { }
-    public void VroConnect()    { }
-    public void VroDisconnect() { }
-    public void VroShow()       { }
-    public void VroHide()       { }
-    public void VroRecordKeybind()   { }
-    public void VroCancelRecording() { }
+    public event Action<JObject>? OnSfUpdate;
+    public event Action? OnSfQuit;
+    public event Action<JObject>? OnStUpdate;
+    public event Action? OnStQuit;
+
+    public VRSubprocessHost(Action<string> log) => _log = log;
+
+    public void EnsureRunning(string cacheDir, int httpPort, string? authCookie, string? tfaCookie)
+    {
+        if (_process is { HasExited: false }) return;
+
+        var executable = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName;
+        if (string.IsNullOrEmpty(executable))
+            throw new InvalidOperationException("Could not determine the VRCNext executable path for the SteamVR helper process.");
+
+        // AppImage launches through AppRun; ProcessPath may point at the wrapper rather
+        // than the managed apphost. Launch the actual apphost so --vr-subprocess is parsed.
+        if (Path.GetFileName(executable).Equals("AppRun", StringComparison.OrdinalIgnoreCase))
+        {
+            var appHost = Path.Combine(Path.GetDirectoryName(executable) ?? "", "usr", "bin", "vrcnext", "VRCNext");
+            if (File.Exists(appHost)) executable = appHost;
+        }
+
+        var startInfo = new ProcessStartInfo(executable)
+        {
+            UseShellExecute = false,
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            CreateNoWindow = true,
+            StandardInputEncoding = new UTF8Encoding(false),
+            StandardOutputEncoding = new UTF8Encoding(false),
+        };
+        startInfo.ArgumentList.Add("--vr-subprocess");
+
+        var openVrLibraryDir = VrcPathsHelper.SteamLibraries()
+            .Select(library => Path.Combine(library, "steamapps", "common", "SteamVR", "bin", "linux64"))
+            .FirstOrDefault(directory => File.Exists(Path.Combine(directory, "libopenvr_api.so")));
+        if (openVrLibraryDir != null)
+        {
+            var existingPath = Environment.GetEnvironmentVariable("LD_LIBRARY_PATH");
+            startInfo.Environment["LD_LIBRARY_PATH"] = string.IsNullOrEmpty(existingPath)
+                ? openVrLibraryDir
+                : openVrLibraryDir + Path.PathSeparator + existingPath;
+        }
+        else
+        {
+            _log("[VRSub] SteamVR libopenvr_api.so was not found in Steam libraries; SteamVR may be unavailable.");
+        }
+
+        _process = Process.Start(startInfo)
+            ?? throw new InvalidOperationException("Could not start the VRCNext SteamVR helper process.");
+        _stdin = _process.StandardInput;
+        _stdin.AutoFlush = true;
+        _process.EnableRaisingEvents = true;
+        _process.Exited += OnProcessExited;
+        _ = ReadLoopAsync(_process.StandardOutput);
+        Send(new JObject
+        {
+            ["t"] = "init",
+            ["cacheDir"] = cacheDir,
+            ["httpPort"] = httpPort,
+            ["authCookie"] = authCookie,
+            ["tfaCookie"] = tfaCookie,
+            ["inputMode"] = InputMode,
+        });
+        _log($"[VRSub] Linux SteamVR helper process started (input mode {InputMode}).");
+    }
+
+    private async Task ReadLoopAsync(StreamReader reader)
+    {
+        try
+        {
+            string? line;
+            while ((line = await reader.ReadLineAsync()) != null)
+            {
+                if (string.IsNullOrWhiteSpace(line)) continue;
+                try
+                {
+                    var message = JObject.Parse(line);
+                    switch (message["t"]?.Value<string>())
+                    {
+                        case "log":
+                            _log(message["text"]?.Value<string>() ?? "");
+                            break;
+                        case "vro_state":
+                            VroConnected = message["connected"]?.Value<bool>() ?? VroConnected;
+                            OnVroState?.Invoke(message);
+                            break;
+                        case "sf_update":
+                            SfConnected = message["connected"]?.Value<bool>() ?? SfConnected;
+                            OnSfUpdate?.Invoke(message);
+                            break;
+                        case "st_update":
+                            StConnected = message["connected"]?.Value<bool>() ?? StConnected;
+                            OnStUpdate?.Invoke(message);
+                            break;
+                    }
+                }
+                catch (Newtonsoft.Json.JsonException ex)
+                {
+                    _log($"[VRSub] Invalid helper response: {ex.Message}");
+                }
+            }
+        }
+        catch (Exception ex) when (ex is IOException or ObjectDisposedException)
+        {
+            _log($"[VRSub] Helper output ended: {ex.Message}");
+        }
+    }
+
+    private void OnProcessExited(object? sender, EventArgs e)
+    {
+        var hadVro = VroConnected;
+        var hadSf = SfConnected;
+        var hadSt = StConnected;
+        VroConnected = false;
+        SfConnected = false;
+        StConnected = false;
+        lock (_stdinLock) _stdin = null;
+        if (hadVro) OnVroQuit?.Invoke();
+        if (hadSf) OnSfQuit?.Invoke();
+        if (hadSt) OnStQuit?.Invoke();
+    }
+
+    private void Send(JObject message)
+    {
+        try
+        {
+            lock (_stdinLock)
+                _stdin?.WriteLine(message.ToString(Newtonsoft.Json.Formatting.None));
+        }
+        catch (Exception ex) when (ex is IOException or ObjectDisposedException)
+        {
+            _log($"[VRSub] Could not send command to SteamVR helper: {ex.Message}");
+        }
+    }
+
+    private void Kill()
+    {
+        if (_process == null) return;
+        _process.Exited -= OnProcessExited;
+        try { if (!_process.HasExited) _process.Kill(); } catch (InvalidOperationException) { }
+        _process.Dispose();
+        _process = null;
+        lock (_stdinLock) _stdin = null;
+    }
+
+    public void VroConnect() { Send(new JObject { ["t"] = "vro_connect" }); }
+    public void VroDisconnect()
+    {
+        VroConnected = false;
+        Send(new JObject { ["t"] = "vro_disconnect" });
+        if (!AnyConnected) Kill();
+    }
+    public void VroShow() { Send(new JObject { ["t"] = "vro_show" }); }
+    public void VroHide() { Send(new JObject { ["t"] = "vro_hide" }); }
+    public void VroRecordKeybind()   { Send(new JObject { ["t"] = "vro_record_keybind" }); }
+    public void VroCancelRecording() { Send(new JObject { ["t"] = "vro_cancel_recording" }); }
     public void VroConfig(bool a, bool b, float c, float d, float e, float f, float g, float h, float i,
         System.Collections.Generic.List<uint> j, int k, int l,
         System.Collections.Generic.List<uint> m, int n, float o,
-        bool p, float q, bool r) { }
+        bool p, float q, bool r)
+    {
+        Send(new JObject { ["t"]="vro_config", ["attachLeft"]=a, ["attachHand"]=b, ["px"]=c, ["py"]=d, ["pz"]=e, ["rx"]=f, ["ry"]=g, ["rz"]=h, ["width"]=i, ["keybind"]=JArray.FromObject(j), ["keybindHand"]=k, ["keybindMode"]=l, ["keybindDt"]=JArray.FromObject(m), ["keybindDtHand"]=n, ["controlRadius"]=o, ["dynVis"]=p, ["focusRadius"]=q, ["seamless"]=r });
+    }
     public void VroApplyToastConfig(bool a, bool b, int c, float d, float e,
         bool f, bool g, bool h, bool i, bool j, bool k, int l, int m, bool n, bool o, bool p, bool q,
-        bool r, bool s) { }
-    public void VroThemeColors(System.Collections.Generic.Dictionary<string, string> colors) { }
+        bool r, bool s) => Send(new JObject { ["t"]="vro_toast_config", ["enabled"]=a, ["favOnly"]=b, ["size"]=c, ["offX"]=d, ["offY"]=e, ["online"]=f, ["offline"]=g, ["gps"]=h, ["status"]=i, ["statusDesc"]=j, ["bio"]=k, ["durationSec"]=l, ["stackSize"]=m, ["friendReq"]=n, ["invite"]=o, ["groupInv"]=p, ["joined"]=q, ["left"]=r, ["reqInvite"]=s });
+    public void VroThemeColors(System.Collections.Generic.Dictionary<string, string> colors) => Send(new JObject { ["t"]="vro_theme_colors", ["colors"]=JObject.FromObject(colors) });
     public void AddNotification(string a, string b, string c, string d,
-        string e = "", string f = "", string g = "", string h = "", string i = "") { }
-    public void UpdateNotification(string a, string? b = null, string? c = null, string? d = null) { }
-    public void EnqueueToast(string a, string b, string c, string d, string e, bool f, string g = "") { }
-    public void SetFriendLocations(System.Collections.Generic.IReadOnlyList<(string, string, string, string, string, string, string, string)> entries) { }
-    public void SetOnlineFriends(System.Collections.Generic.IReadOnlyList<(string, string, string, string, string, string, string)> entries) { }
-    public void SetSelfUser(string userId, string imageUrl, string status) { }
-    public void UpdateMediaInfo(string a, string b, double c, double d, bool e) { }
-    public void SetToolStates(bool a, bool b, bool c, bool d, bool e, bool f, bool g, bool h = false, bool i = false) { }
-    public void SetKikitanState(string a, string b, bool c, string d, string e, string f, bool g) { }
-    public void SfConnect(float a, bool b, bool c, bool d, uint e, uint f, uint g, uint h, uint i, uint j, float k) { }
-    public void SfDisconnect() { }
-    public void SfConfig(float a, bool b, bool c, bool d, uint e, uint f, uint g, uint h, uint i, uint j, float k) { }
-    public void SfReset() { }
-    public void StConnect(float a, float b, bool b2, float b3, uint c, uint d, uint e, uint f) { }
-    public void StDisconnect() { }
-    public void StConfig(float a, float b, bool b2, float b3, uint c, uint d, uint e, uint f) { }
-    public void StReset() { }
-    public event System.Action<Newtonsoft.Json.Linq.JObject>? OnStUpdate;
-    public event System.Action? OnStQuit;
+        string e = "", string f = "", string g = "", string h = "",         string i = "") => Send(new JObject { ["t"]="vro_add_notif", ["evType"]=a, ["friendName"]=b, ["evText"]=c, ["time"]=d, ["imageUrl"]=e, ["friendId"]=f, ["location"]=g, ["notifId"]=h, ["notifData"]=i });
+    public void UpdateNotification(string a, string? b = null, string? c = null, string? d = null) => Send(new JObject { ["t"]="vro_update_notif", ["notifId"]=a, ["newText"]=b, ["newImageUrl"]=c, ["newFriendName"]=d });
+    public void EnqueueToast(string a, string b, string c, string d, string e, bool f, string g = "") => Send(new JObject { ["t"]="vro_enqueue_toast", ["evType"]=a, ["friendName"]=b, ["evText"]=c, ["time"]=d, ["imageUrl"]=e, ["isFavorited"]=f, ["friendId"]=g });
+    public void SetFriendLocations(System.Collections.Generic.IReadOnlyList<(string, string, string, string, string, string, string, string)> entries)
+        => Send(new JObject { ["t"] = "vro_set_locations", ["entries"] = JArray.FromObject(entries.Select(e => new { worldId=e.Item1, instanceId=e.Item2, worldName=e.Item3, worldImageUrl=e.Item4, friendId=e.Item5, friendName=e.Item6, friendImageUrl=e.Item7, location=e.Item8 })) });
+    public void SetOnlineFriends(System.Collections.Generic.IReadOnlyList<(string, string, string, string, string, string, string)> entries)
+        => Send(new JObject { ["t"] = "vro_set_online_friends", ["entries"] = JArray.FromObject(entries.Select(e => new { friendId=e.Item1, friendName=e.Item2, friendImageUrl=e.Item3, status=e.Item4, statusDescription=e.Item5, location=e.Item6, worldName=e.Item7 })) });
+    public void SetSelfUser(string userId, string imageUrl, string status) => Send(new JObject { ["t"]="vro_set_self", ["userId"]=userId, ["imageUrl"]=imageUrl, ["status"]=status });
+    public void UpdateMediaInfo(string a, string b, double c, double d, bool e) => Send(new JObject { ["t"]="vro_update_media", ["title"]=a, ["artist"]=b, ["position"]=c, ["duration"]=d, ["playing"]=e });
+    public void SetToolStates(bool a, bool b, bool c, bool d, bool e, bool f, bool g, bool h = false, bool i = false) => Send(new JObject { ["t"]="vro_tool_states", ["discord"]=a, ["voice"]=b, ["kikitan"]=c, ["space"]=d, ["relay"]=e, ["chatbox"]=f, ["frameShot"]=g, ["spaceTurn"]=h, ["spaceWalk"]=i });
+    public void SetKikitanState(string a, string b, bool c, string d, string e, string f, bool g) => Send(new JObject { ["t"]="vro_kikitan", ["sourceText"]=a, ["translatedText"]=b, ["isFinal"]=c, ["sourceLang"]=d, ["targetLang"]=e, ["engine"]=f, ["translateEnabled"]=g });
+    public void SfConnect(float multiplier, bool lockX, bool lockY, bool lockZ, uint leftResetBtn, uint rightResetBtn, uint leftDragBtn, uint rightDragBtn, uint leftGravityBtn, uint rightGravityBtn, float gravity)
+    {
+        SfConnected = true;
+        Send(new JObject { ["t"] = "sf_connect", ["multiplier"] = multiplier, ["lockX"] = lockX, ["lockY"] = lockY, ["lockZ"] = lockZ,
+            ["leftResetBtn"] = leftResetBtn, ["rightResetBtn"] = rightResetBtn, ["leftDragBtn"] = leftDragBtn, ["rightDragBtn"] = rightDragBtn,
+            ["leftGravityBtn"] = leftGravityBtn, ["rightGravityBtn"] = rightGravityBtn, ["gravity"] = gravity });
+    }
+    public void SfDisconnect()
+    {
+        SfConnected = false;
+        Send(new JObject { ["t"] = "sf_disconnect" });
+        if (!StConnected) Kill();
+    }
+    public void SfConfig(float multiplier, bool lockX, bool lockY, bool lockZ, uint leftResetBtn, uint rightResetBtn, uint leftDragBtn, uint rightDragBtn, uint leftGravityBtn, uint rightGravityBtn, float gravity)
+        => Send(new JObject { ["t"] = "sf_config", ["multiplier"] = multiplier, ["lockX"] = lockX, ["lockY"] = lockY, ["lockZ"] = lockZ,
+            ["leftResetBtn"] = leftResetBtn, ["rightResetBtn"] = rightResetBtn, ["leftDragBtn"] = leftDragBtn, ["rightDragBtn"] = rightDragBtn,
+            ["leftGravityBtn"] = leftGravityBtn, ["rightGravityBtn"] = rightGravityBtn, ["gravity"] = gravity });
+    public void SfReset() => Send(new JObject { ["t"] = "sf_reset" });
+    public void StConnect(float multiplier, float snapDegrees, bool invert, float smoothing, uint leftTurnBtn, uint rightTurnBtn, uint leftResetBtn, uint rightResetBtn)
+    {
+        StConnected = true;
+        Send(new JObject { ["t"] = "st_connect", ["multiplier"] = multiplier, ["snapDegrees"] = snapDegrees, ["invert"] = invert, ["smoothing"] = smoothing,
+            ["leftTurnBtn"] = leftTurnBtn, ["rightTurnBtn"] = rightTurnBtn, ["leftResetBtn"] = leftResetBtn, ["rightResetBtn"] = rightResetBtn });
+    }
+    public void StDisconnect()
+    {
+        StConnected = false;
+        Send(new JObject { ["t"] = "st_disconnect" });
+        if (!SfConnected) Kill();
+    }
+    public void StConfig(float multiplier, float snapDegrees, bool invert, float smoothing, uint leftTurnBtn, uint rightTurnBtn, uint leftResetBtn, uint rightResetBtn)
+        => Send(new JObject { ["t"] = "st_config", ["multiplier"] = multiplier, ["snapDegrees"] = snapDegrees, ["invert"] = invert, ["smoothing"] = smoothing,
+            ["leftTurnBtn"] = leftTurnBtn, ["rightTurnBtn"] = rightTurnBtn, ["leftResetBtn"] = leftResetBtn, ["rightResetBtn"] = rightResetBtn });
+    public void StReset() => Send(new JObject { ["t"] = "st_reset" });
+
     public void SwConnect(float a, float b, float b2, bool c, bool d, bool e, bool f, uint g, uint h, uint i, uint j) { }
     public void SwDisconnect() { }
     public void SwConfig(float a, float b, float b2, bool c, bool d, bool e, bool f, uint g, uint h, uint i, uint j) { }
     public void SwReset() { }
-    public event System.Action<Newtonsoft.Json.Linq.JObject>? OnSwUpdate;
-    public event System.Action? OnSwQuit;
+
     public void FsConnect(uint a, uint b, string c, string c2, int d, uint e, uint f, int g, int h, bool i, uint j, uint k, string l, string m, int n2, string n, string o, int p, uint q = 0, uint r = 0) { }
     public void FsDisconnect() { }
     public void FsConfig(uint a, uint b, int c, uint d, uint e, int f, int g, bool h, uint i, uint j, string k, string l, int m2, string m, string n, int o, uint p = 0, uint q = 0) { }
@@ -578,16 +778,16 @@ public sealed class VRSubprocessHost : IDisposable
     public event System.Action<string>? OnFsPhotoSaved;
     public event System.Action<string>? OnFsQrLink;
     public void TrimMemory() { }
-    public void VroWaterConfig(bool enabled, int intervalSec) { }
-    public void VroScaleConfig(bool a0, bool a, bool b, System.Collections.Generic.List<uint> c, int d, float e, int f = 25) { }
-    public void VroScaleUpdate(float scale) { }
-    public void VroRecordScaleKeybind() { }
-    public void VroCancelScaleRecording() { }
-    public void VroSetLanguage(string lang) { }
+    public void VroWaterConfig(bool enabled, int intervalSec) { Send(new JObject { ["t"]="vro_water_config", ["enabled"]=enabled, ["intervalSec"]=intervalSec }); }
+    public void VroScaleConfig(bool enabled, bool leftThumb, bool rightThumb, System.Collections.Generic.List<uint> keybind, int hand, float scale, int sensitivity = 25) => Send(new JObject { ["t"]="vro_scale_config", ["enabled"]=enabled, ["leftThumb"]=leftThumb, ["rightThumb"]=rightThumb, ["keybind"]=JArray.FromObject(keybind), ["hand"]=hand, ["scale"]=scale, ["sensitivity"]=sensitivity });
+    public void VroScaleUpdate(float scale) => Send(new JObject { ["t"]="vro_scale_update", ["scale"]=scale });
+    public void VroRecordScaleKeybind() => Send(new JObject { ["t"]="vro_record_scale_keybind" });
+    public void VroCancelScaleRecording() => Send(new JObject { ["t"]="vro_cancel_scale_recording" });
+    public void VroSetLanguage(string lang) => Send(new JObject { ["t"]="vro_set_language", ["lang"]=lang });
     public event System.Action? OnVroWaterAlarm;
     public event System.Action? OnVroWaterDismissed;
     public event System.Action<float>? OnVroScaleChange;
     public event System.Action<System.Collections.Generic.List<uint>, System.Collections.Generic.List<string>, int>? OnVroScaleKeybindRecorded;
-    public void Dispose() { }
+    public void Dispose() => Kill();
 }
 #endif
