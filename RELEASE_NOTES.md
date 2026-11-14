@@ -34,6 +34,10 @@ Commits by @hollyntt
 * Slightly faster startup with less memory used.
 * Much lower CPU and GPU usage while VRCNext is open and idle.
 * VRChat data now loads faster because responses are downloaded compressed.
+* Switching tabs is faster.
+* The crash watchdog uses much less memory.
+* Less memory is used for players you have met.
+* Less background work for your friends list, mutual friends and the activity log.
 
 ## Fixes
 * Fixed images not being cached after logging in again inside the app.

@@ -2855,10 +2855,19 @@ public class FriendsController
             {
                 if (_lastSeenMap == null || (DateTime.UtcNow - _lastSeenMapAt).TotalSeconds > 30)
                 {
-                    _lastSeenMap = _core.Timeline.GetLastSeenTogetherMap();
+                    List<string> friendIds;
+                    lock (_friendStore) friendIds = _friendStore.Keys.ToList();
+                    var map = _core.Timeline.GetLastSeenTogether(friendIds);
+                    foreach (var id in friendIds) map.TryAdd(id, "");
+                    _lastSeenMap = map;
                     _lastSeenMapAt = DateTime.UtcNow;
                 }
-                return _lastSeenMap.TryGetValue(userId, out var v) ? v : "";
+                if (!_lastSeenMap.TryGetValue(userId, out var v))
+                {
+                    v = _core.Timeline.GetLastSeenTogether(new[] { userId }).GetValueOrDefault(userId, "");
+                    _lastSeenMap[userId] = v;
+                }
+                return v;
             }
         }
         catch { return ""; }

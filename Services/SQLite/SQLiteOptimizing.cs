@@ -201,6 +201,7 @@ public static class SQLiteOptimizing
                 WHERE (profile_is_friend IS NULL OR profile_is_friend!=1) AND user_id NOT IN (SELECT user_id FROM temp.opt_friends)";
             userCleaned = cmd.ExecuteNonQuery();
         }
+        UnifiedTimeEngine.MarkMutualCachesChangedExternally();
 
 
         const int keepRecent = 100;

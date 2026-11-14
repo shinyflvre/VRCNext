@@ -476,6 +476,7 @@ public partial class AppShell
             switch (action)
             {
                 case "ready":
+                    Volatile.Write(ref _friendsResendNeeded, 1);
                     WriteStartupDiagnostic("backend ready received");
                     StartStartupTrafficDiagnostics();
                     // Signal platform so the UI can hide unsupported controls.
@@ -834,6 +835,7 @@ public partial class AppShell
                     break;
 
                 case "vrcRefreshFriends":
+                    Volatile.Write(ref _friendsResendNeeded, 1);
                     await _friends.RefreshFriendsAsync();
                     break;
 

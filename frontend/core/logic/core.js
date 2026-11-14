@@ -1049,8 +1049,8 @@ function getPageTitle(i) {
     ][i] ?? '';
 }
 
-function updateCurrentPageTitle() {
-    const activeTab = document.querySelector('.tab.active');
+function updateCurrentPageTitle(tabEl) {
+    const activeTab = tabEl || document.querySelector('.tab.active');
     if (!activeTab) return;
     const match = activeTab.id.match(/^tab(\d+)$/);
     if (!match) return;
@@ -1894,6 +1894,7 @@ function showTab(i) {
     const _prevTabEl = (_prevTab >= 0 && _prevTab !== i) ? _tabs[_prevTab] : null;
     const _nextTabEl = _tabs[i];
 
+    updateCurrentPageTitle(_nextTabEl);
     if (_nextTabEl) _reloadTabImages(_nextTabEl);
 
     if (_prevTab === 7 && i !== 7) destroyLibrary();
@@ -1926,7 +1927,6 @@ function showTab(i) {
             }
         }
     });
-    updateCurrentPageTitle();
     if (i === 0) { if (typeof _dashRollGreeting === 'function') _dashRollGreeting(); renderDashboard(); }
     if (i === 1 && favWorldsData.length === 0) sendToCS({ action: 'vrcGetFavoriteWorlds' });
     if (i === 2 && !myGroupsLoaded) loadMyGroups();

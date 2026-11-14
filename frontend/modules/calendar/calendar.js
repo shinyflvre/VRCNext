@@ -795,5 +795,11 @@ function rerenderCalendarTranslations() {
 }
 
 document.documentElement.addEventListener('languagechange', rerenderCalendarTranslations);
-document.documentElement.addEventListener('tabchange', () => { _calDpClose(); _calSizeView(); });
+document.documentElement.addEventListener('tabchange', () => {
+    _calDpClose();
+    const el = document.getElementById('calWeekScroll') || document.getElementById('calMonthCard');
+    const tab = el?.closest('.tab');
+    if (tab && !tab.classList.contains('active')) return;
+    _calSizeView();
+});
 window.addEventListener('resize', _calSizeView);

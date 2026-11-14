@@ -516,7 +516,8 @@ public partial class AppShell
                 var friendsKb = Interlocked.Read(ref _lastFriendsPayloadBytes) / 1024;
                 var heapMb    = GC.GetTotalMemory(false) / (1024 * 1024);
                 var wsMb      = Environment.WorkingSet / (1024 * 1024);
-                w.WriteLine($"{DateTime.Now:HH:mm:ss}  [MEMDIAG] jsQueue={jsDepth} profiles={profiles} worldCache={worlds} lastFriendsPayload={friendsKb}KB gcHeap={heapMb}MB workingSet={wsMb}MB");
+                var friendsSkipped = Interlocked.Read(ref _skippedFriendsPushes);
+                w.WriteLine($"{DateTime.Now:HH:mm:ss}  [MEMDIAG] jsQueue={jsDepth} profiles={profiles} worldCache={worlds} lastFriendsPayload={friendsKb}KB friendsSkipped={friendsSkipped} gcHeap={heapMb}MB workingSet={wsMb}MB");
             }
             catch { }
         }, null, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
@@ -1124,6 +1125,17 @@ public partial class AppShell
     private string? _pendingFriendsJson;
     private int _friendsMarkerQueued;
     private long _lastFriendsPayloadBytes;
+    private int _friendsResendNeeded = 1;
+    private byte[]? _lastSentFriendsHash;
+    private int _lastSentFriendsLength = -1;
+    private long _skippedFriendsPushes;
+    private static readonly string[] FriendsStateMessagePrefixes =
+    {
+        "{\"type\":\"vrcFriendUpdate\"",
+        "{\"type\":\"vrcFriendFacts\"",
+        "{\"type\":\"vrcFriendDetail\"",
+        "{\"type\":\"vrcLoggedOut\"",
+    };
     private readonly TaskCompletionSource _windowReady = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     private async Task RunJsDispatcherAsync()
@@ -1132,6 +1144,7 @@ public partial class AppShell
         await foreach (var msg in _jsQueue.Reader.ReadAllAsync())
         {
             var toSend = msg;
+            byte[]? friendsHash = null;
             if (ReferenceEquals(msg, FriendsCoalesceMarker) || msg == FriendsCoalesceMarker)
             {
                 Interlocked.Exchange(ref _friendsMarkerQueued, 0);
@@ -1141,21 +1154,54 @@ public partial class AppShell
                     toSend = _pendingFriendsJson;
                     _pendingFriendsJson = null;
                 }
+                friendsHash = System.Security.Cryptography.SHA256.HashData(
+                    System.Runtime.InteropServices.MemoryMarshal.AsBytes(toSend.AsSpan()));
+                var resend = Interlocked.Exchange(ref _friendsResendNeeded, 0) != 0;
+                if (!resend && _lastSentFriendsHash != null && toSend.Length == _lastSentFriendsLength
+                    && friendsHash.AsSpan().SequenceEqual(_lastSentFriendsHash))
+                {
+                    Interlocked.Increment(ref _skippedFriendsPushes);
+                    continue;
+                }
             }
-            try { _window.Invoke(() => _window.SendWebMessage(toSend)); } catch (Exception ex) { CrashHandler.WriteEntry("RunJsDispatcherAsync", ex); }
+            else if (IsFriendsStateMessage(msg))
+                Volatile.Write(ref _friendsResendNeeded, 1);
+            try
+            {
+                _window.Invoke(() => _window.SendWebMessage(toSend));
+                if (friendsHash != null)
+                {
+                    _lastSentFriendsHash = friendsHash;
+                    _lastSentFriendsLength = toSend.Length;
+                }
+            }
+            catch (Exception ex)
+            {
+                if (friendsHash != null) Volatile.Write(ref _friendsResendNeeded, 1);
+                CrashHandler.WriteEntry("RunJsDispatcherAsync", ex);
+            }
         }
     }
 
+    private static bool IsFriendsStateMessage(string msg)
+    {
+        foreach (var prefix in FriendsStateMessagePrefixes)
+            if (msg.StartsWith(prefix, StringComparison.Ordinal)) return true;
+        return false;
+    }
+
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<Type, System.Reflection.PropertyInfo?> _logMsgProps = new();
+    private static readonly System.Text.RegularExpressions.Regex PendingRestLine =
+        new(@"\[REST\] (GET|POST|PUT|DELETE|PATCH) ", System.Text.RegularExpressions.RegexOptions.Compiled);
 
     private void SendToJS(string type, object? payload = null)
     {
         TrackStartupTraffic("CS->JS", type);
-        if (type == "log" && payload != null && _activityLogWriter != null)
+        if (type == "log" && payload != null)
         {
+            string? logMsg = null;
             try
             {
-                string logMsg;
                 if (payload is Newtonsoft.Json.Linq.JObject jo)
                 {
                     logMsg = jo["msg"]?.ToString() ?? "";
@@ -1165,9 +1211,11 @@ public partial class AppShell
                     var prop = _logMsgProps.GetOrAdd(payload.GetType(), t => t.GetProperty("msg"));
                     logMsg = prop?.GetValue(payload)?.ToString() ?? "";
                 }
-                _activityLogWriter.WriteLine($"{DateTime.Now:HH:mm:ss}  {logMsg}");
+                _activityLogWriter?.WriteLine($"{DateTime.Now:HH:mm:ss}  {logMsg}");
             }
             catch { }
+            if (logMsg != null && !logMsg.Contains('\n') && !logMsg.Contains('→') && PendingRestLine.IsMatch(logMsg))
+                return;
         }
         var msg = JsonConvert.SerializeObject(new { type, payload });
         if (type == "vrcFriends")
