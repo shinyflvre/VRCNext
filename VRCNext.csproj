@@ -11,6 +11,10 @@
 
     <RootNamespace>VRCNext</RootNamespace>
     <AssemblyName>VRCNext</AssemblyName>
+    <Version>2027.0.1</Version>
+    <AssemblyVersion>2027.0.1.0</AssemblyVersion>
+    <FileVersion>2027.0.1.0</FileVersion>
+    <InformationalVersion>2027.0.1</InformationalVersion>
     <RollForward>latestMajor</RollForward>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
