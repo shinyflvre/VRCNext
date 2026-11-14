@@ -55,6 +55,17 @@ public class InstanceController
     public string LastTrackedWorldId { get => _lastTrackedWorldId; set => _lastTrackedWorldId = value; }
     public HashSet<string> RecentlyClosedLocs => _recentlyClosedLocs;
 
+    private List<(string loc, object payload)> _lastMyInstances = new();
+
+    public void PushMyInstancesWithout(string loc)
+    {
+        var cached = _lastMyInstances;
+        if (!cached.Any(p => p.loc == loc)) return;
+        var next = cached.Where(p => p.loc != loc).ToList();
+        _lastMyInstances = next;
+        _core.SendToJS("myInstances", next.Select(p => p.payload).ToList());
+    }
+
     // Constructor
 
     public InstanceController(CoreLibrary core, FriendsController friends)
@@ -222,6 +233,7 @@ public class InstanceController
                             r.authorId, r.authorName,
                         };
                     }).ToList();
+                    _lastMyInstances = miRaw.Select((r, i) => (r.loc, miResults[i])).ToList();
                     _core.SendToJS("myInstances", miResults);
                 });
                 break;

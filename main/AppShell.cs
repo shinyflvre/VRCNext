@@ -308,6 +308,9 @@ public partial class AppShell
             _settings,
             _core.Timeline,
             pct => _core.SendToJS("dbMigrationProgress", new { percent = pct }));
+        _ = SQLiteMigrator.AddTimelineIndexesAsync(
+            _settings,
+            pct => _core.SendToJS("dbMigrationProgress", new { percent = pct }));
         _ = SQLiteMigrator.RepairRewindHistoryAsync(
             _settings,
             () => _core.Timeline,

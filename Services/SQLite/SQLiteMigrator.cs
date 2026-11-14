@@ -56,6 +56,60 @@ public static class SQLiteMigrator
         settings.Save();
     }
 
+    private static readonly string[] TimelineIndexSql =
+    {
+        "CREATE INDEX IF NOT EXISTS idx_fe_type_ts   ON friend_events(type, timestamp)",
+        "CREATE INDEX IF NOT EXISTS idx_fe_friend_ts ON friend_events(friend_id, timestamp)",
+        "CREATE INDEX IF NOT EXISTS idx_ev_type_ts   ON events(type, timestamp)",
+        "CREATE INDEX IF NOT EXISTS idx_ev_user      ON events(user_id)",
+        "CREATE INDEX IF NOT EXISTS idx_ev_sender    ON events(sender_id)",
+        "CREATE INDEX IF NOT EXISTS idx_ev_noname    ON events(world_id) WHERE world_name = ''",
+    };
+
+    public static async Task AddTimelineIndexesAsync(
+        AppSettings  settings,
+        Action<int>? onProgress = null)
+    {
+        if (settings.TimelineIndexesAdded) return;
+
+        await Task.Delay(8000);
+        onProgress?.Invoke(1);
+
+        try
+        {
+            var paths = Database.EnumerateAccountDbPaths();
+            var count = Math.Max(paths.Count, 1);
+            for (var i = 0; i < paths.Count; i++)
+            {
+                using (var db = Database.OpenConnectionAt(paths[i]))
+                {
+                    foreach (var sql in TimelineIndexSql)
+                    {
+                        try
+                        {
+                            using var cmd = db.CreateCommand();
+                            cmd.CommandText = sql;
+                            cmd.ExecuteNonQuery();
+                        }
+                        catch { }
+                    }
+                }
+                onProgress?.Invoke(5 + (int)((i + 1) * 90.0 / count));
+                await Task.Delay(15);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Migration] AddTimelineIndexes failed: {ex.Message}");
+            onProgress?.Invoke(-1);
+            return;
+        }
+
+        onProgress?.Invoke(100);
+        settings.TimelineIndexesAdded = true;
+        settings.Save();
+    }
+
     public static async Task RepairRewindHistoryAsync(
         AppSettings            settings,
         Func<TimelineService>  timeline,

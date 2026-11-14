@@ -515,18 +515,27 @@ public class WindowController
                 break;
             }
             case "getSystemFonts":
+            _ = System.Threading.Tasks.Task.Run(() =>
             {
                 var fonts = new List<string>();
 #if WINDOWS
                 try
                 {
                     using var installed = new System.Drawing.Text.InstalledFontCollection();
-                    fonts = installed.Families
-                        .Select(f => f.Name)
-                        .Where(n => !string.IsNullOrWhiteSpace(n))
-                        .Distinct(StringComparer.OrdinalIgnoreCase)
-                        .OrderBy(n => n, StringComparer.CurrentCultureIgnoreCase)
-                        .ToList();
+                    var families = installed.Families;
+                    try
+                    {
+                        fonts = families
+                            .Select(f => f.Name)
+                            .Where(n => !string.IsNullOrWhiteSpace(n))
+                            .Distinct(StringComparer.OrdinalIgnoreCase)
+                            .OrderBy(n => n, StringComparer.CurrentCultureIgnoreCase)
+                            .ToList();
+                    }
+                    finally
+                    {
+                        foreach (var f in families) f.Dispose();
+                    }
                 }
                 catch { }
 #else
@@ -556,9 +565,10 @@ public class WindowController
                 catch { }
 #endif
                 _core.SendToJS("systemFonts", new { fonts });
+            });
                 break;
-            }
             case "getCursorFiles":
+            _ = System.Threading.Tasks.Task.Run(() =>
             {
                 var cursorDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "frontend", "cursor");
                 var cursorFiles = Directory.Exists(cursorDir)
@@ -569,9 +579,10 @@ public class WindowController
                         .ToList()
                     : new List<string?>();
                 _core.SendToJS("cursorFiles", new { files = cursorFiles, port = _core.HttpPort });
+            });
                 break;
-            }
             case "getCustomThemes":
+            _ = System.Threading.Tasks.Task.Run(() =>
             {
                 var themes = new List<object>();
 
@@ -620,8 +631,8 @@ public class WindowController
                 }
 
                 _core.SendToJS("customThemes", new { themes, port = _core.HttpPort });
+            });
                 break;
-            }
         }
     }
 }

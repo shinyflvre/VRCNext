@@ -822,6 +822,17 @@ window.external.receiveMessage(rawMsg => {
             case 'vrcGroupDetail':
             {
                 let data = payload;
+                if (payload._partial) {
+                    const prev = (typeof _groupDetailCache !== 'undefined') ? _groupDetailCache[payload.id] : null;
+                    if (!prev) break;
+                    data = { ...prev, galleryImages: payload.galleryImages || [] };
+                    const gdModal = document.getElementById('modalDetail');
+                    const showing = gdModal && gdModal.style.display !== 'none' && gdModal.classList.contains('gd-style-compact')
+                        && window._currentGroupDetail && window._currentGroupDetail.id === payload.id;
+                    if (showing) renderGroupDetail(data);
+                    else _groupDetailCache[payload.id] = data;
+                    break;
+                }
                 if (!payload.isJoined && typeof myGroups !== 'undefined') {
                     const mg = myGroups.find(x => x.id === payload.id);
                     if (mg) {

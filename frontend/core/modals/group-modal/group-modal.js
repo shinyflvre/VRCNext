@@ -41,7 +41,7 @@ function openGroupDetail(groupId) {
             document.getElementById('detailModalContent').innerHTML = sk('content-modal-compact');
         }
     }
-    sendToCS({ action: 'vrcGetGroup', groupId });
+    sendToCS({ action: 'vrcGetGroup', groupId, hasCache: !!cached });
 }
 
 function closeGroupDetail(fromNav = false) {

@@ -42,7 +42,7 @@ function requestTranslation(language = currentLanguage) {
 
 function handleTranslationData(payload) {
     currentLanguage = normalizeUiLanguage(payload?.language || currentLanguage);
-    i18nBundle = payload?.translations || {};
+    if (!payload?.reuse) i18nBundle = payload?.translations || {};
     document.documentElement.lang = currentLanguage;
     applyTranslations();
 }

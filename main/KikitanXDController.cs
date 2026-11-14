@@ -126,25 +126,33 @@ public class KikitanXDController : IDisposable
                 if (msg["blockSentences"] is JToken bs0) _settings.BlockedSentences = bs0.ToObject<List<string>>() ?? new();
                 _settings.Save();
 
-                try
+                if (Interlocked.Exchange(ref _startPending, 1) == 1) break;
+                RunLifecycle(() =>
                 {
-                    StartServiceFromSettings();
-                }
-                catch (Exception ex)
-                {
-                    _service?.Dispose();
-                    _service = null;
-                    _core.SendToJS("kxdState", new { running = false });
-                    _core.SendToJS("toast", new { ok = false, msg = ex.Message });
-                    _core.SendToJS("log", new { msg = $"Kikitan XD: {ex.Message}", color = "err" });
-                }
+                    try
+                    {
+                        StartServiceFromSettings();
+                    }
+                    catch (Exception ex)
+                    {
+                        _service?.Dispose();
+                        _service = null;
+                        _core.SendToJS("kxdState", new { running = false });
+                        _core.SendToJS("toast", new { ok = false, msg = ex.Message });
+                        _core.SendToJS("log", new { msg = $"Kikitan XD: {ex.Message}", color = "err" });
+                    }
+                    finally { Volatile.Write(ref _startPending, 0); }
+                });
                 break;
             }
 
             case "kxdStop":
-                _service?.Stop();
-                _core.SendToJS("kxdState", new { running = false });
-                _core.SendToJS("kxdMeter", new { level = 0f });
+                RunLifecycle(() =>
+                {
+                    _service?.Stop();
+                    _core.SendToJS("kxdState", new { running = false });
+                    _core.SendToJS("kxdMeter", new { level = 0f });
+                });
                 break;
 
             case "kxdSaveSettings":
@@ -250,46 +258,66 @@ public class KikitanXDController : IDisposable
         }
     }
 
+    private readonly SemaphoreSlim _lifecycle = new(1, 1);
+    private int _startPending;
+
+    private void RunLifecycle(Action work)
+    {
+        _ = Task.Run(async () =>
+        {
+            await _lifecycle.WaitAsync();
+            try { work(); }
+            catch (Exception ex) { _core.SendToJS("log", new { msg = $"Kikitan XD: {ex.Message}", color = "err" }); }
+            finally { _lifecycle.Release(); }
+        });
+    }
+
     public void Toggle()
     {
-        if (IsRunning)
+        RunLifecycle(() =>
         {
-            _service?.Stop();
-            _core.SendToJS("kxdState", new { running = false });
-            _core.SendToJS("kxdMeter", new { level = 0f });
-        }
-        else
+            if (IsRunning)
+            {
+                _service?.Stop();
+                _core.SendToJS("kxdState", new { running = false });
+                _core.SendToJS("kxdMeter", new { level = 0f });
+            }
+            else
+            {
+                try
+                {
+                    StartServiceFromSettings();
+                }
+                catch (Exception ex)
+                {
+                    _service?.Dispose();
+                    _service = null;
+                    _core.SendToJS("kxdState", new { running = false });
+                    _core.SendToJS("log", new { msg = $"Kikitan XD: {ex.Message}", color = "err" });
+                }
+            }
+        });
+    }
+
+    private void RestartService(string reason)
+    {
+        RunLifecycle(() =>
         {
             try
             {
                 StartServiceFromSettings();
+                _core.SendToJS("log", new { msg = $"Kikitan XD: restarted to apply the new {reason}", color = "sec" });
             }
             catch (Exception ex)
             {
                 _service?.Dispose();
                 _service = null;
                 _core.SendToJS("kxdState", new { running = false });
+                _core.SendToJS("kxdMeter", new { level = 0f });
+                _core.SendToJS("toast", new { ok = false, msg = ex.Message });
                 _core.SendToJS("log", new { msg = $"Kikitan XD: {ex.Message}", color = "err" });
             }
-        }
-    }
-
-    private void RestartService(string reason)
-    {
-        try
-        {
-            StartServiceFromSettings();
-            _core.SendToJS("log", new { msg = $"Kikitan XD: restarted to apply the new {reason}", color = "sec" });
-        }
-        catch (Exception ex)
-        {
-            _service?.Dispose();
-            _service = null;
-            _core.SendToJS("kxdState", new { running = false });
-            _core.SendToJS("kxdMeter", new { level = 0f });
-            _core.SendToJS("toast", new { ok = false, msg = ex.Message });
-            _core.SendToJS("log", new { msg = $"Kikitan XD: {ex.Message}", color = "err" });
-        }
+        });
     }
 
     private void StartServiceFromSettings()

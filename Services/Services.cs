@@ -735,6 +735,7 @@ public class AppSettings
     public bool EventPlayerSessionsMigrated { get; set; } = false;
 
     public bool EventPlayerSessionsRepaired { get; set; } = false;
+    public bool TimelineIndexesAdded { get; set; } = false;
 
     public bool RewindHistoryRepaired { get; set; } = false;
 

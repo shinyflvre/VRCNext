@@ -3370,7 +3370,26 @@ public partial class AppShell
                                 return;
                             }
 
-                            var all = new List<VrcLogEntry>();
+                            var categorySet = new HashSet<string>(StringComparer.Ordinal);
+                            var shownQueue = new Queue<VrcLogEntry>();
+                            var total = 0;
+                            var matched = 0;
+                            var hasQuery = !string.IsNullOrWhiteSpace(lvQuery);
+                            void Finish(VrcLogEntry e)
+                            {
+                                total++;
+                                if (!string.IsNullOrEmpty(e.category)) categorySet.Add(e.category);
+                                if (lvLevels.Count > 0 && !lvLevels.Contains(e.level, StringComparer.OrdinalIgnoreCase)) return;
+                                if (lvCats.Count > 0 && !lvCats.Contains(e.category, StringComparer.Ordinal)) return;
+                                if (hasQuery
+                                    && !e.message.Contains(lvQuery, StringComparison.OrdinalIgnoreCase)
+                                    && !e.category.Contains(lvQuery, StringComparison.OrdinalIgnoreCase)
+                                    && !e.continuation.Any(c => c.Contains(lvQuery, StringComparison.OrdinalIgnoreCase)))
+                                    return;
+                                matched++;
+                                shownQueue.Enqueue(e);
+                                if (shownQueue.Count > lvMax) shownQueue.Dequeue();
+                            }
                             VrcLogEntry? current = null;
                             var lineNo = 0;
                             using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
@@ -3383,7 +3402,7 @@ public partial class AppShell
                                     var header = ParseVrcLogHeader(line);
                                     if (header != null)
                                     {
-                                        if (current != null) all.Add(current);
+                                        if (current != null) Finish(current);
                                         current = new VrcLogEntry
                                         {
                                             timestamp = header.Value.timestamp,
@@ -3398,29 +3417,13 @@ public partial class AppShell
                                     if (current != null) current.continuation.Add(line);
                                 }
                             }
-                            if (current != null) all.Add(current);
+                            if (current != null) Finish(current);
 
-                            var categories = all.Select(e => e.category)
-                                .Where(c => !string.IsNullOrEmpty(c))
-                                .Distinct(StringComparer.Ordinal)
+                            var categories = categorySet
                                 .OrderBy(c => c, StringComparer.OrdinalIgnoreCase)
                                 .ToList();
-
-                            IEnumerable<VrcLogEntry> filtered = all;
-                            if (lvLevels.Count > 0)
-                                filtered = filtered.Where(e => lvLevels.Contains(e.level, StringComparer.OrdinalIgnoreCase));
-                            if (lvCats.Count > 0)
-                                filtered = filtered.Where(e => lvCats.Contains(e.category, StringComparer.Ordinal));
-                            if (!string.IsNullOrWhiteSpace(lvQuery))
-                                filtered = filtered.Where(e =>
-                                    e.message.Contains(lvQuery, StringComparison.OrdinalIgnoreCase)
-                                    || e.category.Contains(lvQuery, StringComparison.OrdinalIgnoreCase)
-                                    || e.continuation.Any(c => c.Contains(lvQuery, StringComparison.OrdinalIgnoreCase)));
-
-                            var list = filtered.ToList();
-                            var matched = list.Count;
                             var truncated = matched > lvMax;
-                            var shown = truncated ? list.Skip(matched - lvMax).ToList() : list;
+                            var shown = shownQueue.ToList();
 
                             Invoke(() => SendToJS("vrcLogLines", new
                             {
@@ -3437,7 +3440,7 @@ public partial class AppShell
                                 }),
                                 categories,
                                 matched,
-                                total = all.Count,
+                                total,
                                 truncated,
                                 error = "",
                             }));

@@ -60,7 +60,35 @@ public sealed class VRSubprocessHost : IDisposable
     public event Action<string>? OnFsPhotoSaved;
     public event Action<string>? OnFsQrLink;
 
-    public VRSubprocessHost(Action<string> log) => _log = log;
+    private readonly System.Threading.Channels.Channel<(int gen, string? line, TaskCompletionSource? done)> _outQueue =
+        System.Threading.Channels.Channel.CreateUnbounded<(int gen, string? line, TaskCompletionSource? done)>(
+            new System.Threading.Channels.UnboundedChannelOptions { SingleReader = true });
+    private int _gen;
+
+    public VRSubprocessHost(Action<string> log)
+    {
+        _log = log;
+        _ = Task.Run(WriteLoopAsync);
+    }
+
+    private async Task WriteLoopAsync()
+    {
+        await foreach (var (gen, line, done) in _outQueue.Reader.ReadAllAsync())
+        {
+            if (done != null) { done.TrySetResult(); continue; }
+            StreamWriter? writer;
+            lock (_stdinLock) writer = gen == _gen ? _stdin : null;
+            if (writer == null) continue;
+            try { writer.WriteLine(line); }
+            catch (Exception ex) { _log($"[VRSub] Send failed: {ex.Message}"); }
+        }
+    }
+
+    private void FlushQueue(int timeoutMs)
+    {
+        var done = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        if (_outQueue.Writer.TryWrite((0, null, done))) done.Task.Wait(timeoutMs);
+    }
 
     /// <summary>Starts the subprocess if it isn't already running, then sends the init message.</summary>
     public void EnsureRunning(string cacheDir, int httpPort, string? authCookie, string? tfaCookie)
@@ -83,8 +111,12 @@ public sealed class VRSubprocessHost : IDisposable
         };
 
         _process = Process.Start(psi)!;
-        _stdin   = _process.StandardInput;
-        _stdin.AutoFlush = true;
+        lock (_stdinLock)
+        {
+            _stdin = _process.StandardInput;
+            _stdin.AutoFlush = true;
+            _gen++;
+        }
 
         _process.EnableRaisingEvents = true;
         _process.Exited += OnProcessExited;
@@ -118,7 +150,7 @@ public sealed class VRSubprocessHost : IDisposable
         StConnected  = false;
         SwConnected  = false;
         FsConnected  = false;
-        lock (_stdinLock) _stdin = null;
+        lock (_stdinLock) { _stdin = null; _gen++; }
         if (wasVro) OnVroQuit?.Invoke();
         if (wasSf)  OnSfQuit?.Invoke();
         if (wasSt)  OnStQuit?.Invoke();
@@ -130,19 +162,22 @@ public sealed class VRSubprocessHost : IDisposable
     {
         if (_process != null)
         {
+            FlushQueue(500);
             _process.Exited -= OnProcessExited; // prevent spurious Exited event
             try { _process.Kill(); } catch { }
             _process = null;
         }
-        lock (_stdinLock) _stdin = null;
+        lock (_stdinLock) { _stdin = null; _gen++; }
     }
 
     private void SendRaw(JObject obj)
     {
         try
         {
-            lock (_stdinLock)
-                _stdin?.WriteLine(obj.ToString(Newtonsoft.Json.Formatting.None));
+            var line = obj.ToString(Newtonsoft.Json.Formatting.None);
+            int gen;
+            lock (_stdinLock) gen = _gen;
+            _outQueue.Writer.TryWrite((gen, line, null));
         }
         catch (Exception ex) { _log($"[VRSub] Send failed: {ex.Message}"); }
     }
@@ -505,6 +540,7 @@ public sealed class VRSubprocessHost : IDisposable
         _disposed = true;
         _readCts?.Cancel();
         Kill();
+        _outQueue.Writer.TryComplete();
         _readCts?.Dispose();
     }
 }

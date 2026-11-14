@@ -217,10 +217,11 @@ public class AuthController
                 break;
 
             case "loadTranslation":
-                SendTranslation(msg["language"]?.ToString());
+                SendTranslation(msg["language"]?.ToString(), allowReuse: true);
                 break;
 
             case "setupReady":
+                _lastSentLanguage = null;
                 _core.SendToJS("setPlatform", new { isLinux = !OperatingSystem.IsWindows() });
                 var detectedPath = _core.Settings.VrcPath;
                 if (string.IsNullOrWhiteSpace(detectedPath) || !File.Exists(detectedPath) || !PathSafety.IsSafeVrcPath(detectedPath))
@@ -639,6 +640,7 @@ public class AuthController
     public void HandleReady()
     {
         _readyAt = DateTime.UtcNow;
+        _lastSentLanguage = null;
         SendTranslation(_core.Settings.Language);
         _core.SendToJS("loadSettings", _core.Settings);
         _core.SendToJS("dateTimeFormat", new
@@ -786,7 +788,7 @@ public class AuthController
                 if (_core.Settings.MyInstances.Remove(loc))
                 {
                     _core.Settings.Save();
-                    _ = Task.Run(() => _core.DispatchMessage?.Invoke("""{"type":"vrcGetMyInstances"}"""));
+                    _instance.PushMyInstancesWithout(loc);
                 }
             }
             catch (Exception ex) { CrashHandler.WriteEntry("LogWatcher.InstanceClosed", ex); }
@@ -2465,11 +2467,19 @@ public class AuthController
         };
     }
 
-    private void SendTranslation(string? requestedLanguage)
+    private string? _lastSentLanguage;
+
+    private void SendTranslation(string? requestedLanguage, bool allowReuse = false)
     {
         try
         {
             var language = NormalizeLanguage(requestedLanguage);
+            if (allowReuse && language == _lastSentLanguage)
+            {
+                _core.SendToJS("translationData", new { language, reuse = true });
+                return;
+            }
+            _lastSentLanguage = null;
             var i18nDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "frontend", "i18n");
             var path = Path.Combine(i18nDir, $"{language}.json");
             var fallbackPath = Path.Combine(i18nDir, "en.json");
@@ -2480,6 +2490,7 @@ public class AuthController
                     : "{}";
             var translations = JObject.Parse(json);
             _core.SendToJS("translationData", new { language, translations });
+            _lastSentLanguage = language;
         }
         catch (Exception ex)
         {

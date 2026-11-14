@@ -581,6 +581,23 @@ public class TimelineService : IDisposable
         }
     }
 
+    public void UpdateEventWorldName(string id, string worldName, string worldThumb)
+    {
+        lock (_lock)
+        {
+            try
+            {
+                using var cmd = _db.CreateCommand();
+                cmd.CommandText = "UPDATE events SET world_name=$n, world_thumb=CASE WHEN world_thumb IS NULL OR world_thumb='' THEN $t ELSE world_thumb END WHERE id=$id";
+                cmd.Parameters.AddWithValue("$n", worldName);
+                cmd.Parameters.AddWithValue("$t", worldThumb ?? "");
+                cmd.Parameters.AddWithValue("$id", id);
+                cmd.ExecuteNonQuery();
+            }
+            catch { }
+        }
+    }
+
     public TimelineEvent? GetEvent(string id)
     {
         lock (_lock) return DbReadEvent(id);
@@ -1107,9 +1124,10 @@ public class TimelineService : IDisposable
         {
             using var cmd = _db.CreateCommand();
             cmd.CommandText = @"
-                SELECT DISTINCT e.id FROM events e
-                LEFT JOIN event_players ep ON e.id = ep.event_id
-                WHERE ep.user_id = $uid OR e.user_id = $uid OR e.sender_id = $uid
+                SELECT e.id FROM events e
+                WHERE e.id IN (
+                    SELECT event_id FROM event_players WHERE user_id = $uid
+                    UNION SELECT id FROM events WHERE user_id = $uid OR sender_id = $uid)
                 ORDER BY e.timestamp DESC LIMIT $limit";
             cmd.Parameters.AddWithValue("$uid",   userId);
             cmd.Parameters.AddWithValue("$limit", limit);
@@ -2446,7 +2464,7 @@ public class TimelineService : IDisposable
     public void AddLoggedNotif(string notifId)
     {
         if (string.IsNullOrEmpty(notifId)) return;
-        lock (_lock) { if (_loggedNotifs.Count < 2000) _loggedNotifs.Add(notifId); }
+        lock (_lock) _loggedNotifs.Add(notifId);
         try
         {
             using var cmd = _db.CreateCommand();
