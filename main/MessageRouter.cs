@@ -467,6 +467,7 @@ public partial class AppShell
                 msg = JObject.Load(_jr);
             var action = msg["action"]?.ToString() ?? "";
             CrashHandler.AddBreadcrumb($"JS→C# action={action}");
+            TrackStartupTraffic("JS->CS", action);
 
 #if !WINDOWS
             if (IsWindowsOnlyAction(action)) return;
@@ -475,7 +476,13 @@ public partial class AppShell
             switch (action)
             {
                 case "ready":
-                    // Signal platform to JS (hides Windows-only tabs on Linux)
+                    Volatile.Write(ref _friendsResendNeeded, 1);
+                    WriteStartupDiagnostic("backend ready received");
+                    StartStartupTrafficDiagnostics();
+                    // Signal platform so the UI can hide unsupported controls.
+#if !WINDOWS
+                    _trayService?.Initialize(_window);
+#endif
                     SendToJS("setPlatform", new { isLinux = !OperatingSystem.IsWindows() });
                     SendToJS("localHttpInfo", new { port = _core.HttpPort, token = _core.HttpCorsToken });
                     _windowCtrl.InstallChrome();
@@ -499,6 +506,7 @@ public partial class AppShell
                     _authCtrl.HandleReady();
                     _sfCtrl.ResendState();
                     _stCtrl.ResendState();
+                    _swCtrl.ResendState();
                     _fsCtrl.ResendState();
                     FlushPendingDeepLink();
                     Services.CrashHandler.ClearPendingCrash();
@@ -827,6 +835,7 @@ public partial class AppShell
                     break;
 
                 case "vrcRefreshFriends":
+                    Volatile.Write(ref _friendsResendNeeded, 1);
                     await _friends.RefreshFriendsAsync();
                     break;
 
@@ -3056,8 +3065,11 @@ public partial class AppShell
                     break;
 
                 // Custom Chatbox OSC
+                case "chatboxWindowToolsCheck":
+                case "chatboxWindowToolsInstall":
                 case "chatboxConfig":
                 case "chatboxDirectSend":
+                case "chatboxToggle":
                     _chatboxCtrl.HandleMessage(action, msg);
                     break;
 
@@ -3075,6 +3087,13 @@ public partial class AppShell
                 case "stReset":
                 case "stConfig":
                     _stCtrl.HandleMessage(action, msg);
+                    break;
+
+                case "swConnect":
+                case "swDisconnect":
+                case "swReset":
+                case "swConfig":
+                    _swCtrl.HandleMessage(action, msg);
                     break;
 
                 // FrameShot (in-VR photo)
@@ -3362,7 +3381,26 @@ public partial class AppShell
                                 return;
                             }
 
-                            var all = new List<VrcLogEntry>();
+                            var categorySet = new HashSet<string>(StringComparer.Ordinal);
+                            var shownQueue = new Queue<VrcLogEntry>();
+                            var total = 0;
+                            var matched = 0;
+                            var hasQuery = !string.IsNullOrWhiteSpace(lvQuery);
+                            void Finish(VrcLogEntry e)
+                            {
+                                total++;
+                                if (!string.IsNullOrEmpty(e.category)) categorySet.Add(e.category);
+                                if (lvLevels.Count > 0 && !lvLevels.Contains(e.level, StringComparer.OrdinalIgnoreCase)) return;
+                                if (lvCats.Count > 0 && !lvCats.Contains(e.category, StringComparer.Ordinal)) return;
+                                if (hasQuery
+                                    && !e.message.Contains(lvQuery, StringComparison.OrdinalIgnoreCase)
+                                    && !e.category.Contains(lvQuery, StringComparison.OrdinalIgnoreCase)
+                                    && !e.continuation.Any(c => c.Contains(lvQuery, StringComparison.OrdinalIgnoreCase)))
+                                    return;
+                                matched++;
+                                shownQueue.Enqueue(e);
+                                if (shownQueue.Count > lvMax) shownQueue.Dequeue();
+                            }
                             VrcLogEntry? current = null;
                             var lineNo = 0;
                             using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
@@ -3375,7 +3413,7 @@ public partial class AppShell
                                     var header = ParseVrcLogHeader(line);
                                     if (header != null)
                                     {
-                                        if (current != null) all.Add(current);
+                                        if (current != null) Finish(current);
                                         current = new VrcLogEntry
                                         {
                                             timestamp = header.Value.timestamp,
@@ -3390,29 +3428,13 @@ public partial class AppShell
                                     if (current != null) current.continuation.Add(line);
                                 }
                             }
-                            if (current != null) all.Add(current);
+                            if (current != null) Finish(current);
 
-                            var categories = all.Select(e => e.category)
-                                .Where(c => !string.IsNullOrEmpty(c))
-                                .Distinct(StringComparer.Ordinal)
+                            var categories = categorySet
                                 .OrderBy(c => c, StringComparer.OrdinalIgnoreCase)
                                 .ToList();
-
-                            IEnumerable<VrcLogEntry> filtered = all;
-                            if (lvLevels.Count > 0)
-                                filtered = filtered.Where(e => lvLevels.Contains(e.level, StringComparer.OrdinalIgnoreCase));
-                            if (lvCats.Count > 0)
-                                filtered = filtered.Where(e => lvCats.Contains(e.category, StringComparer.Ordinal));
-                            if (!string.IsNullOrWhiteSpace(lvQuery))
-                                filtered = filtered.Where(e =>
-                                    e.message.Contains(lvQuery, StringComparison.OrdinalIgnoreCase)
-                                    || e.category.Contains(lvQuery, StringComparison.OrdinalIgnoreCase)
-                                    || e.continuation.Any(c => c.Contains(lvQuery, StringComparison.OrdinalIgnoreCase)));
-
-                            var list = filtered.ToList();
-                            var matched = list.Count;
                             var truncated = matched > lvMax;
-                            var shown = truncated ? list.Skip(matched - lvMax).ToList() : list;
+                            var shown = shownQueue.ToList();
 
                             Invoke(() => SendToJS("vrcLogLines", new
                             {
@@ -3429,7 +3451,7 @@ public partial class AppShell
                                 }),
                                 categories,
                                 matched,
-                                total = all.Count,
+                                total,
                                 truncated,
                                 error = "",
                             }));
@@ -4325,18 +4347,78 @@ public partial class AppShell
                     await _vroCtrl.HandleMessage(action, msg);
                     break;
 
+#if !WINDOWS
+                case "playNotificationSound":
+                {
+                    var slot = msg["slot"]?.ToString() ?? "";
+                    var defaultFile = slot switch
+                    {
+                        "notify" => "Notification.ogg",
+                        "message" => "Message.ogg",
+                        "mediaRelay" => "MediaRelay.ogg",
+                        "steamOverlay" => "SteamOverlay.ogg",
+                        _ => "",
+                    };
+                    if (defaultFile.Length == 0) break;
+                    var kdeEventId = slot switch
+                    {
+                        "notify" => "notification",
+                        "message" => "message",
+                        "mediaRelay" => "mediaRelay",
+                        "steamOverlay" => "steamOverlay",
+                        _ => "generic",
+                    };
 
+                    var fileName = msg["file"]?.ToString() ?? "";
+                    if (fileName.Length > 0
+                        && (Path.GetFileName(fileName) != fileName
+                            || !string.Equals(Path.GetExtension(fileName), ".ogg", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        SendToJS("log", new { msg = "[Sound] Invalid notification sound file.", color = "warn" });
+                        break;
+                    }
+
+                    var soundDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "frontend", "sounds", "notifications");
+                    var soundPath = fileName.Length == 0
+                        ? Path.Combine(soundDirectory, defaultFile)
+                        : Path.Combine(soundDirectory, "Notificationsv2", fileName);
+                    if (!File.Exists(soundPath))
+                    {
+                        SendToJS("log", new { msg = $"[Sound] Notification sound file not found: {fileName}", color = "warn" });
+                        break;
+                    }
+
+                    var volume = 0.5;
+                    if (double.TryParse(msg["volume"]?.ToString(), System.Globalization.NumberStyles.Float,
+                        System.Globalization.CultureInfo.InvariantCulture, out var requestedVolume)
+                        && double.IsFinite(requestedVolume))
+                        volume = Math.Clamp(requestedVolume, 0, 1);
+                    LinuxDesktopHelper.PlayNotificationSound(
+                        soundPath, volume,
+                        message => SendToJS("log", new { msg = message, color = "warn" }),
+                        kdeEventId, msg["preview"]?.Value<bool>() ?? false);
+                    break;
+                }
+#endif
                 case "trayNotification":
-#if WINDOWS
                     if (_settings.MinimizeToTray && _settings.TrayNotificationsEnabled)
                     {
                         var tnTitle  = msg["title"]?.ToString()    ?? "";
                         var tnSub   = msg["subtitle"]?.ToString()  ?? "";
+                        var tnImage = msg["imageUrl"]?.ToString() ?? "";
+                        var tnEventId = msg["kdeEventId"]?.ToString() ?? "generic";
+#if WINDOWS
                         var tnAccent = msg["accentKey"]?.ToString() ?? "accent";
-                        var tnImage  = msg["imageUrl"]?.ToString()  ?? "";
                         _trayService?.ShowNotification(tnTitle, tnSub, tnImage, tnAccent);
-                    }
+#else
+                        var sent = await LinuxNotificationHelper.TrySendAsync(
+                            tnTitle, tnSub, tnImage, _vrcApi.GetHttpClient(),
+                            message => SendToJS("log", new { msg = message, color = "warn" }),
+                            tnEventId);
+                        if (!sent)
+                            _window?.SendNotification(tnTitle, tnSub);
 #endif
+                    }
                     break;
 
                 // VR Wrist Overlay
@@ -4422,11 +4504,10 @@ public partial class AppShell
 
 #if !WINDOWS
     private static readonly string[] _windowsOnlyActionPrefixes =
-        { "vf", "kxd", "chatbox", "osc", "sf", "st", "fs", "dp", "vc", "vro", "as" };
+        { "vf", "kxd", "fs", "vc", "vro" };
 
     private static bool IsWindowsOnlyAction(string action)
     {
-        if (action == "startRelay" || action == "stopRelay") return true;
         foreach (var prefix in _windowsOnlyActionPrefixes)
         {
             if (action.Length > prefix.Length

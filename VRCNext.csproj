@@ -1,7 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <!-- Detect Linux OS directly, or via -r linux-x64 flag if cross-compiling -->
-    <_LinuxBuild Condition="$([MSBuild]::IsOSPlatform('Linux')) or ($(RuntimeIdentifier) != '' and $(RuntimeIdentifier.StartsWith('linux')))">true</_LinuxBuild>
+    <_LinuxBuild Condition="'$(RuntimeIdentifier)' != '' and !$(RuntimeIdentifier.StartsWith('linux'))">false</_LinuxBuild>
+    <_LinuxBuild Condition="'$(RuntimeIdentifier)' != '' and $(RuntimeIdentifier.StartsWith('linux'))">true</_LinuxBuild>
+    <_LinuxBuild Condition="'$(RuntimeIdentifier)' == '' and $([MSBuild]::IsOSPlatform('Linux'))">true</_LinuxBuild>
 
     <TargetFramework Condition="'$(_LinuxBuild)'!='true'">net9.0-windows10.0.19041.0</TargetFramework>
     <TargetFramework Condition="'$(_LinuxBuild)'=='true'">net9.0</TargetFramework>
@@ -11,6 +13,11 @@
 
     <RootNamespace>VRCNext</RootNamespace>
     <AssemblyName>VRCNext</AssemblyName>
+    <Version>2027.0.1</Version>
+    <AssemblyVersion>2027.0.1.0</AssemblyVersion>
+    <FileVersion>2027.0.1.0</FileVersion>
+    <InformationalVersion>2027.0.1</InformationalVersion>
+    <EnableWindowsTargeting Condition="'$(RuntimeIdentifier)' != '' and $(RuntimeIdentifier.StartsWith('win'))">true</EnableWindowsTargeting>
     <RollForward>latestMajor</RollForward>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -28,27 +35,27 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.12" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="VRChat.OSCQuery" Version="0.0.7" />
     <ProjectReference Include="external\photino.NET\Photino.NET\Photino.NET.csproj" />
-    <PackageReference Include="NativeFileDialogSharp" Version="0.5.0" />
+    <PackageReference Include="NativeFileDialogSharp" Version="0.6.0-alpha" />
     <PackageReference Include="Rsync.Delta" Version="1.0.1" />
-    <PackageReference Include="System.Drawing.Common" Version="9.0.0" />
-    <PackageReference Include="SkiaSharp" Version="2.88.8" />
-    <PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="2.88.8" Condition="'$(_LinuxBuild)'!='true'" />
-    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="2.88.8" Condition="'$(_LinuxBuild)'=='true'" />
-    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="9.0.0" Condition="'$(_LinuxBuild)'!='true'" />
-    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="9.0.0" Condition="'$(_LinuxBuild)'!='true'" />
-    <PackageReference Include="Vortice.Direct3D11" Version="3.8.2" Condition="'$(_LinuxBuild)'!='true'" />
-    <PackageReference Include="Vortice.Direct2D1" Version="3.8.2" Condition="'$(_LinuxBuild)'!='true'" />
-    <PackageReference Include="Velopack" Version="0.0.915" />
+    <PackageReference Include="SkiaSharp" Version="4.155.0-preview.2.26479.13" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="4.155.0-preview.2.26479.13" Condition="'$(_LinuxBuild)'!='true'" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.155.0-preview.2.26479.13" Condition="'$(_LinuxBuild)'=='true'" />
+    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="10.0.12" Condition="'$(_LinuxBuild)'!='true'" />
+    <PackageReference Include="System.Drawing.Common" Version="10.0.12" Condition="'$(_LinuxBuild)'!='true'" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.12" Condition="'$(_LinuxBuild)'!='true'" />
+    <PackageReference Include="Vortice.Direct3D11" Version="3.8.3" Condition="'$(_LinuxBuild)'!='true'" />
+    <PackageReference Include="Vortice.Direct2D1" Version="3.8.3" Condition="'$(_LinuxBuild)'!='true'" />
+    <PackageReference Include="Velopack" Version="1.2.161" />
     <PackageReference Include="Vosk" Version="0.3.38" Condition="'$(_LinuxBuild)'!='true'" />
     <PackageReference Include="Whisper.net" Version="1.9.1" Condition="'$(_LinuxBuild)'!='true'" />
     <PackageReference Include="LLamaSharp" Version="0.27.0" Condition="'$(_LinuxBuild)'!='true'" />
-    <PackageReference Include="NAudio" Version="3.0.0" Condition="'$(_LinuxBuild)'!='true'" />
-    <PackageReference Include="System.Speech" Version="9.0.0" Condition="'$(_LinuxBuild)'!='true'" />
-    <PackageReference Include="NAudio.Vorbis" Version="1.5.0" Condition="'$(_LinuxBuild)'!='true'" />
+    <PackageReference Include="NAudio" Version="3.1.0" Condition="'$(_LinuxBuild)'!='true'" />
+    <PackageReference Include="System.Speech" Version="10.0.12" Condition="'$(_LinuxBuild)'!='true'" />
+    <PackageReference Include="NAudio.Vorbis" Version="3.0.0" Condition="'$(_LinuxBuild)'!='true'" />
     <PackageReference Include="DiscordRichPresence" Version="1.6.1.70" Condition="'$(_LinuxBuild)'!='true'" />
     <PackageReference Include="ZXing.Net" Version="0.16.11" />
   </ItemGroup>
@@ -89,7 +96,7 @@
     <None Update="Services\OpenVR\openvr_api.dll" Condition="'$(_LinuxBuild)'!='true'" Link="openvr_api.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Services\OpenVR\input\*.json" Condition="'$(_LinuxBuild)'!='true'" Link="vrinput\%(Filename)%(Extension)">
+    <None Include="Services\OpenVR\input\*.json" Link="vrinput\%(Filename)%(Extension)">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

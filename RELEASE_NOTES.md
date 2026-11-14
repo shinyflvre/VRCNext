@@ -1,31 +1,49 @@
-﻿# **2027.0.0**
+﻿# **2027.1.0**
 
-**New**
-- Added **My Reports** under Tools > VRChat to see the reports you sent
-- Added **Purchase History** under Tools > VRChat to see what you bought and your Credits activity
-- You can now add a description, languages, a category and vibes when creating an instance
-- Added **Instance History** to the Info tab of groups
-- You can now report users to VRChat from their right-click menu
-- You can now change Avatar Cloning, Booping, Shared Connections and Discord Connections from the **Infos** card of your profile
-- You can now accept, decline or cancel friend requests right from a profile
-- You can now generate and delete the impostor of your own avatars
-- You can now publish your own worlds to Community Labs and change their capacity from the **Infos** card
-- You can now delete your saved persistent data in any world
-- You can now request an invite with a message or an image
-- Added a **Discover** tab to Worlds with **Popular Worlds** and **Discover Worlds**
-- Added **Reward Code** under Tools > VRChat to redeem codes
-- **VRChat Team** members and **Nuisance** users are now marked on profiles, in lists and in the friends sidebar
+## New
+* Added **Space Walk** to tilt and turn your playspace in every direction, like floating in space.
 
-**Performance**
-- Performance improvements on dashboard.
+## Changes
+* VRC+ decorations in lists and on your own profile card now only animate while you hover over them.
+* Removed the **Optimize VRC+ Usage** setting since it is now always on.
 
-**Improvements**
-- Instance details now show the description, category, vibes and languages
-- Smoother scrolling from the top of the **Dashboard** down to the modules
-- The edit button on the **Tags** card of your worlds is now on the right
-- The **Inventory** tab now has categories, including your archived items, and shows everything you own instead of only the first 100 items
+## Linux
+* **OSC Tool** now works on Linux.
+* **Media Relay** now works on Linux.
+* **Discord Presence** now works on Linux.
+* **Space Flight** and **Space Turn** now work on Linux.
+* **Avatar Scaling** now works on Linux.
+* **YouTube Fix** now works on Linux through Steam and has its own Linux guide.
+* **Efficiency Mode** now works on Linux.
+* You can now start VRChat in VR or desktop mode from VRCNext on Linux.
+* Desktop notifications now work on Linux and show VRCNext images.
+* Added a tray icon on Linux with your profile and a status menu.
+* The **Custom Chatbox** can now show the song that is playing on Linux.
+* The **Custom Chatbox** can now show the active window on Linux with X11, and VRCNext can install the needed tools for you.
+* Improved the Linux installer.
+* Fixed memory growing on Linux while blurred effects are on screen.
+Commits by @hollyntt
 
-**Fixed Bugs**
-- Fixed world changes only showing after a refresh or restart
-- Fixed the instance name being ignored for instances that are not group instances
-- Fixed the Microsoft Neural (online) voices in **Kikitan XD** and **VR Overlay** falling back to the offline voice
+## Performance
+* Groups open about twice as fast.
+* Profiles load faster.
+* The **Timeline** and the activity in profiles load faster, especially with a long history.
+* VRCNext no longer freezes while **Kikitan XD** or **Voice Fight** start or stop.
+* VRCNext no longer freezes while VR tools connect and SteamVR is still starting.
+* The VRChat log viewer uses much less memory with large log files.
+* Slightly faster startup with less memory used.
+* Much lower CPU and GPU usage while VRCNext is open and idle.
+* VRChat data now loads faster because responses are downloaded compressed.
+* Switching tabs is faster.
+* The crash watchdog uses much less memory.
+* Less memory is used for players you have met.
+* Less background work for your friends list, mutual friends and the activity log.
+
+## Fixes
+* Fixed images not being cached after logging in again inside the app.
+* Fixed notifications showing up again in the timeline, as VR alerts and as sounds after opening the notification list.
+* Fixed closed instances staying in **My Instances** until the next refresh.
+* Fixed **Status Schedule** not restoring your previous status after you saved or toggled a rule while it was active.
+* Fixed memory usage growing the longer VRCNext stays open.
+* Fixed the group owner name sometimes going missing.
+* Added missing css for the new instance badges and vibes.

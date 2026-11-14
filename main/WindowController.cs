@@ -49,7 +49,11 @@ public class WindowController
 
     public static void AllowNextClose() => _forceClose = true;
 #else
-    public static void AllowNextClose() { }
+    private static volatile bool _minimizeToTray;
+    private static volatile bool _forceClose;
+    private bool _linuxWindowHidden;
+
+    public static void AllowNextClose() => _forceClose = true;
 #endif
 #if WINDOWS
 
@@ -237,6 +241,55 @@ public class WindowController
         else if (!IsWindowVisible(hWnd)) ShowWindow(hWnd, SW_SHOW);
         SetForegroundWindow(hWnd);
     }
+#else
+    public void SetHideFromTaskbar(bool hide) => _minimizeToTray = hide;
+
+    public void HideWindow()
+    {
+        var window = _core.Window;
+        if (window == null) return;
+        if (OperatingSystem.IsLinux()) LinuxGtkWindow.SetVisible(window, false);
+        else window.SetMinimized(true);
+        _linuxWindowHidden = true;
+    }
+
+    public void ShowWindow()
+    {
+        if (!_linuxWindowHidden) return;
+        var window = _core.Window;
+        if (window == null) return;
+        if (OperatingSystem.IsLinux()) LinuxGtkWindow.SetVisible(window, true);
+        else window.SetMinimized(false);
+        _linuxWindowHidden = false;
+    }
+
+    public void ToggleWindowVisibility()
+    {
+        var window = _core.Window;
+        if (window == null) return;
+        if (_linuxWindowHidden)
+        {
+            if (OperatingSystem.IsLinux()) LinuxGtkWindow.SetVisible(window, true);
+            else window.SetMinimized(false);
+            _linuxWindowHidden = false;
+        }
+        else
+        {
+            HideWindow();
+        }
+    }
+
+    public bool HandleWindowClosing()
+    {
+        if (_forceClose)
+        {
+            _forceClose = false;
+            return false;
+        }
+        if (!_minimizeToTray) return false;
+        HideWindow();
+        return true;
+    }
 #endif
 
     /// <summary>
@@ -390,15 +443,14 @@ public class WindowController
         switch (action)
         {
             case "windowMinimize":
-#if WINDOWS
                 if (_minimizeToTray)
                 {
-                    ShowWindow(window.WindowHandle, SW_HIDE);
+                    HideWindow();
+#if WINDOWS
                     OnMinimized?.Invoke(); // SW_HIDE does not send WM_SIZE
-                }
-                else
 #endif
-                    window.SetMinimized(true); // → WM_SIZE SIZE_MINIMIZED → OnMinimized via subclass
+                }
+                else window.SetMinimized(true);
                 break;
             case "windowMaximize":
                 var nowMax = window.Maximized;
@@ -412,15 +464,14 @@ public class WindowController
                 break;
             }
             case "windowClose":
-#if WINDOWS
                 if (_minimizeToTray)
                 {
-                    ShowWindow(window.WindowHandle, SW_HIDE);
+                    HideWindow();
+#if WINDOWS
                     OnMinimized?.Invoke();
-                }
-                else
 #endif
-                    window.Close();
+                }
+                else window.Close();
                 break;
             case "wmSurfaceOpen":
             case "wmSurfaceClose":
@@ -515,18 +566,27 @@ public class WindowController
                 break;
             }
             case "getSystemFonts":
+            _ = System.Threading.Tasks.Task.Run(() =>
             {
                 var fonts = new List<string>();
 #if WINDOWS
                 try
                 {
                     using var installed = new System.Drawing.Text.InstalledFontCollection();
-                    fonts = installed.Families
-                        .Select(f => f.Name)
-                        .Where(n => !string.IsNullOrWhiteSpace(n))
-                        .Distinct(StringComparer.OrdinalIgnoreCase)
-                        .OrderBy(n => n, StringComparer.CurrentCultureIgnoreCase)
-                        .ToList();
+                    var families = installed.Families;
+                    try
+                    {
+                        fonts = families
+                            .Select(f => f.Name)
+                            .Where(n => !string.IsNullOrWhiteSpace(n))
+                            .Distinct(StringComparer.OrdinalIgnoreCase)
+                            .OrderBy(n => n, StringComparer.CurrentCultureIgnoreCase)
+                            .ToList();
+                    }
+                    finally
+                    {
+                        foreach (var f in families) f.Dispose();
+                    }
                 }
                 catch { }
 #else
@@ -556,9 +616,10 @@ public class WindowController
                 catch { }
 #endif
                 _core.SendToJS("systemFonts", new { fonts });
+            });
                 break;
-            }
             case "getCursorFiles":
+            _ = System.Threading.Tasks.Task.Run(() =>
             {
                 var cursorDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "frontend", "cursor");
                 var cursorFiles = Directory.Exists(cursorDir)
@@ -569,9 +630,10 @@ public class WindowController
                         .ToList()
                     : new List<string?>();
                 _core.SendToJS("cursorFiles", new { files = cursorFiles, port = _core.HttpPort });
+            });
                 break;
-            }
             case "getCustomThemes":
+            _ = System.Threading.Tasks.Task.Run(() =>
             {
                 var themes = new List<object>();
 
@@ -620,8 +682,8 @@ public class WindowController
                 }
 
                 _core.SendToJS("customThemes", new { themes, port = _core.HttpPort });
+            });
                 break;
-            }
         }
     }
 }

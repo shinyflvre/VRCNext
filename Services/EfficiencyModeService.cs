@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.IO;
+using System.Collections.Generic;
 
 namespace VRCNext.Services;
 
@@ -56,11 +58,32 @@ public static class EfficiencyModeService
 
     private static System.Timers.Timer? _timer;
     private static bool _enabled;
+#if !WINDOWS
+    private const int SCHED_BATCH = 3;
+    private const int SCHED_OTHER = 0;
+    private static readonly Dictionary<int, (long StartTicks, int Policy, int Priority)> _linuxOriginalPolicies = new();
+    private static readonly object _linuxLock = new();
+    private static bool _linuxInitialPassDone;
+    public static event Action<string>? OnLog;
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct SchedParam { public int Priority; }
+
+    [DllImport("libc", SetLastError = true)]
+    private static extern int sched_getscheduler(int pid);
+
+    [DllImport("libc", SetLastError = true)]
+    private static extern int sched_getparam(int pid, out SchedParam param);
+
+    [DllImport("libc", SetLastError = true)]
+    private static extern int sched_setscheduler(int pid, int policy, ref SchedParam param);
+#endif
 
     public static void Apply(bool enabled)
     {
-        if (!OperatingSystem.IsWindows()) return;
+        var wasEnabled = _enabled;
         _enabled = enabled;
+#if WINDOWS
         ApplyNow();
         if (enabled)
         {
@@ -75,8 +98,105 @@ public static class EfficiencyModeService
         {
             _timer?.Stop();
         }
+#else
+        if (!OperatingSystem.IsLinux()) return;
+        if (enabled && !wasEnabled) _linuxInitialPassDone = false;
+        ApplyLinux();
+        if (enabled)
+        {
+            if (_timer == null)
+            {
+                _timer = new System.Timers.Timer(60000) { AutoReset = true };
+                _timer.Elapsed += (_, _) => { if (_enabled) ApplyLinux(); };
+            }
+            _timer.Start();
+        }
+        else
+        {
+            _timer?.Stop();
+        }
+#endif
     }
 
+#if !WINDOWS
+    private static void ApplyLinux()
+    {
+        lock (_linuxLock)
+        {
+            if (_enabled)
+            {
+                var initialPass = !_linuxInitialPassDone;
+                foreach (var pid in GetLinuxDescendants(Environment.ProcessId).Prepend(Environment.ProcessId))
+                {
+                    var startTicks = GetLinuxProcessStartTicks(pid);
+                    if (startTicks < 0) continue;
+                    if (_linuxOriginalPolicies.TryGetValue(pid, out var saved) && saved.StartTicks == startTicks) continue;
+                    _linuxOriginalPolicies.Remove(pid);
+                    var policy = sched_getscheduler(pid);
+                    if (policy < 0 || sched_getparam(pid, out var param) != 0) continue;
+                    var batchParam = new SchedParam { Priority = 0 };
+                    if (sched_setscheduler(pid, SCHED_BATCH, ref batchParam) == 0)
+                    {
+                        var restorePolicy = policy == SCHED_BATCH && !initialPass && pid != Environment.ProcessId
+                            ? SCHED_OTHER
+                            : policy;
+                        _linuxOriginalPolicies[pid] = (startTicks, restorePolicy, param.Priority);
+                    }
+                    else
+                        OnLog?.Invoke($"[Efficiency Mode] Could not lower scheduling priority for process {pid}: {new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error()).Message}");
+                }
+                _linuxInitialPassDone = true;
+                return;
+            }
+
+            foreach (var (pid, original) in _linuxOriginalPolicies.ToArray())
+            {
+                if (GetLinuxProcessStartTicks(pid) != original.StartTicks) continue;
+                var param = new SchedParam { Priority = original.Priority };
+                if (sched_setscheduler(pid, original.Policy, ref param) != 0)
+                    OnLog?.Invoke($"[Efficiency Mode] Could not restore scheduling for process {pid}: {new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error()).Message}");
+            }
+            _linuxOriginalPolicies.Clear();
+            _linuxInitialPassDone = false;
+        }
+    }
+
+    private static IEnumerable<int> GetLinuxDescendants(int rootPid)
+    {
+        var visited = new HashSet<int> { rootPid };
+        var queue = new Queue<int>();
+        queue.Enqueue(rootPid);
+        while (queue.Count > 0)
+        {
+            var pid = queue.Dequeue();
+            var childrenPath = $"/proc/{pid}/task/{pid}/children";
+            string children;
+            try { children = File.ReadAllText(childrenPath); }
+            catch { continue; }
+            foreach (var part in children.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (!int.TryParse(part, out var child) || !visited.Add(child)) continue;
+                queue.Enqueue(child);
+                yield return child;
+            }
+        }
+    }
+
+    private static long GetLinuxProcessStartTicks(int pid)
+    {
+        try
+        {
+            var stat = File.ReadAllText($"/proc/{pid}/stat");
+            var endOfCommand = stat.LastIndexOf(')');
+            if (endOfCommand < 0) return -1;
+            var fields = stat[(endOfCommand + 1)..].Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            return fields.Length > 19 && long.TryParse(fields[19], out var ticks) ? ticks : -1;
+        }
+        catch { return -1; }
+    }
+#endif
+
+#if WINDOWS
     private static void ApplyNow()
     {
         try
@@ -169,4 +289,5 @@ public static class EfficiencyModeService
         }
         return result;
     }
+#endif
 }

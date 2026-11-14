@@ -126,25 +126,33 @@ public class VoiceFightController : IDisposable
                         break;
                     }
 
-                    _voiceFight?.Dispose();
-                    _voiceFight = new VoiceFightService();
-                    _voiceFight.OnLog += s => Invoke(() => _core.SendToJS("log", new { msg = s, color = "sec" }));
-                    _voiceFight.OnKeywordTriggered += word => Invoke(() => _core.SendToJS("vfKeyword", new { word }));
-                    _voiceFight.OnRecognized += (displayHtml, cleanText, isPartial) =>
-                        Invoke(() => _core.SendToJS("vfRecognized", new { text = displayHtml, isPartial }));
-                    _voiceFight.SetKeywords(_vfSettings.Items);
-                    _voiceFight.SetStopWord(_vfSettings.StopWord);
-                    _voiceFight.Start(inIdx.Value, outIdx.Value);
-                    _core.SendToJS("vfState", new { running = true });
-                    _vroCtrl.UpdateToolStates();
+                    var startIn  = inIdx.Value;
+                    var startOut = outIdx.Value;
+                    RunLifecycle(() =>
+                    {
+                        _voiceFight?.Dispose();
+                        _voiceFight = new VoiceFightService();
+                        _voiceFight.OnLog += s => Invoke(() => _core.SendToJS("log", new { msg = s, color = "sec" }));
+                        _voiceFight.OnKeywordTriggered += word => Invoke(() => _core.SendToJS("vfKeyword", new { word }));
+                        _voiceFight.OnRecognized += (displayHtml, cleanText, isPartial) =>
+                            Invoke(() => _core.SendToJS("vfRecognized", new { text = displayHtml, isPartial }));
+                        _voiceFight.SetKeywords(_vfSettings.Items);
+                        _voiceFight.SetStopWord(_vfSettings.StopWord);
+                        _voiceFight.Start(startIn, startOut);
+                        _core.SendToJS("vfState", new { running = true });
+                        _vroCtrl.UpdateToolStates();
+                    });
                 }
                 break;
 
             case "vfStop":
-                _voiceFight?.Stop();
-                _core.SendToJS("vfState", new { running = false });
-                _core.SendToJS("vfMeter", new { level = 0f });
-                _vroCtrl.UpdateToolStates();
+                RunLifecycle(() =>
+                {
+                    _voiceFight?.Stop();
+                    _core.SendToJS("vfState", new { running = false });
+                    _core.SendToJS("vfMeter", new { level = 0f });
+                    _vroCtrl.UpdateToolStates();
+                });
                 break;
 
             case "vfAddSound":
@@ -333,8 +341,9 @@ public class VoiceFightController : IDisposable
                     ApplyDeviceSelection(msg, "deviceId", "deviceName", action == "vfSetInputDevice");
                     _vfSettings.Save();
                     _core.SendToJS("toast", new { ok = true, msg = "Saved" });
-                    if (_voiceFight?.IsRunning == true)
+                    RunLifecycle(() =>
                     {
+                        if (_voiceFight?.IsRunning != true) return;
                         _voiceFight.Stop();
                         var inIdx  = AudioDeviceManager.ResolveInputIndex(InputSelection);
                         var outIdx = AudioDeviceManager.ResolveOutputIndex(OutputSelection);
@@ -348,7 +357,7 @@ public class VoiceFightController : IDisposable
                             _core.SendToJS("vfState", new { running = false });
                             _vroCtrl.UpdateToolStates();
                         }
-                    }
+                    });
                 }
                 break;
         }
@@ -358,33 +367,49 @@ public class VoiceFightController : IDisposable
 
     public void Toggle()
     {
-        if (_voiceFight != null)
+        RunLifecycle(() =>
         {
-            _voiceFight.Stop();
-            _voiceFight = null;
-            _core.SendToJS("vfState", new { running = false });
-            _core.SendToJS("vfMeter", new { level = 0f });
-        }
-        else
-        {
-            _voiceFight = new VoiceFightService();
-            _voiceFight.OnLog += s => Invoke(() => _core.SendToJS("log", new { msg = s, color = "sec" }));
-            _voiceFight.OnKeywordTriggered += word => Invoke(() => _core.SendToJS("vfKeyword", new { word }));
-            _voiceFight.OnRecognized += (displayHtml, cleanText, isPartial) =>
-                Invoke(() => _core.SendToJS("vfRecognized", new { text = displayHtml, isPartial }));
-            var togIn  = AudioDeviceManager.ResolveInputIndex(InputSelection);
-            var togOut = AudioDeviceManager.ResolveOutputIndex(OutputSelection);
-            if (togIn == null || togOut == null)
+            if (_voiceFight != null)
             {
-                _core.SendToJS("log", new { msg = "Voice Fight: selected device unavailable, not starting (selection kept).", color = "err" });
+                _voiceFight.Stop();
+                _voiceFight = null;
                 _core.SendToJS("vfState", new { running = false });
-                return;
+                _core.SendToJS("vfMeter", new { level = 0f });
             }
-            _voiceFight.SetKeywords(_vfSettings.Items);
-            _voiceFight.SetStopWord(_vfSettings.StopWord);
-            _voiceFight.Start(togIn.Value, togOut.Value);
-            _core.SendToJS("vfState", new { running = true });
-        }
+            else
+            {
+                _voiceFight = new VoiceFightService();
+                _voiceFight.OnLog += s => Invoke(() => _core.SendToJS("log", new { msg = s, color = "sec" }));
+                _voiceFight.OnKeywordTriggered += word => Invoke(() => _core.SendToJS("vfKeyword", new { word }));
+                _voiceFight.OnRecognized += (displayHtml, cleanText, isPartial) =>
+                    Invoke(() => _core.SendToJS("vfRecognized", new { text = displayHtml, isPartial }));
+                var togIn  = AudioDeviceManager.ResolveInputIndex(InputSelection);
+                var togOut = AudioDeviceManager.ResolveOutputIndex(OutputSelection);
+                if (togIn == null || togOut == null)
+                {
+                    _core.SendToJS("log", new { msg = "Voice Fight: selected device unavailable, not starting (selection kept).", color = "err" });
+                    _core.SendToJS("vfState", new { running = false });
+                    return;
+                }
+                _voiceFight.SetKeywords(_vfSettings.Items);
+                _voiceFight.SetStopWord(_vfSettings.StopWord);
+                _voiceFight.Start(togIn.Value, togOut.Value);
+                _core.SendToJS("vfState", new { running = true });
+            }
+        });
+    }
+
+    private readonly SemaphoreSlim _lifecycle = new(1, 1);
+
+    private void RunLifecycle(Action work)
+    {
+        _ = Task.Run(async () =>
+        {
+            await _lifecycle.WaitAsync();
+            try { work(); }
+            catch (Exception ex) { _core.SendToJS("log", new { msg = $"Voice Fight: {ex.Message}", color = "err" }); }
+            finally { _lifecycle.Release(); }
+        });
     }
 
     // Voice Fight helpers (moved from MainForm.Relay.cs)

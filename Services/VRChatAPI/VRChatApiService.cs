@@ -10,7 +10,7 @@ public class VRChatApiService
     internal HttpClient _http = null!;
     internal CookieContainer _cookies = new();
     internal const string BASE = "https://api.vrchat.cloud/api/1";
-    private const string UA = AppInfo.UserAgent;
+    private static readonly string UA = AppInfo.UserAgent;
 
     public bool IsLoggedIn { get; internal set; }
     public JObject? CurrentUserRaw { get; internal set; }
@@ -65,6 +65,7 @@ public class VRChatApiService
         {
             CookieContainer = _cookies,
             UseCookies = true,
+            AutomaticDecompression = DecompressionMethods.All,
         };
         _http = new HttpClient(new BackoffHandler(new LoggingHandler(inner, Log), Log));
         _http.DefaultRequestVersion = HttpVersion.Version20;
@@ -75,10 +76,12 @@ public class VRChatApiService
     // Fully resets the API session by recreating CookieContainer and HttpClient so no prior state leaks.
     public void ResetSession()
     {
-        try { _http?.Dispose(); } catch { }
+        var old = _http;
+        try { old?.Dispose(); } catch { }
         IsLoggedIn = false;
         CurrentUserRaw = null;
         BuildHttpClient();
+        if (old != null) ImageCacheHelper.ReplaceHttpClient(old, _http);
     }
 
     public void RestoreCookies(string? authCookie, string? twoFactorAuthCookie)

@@ -12,11 +12,7 @@ public class SpaceFlightController : IDisposable
     private VRSubprocessHost? _sfWiredHost;
     private JObject? _sfLastState;
 
-#if WINDOWS
     public bool IsConnected => _core.VrOverlay?.SfConnected ?? false;
-#else
-    public bool IsConnected => false;
-#endif
 
     public SpaceFlightController(CoreLibrary core, VROverlayController vroCtrl)
     {
@@ -24,7 +20,6 @@ public class SpaceFlightController : IDisposable
         _vroCtrl = vroCtrl;
     }
 
-#if WINDOWS
     private VRSubprocessHost EnsureHost()
     {
         if (_core.VrOverlay == null)
@@ -59,13 +54,10 @@ public class SpaceFlightController : IDisposable
 
         return _core.VrOverlay;
     }
-#endif
-
     public void HandleMessage(string action, JObject msg)
     {
         switch (action)
         {
-#if WINDOWS
             case "sfConnect":
             {
                 var host = EnsureHost();
@@ -121,23 +113,22 @@ public class SpaceFlightController : IDisposable
                 _core.VrOverlay?.SfConfig(mult, lx, ly, lz, lr, rr, ld, rd, lg, rg, grav);
                 break;
             }
-#endif
         }
     }
 
     public void ResendState()
     {
-#if WINDOWS
         if (_core.VrOverlay?.SfConnected != true) return;
         if (_sfLastState != null) _core.SendToJS("sfUpdate", _sfLastState);
-#endif
     }
 
-    private uint SfBtn(uint legacy, uint index) => _core.Settings.VrInputMode == 1 ? index : legacy;
+    private uint SfBtn(uint legacy, uint index)
+    {
+        return _core.Settings.VrInputMode == 1 ? index : legacy;
+    }
 
     public void Toggle()
     {
-#if WINDOWS
         if (_core.VrOverlay?.SfConnected == true)
         {
             _core.VrOverlay.SfDisconnect();
@@ -166,7 +157,6 @@ public class SpaceFlightController : IDisposable
                 SfBtn(_core.Settings.SfRightGravityButton, _core.Settings.SfIdxRightGravityButton),
                 _core.Settings.SfGravity);
         }
-#endif
     }
 
     public void Dispose()

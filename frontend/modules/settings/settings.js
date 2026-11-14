@@ -87,7 +87,12 @@ function saveSettings() {
     const _vriReady = typeof vriLoaded !== 'undefined' && vriLoaded;
     const _sfCur = _vriReady && typeof sfReadBtns === 'function' ? sfReadBtns() : {};
     const _stCur = _vriReady && typeof stReadBtns === 'function' ? stReadBtns() : {};
+    const _swCur = _vriReady && typeof swReadBtns === 'function' ? swReadBtns() : {};
     const _fsCur = _vriReady && typeof fsReadBtns === 'function' ? fsReadBtns() : {};
+    const _sfLegacy = vrInputMode === 1 ? _sfOtherBtns : _sfCur;
+    const _sfIndex = vrInputMode === 1 ? _sfCur : _sfOtherBtns;
+    const _stLegacy = vrInputMode === 1 ? _stOtherBtns : _stCur;
+    const _stIndex = vrInputMode === 1 ? _stCur : _stOtherBtns;
 
     const payload = {
         action: 'saveSettings',
@@ -181,7 +186,13 @@ function saveSettings() {
             sfLeftDragBtn:        _sfCur.sfLeftDrag,
             sfRightDragBtn:       _sfCur.sfRightDrag,
             sfLeftGravityBtn:     _sfCur.sfLeftGravity,
-            sfRightGravityBtn:    _sfCur.sfRightGravity,
+            sfRightGravityBtn:     _sfLegacy.sfRightGravity,
+            sfIdxLeftResetBtn:     _sfIndex.sfLeftReset,
+            sfIdxRightResetBtn:    _sfIndex.sfRightReset,
+            sfIdxLeftDragBtn:      _sfIndex.sfLeftDrag,
+            sfIdxRightDragBtn:     _sfIndex.sfRightDrag,
+            sfIdxLeftGravityBtn:   _sfIndex.sfLeftGravity,
+            sfIdxRightGravityBtn:  _sfIndex.sfRightGravity,
             ...(_vriReady ? { vrInputMode } : {}),
             sfGravity: parseFloat(document.getElementById('sfGravity')?.value) || 9.8,
             stMultiplier:  parseFloat(document.getElementById('stMultiplier')?.value) || 1,
@@ -191,8 +202,24 @@ function saveSettings() {
             stLeftTurnBtn:   _stCur.stLeftTurn,
             stRightTurnBtn:  _stCur.stRightTurn,
             stLeftResetBtn:  _stCur.stLeftReset,
-            stRightResetBtn: _stCur.stRightReset,
+            stRightResetBtn:  _stLegacy.stRightReset,
+            stIdxLeftTurnBtn:   _stIndex.stLeftTurn,
+            stIdxRightTurnBtn:  _stIndex.stRightTurn,
+            stIdxLeftResetBtn:  _stIndex.stLeftReset,
+            stIdxRightResetBtn: _stIndex.stRightReset,
             stAutoStartVR:   document.getElementById('setStAutoStartVR')?.checked ?? false,
+            swMultiplier:    parseFloat(document.getElementById('swMultiplier')?.value) || 1,
+            swSmoothing:     parseFloat(document.getElementById('swSmoothing')?.value) || 0,
+            swMomentum:      parseFloat(document.getElementById('swMomentum')?.value) || 0,
+            swInvert:        !!document.getElementById('swInvert')?.checked,
+            swLockPitch:     !!document.getElementById('swLockPitch')?.checked,
+            swLockRoll:      !!document.getElementById('swLockRoll')?.checked,
+            swLockYaw:       !!document.getElementById('swLockYaw')?.checked,
+            swLeftWalkBtn:   _swCur.swLeftWalk,
+            swRightWalkBtn:  _swCur.swRightWalk,
+            swLeftResetBtn:  _swCur.swLeftReset,
+            swRightResetBtn: _swCur.swRightReset,
+            swAutoStartVR:   document.getElementById('setSwAutoStartVR')?.checked ?? false,
             chatboxAutoStart: false, // legacy
             chatboxAutoStartVR:       document.getElementById('setCbAutoStartVR')?.checked        ?? false,
             chatboxAutoStartDesktop:  document.getElementById('setCbAutoStartDesktop')?.checked   ?? false,
@@ -219,6 +246,7 @@ function saveSettings() {
             fsAudioKbps:              parseInt(document.getElementById('fsAudioKbps')?.value          ?? '256', 10),
             ytAutoStartVR:            document.getElementById('setYtAutoStartVR')?.checked        ?? false,
             ytAutoStartDesktop:       document.getElementById('setYtAutoStartDesktop')?.checked   ?? false,
+            ytAutoStartSteam:         document.getElementById('setYtAutoStartSteam')?.checked      ?? false,
             vfAutoStartVR:            document.getElementById('setVfAutoStartVR')?.checked        ?? false,
             vfAutoStartDesktop:       document.getElementById('setVfAutoStartDesktop')?.checked   ?? false,
             discordPresenceAutoStart: false, // legacy
@@ -314,7 +342,6 @@ function saveSettings() {
             imgCacheLimitGb:         parseInt(document.getElementById('setImgCacheLimit').value) || 5,
             imgCacheOptimizeEnabled: document.getElementById('setImgCacheOptimizeEnabled').checked,
             imgMemoryOptimizeEnabled: document.getElementById('setImgMemoryOptimizeEnabled')?.checked ?? true,
-            vrcPlusOptimizeEnabled: document.getElementById('setVrcPlusOptimize')?.checked ?? true,
             ffcEnabled: document.getElementById('setFfcEnabled').checked,
             memoryTrimEnabled: document.getElementById('setMemoryTrimEnabled').checked,
             mediaFixEnabled: document.getElementById('setMediaFixEnabled')?.checked ?? true,
@@ -413,10 +440,10 @@ function initAutoSave() {
         'setCloseWithVrc','setStartAlwaysWithVrc',
         'setCbAutoStartVR','setCbAutoStartDesktop',
         'setSfAutoStartVR',
-        'setYtAutoStartVR','setYtAutoStartDesktop',
+        'setYtAutoStartVR','setYtAutoStartDesktop','setYtAutoStartSteam',
         'setVfAutoStartVR','setVfAutoStartDesktop',
         'setDpAutoStartVR','setDpAutoStartDesktop',
-        'setImgCacheEnabled','setImgCacheLimit','setImgCacheOptimizeEnabled','setImgMemoryOptimizeEnabled','setVrcPlusOptimize','setMemoryTrimEnabled','setRestartAfterCrash',
+        'setImgCacheEnabled','setImgCacheLimit','setImgCacheOptimizeEnabled','setImgMemoryOptimizeEnabled','setMemoryTrimEnabled','setRestartAfterCrash',
         'setPerfGpuAccel','setPerfShaderCache','setPerfV8Heap','setPerfRenderProc',
         'setPerfAnimations','setPerfBlur'];
     ids.forEach(id => {
@@ -697,7 +724,6 @@ function loadSettingsToUI(s) {
     document.getElementById('cbShowAfk').checked = s.CbShowAfk ?? s.cbShowAfk ?? false;
     document.getElementById('cbAfkMessage').value = s.CbAfkMessage || s.cbAfkMessage || 'Currently AFK';
     document.getElementById('cbSuppressSound').checked = s.CbSuppressSound ?? s.cbSuppressSound ?? true;
-    document.getElementById('cbHideBackground').checked = s.CbHideBackground ?? s.cbHideBackground ?? false;
     const cbTf = s.CbTimeFormat || s.cbTimeFormat || 'hh:mm tt';
     const cbTfEl = document.getElementById('cbTimeFormat');
     if (cbTfEl) cbTfEl.value = cbTf;
@@ -784,8 +810,8 @@ function loadSettingsToUI(s) {
             sfLeftGravity:  s.SfIdxLeftGravityButton  ?? s.sfIdxLeftGravityButton  ?? 0,
             sfRightGravity: s.SfIdxRightGravityButton ?? s.sfIdxRightGravityButton ?? 0,
         };
-        _sfOtherBtns = _sfIdx ? _sfLegacySet : _sfIndexSet;
-        if (_sfIdx && typeof sfWriteBtns === 'function') sfWriteBtns(_sfIndexSet);
+        _sfOtherBtns = _sfIdx ? _sfIndexSet : _sfLegacySet;
+        if (typeof sfWriteBtns === 'function') sfWriteBtns(_sfOtherBtns);
     }
     if (typeof sfRenderKeybind === 'function') sfRenderKeybind();
 
@@ -823,10 +849,43 @@ function loadSettingsToUI(s) {
             stLeftReset:  s.StIdxLeftResetButton  ?? s.stIdxLeftResetButton  ?? 0,
             stRightReset: s.StIdxRightResetButton ?? s.stIdxRightResetButton ?? 0,
         };
-        _stOtherBtns = _stIdx ? _stLegacySet : _stIndexSet;
-        if (typeof stWriteBtns === 'function') stWriteBtns(_stIdx ? _stIndexSet : _stLegacySet);
+        _stOtherBtns = _stIdx ? _stIndexSet : _stLegacySet;
+        if (typeof stWriteBtns === 'function') stWriteBtns(_stOtherBtns);
     }
     if (typeof stRenderKeybind === 'function') stRenderKeybind();
+
+    const _swRange = (id, valId, value, suffix) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.value = value;
+        const v = document.getElementById(valId);
+        if (v) v.textContent = el.value + suffix;
+    };
+    _swRange('swMultiplier', 'swMultVal', s.SwMultiplier ?? s.swMultiplier ?? 1, 'x');
+    _swRange('swSmoothing', 'swSmoothVal', s.SwSmoothing ?? s.swSmoothing ?? 0, '%');
+    _swRange('swMomentum', 'swMomentumVal', s.SwMomentum ?? s.swMomentum ?? 0, '%');
+    [['swInvert', 'SwInvert'], ['swLockPitch', 'SwLockPitch'], ['swLockRoll', 'SwLockRoll'], ['swLockYaw', 'SwLockYaw']].forEach(([id, key]) => {
+        const el = document.getElementById(id);
+        if (el) el.checked = !!(s[key] ?? s[key.charAt(0).toLowerCase() + key.slice(1)] ?? false);
+    });
+    if (typeof _swOtherBtns !== 'undefined') {
+        const _swIdx = (s.VrInputMode ?? s.vrInputMode ?? 0) === 1;
+        const _swLegacySet = {
+            swLeftWalk:   s.SwLeftWalkButton   ?? s.swLeftWalkButton   ?? 0,
+            swRightWalk:  s.SwRightWalkButton  ?? s.swRightWalkButton  ?? 2,
+            swLeftReset:  s.SwLeftResetButton  ?? s.swLeftResetButton  ?? 0,
+            swRightReset: s.SwRightResetButton ?? s.swRightResetButton ?? 0,
+        };
+        const _swIndexSet = {
+            swLeftWalk:   s.SwIdxLeftWalkButton   ?? s.swIdxLeftWalkButton   ?? 0,
+            swRightWalk:  s.SwIdxRightWalkButton  ?? s.swIdxRightWalkButton  ?? 0,
+            swLeftReset:  s.SwIdxLeftResetButton  ?? s.swIdxLeftResetButton  ?? 0,
+            swRightReset: s.SwIdxRightResetButton ?? s.swIdxRightResetButton ?? 0,
+        };
+        _swOtherBtns = _swIdx ? _swLegacySet : _swIndexSet;
+        if (typeof swWriteBtns === 'function') swWriteBtns(_swIdx ? _swIndexSet : _swLegacySet);
+    }
+    if (typeof swRenderKeybind === 'function') swRenderKeybind();
 
     // Restore VR/Desktop auto-start flags
     const _set = (id, v) => { const el = document.getElementById(id); if (el) el.checked = !!v; };
@@ -834,6 +893,7 @@ function loadSettingsToUI(s) {
     _set('setCbAutoStartDesktop', s.ChatboxAutoStartDesktop ?? s.chatboxAutoStartDesktop ?? false);
     _set('setSfAutoStartVR',      s.SfAutoStartVR           ?? s.sfAutoStartVR           ?? false);
     _set('setStAutoStartVR',      s.StAutoStartVR           ?? s.stAutoStartVR           ?? false);
+    _set('setSwAutoStartVR',      s.SwAutoStartVR           ?? s.swAutoStartVR           ?? false);
     _set('setFsAutoStartVR',      s.FsAutoStartVR           ?? s.fsAutoStartVR           ?? false);
     const _fsLeftEl  = document.getElementById('fsLeftButton');
     const _fsRightEl = document.getElementById('fsRightButton');
@@ -903,6 +963,7 @@ function loadSettingsToUI(s) {
     }
     _set('setYtAutoStartVR',      s.YtAutoStartVR           ?? s.ytAutoStartVR           ?? false);
     _set('setYtAutoStartDesktop', s.YtAutoStartDesktop      ?? s.ytAutoStartDesktop      ?? false);
+    _set('setYtAutoStartSteam', s.YtAutoStartSteam          ?? s.ytAutoStartSteam          ?? false);
     _set('setVfAutoStartVR',      s.VfAutoStartVR           ?? s.vfAutoStartVR           ?? false);
     _set('setVfAutoStartDesktop', s.VfAutoStartDesktop      ?? s.vfAutoStartDesktop      ?? false);
     _set('setDpAutoStartVR',      s.DpAutoStartVR           ?? s.dpAutoStartVR           ?? false);
@@ -1023,9 +1084,6 @@ function loadSettingsToUI(s) {
     imgThumbsEnabled = imgMemoryOptimizeEnabled === true;
     const memOptEl = document.getElementById('setImgMemoryOptimizeEnabled');
     if (memOptEl) memOptEl.checked = imgThumbsEnabled;
-    vrcPlusOptimizeEnabled = (s.VrcPlusOptimizeEnabled ?? s.vrcPlusOptimizeEnabled ?? true) === true;
-    const vpOptEl = document.getElementById('setVrcPlusOptimize');
-    if (vpOptEl) vpOptEl.checked = vrcPlusOptimizeEnabled;
     document.getElementById('setImgCacheLimit').value = imgCacheLimitGb;
     document.getElementById('imgCacheLimitVal').textContent = imgCacheLimitGb + ' GB';
     document.getElementById('setImgCacheOptimizeEnabled').checked = imgCacheOptimizeEnabled;
@@ -1188,19 +1246,6 @@ function onDecoToggle(key, on) {
     autoSave();
     if (typeof applyDecorationsSetting === 'function') applyDecorationsSetting();
     if (typeof updateSquareFrameToggle === 'function') updateSquareFrameToggle();
-}
-
-function onVrcPlusOptimizeToggle() {
-    vrcPlusOptimizeEnabled = document.getElementById('setVrcPlusOptimize')?.checked === true;
-    autoSave();
-    const fl = document.getElementById('vrcFriendsList');
-    if (fl) fl.__lastHtml = null;
-    ['dashFavWorlds', 'dashFriendsFeed', 'dashFriendLocSmallShelf', 'dashGroupActivityGrid', 'dashGroupActivityCards', 'dashGroupActivityShelf'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.__lastHtml = null;
-    });
-    if (typeof renderVrcFriends === 'function' && typeof vrcFriendsData !== 'undefined' && vrcFriendsData.length) renderVrcFriends(vrcFriendsData);
-    if (typeof renderDashboard === 'function') renderDashboard();
 }
 
 function onImgMemoryOptimizeToggle() {

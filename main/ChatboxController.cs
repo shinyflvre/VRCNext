@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json.Linq;
+using System.Diagnostics;
 using VRCNext.Services;
 
 namespace VRCNext;
@@ -13,6 +14,7 @@ public class ChatboxController : IDisposable
     // Fields (moved from MainForm.Fields.cs)
     private ChatboxService? _chatbox;
     private OscService? _osc;
+    private int _windowToolsInstallRunning;
 
     // Public Accessors (for other domains)
     public bool IsEnabled => _chatbox?.Enabled ?? false;
@@ -31,6 +33,19 @@ public class ChatboxController : IDisposable
     {
         switch (action)
         {
+            case "chatboxWindowToolsCheck":
+                SendWindowToolsState();
+                break;
+
+            case "chatboxWindowToolsInstall":
+                if (Interlocked.CompareExchange(ref _windowToolsInstallRunning, 1, 0) == 0)
+                    _ = InstallWindowToolsAsync();
+                break;
+
+            case "chatboxToggle":
+                Toggle();
+                break;
+
             case "chatboxConfig":
                 {
                     _chatbox ??= new ChatboxService(s => Invoke(() => _core.SendToJS("log", new { msg = s, color = "sec" })));
@@ -67,7 +82,7 @@ public class ChatboxController : IDisposable
                     var separator = msg["separator"]?.ToString() ?? " | ";
                     var intervalMs = msg["intervalMs"]?.Value<int>() ?? 5000;
                     var customLines = msg["customLines"]?.ToObject<List<CbCustomLine>>() ?? new();
-                    var hideBackground = msg["hideBackground"]?.Value<bool>() ?? false;
+                    const bool hideBackground = false;
                     var customTemplate = msg["customTemplate"]?.ToString() ?? "";
                     var showAfkTime = msg["showAfkTime"]?.Value<bool>() ?? true;
                     var lineOrder = msg["lineOrder"]?.ToObject<List<string>>() ?? new(ChatboxService.DefaultLineOrder);
@@ -154,7 +169,7 @@ public class ChatboxController : IDisposable
                     }
                     else
                     {
-                        var svc = new ChatboxService(_ => { });
+                        using var svc = new ChatboxService(s => Invoke(() => _core.SendToJS("log", new { msg = s, color = "sec" })));
                         svc.SendDirect(text);
                     }
                 }
@@ -368,11 +383,115 @@ public class ChatboxController : IDisposable
         });
     }
 
+    private void SendWindowToolsState(string? message = null, bool success = false)
+    {
+        var missing = GetMissingWindowTools();
+        _core.SendToJS("chatboxWindowToolsState", new
+        {
+            available = missing.Count == 0,
+            installing = Volatile.Read(ref _windowToolsInstallRunning) != 0,
+            missing,
+            message,
+            success,
+        });
+    }
+
+    private static List<string> GetMissingWindowTools()
+    {
+        var missing = new List<string>();
+        if (FindExecutable("xdotool") == null) missing.Add("xdotool");
+        if (FindExecutable("xprop") == null) missing.Add("xprop");
+        return missing;
+    }
+
+    private static string? FindExecutable(string name)
+    {
+        foreach (var directory in (Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator))
+        {
+            if (string.IsNullOrWhiteSpace(directory)) continue;
+            var path = Path.Combine(directory, name);
+            if (File.Exists(path)) return path;
+        }
+        return null;
+    }
+
+    private async Task InstallWindowToolsAsync()
+    {
+        var manager = GetWindowToolsPackageManager();
+        if (manager == null)
+        {
+            Interlocked.Exchange(ref _windowToolsInstallRunning, 0);
+            SendWindowToolsState("Could not detect a supported package manager. Install xdotool and xprop using your distribution's package manager.", false);
+            return;
+        }
+
+        var pkexec = FindExecutable("pkexec");
+        if (pkexec == null)
+        {
+            Interlocked.Exchange(ref _windowToolsInstallRunning, 0);
+            SendWindowToolsState($"Graphical administrator authorization (pkexec) is unavailable. Install them manually with: {manager.ManualCommand}", false);
+            return;
+        }
+
+        SendWindowToolsState();
+        try
+        {
+            var startInfo = new ProcessStartInfo(pkexec) { UseShellExecute = false };
+            startInfo.ArgumentList.Add(manager.Executable);
+            foreach (var argument in manager.Arguments) startInfo.ArgumentList.Add(argument);
+
+            using var process = Process.Start(startInfo);
+            if (process == null)
+                throw new InvalidOperationException("Could not start the package manager through pkexec.");
+            await process.WaitForExitAsync();
+
+            var missing = GetMissingWindowTools();
+            if (process.ExitCode == 0 && missing.Count == 0)
+            {
+                Interlocked.Exchange(ref _windowToolsInstallRunning, 0);
+                SendWindowToolsState("Window Activity tools installed.", true);
+                return;
+            }
+
+            var detail = process.ExitCode == 126 || process.ExitCode == 127
+                ? "Authorization was cancelled or failed."
+                : $"The package installer exited with code {process.ExitCode}.";
+            Interlocked.Exchange(ref _windowToolsInstallRunning, 0);
+            SendWindowToolsState($"{detail} Install the tools manually with: {manager.ManualCommand}", false);
+        }
+        catch (Exception ex)
+        {
+            Interlocked.Exchange(ref _windowToolsInstallRunning, 0);
+            SendWindowToolsState($"Could not install Window Activity tools: {ex.Message}. You can install them manually with: {manager.ManualCommand}", false);
+        }
+    }
+
+    private static WindowToolsPackageManager? GetWindowToolsPackageManager()
+    {
+        if (FindExecutable("apt-get") is { } apt)
+            return new(apt, ["install", "-y", "xdotool", "x11-utils"], "sudo apt-get install xdotool x11-utils");
+        if (FindExecutable("dnf") is { } dnf)
+            return new(dnf, ["install", "-y", "xdotool", "xorg-x11-utils"], "sudo dnf install xdotool xorg-x11-utils");
+        if (FindExecutable("pacman") is { } pacman)
+            return new(pacman, ["-S", "--needed", "--noconfirm", "xdotool", "xorg-xprop"], "sudo pacman -S xdotool xorg-xprop");
+        if (FindExecutable("zypper") is { } zypper)
+            return new(zypper, ["--non-interactive", "install", "xdotool", "xprop"], "sudo zypper install xdotool xprop");
+        if (FindExecutable("apk") is { } apk)
+            return new(apk, ["add", "xdotool", "xprop"], "sudo apk add xdotool xprop");
+        if (FindExecutable("xbps-install") is { } xbps)
+            return new(xbps, ["-Sy", "xdotool", "xprop"], "sudo xbps-install -Sy xdotool xprop");
+        if (FindExecutable("eopkg") is { } eopkg)
+            return new(eopkg, ["install", "-y", "xdotool", "xprop"], "sudo eopkg install xdotool xprop");
+        return null;
+    }
+
+    private sealed record WindowToolsPackageManager(string Executable, string[] Arguments, string ManualCommand);
+
     // Toggle (called from VR overlay)
 
     public void Toggle()
     {
-        if (_chatbox != null)
+        if (_chatbox?.Enabled == true)
         {
             _chatbox.Stop();
             _chatbox = null;
@@ -382,7 +501,7 @@ public class ChatboxController : IDisposable
         }
         else
         {
-            _chatbox = new ChatboxService(s => Invoke(() => _core.SendToJS("log", new { msg = s, color = "sec" })));
+            _chatbox ??= new ChatboxService(s => Invoke(() => _core.SendToJS("log", new { msg = s, color = "sec" })));
             _chatbox.SetUpdateCallback(data => { try { Invoke(() => _core.SendToJS("chatboxUpdate", data)); } catch (Exception ex) { CrashHandler.WriteEntry("Chatbox.SetUpdateCallback", ex); } });
             _chatbox.ApplyConfig(true, _core.Settings.CbShowTime, _core.Settings.CbShowMedia, _core.Settings.CbShowPlaytime,
                 _core.Settings.CbShowCustomText, _core.Settings.CbShowSystemStats, _core.Settings.CbShowAfk, _core.Settings.CbAfkMessage,

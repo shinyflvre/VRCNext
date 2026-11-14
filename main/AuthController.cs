@@ -217,10 +217,11 @@ public class AuthController
                 break;
 
             case "loadTranslation":
-                SendTranslation(msg["language"]?.ToString());
+                SendTranslation(msg["language"]?.ToString(), allowReuse: true);
                 break;
 
             case "setupReady":
+                _lastSentLanguage = null;
                 _core.SendToJS("setPlatform", new { isLinux = !OperatingSystem.IsWindows() });
                 var detectedPath = _core.Settings.VrcPath;
                 if (string.IsNullOrWhiteSpace(detectedPath) || !File.Exists(detectedPath) || !PathSafety.IsSafeVrcPath(detectedPath))
@@ -230,7 +231,7 @@ public class AuthController
                     _core.Settings.VrcPath = detectedPath;
                     _core.Settings.Save();
                 }
-                var photoDir = _core.Settings.WatchFolders.FirstOrDefault() ?? "";
+                var photoDir = _core.Settings.WatchFolders.FirstOrDefault(Directory.Exists) ?? "";
                 if (string.IsNullOrEmpty(photoDir))
                     photoDir = DetectVrcPhotoDir();
                 _core.SendToJS("setupState", new
@@ -431,14 +432,24 @@ public class AuthController
                 break;
 
             case "setupSavePhotoDir":
-                var setupPhotoDir = msg["path"]?.ToString() ?? "";
-                if (!string.IsNullOrEmpty(setupPhotoDir)
-                    && Directory.Exists(setupPhotoDir)
-                    && PathSafety.IsSafeWatchFolder(setupPhotoDir)
-                    && !_core.Settings.WatchFolders.Contains(setupPhotoDir, StringComparer.OrdinalIgnoreCase))
                 {
-                    _core.Settings.WatchFolders.Add(setupPhotoDir);
-                    _core.Settings.Save();
+                    var setupPhotoDir = msg["path"]?.ToString() ?? "";
+                    if (string.IsNullOrEmpty(setupPhotoDir) || !PathSafety.IsSafeWatchFolder(setupPhotoDir))
+                    {
+                        _core.SendToJS("log", new { msg = $"Rejected VRChat photo folder: {setupPhotoDir}", color = "warn" });
+                        break;
+                    }
+                    try
+                    {
+                        Directory.CreateDirectory(setupPhotoDir);
+                        if (!_core.Settings.WatchFolders.Contains(setupPhotoDir, StringComparer.OrdinalIgnoreCase))
+                            _core.Settings.WatchFolders.Add(setupPhotoDir);
+                        _core.Settings.Save();
+                    }
+                    catch (Exception ex)
+                    {
+                        _core.SendToJS("log", new { msg = $"Could not configure VRChat photo folder: {ex.Message}", color = "err" });
+                    }
                 }
                 break;
 
@@ -639,6 +650,7 @@ public class AuthController
     public void HandleReady()
     {
         _readyAt = DateTime.UtcNow;
+        _lastSentLanguage = null;
         SendTranslation(_core.Settings.Language);
         _core.SendToJS("loadSettings", _core.Settings);
         _core.SendToJS("dateTimeFormat", new
@@ -652,10 +664,8 @@ public class AuthController
 #endif
         var customColors = _core.Cache.LoadRaw(CacheHandler.KeyCustomColors);
         if (customColors != null) _core.SendToJS("customColors", customColors);
-#if WINDOWS
         if (_core.Settings.MinimizeToTray)
             _core.OnTraySettingChanged?.Invoke(true, true); // autoHide on startup
-#endif
         _ = VrcTryResumeAsync();
         if (_core.Settings.LastChangelogVersion != AppInfo.Version)
         {
@@ -734,7 +744,7 @@ public class AuthController
             if (src == null) return "";
             const int size = 80;
             using var dst = new SkiaSharp.SKBitmap(size, size, SkiaSharp.SKColorType.Rgba8888, SkiaSharp.SKAlphaType.Premul);
-            src.ScalePixels(dst, SkiaSharp.SKFilterQuality.Medium);
+            src.ScalePixels( dst, new SkiaSharp.SKSamplingOptions(SkiaSharp.SKFilterMode.Linear) );
             using var img  = SkiaSharp.SKImage.FromBitmap(dst);
             using var data = img.Encode(SkiaSharp.SKEncodedImageFormat.Png, 90);
             if (data == null) return "";
@@ -786,7 +796,7 @@ public class AuthController
                 if (_core.Settings.MyInstances.Remove(loc))
                 {
                     _core.Settings.Save();
-                    _ = Task.Run(() => _core.DispatchMessage?.Invoke("""{"type":"vrcGetMyInstances"}"""));
+                    _instance.PushMyInstancesWithout(loc);
                 }
             }
             catch (Exception ex) { CrashHandler.WriteEntry("LogWatcher.InstanceClosed", ex); }
@@ -1125,9 +1135,7 @@ public class AuthController
 
         _core.SendToJS("log", new { msg = $"VRChat: Session expired ({reason}) — please log in again", color = "warn" });
         _core.SendToJS("vrcLoggedOut", (object?)null);
-#if WINDOWS
         _core.OnTrayLoggedOut?.Invoke();
-#endif
         if (!string.IsNullOrEmpty(username))
             _core.SendToJS("vrcPrefillLogin", new { username, password });
     }
@@ -1415,9 +1423,7 @@ public class AuthController
             rawJson = user,
         });
 
-#if WINDOWS
         _core.OnTrayUserUpdate?.Invoke(userDisplayName, userStatus, userStatusDesc, userImage);
-#endif
 
         // Fetch own badges (auth endpoint may not include badges, so fetch full user profile)
         var userId = user["id"]?.ToString() ?? "";
@@ -2023,9 +2029,7 @@ public class AuthController
             _core.Settings.ShowDecorationsOnDashboardOthers = data["showDecorationsOnDashboardOthers"]?.Value<bool>() ?? _core.Settings.ShowDecorationsOnDashboardOthers;
             _core.Settings.MinimizeToTray = data["minimizeToTray"]?.Value<bool>() ?? false;
             _core.Settings.TrayNotificationsEnabled = data["trayNotificationsEnabled"]?.Value<bool>() ?? false;
-#if WINDOWS
             _core.OnTraySettingChanged?.Invoke(_core.Settings.MinimizeToTray, false);
-#endif
             _core.Settings.Language = NormalizeLanguage(data["language"]?.ToString());
             _core.Settings.Theme = data["theme"]?.ToString() ?? "vrcn";
             _core.Settings.SpecialTheme = data["specialTheme"]?.ToString() ?? "";
@@ -2160,12 +2164,12 @@ public class AuthController
 
             if (vrIdx)
             {
-                _core.Settings.SfIdxLeftResetButton    = SfIn("sfLeftResetBtn",     _core.Settings.SfIdxLeftResetButton);
-                _core.Settings.SfIdxRightResetButton   = SfIn("sfRightResetBtn",    _core.Settings.SfIdxRightResetButton);
-                _core.Settings.SfIdxLeftDragButton     = SfIn("sfLeftDragBtn",      _core.Settings.SfIdxLeftDragButton);
-                _core.Settings.SfIdxRightDragButton    = SfIn("sfRightDragBtn",     _core.Settings.SfIdxRightDragButton);
-                _core.Settings.SfIdxLeftGravityButton  = SfIn("sfLeftGravityBtn",   _core.Settings.SfIdxLeftGravityButton);
-                _core.Settings.SfIdxRightGravityButton = SfIn("sfRightGravityBtn",  _core.Settings.SfIdxRightGravityButton);
+                _core.Settings.SfIdxLeftResetButton    = SfIn("sfIdxLeftResetBtn",     _core.Settings.SfIdxLeftResetButton);
+                _core.Settings.SfIdxRightResetButton   = SfIn("sfIdxRightResetBtn",    _core.Settings.SfIdxRightResetButton);
+                _core.Settings.SfIdxLeftDragButton     = SfIn("sfIdxLeftDragBtn",      _core.Settings.SfIdxLeftDragButton);
+                _core.Settings.SfIdxRightDragButton    = SfIn("sfIdxRightDragBtn",      _core.Settings.SfIdxRightDragButton);
+                _core.Settings.SfIdxLeftGravityButton  = SfIn("sfIdxLeftGravityBtn",   _core.Settings.SfIdxLeftGravityButton);
+                _core.Settings.SfIdxRightGravityButton = SfIn("sfIdxRightGravityBtn",  _core.Settings.SfIdxRightGravityButton);
             }
             else
             {
@@ -2186,10 +2190,10 @@ public class AuthController
             _core.Settings.StAutoStartVR = data["stAutoStartVR"]?.Value<bool>()  ?? _core.Settings.StAutoStartVR;
             if (vrIdx)
             {
-                _core.Settings.StIdxLeftTurnButton   = SfIn("stLeftTurnBtn",   _core.Settings.StIdxLeftTurnButton);
-                _core.Settings.StIdxRightTurnButton  = SfIn("stRightTurnBtn",  _core.Settings.StIdxRightTurnButton);
-                _core.Settings.StIdxLeftResetButton  = SfIn("stLeftResetBtn",  _core.Settings.StIdxLeftResetButton);
-                _core.Settings.StIdxRightResetButton = SfIn("stRightResetBtn", _core.Settings.StIdxRightResetButton);
+                _core.Settings.StIdxLeftTurnButton   = SfIn("stIdxLeftTurnBtn",   _core.Settings.StIdxLeftTurnButton);
+                _core.Settings.StIdxRightTurnButton  = SfIn("stIdxRightTurnBtn",  _core.Settings.StIdxRightTurnButton);
+                _core.Settings.StIdxLeftResetButton  = SfIn("stIdxLeftResetBtn",  _core.Settings.StIdxLeftResetButton);
+                _core.Settings.StIdxRightResetButton = SfIn("stIdxRightResetBtn", _core.Settings.StIdxRightResetButton);
             }
             else
             {
@@ -2197,6 +2201,29 @@ public class AuthController
                 _core.Settings.StRightTurnButton  = SfIn("stRightTurnBtn",  _core.Settings.StRightTurnButton);
                 _core.Settings.StLeftResetButton  = SfIn("stLeftResetBtn",  _core.Settings.StLeftResetButton);
                 _core.Settings.StRightResetButton = SfIn("stRightResetBtn", _core.Settings.StRightResetButton);
+            }
+
+            _core.Settings.SwMultiplier  = data["swMultiplier"]?.Value<float>() ?? _core.Settings.SwMultiplier;
+            _core.Settings.SwSmoothing   = data["swSmoothing"]?.Value<float>()  ?? _core.Settings.SwSmoothing;
+            _core.Settings.SwMomentum    = data["swMomentum"]?.Value<float>()   ?? _core.Settings.SwMomentum;
+            _core.Settings.SwInvert      = data["swInvert"]?.Value<bool>()      ?? _core.Settings.SwInvert;
+            _core.Settings.SwLockPitch   = data["swLockPitch"]?.Value<bool>()   ?? _core.Settings.SwLockPitch;
+            _core.Settings.SwLockRoll    = data["swLockRoll"]?.Value<bool>()    ?? _core.Settings.SwLockRoll;
+            _core.Settings.SwLockYaw     = data["swLockYaw"]?.Value<bool>()     ?? _core.Settings.SwLockYaw;
+            _core.Settings.SwAutoStartVR = data["swAutoStartVR"]?.Value<bool>() ?? _core.Settings.SwAutoStartVR;
+            if (vrIdx)
+            {
+                _core.Settings.SwIdxLeftWalkButton   = SfIn("swLeftWalkBtn",   _core.Settings.SwIdxLeftWalkButton);
+                _core.Settings.SwIdxRightWalkButton  = SfIn("swRightWalkBtn",  _core.Settings.SwIdxRightWalkButton);
+                _core.Settings.SwIdxLeftResetButton  = SfIn("swLeftResetBtn",  _core.Settings.SwIdxLeftResetButton);
+                _core.Settings.SwIdxRightResetButton = SfIn("swRightResetBtn", _core.Settings.SwIdxRightResetButton);
+            }
+            else
+            {
+                _core.Settings.SwLeftWalkButton   = SfIn("swLeftWalkBtn",   _core.Settings.SwLeftWalkButton);
+                _core.Settings.SwRightWalkButton  = SfIn("swRightWalkBtn",  _core.Settings.SwRightWalkButton);
+                _core.Settings.SwLeftResetButton  = SfIn("swLeftResetBtn",  _core.Settings.SwLeftResetButton);
+                _core.Settings.SwRightResetButton = SfIn("swRightResetBtn", _core.Settings.SwRightResetButton);
             }
             _core.Settings.ChatboxAutoStart = data["chatboxAutoStart"]?.Value<bool>() ?? false;
             _core.Settings.SfAutoStart = data["sfAutoStart"]?.Value<bool>() ?? false;
@@ -2265,6 +2292,7 @@ public class AuthController
             _core.Settings.RelayAutoStartDesktop   = data["relayAutoStartDesktop"]?.Value<bool>()   ?? false;
             _core.Settings.YtAutoStartVR           = data["ytAutoStartVR"]?.Value<bool>()           ?? false;
             _core.Settings.YtAutoStartDesktop      = data["ytAutoStartDesktop"]?.Value<bool>()      ?? false;
+            _core.Settings.YtAutoStartSteam        = data["ytAutoStartSteam"]?.Value<bool>()        ?? false;
             _core.Settings.VfAutoStartVR           = data["vfAutoStartVR"]?.Value<bool>()           ?? false;
             _core.Settings.VfAutoStartDesktop      = data["vfAutoStartDesktop"]?.Value<bool>()      ?? false;
             _core.Settings.DpAutoStartVR           = data["dpAutoStartVR"]?.Value<bool>()           ?? false;
@@ -2305,7 +2333,6 @@ public class AuthController
             _core.Settings.ImgCacheLimitGb         = Math.Clamp(data["imgCacheLimitGb"]?.Value<int>() ?? 5, 5, 30);
             _core.Settings.ImgCacheOptimizeEnabled = data["imgCacheOptimizeEnabled"]?.Value<bool>() ?? true;
             _core.Settings.ImgMemoryOptimizeEnabled = data["imgMemoryOptimizeEnabled"]?.Value<bool>() ?? true;
-            _core.Settings.VrcPlusOptimizeEnabled   = data["vrcPlusOptimizeEnabled"]?.Value<bool>() ?? true;
             ImageCacheHelper.LimitGb         = _core.Settings.ImgCacheLimitGb;
             ImageCacheHelper.OptimizeEnabled = _core.Settings.ImgCacheOptimizeEnabled;
 
@@ -2439,15 +2466,24 @@ public class AuthController
             "zh_tw" => "zh-TW",
             "ru"    => "ru",
             "ko"  => "ko",
+            "uk"  => "uk",
             _ => "en"
         };
     }
 
-    private void SendTranslation(string? requestedLanguage)
+    private string? _lastSentLanguage;
+
+    private void SendTranslation(string? requestedLanguage, bool allowReuse = false)
     {
         try
         {
             var language = NormalizeLanguage(requestedLanguage);
+            if (allowReuse && language == _lastSentLanguage)
+            {
+                _core.SendToJS("translationData", new { language, reuse = true });
+                return;
+            }
+            _lastSentLanguage = null;
             var i18nDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "frontend", "i18n");
             var path = Path.Combine(i18nDir, $"{language}.json");
             var fallbackPath = Path.Combine(i18nDir, "en.json");
@@ -2458,6 +2494,7 @@ public class AuthController
                     : "{}";
             var translations = JObject.Parse(json);
             _core.SendToJS("translationData", new { language, translations });
+            _lastSentLanguage = language;
         }
         catch (Exception ex)
         {
@@ -2534,18 +2571,10 @@ public class AuthController
             "Steam", "steamapps", "libraryfolders.vdf");
         AddVdfLibraries(steamVdfWin, candidates, "launch.exe");
 #else
-        var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        var linuxSteamRoots = new[]
+        foreach (var library in VRCNext.Services.Helpers.VrcPathsHelper.SteamLibraries())
         {
-            Path.Combine(home, ".local", "share", "Steam"),
-            Path.Combine(home, ".steam", "steam"),
-            Path.Combine(home, ".steam", "root"),
-        };
-        foreach (var sr in linuxSteamRoots)
-        {
-            candidates.Add(Path.Combine(sr, "steamapps", "common", "VRChat", "VRChat.exe"));
-            candidates.Add(Path.Combine(sr, "steamapps", "common", "VRChat", "launch.exe"));
-            AddVdfLibraries(Path.Combine(sr, "steamapps", "libraryfolders.vdf"), candidates, "VRChat.exe");
+            candidates.Add(Path.Combine(library, "steamapps", "common", "VRChat", "VRChat.exe"));
+            candidates.Add(Path.Combine(library, "steamapps", "common", "VRChat", "launch.exe"));
         }
 #endif
         return candidates.FirstOrDefault(File.Exists);
@@ -2570,7 +2599,7 @@ public class AuthController
     internal static string DetectVrcPhotoDir()
     {
         var path = VrcPathsHelper.PhotoDir();
-        return Directory.Exists(path) ? path : "";
+        return path;
     }
 
     // Cache Send / Startup Refresh

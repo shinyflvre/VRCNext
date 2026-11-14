@@ -19,6 +19,23 @@ public class GroupsController
         lock (_deletedGroupIds) _deletedGroupIds.Add(groupId);
     }
 
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _groupOwnerNames = new();
+
+    private string ResolveGroupOwnerName(string ownerId, JArray members)
+    {
+        if (string.IsNullOrEmpty(ownerId)) return "";
+        var ownerMember = members.FirstOrDefault(m => m["userId"]?.ToString() == ownerId);
+        var name = ownerMember?["user"]?["displayName"]?.ToString() ?? ownerMember?["displayName"]?.ToString() ?? "";
+        if (!string.IsNullOrEmpty(name)) return name;
+        if (ownerId == _core.VrcApi.CurrentUserId)
+        {
+            name = _core.VrcApi.CurrentUserRaw?["displayName"]?.ToString() ?? "";
+            if (!string.IsNullOrEmpty(name)) return name;
+        }
+        if (_friends.TryGetNameImage(ownerId, out var friend) && !string.IsNullOrEmpty(friend.name)) return friend.name;
+        return _groupOwnerNames.TryGetValue(ownerId, out var known) ? known : "";
+    }
+
     private record GroupMemberPerms(
         bool CanPost, bool CanEvent, bool CanInvite, bool CanEdit,
         bool CanKick, bool CanBan, bool CanManageRoles, bool CanAssignRoles,
@@ -270,7 +287,7 @@ public class GroupsController
                 {
                     var ggCached = _core.TimeEngine.GetGroupDetail(ggId);
                     _memberPerms.TryGetValue(ggId, out var gp);
-                    if (ggCached != null)
+                    if (ggCached != null && msg["hasCache"]?.Value<bool>() != true)
                     {
                         var cachedPost  = string.IsNullOrEmpty(ggCached.LastPostJson)  ? null : Newtonsoft.Json.JsonConvert.DeserializeObject(ggCached.LastPostJson);
                         var cachedEvent = string.IsNullOrEmpty(ggCached.LastEventJson) ? null : Newtonsoft.Json.JsonConvert.DeserializeObject(ggCached.LastEventJson);
@@ -298,12 +315,21 @@ public class GroupsController
                     }
                     _ = Task.Run(async () =>
                     {
-                        var g = await _core.Groups.GetGroupAsync(ggId);
+                        bool ggDeleted;
+                        lock (_deletedGroupIds) ggDeleted = _deletedGroupIds.Contains(ggId);
+                        var ggKnown = !ggDeleted && (ggCached != null || gp != null);
+                        var groupTask = _core.Groups.GetGroupAsync(ggId);
+                        var instancesTask = ggKnown ? _core.Groups.GetGroupInstancesAsync(ggId) : null;
+                        var membersTask   = ggKnown ? _core.Groups.GetGroupMembersAsync(ggId) : null;
+                        var eventsTask    = ggKnown ? _core.Calendar.GetGroupEventsAsync(ggId) : null;
+                        var postsTask     = ggKnown && gp != null ? _core.Groups.GetGroupPostsAsync(ggId, publicOnly: false) : null;
+                        var g = await groupTask;
                         if (g != null)
                         {
                             // Save basic detail to DB immediately so future opens are instant
                             var saveId = g["id"]?.ToString() ?? "";
                             var earlyMember = g["myMember"] as JObject;
+                            var earlyOwnerId = g["ownerId"]?.ToString() ?? "";
                             _core.TimeEngine.SaveGroupDetail(
                                 saveId,
                                 g["name"]?.ToString() ?? "",
@@ -314,7 +340,8 @@ public class GroupsController
                                 g["memberCount"]?.Value<int>() ?? 0,
                                 g["privacy"]?.ToString() ?? "",
                                 g["joinState"]?.ToString() ?? "",
-                                g["ownerId"]?.ToString() ?? "", "",
+                                earlyOwnerId,
+                                ggCached != null && ggCached.OwnerId == earlyOwnerId ? ggCached.OwnerName ?? "" : "",
                                 g["rules"]?.ToString() ?? "",
                                 (g["languages"] as JArray)?.Select(x => x.ToString()).ToList() ?? new(),
                                 (g["links"]     as JArray)?.Select(x => x.ToString()).ToList() ?? new(),
@@ -324,39 +351,52 @@ public class GroupsController
                                 isRepresenting: earlyMember?["isRepresenting"]?.Value<bool>() ?? false);
 
                             bool isMember = g["myMember"] != null && g["myMember"]!.Type != JTokenType.Null;
-                            // Fetch additional data in parallel
-                            var postsTask = _core.Groups.GetGroupPostsAsync(ggId, publicOnly: !isMember);
-                            var instancesTask = _core.Groups.GetGroupInstancesAsync(ggId);
-                            var membersTask = _core.Groups.GetGroupMembersAsync(ggId);
-                            var eventsTask = _core.Calendar.GetGroupEventsAsync(ggId);
+                            if (postsTask == null || !isMember)
+                                postsTask = _core.Groups.GetGroupPostsAsync(ggId, publicOnly: !isMember);
+                            instancesTask ??= _core.Groups.GetGroupInstancesAsync(ggId);
+                            membersTask   ??= _core.Groups.GetGroupMembersAsync(ggId);
+                            eventsTask    ??= _core.Calendar.GetGroupEventsAsync(ggId);
 
-                            await Task.WhenAll(postsTask, instancesTask, membersTask, eventsTask);
+                            var galleryDefs = (g["galleries"] as JArray ?? new JArray())
+                                .Select(gal => (id: gal["id"]?.ToString() ?? "", name: gal["name"]?.ToString() ?? ""))
+                                .Where(x => !string.IsNullOrEmpty(x.id))
+                                .ToList();
+                            var galleryTasks = galleryDefs.Select(x => _core.Groups.GetGroupGalleryImagesAsync(ggId, x.id)).ToList();
+                            var galleriesTask = Task.WhenAll(galleryTasks);
 
+                            var members = await membersTask;
+                            var ownerId = earlyOwnerId;
+                            var ownerDisplayName = ResolveGroupOwnerName(ownerId, members);
+                            if (string.IsNullOrEmpty(ownerDisplayName) && !string.IsNullOrEmpty(ownerId))
+                            {
+                                var ownerUser = await _core.Users.GetUserAsync(ownerId);
+                                ownerDisplayName = ownerUser?["displayName"]?.ToString() ?? "";
+                                if (!string.IsNullOrEmpty(ownerDisplayName)) _groupOwnerNames[ownerId] = ownerDisplayName;
+                                else if (ggCached != null && ggCached.OwnerId == ownerId) ownerDisplayName = ggCached.OwnerName ?? "";
+                            }
+
+                            await Task.WhenAll(postsTask, instancesTask, eventsTask);
                             var posts = postsTask.Result;
                             var instances = instancesTask.Result;
-                            var members = membersTask.Result;
                             var events = eventsTask.Result;
 
-                            // Fetch gallery images for all galleries
-                            var galleries = g["galleries"] as JArray ?? new JArray();
                             var galleryImages = new List<object>();
-                            foreach (var gal in galleries)
+                            void CollectGalleryImages()
                             {
-                                var galId = gal["id"]?.ToString();
-                                var galName = gal["name"]?.ToString() ?? "";
-                                if (!string.IsNullOrEmpty(galId))
+                                for (int gi = 0; gi < galleryDefs.Count; gi++)
                                 {
-                                    var imgs = await _core.Groups.GetGroupGalleryImagesAsync(ggId, galId);
-                                    foreach (var img in imgs)
+                                    foreach (var img in galleryTasks[gi].Result)
                                     {
                                         galleryImages.Add(new {
                                             imageUrl = ImageCacheHelper.GetGroupUrl(img["id"]?.ToString(), img["imageUrl"]?.ToString()),
-                                            galleryName = galName,
+                                            galleryName = galleryDefs[gi].name,
                                             createdAt = img["createdAt"]?.ToString() ?? "",
                                         });
                                     }
                                 }
                             }
+                            var galleriesReady = galleriesTask.IsCompleted;
+                            if (galleriesReady) CollectGalleryImages();
 
                             var myMember = g["myMember"] as JObject;
                             var myPerms = myMember?["permissions"] as JArray ?? new JArray();
@@ -369,16 +409,6 @@ public class GroupsController
                             var canManageRoles = myPerms.Any(p => p.ToString() == "*" || p.ToString() == "group-roles-manage");
                             var canAssignRoles = myPerms.Any(p => p.ToString() == "*" || p.ToString() == "group-roles-manage" || p.ToString() == "group-roles-assign");
                             var canViewAudit   = myPerms.Any(p => p.ToString() == "*" || p.ToString() == "group-audit-view");
-
-                            var ownerId = g["ownerId"]?.ToString() ?? "";
-                            var ownerMember = members.FirstOrDefault(m => m["userId"]?.ToString() == ownerId);
-                            var ownerDisplayName = ownerMember?["user"]?["displayName"]?.ToString()
-                                ?? ownerMember?["displayName"]?.ToString() ?? "";
-                            if (string.IsNullOrEmpty(ownerDisplayName) && !string.IsNullOrEmpty(ownerId))
-                            {
-                                var ownerUser = await _core.Users.GetUserAsync(ownerId);
-                                ownerDisplayName = ownerUser?["displayName"]?.ToString() ?? "";
-                            }
 
                             var firstPost  = posts.Cast<JObject>().FirstOrDefault();
                             var firstEvent = events.Cast<JObject>().FirstOrDefault();
@@ -496,6 +526,13 @@ public class GroupsController
                                 }),
                                 rawJson = g,
                             });
+                            if (!galleriesReady)
+                            {
+                                await galleriesTask;
+                                CollectGalleryImages();
+                                if (galleryImages.Count > 0)
+                                    _core.SendToJS("vrcGroupDetail", new { id = g["id"]?.ToString() ?? "", _partial = true, galleryImages });
+                            }
                         }
                         else
                         {

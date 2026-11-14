@@ -9,24 +9,25 @@ const NAV_ITEMS_DEF = {
     'timeline':         { icon: 'timeline',        tab: 12, i18n: 'nav.timeline',           label: 'Timeline'         },
     'media-library':    { icon: 'photo_library',   tab: 7,  i18n: 'nav.media_library',      label: 'Media Library',    badge: 'library'  },
     'settings':         { icon: 'settings',        tab: 9,  i18n: 'nav.settings',           label: 'Settings'         },
-    'chatbox':          { icon: 'chat',            tab: 5,  i18n: 'nav.custom_chatbox',     label: 'Custom Chatbox',   windowsOnly: true },
-    'media-relay':      { icon: 'cell_tower',      tab: 6,  i18n: 'nav.media_relay',        label: 'Media Relay',      windowsOnly: true },
-    'space-flight':     { icon: 'rocket_launch',   tab: 10, i18n: 'nav.space_flight',       label: 'Space Flight',     windowsOnly: true },
-    'space-turn':       { icon: 'rotate_right',    tab: 28, i18n: 'nav.space_turn',         label: 'Space Turn',       windowsOnly: true, defaultFolder: 'folder-tools' },
+    'chatbox':          { icon: 'chat',            tab: 5,  i18n: 'nav.custom_chatbox',     label: 'Custom Chatbox'   },
+    'media-relay':      { icon: 'cell_tower',      tab: 6,  i18n: 'nav.media_relay',        label: 'Media Relay'       },
+    'space-flight':     { icon: 'rocket_launch',   tab: 10, i18n: 'nav.space_flight',       label: 'Space Flight'      },
+    'space-turn':       { icon: 'rotate_right',    tab: 28, i18n: 'nav.space_turn',         label: 'Space Turn',       defaultFolder: 'folder-tools' },
+    'space-walk':       { icon: 'orbit',           tab: 30, i18n: 'nav.space_walk',       label: 'Space Walk',       defaultFolder: 'folder-tools' },
     'frame-shot':       { icon: 'photo_camera',    tab: 26, i18n: 'nav.frame_shot',         label: 'FrameShot',        windowsOnly: true },
-    'osc-tool':         { icon: 'tune',            tab: 11, i18n: 'nav.osc_tool',           label: 'OSC Tool',         windowsOnly: true },
-    'youtube-fix':      { icon: 'smart_display',   tab: 14, i18n: 'nav.youtube_fix',        label: 'YouTube Fix',      windowsOnly: true },
+    'osc-tool':         { icon: 'tune',            tab: 11, i18n: 'nav.osc_tool',           label: 'OSC Tool'          },
+    'youtube-fix':      { icon: 'smart_display',   tab: 14, i18n: 'nav.youtube_fix',        label: 'YouTube Fix'       },
     'activity-log':     { icon: 'article',         tab: 8,  i18n: 'nav.activity_log',       label: 'Activity Log'     },
     'mutual-network':   { icon: 'hub',             tab: 15, i18n: 'nav.mutual_network',     label: 'Mutual Network'   },
     'meet-network':     { icon: 'handshake',       tab: 29, i18n: 'nav.meet_network',       label: 'Meet Network'     },
     'time-spent':       { icon: 'schedule',        tab: 16, i18n: 'nav.time_spent',         label: 'Time Spent'       },
     'voice-fight':      { icon: 'mic',             tab: 18, i18n: 'nav.voice_fight',        label: 'Voice Fight',      windowsOnly: true },
-    'discord-presence': { icon: 'sensors',         tab: 19, i18n: 'nav.discord_presence',   label: 'Discord Presence', windowsOnly: true },
+    'discord-presence': { icon: 'sensors',         tab: 19, i18n: 'nav.discord_presence',   label: 'Discord Presence' },
     'vr-overlay':       { icon: 'watch',           tab: 20, i18n: 'nav.vr_overlay',         label: 'VR Overlay',       windowsOnly: true },
     'permini':          { icon: 'lock',            tab: 21, i18n: 'nav.permini',            label: 'Permini'          },
     'kikitan-xd':       { icon: 'translate',       tab: 22, i18n: 'nav.kikitan_xd',         label: 'Kikitan XD',       windowsOnly: true },
     'event-snipe':      { icon: 'gps_fixed',       tab: 23, i18n: 'nav.event_snipe',        label: 'Event Snipe'      },
-    'avatar-scaling':   { icon: 'height',          tab: 24, i18n: 'nav.avatar_scaling',     label: 'Avatar Scaling',   windowsOnly: true },
+    'avatar-scaling':   { icon: 'height',          tab: 24, i18n: 'nav.avatar_scaling',     label: 'Avatar Scaling' },
     'action-flow':      { icon: 'auto_awesome',    tab: 25, i18n: 'nav.action_flow',        label: 'Action Flow'      },
     'status-schedule':  { icon: 'event_available', tab: 27, i18n: 'nav.status_schedule',    label: 'Status Schedule',  defaultFolder: 'folder-tools' },
 };
@@ -85,7 +86,7 @@ const NAV_DEFAULT_LAYOUT = [
     {
         type: 'folder', id: 'folder-tools', name: 'Tools', icon: 'adjust',
         items: [
-            'chatbox','media-relay','space-flight','space-turn','frame-shot','osc-tool','youtube-fix',
+            'chatbox','media-relay','space-flight','space-turn','space-walk','frame-shot','osc-tool','youtube-fix',
             'activity-log','mutual-network','meet-network','time-spent','voice-fight',
             'discord-presence','vr-overlay','permini','kikitan-xd','event-snipe','avatar-scaling','action-flow',
             'status-schedule',
@@ -138,14 +139,35 @@ function navSaveLayout(layout, hidden, start = 'dashboard') {
 // Apply the configured start page on app launch. No-op for the default (Dashboard,
 // which is already the active tab) or when the page is hidden / unavailable.
 function navApplyStartPage() {
+    const diagnostic = window.__vrcnStartupDiagnostic;
+    const record = state => {
+        window.__vrcnStartupNavigationState = state;
+        if (typeof diagnostic === 'function') diagnostic(`startup navigation ${state}`);
+    };
     try {
         const { hidden, start } = navLoadLayout();
-        if (!start || start === 'dashboard') return;
+        if (!start || start === 'dashboard') {
+            record('completed start=dashboard active=' + (document.querySelector('.tab.active')?.id || 'none'));
+            return;
+        }
         const def = NAV_ITEMS_DEF[start];
-        if (!def || hidden.includes(start)) return;
-        if (def.windowsOnly && typeof _navIsLinux !== 'undefined' && _navIsLinux) return;
+        if (!def) {
+            record(`skipped invalid-start=${start}`);
+            return;
+        }
+        if (hidden.includes(start)) {
+            record(`skipped hidden-start=${start}`);
+            return;
+        }
+        if (def.windowsOnly && typeof _navIsLinux !== 'undefined' && _navIsLinux) {
+            record(`skipped linux-unavailable-start=${start}`);
+            return;
+        }
         if (typeof showTab === 'function') showTab(def.tab);
-    } catch { /* ignore */ }
+        record(`completed start=${start} tab=${def.tab} active=${document.querySelector('.tab.active')?.id || 'none'}`);
+    } catch (error) {
+        record(`failed error=${error?.message || error}`);
+    }
 }
 
 function navSanitizeLayout(layout, hidden = []) {

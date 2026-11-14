@@ -136,7 +136,7 @@ public class StatusScheduleController : IDisposable
 
     // Evaluation
 
-    private async Task EvaluateAsync()
+    private async Task EvaluateAsync(bool force = false)
     {
         if (!_settings.Enabled || !_core.VrcApi.IsLoggedIn)
         {
@@ -167,7 +167,7 @@ public class StatusScheduleController : IDisposable
             return;
         }
 
-        if (_activeRuleId == rule.Id) return;
+        if (_activeRuleId == rule.Id && !force) return;
 
         var current        = _core.VrcApi.CurrentUserRaw;
         var currentStatus  = current?["status"]?.ToString() ?? "";
@@ -249,8 +249,7 @@ public class StatusScheduleController : IDisposable
                     _core.SendToJS("ssSaveResult", new { ok = true, count = _settings.Rules.Count });
 
                 // A changed rule set can invalidate the active window immediately.
-                _activeRuleId = null;
-                await EvaluateAsync();
+                await EvaluateAsync(force: true);
                 _lastPushedRuleId = _activeRuleId;
                 SendState();
                 break;
@@ -262,8 +261,7 @@ public class StatusScheduleController : IDisposable
                 _settings.Save();
                 if (_settings.LastSaveError != null)
                     Log("enabled save failed: " + _settings.LastSaveError, "err");
-                _activeRuleId = null;
-                await EvaluateAsync();
+                await EvaluateAsync(force: true);
                 _lastPushedRuleId = _activeRuleId;
                 SendState();
                 break;

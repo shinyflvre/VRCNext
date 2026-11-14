@@ -140,8 +140,8 @@ function renderVrcProfile(u) {
         : `<div class="vrc-avatar" style="display:flex;align-items:center;justify-content:center;font-size:calc(13px + var(--fs-off, 0px));font-weight:700;color:var(--tx0)">${esc((u.displayName || '?')[0])}</div>`;
     const ownStatusCls = statusDotClass(u.status);
     const ownDotShape = u.vrcRunning ? 'vrc-status-dot' : 'vrc-status-ring';
-    const ownAvatarWrap = `<div class="vrc-profile-avatar-wrap">${imgTag}${(typeof iconFrameHtml === 'function') ? iconFrameHtml(u.iconFrameUrl, true) : ''}<span class="vrc-friend-status-badge ${ownDotShape} ${ownStatusCls}"></span></div>`;
-    a.innerHTML = `<div class="vrc-profile deco-self" data-status="${ownStatusCls}" onclick="openMyProfileModal()">${(typeof nameplateDecoHtml === 'function') ? nameplateDecoHtml(u.nameplateUrl, true) : ''}${ownAvatarWrap}<div class="vrc-profile-info"><div class="vrc-profile-name">${esc(u.displayName)}</div><div class="vrc-profile-status">${getStatusText(u.status, u.statusDescription)}</div></div><span class="msi" style="font-size:16px;color:var(--tx2);flex-shrink:0;">manage_accounts</span></div>`;
+    const ownAvatarWrap = `<div class="vrc-profile-avatar-wrap">${imgTag}${(typeof iconFrameHtml === 'function') ? iconFrameHtml(u.iconFrameUrl) : ''}<span class="vrc-friend-status-badge ${ownDotShape} ${ownStatusCls}"></span></div>`;
+    a.innerHTML = `<div class="vrc-profile deco-self" data-status="${ownStatusCls}" onclick="openMyProfileModal()">${(typeof nameplateDecoHtml === 'function') ? nameplateDecoHtml(u.nameplateUrl) : ''}${ownAvatarWrap}<div class="vrc-profile-info"><div class="vrc-profile-name">${esc(u.displayName)}</div><div class="vrc-profile-status">${getStatusText(u.status, u.statusDescription)}</div></div><span class="msi" style="font-size:16px;color:var(--tx2);flex-shrink:0;">manage_accounts</span></div>`;
 }
 
 function onVrcRunningChanged(payload) {

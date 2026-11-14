@@ -7,6 +7,9 @@ namespace VRCNext.Services;
 // Watchdog mode — runs as a detached child process, monitors the main VRCNext PID for Crash handling. Only a Test ver rn.
 internal static class WatchdogRunner
 {
+    [DllImport("psapi.dll")]
+    private static extern bool EmptyWorkingSet(nint hProcess);
+
     public static void Run(string[] args)
     {
         if (args.Length < 4) return;
@@ -18,6 +21,10 @@ internal static class WatchdogRunner
         try
         {
             var proc = Process.GetProcessById(targetPid);
+            if (OperatingSystem.IsWindows())
+            {
+                try { using var self = Process.GetCurrentProcess(); EmptyWorkingSet(self.Handle); } catch { }
+            }
             proc.WaitForExit();
             try { exitCode = proc.ExitCode; } catch { }
         }

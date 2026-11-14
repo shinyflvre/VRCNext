@@ -31,8 +31,11 @@ namespace VRCNext
         private const int MIN_INTERVAL_MS = 1500;
 
         private UdpClient? _udp;
+        private readonly object _udpLock = new();
         private CancellationTokenSource? _cts;
         private bool _running;
+        private bool _loggedOscSend;
+        private string _lastMediaError = "";
 
         // Config
         public bool Enabled { get; set; }
@@ -126,11 +129,10 @@ namespace VRCNext
         public void Start()
         {
             if (_running) return;
-            _running = true;
+            lock (_udpLock) _udp ??= new UdpClient();
             _cts = new CancellationTokenSource();
-            _udp = new UdpClient();
-            _udp.Connect(IPAddress.Parse(OSC_IP), OSC_PORT);
-            _log("[Chatbox] Started");
+            _running = true;
+            _log($"[Chatbox] Started; OSC target {OSC_IP}:{OSC_PORT}");
             _ = RunLoopAsync(_cts.Token);
         }
 
@@ -139,8 +141,12 @@ namespace VRCNext
             if (!_running) return;
             _running = false;
             _cts?.Cancel();
-            try { SendOscChatbox("", true); } catch { }
-            _udp?.Close(); _udp = null;
+            SendOscChatbox("", true);
+            lock (_udpLock)
+            {
+                _udp?.Dispose();
+                _udp = null;
+            }
             _log("[Chatbox] Stopped");
         }
 
@@ -677,55 +683,111 @@ namespace VRCNext
             }
             catch (Exception ex) { _log($"[Chatbox/SMTC] Exception: {ex.GetType().Name}: {ex.Message}"); IsPlaying = false; }
 #else
-            // MPRIS2 via playerctl — works on KDE Plasma, GNOME, and most Linux DEs
+            // MPRIS2 via playerctl — supports multiple players without shell parsing.
             try
             {
-                // Single call: tab-separated status, title, artist, length(µs), position(µs)
+                const char separator = '\u001f';
                 var raw = await RunProcessAsync("playerctl",
-                    "--format={{status}}\t{{title}}\t{{artist}}\t{{mpris:length}}\t{{mpris:position}} metadata");
-                var cols = raw.Trim().Split('\t');
-                if (cols.Length < 2 || string.IsNullOrWhiteSpace(cols[0]))
+                    "--all-players", "metadata", "--format",
+                    $"{{{{playerName}}}}{separator}{{{{status}}}}{separator}{{{{title}}}}{separator}{{{{artist}}}}{separator}{{{{mpris:length}}}}");
+                var tracks = raw.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Select(line => line.Split(separator))
+                    .Where(columns => columns.Length >= 5 && !string.IsNullOrWhiteSpace(columns[2]))
+                    .Select(columns => new
+                    {
+                        Player = columns[0],
+                        Status = columns[1],
+                        Title = columns[2].Trim(),
+                        Artist = columns[3].Trim(),
+                        DurationUs = long.TryParse(columns[4].Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var duration) ? duration : 0L
+                    })
+                    .OrderByDescending(track => string.Equals(track.Status, "Playing", StringComparison.OrdinalIgnoreCase))
+                    .ThenByDescending(track => track.DurationUs >= 30_000_000)
+                    .ThenByDescending(track => track.DurationUs)
+                    .ToList();
+                var selected = tracks.FirstOrDefault();
+                if (selected == null)
                 {
                     IsPlaying = false; CurrentTitle = ""; CurrentArtist = "";
+                    CurrentPosition = TimeSpan.Zero; CurrentDuration = TimeSpan.Zero;
                     return;
                 }
-                IsPlaying = cols[0].Trim() == "Playing";
-                CurrentTitle  = cols.Length > 1 ? cols[1].Trim() : "";
-                CurrentArtist = cols.Length > 2 ? cols[2].Trim() : "";
-                if (cols.Length > 3 && long.TryParse(cols[3].Trim(), out long lenUs))
-                    CurrentDuration = TimeSpan.FromMicroseconds(lenUs);
-                if (cols.Length > 4 && long.TryParse(cols[4].Trim().Split(' ')[0], out long posUs))
-                    CurrentPosition = TimeSpan.FromMicroseconds(posUs);
+                IsPlaying = string.Equals(selected.Status, "Playing", StringComparison.OrdinalIgnoreCase);
+                CurrentTitle = selected.Title;
+                CurrentArtist = selected.Artist;
+                CurrentDuration = TimeSpan.FromMicroseconds(Math.Max(0, selected.DurationUs));
+                var position = await RunProcessAsync("playerctl", "--player", selected.Player, "position");
+                if (double.TryParse(position, NumberStyles.Float, CultureInfo.InvariantCulture, out var positionSeconds)
+                    && double.IsFinite(positionSeconds) && positionSeconds >= 0)
+                    CurrentPosition = TimeSpan.FromSeconds(positionSeconds);
+                _lastMediaError = "";
             }
-            catch { IsPlaying = false; }
+            catch (Exception ex)
+            {
+                IsPlaying = false;
+                CurrentTitle = ""; CurrentArtist = "";
+                CurrentPosition = TimeSpan.Zero; CurrentDuration = TimeSpan.Zero;
+                if (_lastMediaError != ex.Message)
+                {
+                    _log($"[Chatbox] Linux media query failed: {ex.Message}");
+                    _lastMediaError = ex.Message;
+                }
+            }
 #endif
         }
 
 #if !WINDOWS
-        private static async Task<string> RunProcessAsync(string exe, string args)
+        private static async Task<string> RunProcessAsync(string exe, params string[] args)
         {
             using var proc = new Process
             {
-                StartInfo = new ProcessStartInfo(exe, args)
+                StartInfo = new ProcessStartInfo(exe)
                 {
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
-                    RedirectStandardError = true,
                     CreateNoWindow = true
                 }
             };
-            proc.Start();
-            var output = await proc.StandardOutput.ReadToEndAsync();
-            await proc.WaitForExitAsync();
-            return output;
+            foreach (var arg in args) proc.StartInfo.ArgumentList.Add(arg);
+            if (!proc.Start()) throw new InvalidOperationException($"Could not start {exe}");
+            var outputTask = proc.StandardOutput.ReadToEndAsync();
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+            try
+            {
+                await proc.WaitForExitAsync(timeout.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                try { proc.Kill(entireProcessTree: true); } catch { }
+                throw new TimeoutException($"{exe} timed out");
+            }
+            var output = await outputTask;
+            return proc.ExitCode == 0 ? output.Trim() : "";
         }
 #endif
 
         private void SendOscChatbox(string text, bool suppressSound = true)
         {
-            if (_udp == null) return;
-            try { var p = BuildOscMessage("/chatbox/input", text, true, !suppressSound); _udp.Send(p, p.Length); }
-            catch (Exception ex) { _log($"[Chatbox] OSC send error: {ex.Message}"); }
+            lock (_udpLock)
+            {
+                try
+                {
+                    _udp ??= new UdpClient();
+                    var packet = BuildOscMessage("/chatbox/input", text, true, !suppressSound);
+                    var sent = _udp.Send(packet, packet.Length, new IPEndPoint(IPAddress.Parse(OSC_IP), OSC_PORT));
+                    if (!_loggedOscSend)
+                    {
+                        _loggedOscSend = true;
+                        _log($"[Chatbox] Sent first OSC chatbox packet ({sent} bytes)");
+                    }
+                }
+                catch (Exception ex) when (ex is SocketException or ObjectDisposedException or ArgumentException)
+                {
+                    _log($"[Chatbox] OSC send error: {ex.Message}");
+                    _udp?.Dispose();
+                    _udp = null;
+                }
+            }
         }
 
         private static byte[] BuildOscMessage(string address, string text, bool sendImmediate, bool notifySound)
@@ -785,15 +847,16 @@ namespace VRCNext
         public void SendDirect(string text)
         {
             if (string.IsNullOrEmpty(text)) return;
-            bool ownUdp = _udp == null;
-            if (ownUdp)
-            {
-                _udp = new UdpClient();
-                _udp.Connect(IPAddress.Parse(OSC_IP), OSC_PORT);
-            }
             SendOscChatbox(text, SuppressNotifSound);
-            if (ownUdp) { _udp?.Close(); _udp = null; }
-            else Interlocked.Exchange(ref _pauseUntilTick, Environment.TickCount64 + 10_000);
+            if (_running) Interlocked.Exchange(ref _pauseUntilTick, Environment.TickCount64 + 10_000);
+            else
+            {
+                lock (_udpLock)
+                {
+                    _udp?.Dispose();
+                    _udp = null;
+                }
+            }
         }
 
         public void PauseDirectSend(int ms)
