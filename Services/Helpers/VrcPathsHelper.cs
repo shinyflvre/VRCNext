@@ -42,17 +42,22 @@ public static class VrcPathsHelper
 #if WINDOWS
         var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), "VRChat");
 #else
-        var pfx = FindProtonPrefix();
-        string dir = "";
-        if (pfx != null)
+        var candidates = new List<string>();
+        foreach (var lib in SteamLibraries())
         {
-            var p1 = Path.Combine(pfx, "drive_c", "users", "steamuser", "My Pictures", "VRChat");
-            var p2 = Path.Combine(pfx, "drive_c", "users", "steamuser", "Pictures", "VRChat");
-            if (Directory.Exists(p1)) dir = p1;
-            else if (Directory.Exists(p2)) dir = p2;
+            var pfx = Path.Combine(lib, "steamapps", "compatdata", VrcSteamAppId, "pfx");
+            if (!Directory.Exists(pfx)) continue;
+            foreach (var user in new[] { "steamuser", "SteamUser" })
+            {
+                var userDir = Path.Combine(pfx, "drive_c", "users", user);
+                candidates.Add(Path.Combine(userDir, "Pictures", "VRChat"));
+                candidates.Add(Path.Combine(userDir, "My Pictures", "VRChat"));
+            }
         }
-        if (dir.Length == 0)
-            dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Pictures", "VRChat");
+        var userPictures = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        candidates.Add(Path.Combine(userPictures, "Pictures", "VRChat"));
+        candidates.Add(Path.Combine(userPictures, "My Pictures", "VRChat"));
+        var dir = candidates.FirstOrDefault(Directory.Exists) ?? candidates.FirstOrDefault()!;
 #endif
         _cachedPhotoDir = dir;
         _cachedPhotoDirAt = DateTime.UtcNow;
@@ -103,19 +108,24 @@ public static class VrcPathsHelper
     {
         if (_cachedPrefix != null && (DateTime.UtcNow - _cachedPrefixAt).TotalMinutes < 5)
             return _cachedPrefix;
-        foreach (var lib in SteamLibraries())
+        foreach (var pfx in ProtonPrefixes())
         {
-            var pfx = Path.Combine(lib, "steamapps", "compatdata", VrcSteamAppId, "pfx");
-            if (Directory.Exists(pfx))
-            {
-                _cachedPrefix = pfx;
-                _cachedPrefixAt = DateTime.UtcNow;
-                return pfx;
-            }
+            _cachedPrefix = pfx;
+            _cachedPrefixAt = DateTime.UtcNow;
+            return pfx;
         }
         _cachedPrefix = null;
         _cachedPrefixAt = DateTime.UtcNow;
         return null;
+    }
+
+    private static IEnumerable<string> ProtonPrefixes()
+    {
+        foreach (var lib in SteamLibraries())
+        {
+            var pfx = Path.Combine(lib, "steamapps", "compatdata", VrcSteamAppId, "pfx");
+            if (Directory.Exists(pfx)) yield return pfx;
+        }
     }
 
     public static IEnumerable<string> SteamLibraries()

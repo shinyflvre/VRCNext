@@ -70,6 +70,15 @@ internal static class CrashHandler
 
     [DllImport("kernel32.dll", SetLastError = true)]
     private static extern bool SetStdHandle(int nStdHandle, nint hHandle);
+#else
+    [DllImport("libc", SetLastError = true)]
+    private static extern int open(string pathname, int flags, uint mode);
+
+    [DllImport("libc", SetLastError = true)]
+    private static extern int dup2(int oldfd, int newfd);
+
+    [DllImport("libc", SetLastError = true)]
+    private static extern int close(int fd);
 #endif
 
     private static void RedirectStderr(string logsDir)
@@ -109,6 +118,35 @@ internal static class CrashHandler
                 SetStdHandle(STD_ERROR_HANDLE, handle);
         }
         catch { }
+#else
+        if (OperatingSystem.IsLinux())
+        {
+            if (Environment.GetEnvironmentVariable("VRCNEXT_DEBUG") == "1")
+                return;
+
+            try
+            {
+                _stderrPath = Path.Combine(logsDir, $"stderr_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.txt");
+                const int O_WRONLY = 0x1;
+                const int O_CREAT = 0x40;
+                const int O_TRUNC = 0x200;
+                var fd = open(_stderrPath, O_WRONLY | O_CREAT | O_TRUNC, 0x180);
+                if (fd < 0)
+                {
+                    _stderrPath = "";
+                    return;
+                }
+                try
+                {
+                    if (dup2(fd, 2) < 0) _stderrPath = "";
+                }
+                finally
+                {
+                    close(fd);
+                }
+            }
+            catch { _stderrPath = ""; }
+        }
 #endif
     }
 

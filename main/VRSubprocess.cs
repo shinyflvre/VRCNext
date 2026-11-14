@@ -58,7 +58,9 @@ static class VRSubprocess
 
         var sf = new SteamVRService(Log);
 
+#if WINDOWS
         var fs = new FrameShotService(Log);
+#endif
 
         vro.OnStateUpdate += d =>
         {
@@ -576,11 +578,11 @@ static class VRSubprocess
         }
     }
 
+    private static string S(JToken t, string k, string def = "") => t[k]?.Value<string>() ?? def;
     private static bool   B(JToken t, string k, bool   def = false) => t[k]?.Value<bool>()   ?? def;
     private static int    I(JToken t, string k, int    def = 0)     => t[k]?.Value<int>()    ?? def;
     private static float  F(JToken t, string k, float  def = 0f)    => t[k]?.Value<float>()  ?? def;
     private static double D(JToken t, string k, double def = 0)     => t[k]?.Value<double>() ?? def;
-    private static string S(JToken t, string k, string def = "")    => t[k]?.Value<string>() ?? def;
     private static string? SN(JToken t, string k) => t[k]?.Type == JTokenType.Null ? null : t[k]?.Value<string>();
 
     private static List<uint> UList(JToken t, string k)
@@ -592,9 +594,80 @@ static class VRSubprocess
     }
 }
 #else
+using System.Text;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using VRCNext.Services;
+
 namespace VRCNext;
+
 static class VRSubprocess
 {
-    public static void Run() { }
+    private static readonly object _writeLock = new();
+
+    public static void Run()
+    {
+        Console.InputEncoding = Encoding.UTF8;
+        Console.OutputEncoding = Encoding.UTF8;
+        var initLine = Console.ReadLine();
+        if (string.IsNullOrWhiteSpace(initLine)) return;
+        JObject init;
+        try { init = JObject.Parse(initLine); }
+        catch (JsonException ex) { SendLine("log", new { text = $"[Sub] Invalid initialization message: {ex.Message}" }); return; }
+
+        void Log(string text) => SendLine("log", new { text });
+        VrInputActions.SetRequested((init["inputMode"]?.Value<int>() ?? 0) == 1);
+        using var steamVr = new SteamVRService(Log);
+        steamVr.SetUpdateCallback(state => SendLine("sf_update", state));
+        steamVr.SetTurnUpdateCallback(state => SendLine("st_update", state));
+        steamVr.OnVRQuit += () => Environment.Exit(0);
+
+        string? line;
+        while ((line = Console.ReadLine()) != null)
+        {
+            if (string.IsNullOrWhiteSpace(line)) continue;
+            try { Dispatch(JObject.Parse(line), steamVr); }
+            catch (Exception ex) { Log($"[Sub] Dispatch error: {ex.Message}"); }
+        }
+    }
+
+    private static void Dispatch(JObject cmd, SteamVRService steamVr)
+    {
+        switch (cmd["t"]?.Value<string>() ?? "")
+        {
+            case "vr_input_mode":
+                VrInputActions.SetRequested(cmd["mode"]?.Value<int>() == 1);
+                if (VrInputActions.Requested && Valve.VR.OpenVR.System != null)
+                    VrInputActions.Initialize(s => SendLine("log", new { text = s }));
+                break;
+            case "sf_connect":
+                if (!steamVr.Connect()) { SendLine("sf_update", new { connected = false, dragging = false, offsetX = 0, offsetY = 0, offsetZ = 0, leftController = false, rightController = false, error = steamVr.LastError }); break; }
+                steamVr.DragEnabled = true;
+                steamVr.ApplyConfig(F(cmd,"multiplier",1f), B(cmd,"lockX"), B(cmd,"lockY"), B(cmd,"lockZ"), U(cmd,"leftResetBtn",32), U(cmd,"rightResetBtn"), U(cmd,"leftDragBtn"), U(cmd,"rightDragBtn",32), U(cmd,"leftGravityBtn"), U(cmd,"rightGravityBtn"), F(cmd,"gravity",9.8f));
+                steamVr.StartPolling();
+                break;
+            case "sf_disconnect": steamVr.DragEnabled = false; if (!steamVr.TurnEnabled) steamVr.Disconnect(); break;
+            case "sf_config": steamVr.ApplyConfig(F(cmd,"multiplier",1f), B(cmd,"lockX"), B(cmd,"lockY"), B(cmd,"lockZ"), U(cmd,"leftResetBtn",32), U(cmd,"rightResetBtn"), U(cmd,"leftDragBtn"), U(cmd,"rightDragBtn",32), U(cmd,"leftGravityBtn"), U(cmd,"rightGravityBtn"), F(cmd,"gravity",9.8f)); break;
+            case "sf_reset": steamVr.ResetPosition(); break;
+            case "st_connect":
+                if (!steamVr.Connect()) { SendLine("st_update", new { connected = false, turning = false, rotation = 0f, leftController = false, rightController = false, error = steamVr.LastError }); break; }
+                steamVr.TurnEnabled = true;
+                steamVr.ApplyTurnConfig(F(cmd,"multiplier",1f), F(cmd,"snapDegrees"), B(cmd,"invert"), F(cmd,"smoothing"), U(cmd,"leftTurnBtn",2), U(cmd,"rightTurnBtn"), U(cmd,"leftResetBtn"), U(cmd,"rightResetBtn"));
+                steamVr.StartPolling();
+                break;
+            case "st_disconnect": steamVr.TurnEnabled = false; if (!steamVr.DragEnabled) steamVr.Disconnect(); break;
+            case "st_config": steamVr.ApplyTurnConfig(F(cmd,"multiplier",1f), F(cmd,"snapDegrees"), B(cmd,"invert"), F(cmd,"smoothing"), U(cmd,"leftTurnBtn",2), U(cmd,"rightTurnBtn"), U(cmd,"leftResetBtn"), U(cmd,"rightResetBtn")); break;
+            case "st_reset": steamVr.ResetRotation(); break;
+        }
+    }
+
+    private static void SendLine(string type, object payload)
+    {
+        var message = JObject.FromObject(payload); message["t"] = type;
+        lock (_writeLock) { Console.WriteLine(message.ToString(Formatting.None)); Console.Out.Flush(); }
+    }
+    private static bool B(JObject v,string n,bool d=false)=>v[n]?.Value<bool>()??d;
+    private static float F(JObject v,string n,float d=0f)=>v[n]?.Value<float>()??d;
+    private static uint U(JObject v,string n,uint d=0)=>v[n]?.Value<uint>()??d;
 }
 #endif

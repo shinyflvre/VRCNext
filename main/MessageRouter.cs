@@ -467,6 +467,7 @@ public partial class AppShell
                 msg = JObject.Load(_jr);
             var action = msg["action"]?.ToString() ?? "";
             CrashHandler.AddBreadcrumb($"JS→C# action={action}");
+            TrackStartupTraffic("JS->CS", action);
 
 #if !WINDOWS
             if (IsWindowsOnlyAction(action)) return;
@@ -475,7 +476,12 @@ public partial class AppShell
             switch (action)
             {
                 case "ready":
-                    // Signal platform to JS (hides Windows-only tabs on Linux)
+                    WriteStartupDiagnostic("backend ready received");
+                    StartStartupTrafficDiagnostics();
+                    // Signal platform so the UI can hide unsupported controls.
+#if !WINDOWS
+                    _trayService?.Initialize(_window);
+#endif
                     SendToJS("setPlatform", new { isLinux = !OperatingSystem.IsWindows() });
                     SendToJS("localHttpInfo", new { port = _core.HttpPort, token = _core.HttpCorsToken });
                     _windowCtrl.InstallChrome();
@@ -3057,8 +3063,11 @@ public partial class AppShell
                     break;
 
                 // Custom Chatbox OSC
+                case "chatboxWindowToolsCheck":
+                case "chatboxWindowToolsInstall":
                 case "chatboxConfig":
                 case "chatboxDirectSend":
+                case "chatboxToggle":
                     _chatboxCtrl.HandleMessage(action, msg);
                     break;
 
@@ -4336,18 +4345,78 @@ public partial class AppShell
                     await _vroCtrl.HandleMessage(action, msg);
                     break;
 
+#if !WINDOWS
+                case "playNotificationSound":
+                {
+                    var slot = msg["slot"]?.ToString() ?? "";
+                    var defaultFile = slot switch
+                    {
+                        "notify" => "Notification.ogg",
+                        "message" => "Message.ogg",
+                        "mediaRelay" => "MediaRelay.ogg",
+                        "steamOverlay" => "SteamOverlay.ogg",
+                        _ => "",
+                    };
+                    if (defaultFile.Length == 0) break;
+                    var kdeEventId = slot switch
+                    {
+                        "notify" => "notification",
+                        "message" => "message",
+                        "mediaRelay" => "mediaRelay",
+                        "steamOverlay" => "steamOverlay",
+                        _ => "generic",
+                    };
 
+                    var fileName = msg["file"]?.ToString() ?? "";
+                    if (fileName.Length > 0
+                        && (Path.GetFileName(fileName) != fileName
+                            || !string.Equals(Path.GetExtension(fileName), ".ogg", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        SendToJS("log", new { msg = "[Sound] Invalid notification sound file.", color = "warn" });
+                        break;
+                    }
+
+                    var soundDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "frontend", "sounds", "notifications");
+                    var soundPath = fileName.Length == 0
+                        ? Path.Combine(soundDirectory, defaultFile)
+                        : Path.Combine(soundDirectory, "Notificationsv2", fileName);
+                    if (!File.Exists(soundPath))
+                    {
+                        SendToJS("log", new { msg = $"[Sound] Notification sound file not found: {fileName}", color = "warn" });
+                        break;
+                    }
+
+                    var volume = 0.5;
+                    if (double.TryParse(msg["volume"]?.ToString(), System.Globalization.NumberStyles.Float,
+                        System.Globalization.CultureInfo.InvariantCulture, out var requestedVolume)
+                        && double.IsFinite(requestedVolume))
+                        volume = Math.Clamp(requestedVolume, 0, 1);
+                    LinuxDesktopHelper.PlayNotificationSound(
+                        soundPath, volume,
+                        message => SendToJS("log", new { msg = message, color = "warn" }),
+                        kdeEventId, msg["preview"]?.Value<bool>() ?? false);
+                    break;
+                }
+#endif
                 case "trayNotification":
-#if WINDOWS
                     if (_settings.MinimizeToTray && _settings.TrayNotificationsEnabled)
                     {
                         var tnTitle  = msg["title"]?.ToString()    ?? "";
                         var tnSub   = msg["subtitle"]?.ToString()  ?? "";
+                        var tnImage = msg["imageUrl"]?.ToString() ?? "";
+                        var tnEventId = msg["kdeEventId"]?.ToString() ?? "generic";
+#if WINDOWS
                         var tnAccent = msg["accentKey"]?.ToString() ?? "accent";
-                        var tnImage  = msg["imageUrl"]?.ToString()  ?? "";
                         _trayService?.ShowNotification(tnTitle, tnSub, tnImage, tnAccent);
-                    }
+#else
+                        var sent = await LinuxNotificationHelper.TrySendAsync(
+                            tnTitle, tnSub, tnImage, _vrcApi.GetHttpClient(),
+                            message => SendToJS("log", new { msg = message, color = "warn" }),
+                            tnEventId);
+                        if (!sent)
+                            _window?.SendNotification(tnTitle, tnSub);
 #endif
+                    }
                     break;
 
                 // VR Wrist Overlay
@@ -4433,11 +4502,10 @@ public partial class AppShell
 
 #if !WINDOWS
     private static readonly string[] _windowsOnlyActionPrefixes =
-        { "vf", "kxd", "chatbox", "osc", "sf", "st", "fs", "dp", "vc", "vro", "as" };
+        { "vf", "kxd", "fs", "vc", "vro" };
 
     private static bool IsWindowsOnlyAction(string action)
     {
-        if (action == "startRelay" || action == "stopRelay") return true;
         foreach (var prefix in _windowsOnlyActionPrefixes)
         {
             if (action.Length > prefix.Length

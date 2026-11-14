@@ -2,9 +2,6 @@
 
 <a href="https://trendshift.io/repositories/99779?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-99779" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/99779" alt="shinyflvre%2FVRCNext | Trendshift" width="250" height="55"/></a>
 
-IMPORTANT: IF YOU MODIFY VRCN / CREATE A FORK OF IT YOU ARE NOT ALLOWED TO USE MY USER AGENT!
-PLEASE IDENTIFY YOURSELF WITH YOUR OWN USER AGENT! EXAMPLE Modified-VRCNext/0000.00.00(your contact adress)
-That should look like this: Nano-VRCNext/2026.1.0(max@musterman.com)
 
 # VRCNext
 
@@ -12,8 +9,10 @@ VRCNext is a VRChat Launcher and Management system that aims for simplicity and 
 With VRCNext you can check the status of your friends, watch their profiles, see in what world they are and ask them to send you an invite or send them one yourself. You can create an instance before even starting VRChat, manage your friends, remove or add new ones. You can search for worlds and groups, change your avatar before even starting VRChat, and set up a Media Library so all of your VRChat images are in one place. Send images directly to Discord using the Media Relay webhook system. See actual instance information such as which players are currently in your instance. Start VRChat directly through VRCNext and configure other apps to launch alongside it like SlimeVR, VRCVideoCacher, and VRCFaceTracking.
 
 # Performance
-About 60-80% less memory usage compared to VRCX
-About 15-25% less memory usage compared to VRCX-0 (Rust rewrite of VRCX) (Windows only) VRCN as of right now runs worse on linux.
+Around 60–70% less memory usage compared to VRCX – Tested on Windows only.
+About 15–25% less memory usage compared to VRCX-0 – Tested on Windows only.
+The Linux beta build may perform worse than VRCX/VRCX-0, as it is still in development. Performance optimizations may be missing, and some modules may not be fully ported yet.
+Comparisons were made using 15–30-minute runtime tests on the same VRChat account, repeatedly performing the same tasks under identical conditions.
 
 ---
 

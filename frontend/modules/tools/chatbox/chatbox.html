@@ -1,7 +1,10 @@
                 <div class="vrcn-panel-card status" style="margin-bottom:16px;">
                     <div class="sf-status-row">
                         <div class="sf-status"><span class="sf-dot offline" id="cbDot"></span><span id="cbStatusText" data-i18n="chatbox.status.not_running">Not running</span></div>
-                        <button class="vrcn-button" id="cbConnBtn" onclick="toggleChatbox()"><span class="msi" style="font-size:16px;">play_arrow</span> <span data-i18n="common.start">Start</span></button>
+                        <div class="cb-status-actions">
+                            <button class="vrcn-button" id="cbWindowToolsInstallBtn" onclick="installChatboxWindowTools()" style="display:none;"><span class="msi" style="font-size:16px;">download</span> <span data-i18n="chatbox.window.install">Install Window Activity tools</span></button>
+                            <button class="vrcn-button" id="cbConnBtn" onclick="toggleChatbox()"><span class="msi" style="font-size:16px;">play_arrow</span> <span data-i18n="common.start">Start</span></button>
+                        </div>
                     </div>
                 </div>
                 <div class="cb-grid">
@@ -95,7 +98,6 @@
                             </div>
                         </div>
                         <div class="sf-toggle-row"><div style="display:flex;align-items:center;gap:8px;"><span class="msi cb-toggle-icon">notifications_off</span><span data-i18n="chatbox.modules.suppress_sound">Suppress Sound</span></div><label class="toggle"><input type="checkbox" id="cbSuppressSound" checked onchange="updateChatboxConfig()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
-                        <div class="sf-toggle-row"><div style="display:flex;align-items:center;gap:8px;"><span class="msi cb-toggle-icon">hide_source</span><span data-i18n="chatbox.modules.hide_background">Hide Chatbox Background</span></div><label class="toggle"><input type="checkbox" id="cbHideBackground" onchange="updateChatboxConfig()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
                     </div>
                     <div class="vrcn-panel-card">
                         <div class="vrcn-panel-card-header"><span class="msi" style="font-size:16px;">tune</span> <span data-i18n="chatbox.format.title">Format</span></div>
