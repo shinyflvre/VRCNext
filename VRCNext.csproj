@@ -1,7 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <!-- Detect Linux OS directly, or via -r linux-x64 flag if cross-compiling -->
-    <_LinuxBuild Condition="$([MSBuild]::IsOSPlatform('Linux')) or ($(RuntimeIdentifier) != '' and $(RuntimeIdentifier.StartsWith('linux')))">true</_LinuxBuild>
+    <_LinuxBuild Condition="'$(RuntimeIdentifier)' != '' and !$(RuntimeIdentifier.StartsWith('linux'))">false</_LinuxBuild>
+    <_LinuxBuild Condition="'$(RuntimeIdentifier)' != '' and $(RuntimeIdentifier.StartsWith('linux'))">true</_LinuxBuild>
+    <_LinuxBuild Condition="'$(RuntimeIdentifier)' == '' and $([MSBuild]::IsOSPlatform('Linux'))">true</_LinuxBuild>
 
     <TargetFramework Condition="'$(_LinuxBuild)'!='true'">net9.0-windows10.0.19041.0</TargetFramework>
     <TargetFramework Condition="'$(_LinuxBuild)'=='true'">net9.0</TargetFramework>
@@ -15,6 +17,7 @@
     <AssemblyVersion>2027.0.1.0</AssemblyVersion>
     <FileVersion>2027.0.1.0</FileVersion>
     <InformationalVersion>2027.0.1</InformationalVersion>
+    <EnableWindowsTargeting Condition="'$(RuntimeIdentifier)' != '' and $(RuntimeIdentifier.StartsWith('win'))">true</EnableWindowsTargeting>
     <RollForward>latestMajor</RollForward>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
