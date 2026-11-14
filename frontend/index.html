@@ -129,7 +129,7 @@
     <div class="sidebar" id="sidebarEl">
         <div class="sidebar-resizer" id="sidebarResizer" data-side="left"></div>
         <div class="sidebar-sep"></div>
-        <div class="logo"><div class="logo-icon" id="logoIcon">V</div><div class="logo-txt"><div class="logo-text-row"><div class="logo-text">VRCNext</div></div><div class="logo-sub">v2027.0.0</div></div></div>
+        <div class="logo"><div class="logo-icon" id="logoIcon">V</div><div class="logo-txt"><div class="logo-text-row"><div class="logo-text">VRCNext</div></div><div class="logo-sub">v2027.0.1</div></div></div>
         <div class="nav vrcn-scrollbar" id="navEl"></div>
         <div class="play-area"><button class="btn-play" onclick="playVRChat()" data-i18n-title="sidebar.play_vrchat" title="Play VRChat"><span class="play-icon-wrap"><span class="msi play-icon">play_arrow</span></span><span class="play-copy pl"><strong class="play-title" data-i18n="sidebar.play_vrchat">Play VRChat</strong><span class="play-sub" id="playSubText"></span></span><span class="msi play-arrow pl">chevron_right</span></button></div>
     </div>
@@ -225,6 +225,7 @@
                                     <div class="tb-dd-item" onclick="showTab(20)"><span class="msi">watch</span><span data-i18n="nav.vr_overlay">VR Overlay</span></div>
                                     <div class="tb-dd-item" onclick="showTab(10)"><span class="msi">rocket_launch</span><span data-i18n="nav.space_flight">Space Flight</span></div>
                                     <div class="tb-dd-item" onclick="showTab(28)"><span class="msi">rotate_right</span><span data-i18n="nav.space_turn">Space Turn</span></div>
+                                    <div class="tb-dd-item" onclick="showTab(30)"><span class="msi">orbit</span><span data-i18n="nav.space_walk">Space Walk</span></div>
                                     <div class="tb-dd-item" onclick="showTab(5)"><span class="msi">chat</span><span data-i18n="nav.custom_chatbox">Custom Chatbox</span></div>
                                 </div>
                             </div>
@@ -303,6 +304,7 @@
                     <button class="tb-sidebar-btn" id="badgeChatbox" title="Custom Chatbox" data-i18n-title="nav.custom_chatbox" onclick="toggleChatbox()"><span class="msi">chat</span></button>
                     <button class="tb-sidebar-btn" id="badgeSpace" title="Space Flight" data-i18n-title="nav.space_flight" onclick="sfConnect()"><span class="msi">rocket_launch</span></button>
                     <button class="tb-sidebar-btn" id="badgeSpaceTurn" title="Space Turn" data-i18n-title="nav.space_turn" onclick="stConnect()"><span class="msi">rotate_right</span></button>
+                    <button class="tb-sidebar-btn" id="badgeSpaceWalk" title="Space Walk" data-i18n-title="nav.space_walk" onclick="swConnect()"><span class="msi">orbit</span></button>
                     <button class="tb-sidebar-btn" id="badgeFrameShot" title="FrameShot" data-i18n-title="nav.frame_shot" onclick="fsConnect()"><span class="msi">photo_camera</span></button>
                     <button class="tb-sidebar-btn" id="badgeVoice" title="Voice Fight" data-i18n-title="nav.voice_fight" onclick="if(!vfRunning)vfOnTabOpen();vfConnect()"><span class="msi">mic</span></button>
                     <button class="tb-sidebar-btn" id="badgeDp" title="Discord Presence" data-i18n-title="nav.discord_presence" onclick="dpToggle()"><span class="msi">sensors</span></button>
@@ -458,6 +460,9 @@
 
             <!-- Tab 29: Meet Network -->
             <div class="tab" id="tab29"></div>
+
+            <!-- Tab 30: Space Walk -->
+            <div class="tab" id="tab30" data-windows-only></div>
 
         </div>
     </div>
@@ -747,6 +752,7 @@
             tab27: 'modules/tools/status-schedule/status-schedule.html',
             tab28: 'modules/tools/space-turn/space-turn.html',
             tab29: 'modules/tools/meet-network/meet-network.html',
+            tab30: 'modules/tools/space-walk/space-walk.html',
         };
 
         const modalFragments = {
@@ -836,6 +842,7 @@
             'core/VRInput/vr-input.js',
             'modules/tools/space-flight/space-flight.js',
             'modules/tools/space-turn/space-turn.js',
+            'modules/tools/space-walk/space-walk.js',
             'modules/tools/frame-shot/frame-shot.js',
             'modules/tools/osc-tool/osc-tool.js',
             'modules/timeline/list-table.js',

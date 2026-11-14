@@ -34,6 +34,21 @@ namespace VRCNext.Services
         public uint LeftTurnResetButton  { get; set; } = 0;
         public uint RightTurnResetButton { get; set; } = 0;
 
+        public bool WalkEnabled { get; set; }
+        public float WalkMultiplier { get; set; } = 1.0f;
+        public float WalkSmoothing { get; set; }
+        public float WalkMomentum { get; set; }
+        public bool WalkInvert { get; set; }
+        public bool WalkLockPitch { get; set; }
+        public bool WalkLockRoll { get; set; }
+        public bool WalkLockYaw { get; set; }
+        public uint LeftWalkButton  { get; set; } = 0;
+        public uint RightWalkButton { get; set; } = (uint)EVRButtonId.k_EButton_Grip;
+        public uint LeftWalkResetButton  { get; set; } = 0;
+        public uint RightWalkResetButton { get; set; } = 0;
+        public bool IsWalking { get; private set; }
+        public bool TiltSupported { get; private set; }
+
         public bool IsConnected { get; private set; }
         public bool IsDragging { get; private set; }
         public bool IsTurning { get; private set; }
@@ -50,6 +65,35 @@ namespace VRCNext.Services
         private readonly Action<string> _log;
         private Action<object>? _onUpdate;
         private Action<object>? _onTurnUpdate;
+        private Action<object>? _onWalkUpdate;
+
+        private bool _walkEmitPrimed;
+        private bool _walkEmitConnected;
+        private bool _walkEmitWalking;
+        private Vector3 _walkEmitAngles;
+        private bool _walkEmitTiltSupported;
+        private bool _walkEmitLeftController;
+        private bool _walkEmitRightController;
+
+        private bool _leftWalking;
+        private bool _rightWalking;
+        private Vector3 _leftWalkPos;
+        private Vector3 _rightWalkPos;
+        private float[] _leftWalkRot = Identity3();
+        private float[] _rightWalkRot = Identity3();
+        private Vector3 _walkSmooth;
+        private Vector3 _walkVel;
+        private bool _walkCoasting;
+        private float[] _walkCoastHeading = Identity3();
+        private const float WALK_RADIANS_PER_METER = MathF.PI;
+        private bool _leftWalkResetHeldPrev;
+        private bool _rightWalkResetHeldPrev;
+
+        private bool _tiltChecked;
+        private bool _tiltActive;
+        private bool _tiltWriteFailed;
+        private HmdMatrix34_t _tiltStanding;
+        private HmdMatrix34_t _tiltSeated;
 
         private bool _turnEmitPrimed;
         private bool _turnEmitConnected;
@@ -135,6 +179,7 @@ namespace VRCNext.Services
 
         public void SetUpdateCallback(Action<object> cb) => _onUpdate = cb;
         public void SetTurnUpdateCallback(Action<object> cb) => _onTurnUpdate = cb;
+        public void SetWalkUpdateCallback(Action<object> cb) => _onWalkUpdate = cb;
 
         public bool Connect()
         {
@@ -315,8 +360,14 @@ namespace VRCNext.Services
             IsConnected = false;
             IsDragging = false;
             IsTurning = false;
+            IsWalking = false;
             DragEnabled = false;
             TurnEnabled = false;
+            WalkEnabled = false;
+            TiltSupported = false;
+            _tiltChecked = false;
+            _tiltActive = false;
+            SteamVrPaths.Reset();
             _vrSystem = null;
             _hasBaseStandingPose = false;
             _hasBaseSeatedPose = false;
@@ -330,6 +381,7 @@ namespace VRCNext.Services
             _running = true;
             _emitPrimed = false;
             _turnEmitPrimed = false;
+            _walkEmitPrimed = false;
             StartVrserverMonitor(_cts.Token);
             _ = PollLoopAsync(_cts.Token);
         }
@@ -392,6 +444,8 @@ namespace VRCNext.Services
                 }
             }
 
+            if (_tiltActive) WriteTilt();
+
             _vrSystem.GetDeviceToAbsoluteTrackingPose(ETrackingUniverseOrigin.TrackingUniverseRawAndUncalibrated, 0, _rawPoses);
             UpdateControllerIndices();
 
@@ -400,6 +454,7 @@ namespace VRCNext.Services
             ulong rightBtns = ReadButtons(_rightIdx);
 
             ProcessTurn(leftBtns, rightBtns);
+            ProcessWalk(leftBtns, rightBtns);
 
             if (!DragEnabled)
             {
@@ -590,6 +645,275 @@ namespace VRCNext.Services
             return d;
         }
 
+        private void ProcessWalk(ulong leftBtns, ulong rightBtns)
+        {
+            if (!WalkEnabled)
+            {
+                _leftWalking = false;
+                _rightWalking = false;
+                _walkSmooth = Vector3.Zero;
+                _walkVel = Vector3.Zero;
+                _walkCoasting = false;
+                _leftWalkResetHeldPrev = false;
+                _rightWalkResetHeldPrev = false;
+                IsWalking = false;
+                return;
+            }
+
+            bool leftResetHeld  = IsBitSet(leftBtns,  LeftWalkResetButton);
+            bool rightResetHeld = IsBitSet(rightBtns, RightWalkResetButton);
+            if (leftResetHeld  && !_leftWalkResetHeldPrev)  ResetRotation();
+            if (rightResetHeld && !_rightWalkResetHeldPrev) ResetRotation();
+            _leftWalkResetHeldPrev  = leftResetHeld;
+            _rightWalkResetHeldPrev = rightResetHeld;
+
+            bool wasWalking = _leftWalking || _rightWalking;
+            var move = HandleHandWalk(ref _leftWalking, LeftWalkButton != 0 && IsBitSet(leftBtns, LeftWalkButton), _leftIdx, ref _leftWalkPos, ref _leftWalkRot);
+            if (_leftWalking)
+                _rightWalking = false;
+            else
+                move = HandleHandWalk(ref _rightWalking, RightWalkButton != 0 && IsBitSet(rightBtns, RightWalkButton), _rightIdx, ref _rightWalkPos, ref _rightWalkRot);
+
+            bool walking = _leftWalking || _rightWalking;
+
+            if (!walking)
+            {
+                _walkSmooth = Vector3.Zero;
+                if (wasWalking && WalkMomentum > 0f && _walkVel.LengthSquared() > 1e-8f) _walkCoasting = true;
+                if (!wasWalking && !_walkCoasting) _walkVel = Vector3.Zero;
+                if (_walkCoasting) StepWalkCoast();
+                IsWalking = _walkCoasting;
+                return;
+            }
+
+            IsWalking = true;
+            _walkCoasting = false;
+            if (move == null) return;
+
+            var heading = RotY(TryGetRawHeading(OpenVR.k_unTrackedDeviceIndex_Hmd, out var hmdHeading) ? hmdHeading : 0f);
+            var headingT = Transpose3(heading);
+            var localMove = Apply3(headingT, move.Value.move);
+            var localRot = Mul3(headingT, Mul3(move.Value.rot, heading));
+            float handRoll = MathF.Atan2(localRot[3] - localRot[1], localRot[0] + localRot[4]);
+            float scale = WALK_RADIANS_PER_METER * WalkMultiplier;
+            var step = new Vector3(
+                WalkLockPitch || !TiltSupported ? 0f : localMove.Y * scale,
+                WalkLockYaw ? 0f : -localMove.X * scale,
+                WalkLockRoll || !TiltSupported ? 0f : handRoll * WalkMultiplier);
+            if (WalkInvert) step = -step;
+
+            if (WalkSmoothing > 0f)
+            {
+                float alpha = 1f - (WalkSmoothing / 100f) * 0.95f;
+                _walkSmooth += (step - _walkSmooth) * alpha;
+                step = _walkSmooth;
+            }
+
+            _walkVel = Vector3.Lerp(_walkVel, step, 0.5f);
+            _walkCoastHeading = heading;
+
+            if (MathF.Abs(step.X) < 0.00002f && MathF.Abs(step.Y) < 0.00002f && MathF.Abs(step.Z) < 0.00002f) return;
+
+            ApplyWalkStep(heading, step);
+        }
+
+        private void StepWalkCoast()
+        {
+            float halfLife = 0.1f * MathF.Pow(150f, WalkMomentum / 100f);
+            _walkVel *= MathF.Pow(0.5f, DT / halfLife);
+            if (_walkVel.LengthSquared() < 1e-9f)
+            {
+                _walkVel = Vector3.Zero;
+                _walkCoasting = false;
+                return;
+            }
+            ApplyWalkStep(_walkCoastHeading, _walkVel);
+        }
+
+        private void ApplyWalkStep(float[] heading, Vector3 step)
+        {
+            var localStep = Mul3(RotY(step.Y), Mul3(RotX(step.X), RotZ(step.Z)));
+            ApplyRotation(Mul3(heading, Mul3(localStep, Transpose3(heading))));
+        }
+
+        private (Vector3 move, float[] rot)? HandleHandWalk(ref bool wasWalking, bool pressed, uint idx, ref Vector3 prevPos, ref float[] prevRot)
+        {
+            if (!pressed || idx == OpenVR.k_unTrackedDeviceIndexInvalid)
+            {
+                wasWalking = false;
+                return null;
+            }
+
+            if (!TryGetRawPos(idx, out var pos) || !TryGetRawRot(idx, out var rot)) return null;
+
+            if (!wasWalking)
+            {
+                wasWalking = true;
+                prevPos = pos;
+                prevRot = rot;
+                return null;
+            }
+
+            var d = pos - prevPos;
+            var dRot = Mul3(rot, Transpose3(prevRot));
+            prevPos = pos;
+            prevRot = rot;
+            if (MathF.Abs(d.X) > 1f || MathF.Abs(d.Y) > 1f || MathF.Abs(d.Z) > 1f) return null;
+            if (dRot[0] + dRot[4] + dRot[8] < 2f) return null;
+            return (d, dRot);
+        }
+
+        private bool TryGetRawRot(uint i, out float[] rot)
+        {
+            rot = Identity3();
+            if (i >= _rawPoses.Length || !_rawPoses[i].bPoseIsValid || !_rawPoses[i].bDeviceIsConnected) return false;
+            var m = _rawPoses[i].mDeviceToAbsoluteTracking;
+            rot = new float[] { m.m0, m.m1, m.m2, m.m4, m.m5, m.m6, m.m8, m.m9, m.m10 };
+            return true;
+        }
+
+        private void ApplyRotation(float[] rot)
+        {
+            Vector3 pivot;
+            if (OpenVR.k_unTrackedDeviceIndex_Hmd < _rawPoses.Length && _rawPoses[OpenVR.k_unTrackedDeviceIndex_Hmd].bPoseIsValid)
+            {
+                var hm = _rawPoses[OpenVR.k_unTrackedDeviceIndex_Hmd].mDeviceToAbsoluteTracking;
+                pivot = new Vector3(hm.m3, hm.m7, hm.m11);
+            }
+            else
+            {
+                pivot = _deltaT;
+            }
+
+            var newT = Apply3(rot, _deltaT - pivot) + pivot;
+            _deltaR = Orthonormalize3(Mul3(rot, _deltaR));
+            RotationDeg = EulerYXZ(_deltaR).Y * 180f / MathF.PI;
+            ApplyOffset(newT);
+        }
+
+        public void ClearTilt()
+        {
+            if (!HasTilt(_deltaR)) return;
+            var yawOnly = RotY(EulerYXZ(_deltaR).Y);
+            ApplyRotation(Mul3(yawOnly, Transpose3(_deltaR)));
+            _deltaR = yawOnly;
+            ApplyOffset(_deltaT);
+            _log("[SteamVR] Tilt cleared");
+        }
+
+        public void CheckTiltSupport()
+        {
+            if (_tiltChecked) return;
+            if (_vrSystem == null) return;
+            _tiltChecked = true;
+            TiltSupported = false;
+
+            if (!SteamVrPaths.Init(_log)) return;
+            if (!SteamVrPaths.TryRead(false, out var current))
+            {
+                _log("[SteamVR] Tilt unavailable: standing transform could not be read");
+                return;
+            }
+
+            var expected = _vrSystem.GetRawZeroPoseToStandingAbsoluteTrackingPose();
+            if (!NearlyEqual(current, expected, 1e-3f))
+            {
+                _log("[SteamVR] Tilt unavailable: standing transform does not match the runtime");
+                return;
+            }
+
+            TiltSupported = true;
+            _log("[SteamVR] Tilt available");
+        }
+
+        private void WriteTilt()
+        {
+            bool ok = SteamVrPaths.Write(false, InvertRigid(_tiltStanding));
+            if (_hasBaseSeatedPose) ok &= SteamVrPaths.Write(true, InvertRigid(_tiltSeated));
+            if (!ok && !_tiltWriteFailed) _log("[SteamVR] Writing tilt failed");
+            _tiltWriteFailed = !ok;
+        }
+
+        private bool TryGetRawHeading(uint i, out float heading)
+        {
+            heading = 0f;
+            if (i >= _rawPoses.Length || !_rawPoses[i].bPoseIsValid) return false;
+            var m = _rawPoses[i].mDeviceToAbsoluteTracking;
+            if (m.m2 * m.m2 + m.m10 * m.m10 >= 0.0025f)
+            {
+                heading = MathF.Atan2(m.m2, m.m10);
+                return true;
+            }
+            if (m.m0 * m.m0 + m.m8 * m.m8 >= 0.0025f)
+            {
+                heading = MathF.Atan2(-m.m8, m.m0);
+                return true;
+            }
+            return false;
+        }
+
+        private static float[] RotX(float a)
+        {
+            float c = MathF.Cos(a), s = MathF.Sin(a);
+            return new float[] { 1, 0, 0, 0, c, -s, 0, s, c };
+        }
+
+        private static float[] RotZ(float a)
+        {
+            float c = MathF.Cos(a), s = MathF.Sin(a);
+            return new float[] { c, -s, 0, s, c, 0, 0, 0, 1 };
+        }
+
+        private static float[] Transpose3(float[] r) => new float[] { r[0], r[3], r[6], r[1], r[4], r[7], r[2], r[5], r[8] };
+
+        private static Vector3 EulerYXZ(float[] r)
+        {
+            float pitch = MathF.Asin(Math.Clamp(-r[5], -1f, 1f));
+            float yaw = MathF.Atan2(r[2], r[8]);
+            float roll = MathF.Atan2(r[3], r[4]);
+            return new Vector3(pitch, yaw, roll);
+        }
+
+        private static bool HasTilt(float[] r) => r[4] < 0.99999f;
+
+        private static bool IsIdentity3(float[] r) =>
+            MathF.Abs(r[0] - 1f) < 1e-6f && MathF.Abs(r[4] - 1f) < 1e-6f && MathF.Abs(r[8] - 1f) < 1e-6f;
+
+        private static float[] Orthonormalize3(float[] r)
+        {
+            var x = Vector3.Normalize(new Vector3(r[0], r[3], r[6]));
+            var y = new Vector3(r[1], r[4], r[7]);
+            y = Vector3.Normalize(y - Vector3.Dot(y, x) * x);
+            var z = Vector3.Cross(x, y);
+            return new float[] { x.X, y.X, z.X, x.Y, y.Y, z.Y, x.Z, y.Z, z.Z };
+        }
+
+        private static HmdMatrix34_t YawOnly(HmdMatrix34_t m)
+        {
+            float yaw;
+            if (m.m2 * m.m2 + m.m10 * m.m10 >= 0.0025f) yaw = MathF.Atan2(m.m2, m.m10);
+            else yaw = MathF.Atan2(-m.m8, m.m0);
+            float c = MathF.Cos(yaw), s = MathF.Sin(yaw);
+            return new HmdMatrix34_t
+            {
+                m0 = c,  m1 = 0, m2 = s,  m3 = m.m3,
+                m4 = 0,  m5 = 1, m6 = 0,  m7 = m.m7,
+                m8 = -s, m9 = 0, m10 = c, m11 = m.m11,
+            };
+        }
+
+        private static HmdMatrix34_t InvertRigid(HmdMatrix34_t m) => new HmdMatrix34_t
+        {
+            m0 = m.m0, m1 = m.m4, m2 = m.m8,  m3 = -(m.m0 * m.m3 + m.m4 * m.m7 + m.m8 * m.m11),
+            m4 = m.m1, m5 = m.m5, m6 = m.m9,  m7 = -(m.m1 * m.m3 + m.m5 * m.m7 + m.m9 * m.m11),
+            m8 = m.m2, m9 = m.m6, m10 = m.m10, m11 = -(m.m2 * m.m3 + m.m6 * m.m7 + m.m10 * m.m11),
+        };
+
+        private static bool NearlyEqual(HmdMatrix34_t a, HmdMatrix34_t b, float tolerance) =>
+            MathF.Abs(a.m0 - b.m0) <= tolerance && MathF.Abs(a.m1 - b.m1) <= tolerance && MathF.Abs(a.m2 - b.m2) <= tolerance && MathF.Abs(a.m3 - b.m3) <= tolerance
+            && MathF.Abs(a.m4 - b.m4) <= tolerance && MathF.Abs(a.m5 - b.m5) <= tolerance && MathF.Abs(a.m6 - b.m6) <= tolerance && MathF.Abs(a.m7 - b.m7) <= tolerance
+            && MathF.Abs(a.m8 - b.m8) <= tolerance && MathF.Abs(a.m9 - b.m9) <= tolerance && MathF.Abs(a.m10 - b.m10) <= tolerance && MathF.Abs(a.m11 - b.m11) <= tolerance;
+
         private void ApplyTurn(float radians)
         {
             if (radians == 0f) return;
@@ -771,20 +1095,39 @@ namespace VRCNext.Services
             OffsetZ = off.Z;
             _deltaT = off;
 
-            OpenVR.ChaperoneSetup.RevertWorkingCopy();
-
+            bool tilted = TiltSupported && HasTilt(_deltaR);
             var standing = ComposeDelta(_baseStandingPose);
-            OpenVR.ChaperoneSetup.SetWorkingStandingZeroPoseToRawTrackingPose(ref standing);
+            var seated = _hasBaseSeatedPose ? ComposeDelta(_baseSeatedPose) : new HmdMatrix34_t();
+            _tiltStanding = standing;
+            _tiltSeated = seated;
+            _tiltActive = tilted;
 
-            if (_hasBaseSeatedPose)
+            if (tilted)
             {
-                var seated = ComposeDelta(_baseSeatedPose);
-                OpenVR.ChaperoneSetup.SetWorkingSeatedZeroPoseToRawTrackingPose(ref seated);
+                var standingYaw = YawOnly(standing);
+                OpenVR.ChaperoneSetup.SetWorkingStandingZeroPoseToRawTrackingPose(ref standingYaw);
+                if (_hasBaseSeatedPose)
+                {
+                    var seatedYaw = YawOnly(seated);
+                    OpenVR.ChaperoneSetup.SetWorkingSeatedZeroPoseToRawTrackingPose(ref seatedYaw);
+                }
+                if (!_previewActive)
+                {
+                    OpenVR.ChaperoneSetup.ShowWorkingSetPreview();
+                    _previewActive = true;
+                }
+                WriteTilt();
             }
-
-            OpenVR.ChaperoneSetup.ShowWorkingSetPreview();
-            _previewActive = true;
-            OpenVR.ChaperoneSetup.CommitWorkingCopy(EChaperoneConfigFile.Live);
+            else
+            {
+                OpenVR.ChaperoneSetup.RevertWorkingCopy();
+                OpenVR.ChaperoneSetup.SetWorkingStandingZeroPoseToRawTrackingPose(ref standing);
+                if (_hasBaseSeatedPose)
+                    OpenVR.ChaperoneSetup.SetWorkingSeatedZeroPoseToRawTrackingPose(ref seated);
+                OpenVR.ChaperoneSetup.ShowWorkingSetPreview();
+                _previewActive = true;
+                OpenVR.ChaperoneSetup.CommitWorkingCopy(EChaperoneConfigFile.Live);
+            }
 
             if (verbose)
                 _log($"[SteamVR] Offset ({off.X:F3},{off.Y:F3},{off.Z:F3})");
@@ -802,7 +1145,7 @@ namespace VRCNext.Services
             _offsetVel = Vector3.Zero;
             _prevOffset = Vector3.Zero;
 
-            if (RotationDeg == 0f)
+            if (RotationDeg == 0f && IsIdentity3(_deltaR))
             {
                 ResetOffset();
                 return;
@@ -818,8 +1161,13 @@ namespace VRCNext.Services
             _leftTurning = false;
             _rightTurning = false;
             _turnAccum = 0f;
+            _leftWalking = false;
+            _rightWalking = false;
+            _walkSmooth = Vector3.Zero;
+            _walkVel = Vector3.Zero;
+            _walkCoasting = false;
 
-            if (RotationDeg == 0f) return;
+            if (RotationDeg == 0f && IsIdentity3(_deltaR)) return;
 
             if (OffsetX == 0f && OffsetY == 0f && OffsetZ == 0f)
             {
@@ -827,7 +1175,8 @@ namespace VRCNext.Services
                 return;
             }
 
-            ApplyTurn(-RotationDeg * MathF.PI / 180f);
+            if (HasTilt(_deltaR)) ApplyRotation(Transpose3(_deltaR));
+            else ApplyTurn(-RotationDeg * MathF.PI / 180f);
             _deltaR = Identity3();
             RotationDeg = 0f;
             ApplyOffset(_deltaT);
@@ -857,6 +1206,12 @@ namespace VRCNext.Services
             _leftTurning = false;
             _rightTurning = false;
             _turnAccum = 0f;
+            _leftWalking = false;
+            _rightWalking = false;
+            _walkSmooth = Vector3.Zero;
+            _walkVel = Vector3.Zero;
+            _walkCoasting = false;
+            _tiltActive = false;
 
             if (OpenVR.ChaperoneSetup != null)
             {
@@ -910,6 +1265,7 @@ namespace VRCNext.Services
         private void EmitState()
         {
             EmitTurnState();
+            EmitWalkState();
             if (!DragEnabled && !_emitPrimed) return;
             var offsetX = MathF.Round(OffsetX, 3);
             var offsetY = MathF.Round(OffsetY, 3);
@@ -982,6 +1338,67 @@ namespace VRCNext.Services
                 rightController = rightController,
                 error = (string?)null
             });
+        }
+
+        private void EmitWalkState()
+        {
+            if (!WalkEnabled && !_walkEmitPrimed) return;
+            bool walkConnected = IsConnected && WalkEnabled;
+            var e = EulerYXZ(_deltaR);
+            var angles = new Vector3(
+                MathF.Round(e.X * 180f / MathF.PI, 1),
+                MathF.Round(e.Y * 180f / MathF.PI, 1),
+                MathF.Round(e.Z * 180f / MathF.PI, 1));
+            var leftController = _leftIdx != OpenVR.k_unTrackedDeviceIndexInvalid;
+            var rightController = _rightIdx != OpenVR.k_unTrackedDeviceIndexInvalid;
+
+            if (_walkEmitPrimed
+                && _walkEmitConnected == walkConnected
+                && _walkEmitWalking == IsWalking
+                && _walkEmitAngles.Equals(angles)
+                && _walkEmitTiltSupported == TiltSupported
+                && _walkEmitLeftController == leftController
+                && _walkEmitRightController == rightController)
+                return;
+
+            _walkEmitPrimed = true;
+            _walkEmitConnected = walkConnected;
+            _walkEmitWalking = IsWalking;
+            _walkEmitAngles = angles;
+            _walkEmitTiltSupported = TiltSupported;
+            _walkEmitLeftController = leftController;
+            _walkEmitRightController = rightController;
+
+            _onWalkUpdate?.Invoke(new
+            {
+                connected = walkConnected,
+                walking = IsWalking,
+                pitch = angles.X,
+                yaw = angles.Y,
+                roll = angles.Z,
+                tiltSupported = TiltSupported,
+                leftController = leftController,
+                rightController = rightController,
+                error = (string?)null
+            });
+        }
+
+        public void ApplyWalkConfig(float multiplier, float smoothing, float momentum, bool invert,
+                                    bool lockPitch, bool lockRoll, bool lockYaw,
+                                    uint leftWalkBtn, uint rightWalkBtn,
+                                    uint leftResetBtn, uint rightResetBtn)
+        {
+            WalkMultiplier       = Math.Clamp(multiplier, 0.1f, 10f);
+            WalkSmoothing        = Math.Clamp(smoothing, 0f, 100f);
+            WalkMomentum         = Math.Clamp(momentum, 0f, 100f);
+            WalkInvert           = invert;
+            WalkLockPitch        = lockPitch;
+            WalkLockRoll         = lockRoll;
+            WalkLockYaw          = lockYaw;
+            LeftWalkButton       = leftWalkBtn;
+            RightWalkButton      = rightWalkBtn;
+            LeftWalkResetButton  = leftResetBtn;
+            RightWalkResetButton = rightResetBtn;
         }
 
         public void ApplyTurnConfig(float turnMultiplier, float snapDegrees, bool invert, float smoothing,

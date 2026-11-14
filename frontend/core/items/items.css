@@ -256,6 +256,24 @@
 }
 
 /* Instance Card (Layout A — world modal, matches instance modal style) */
+.inst-meta {
+    display: grid;
+    gap: 8px;
+    padding: 9px 12px;
+    border-bottom: 1px solid color-mix(in srgb, var(--brd) 40%, transparent);
+}
+.inst-meta-desc {
+    font-size: calc(12px + var(--fs-off, 0px));
+    line-height: 1.45;
+    color: var(--tx1);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.inst-meta-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
 .inst-item-card {
     background: var(--bg-input);
     border-radius: 10px;

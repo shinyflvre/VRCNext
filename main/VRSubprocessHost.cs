@@ -27,9 +27,10 @@ public sealed class VRSubprocessHost : IDisposable
     public bool VroConnected { get; private set; }
     public bool SfConnected  { get; private set; }
     public bool StConnected  { get; private set; }
+    public bool SwConnected  { get; private set; }
     public bool FsConnected  { get; private set; }
 
-    public bool AnyConnected => VroConnected || SfConnected || StConnected || FsConnected;
+    public bool AnyConnected => VroConnected || SfConnected || StConnected || SwConnected || FsConnected;
 
     public int InputMode { get; set; }
     private int _runningInputMode = -1;
@@ -51,6 +52,8 @@ public sealed class VRSubprocessHost : IDisposable
     public event Action? OnSfQuit;
     public event Action<JObject>? OnStUpdate;
     public event Action? OnStQuit;
+    public event Action<JObject>? OnSwUpdate;
+    public event Action? OnSwQuit;
     public event Action<JObject>? OnFsUpdate;
     public event Action? OnFsQuit;
     public event Action<JArray>? OnFsDevices;
@@ -113,15 +116,18 @@ public sealed class VRSubprocessHost : IDisposable
         bool wasVro = VroConnected;
         bool wasSf  = SfConnected;
         bool wasSt  = StConnected;
+        bool wasSw  = SwConnected;
         bool wasFs  = FsConnected;
         VroConnected = false;
         SfConnected  = false;
         StConnected  = false;
+        SwConnected  = false;
         FsConnected  = false;
         lock (_stdinLock) _stdin = null;
         if (wasVro) OnVroQuit?.Invoke();
         if (wasSf)  OnSfQuit?.Invoke();
         if (wasSt)  OnStQuit?.Invoke();
+        if (wasSw)  OnSwQuit?.Invoke();
         if (wasFs)  OnFsQuit?.Invoke();
     }
 
@@ -233,6 +239,9 @@ public sealed class VRSubprocessHost : IDisposable
             case "st_update":
                 OnStUpdate?.Invoke(msg);
                 break;
+            case "sw_update":
+                OnSwUpdate?.Invoke(msg);
+                break;
             case "fs_update":
                 OnFsUpdate?.Invoke(msg);
                 break;
@@ -278,16 +287,18 @@ public sealed class VRSubprocessHost : IDisposable
         }
 
         _log("[VRSub] Switching back to legacy input, restarting subprocess");
-        bool wasVro = VroConnected, wasSf = SfConnected, wasSt = StConnected, wasFs = FsConnected;
+        bool wasVro = VroConnected, wasSf = SfConnected, wasSt = StConnected, wasSw = SwConnected, wasFs = FsConnected;
         Kill();
         _runningInputMode = -1;
         VroConnected = false;
         SfConnected  = false;
         StConnected  = false;
+        SwConnected  = false;
         FsConnected  = false;
         if (wasVro) OnVroQuit?.Invoke();
         if (wasSf)  OnSfQuit?.Invoke();
         if (wasSt)  OnStQuit?.Invoke();
+        if (wasSw)  OnSwQuit?.Invoke();
         if (wasFs)  OnFsQuit?.Invoke();
     }
 
@@ -301,7 +312,7 @@ public sealed class VRSubprocessHost : IDisposable
     {
         VroConnected = false;
         Send("vro_disconnect");
-        if (!SfConnected && !StConnected && !FsConnected) Kill();
+        if (!SfConnected && !StConnected && !SwConnected && !FsConnected) Kill();
     }
 
     public void VroShow()            => Send("vro_show");
@@ -385,8 +396,8 @@ public sealed class VRSubprocessHost : IDisposable
     public void UpdateMediaInfo(string title, string artist, double position, double duration, bool playing)
         => Send("vro_update_media", new { title, artist, position, duration, playing });
 
-    public void SetToolStates(bool discord, bool voice, bool kikitan, bool space, bool relay, bool chatbox, bool frameShot, bool spaceTurn = false)
-        => Send("vro_tool_states", new { discord, voice, kikitan, space, relay, chatbox, frameShot, spaceTurn });
+    public void SetToolStates(bool discord, bool voice, bool kikitan, bool space, bool relay, bool chatbox, bool frameShot, bool spaceTurn = false, bool spaceWalk = false)
+        => Send("vro_tool_states", new { discord, voice, kikitan, space, relay, chatbox, frameShot, spaceTurn, spaceWalk });
 
     public void SetKikitanState(string sourceText, string translatedText, bool isFinal,
         string sourceLang, string targetLang, string engine, bool translateEnabled)
@@ -404,7 +415,7 @@ public sealed class VRSubprocessHost : IDisposable
     {
         SfConnected = false;
         Send("sf_disconnect");
-        if (!VroConnected && !StConnected && !FsConnected) Kill();
+        if (!VroConnected && !StConnected && !SwConnected && !FsConnected) Kill();
     }
 
     public void SfConfig(float multiplier, bool lockX, bool lockY, bool lockZ,
@@ -425,7 +436,7 @@ public sealed class VRSubprocessHost : IDisposable
     {
         StConnected = false;
         Send("st_disconnect");
-        if (!VroConnected && !SfConnected && !FsConnected) Kill();
+        if (!VroConnected && !SfConnected && !SwConnected && !FsConnected) Kill();
     }
 
     public void StConfig(float multiplier, float snapDegrees, bool invert, float smoothing,
@@ -433,6 +444,26 @@ public sealed class VRSubprocessHost : IDisposable
         => Send("st_config", new { multiplier, snapDegrees, invert, smoothing, leftTurnBtn, rightTurnBtn, leftResetBtn, rightResetBtn });
 
     public void StReset() => Send("st_reset");
+
+    public void SwConnect(float multiplier, float smoothing, float momentum, bool invert, bool lockPitch, bool lockRoll, bool lockYaw,
+        uint leftWalkBtn, uint rightWalkBtn, uint leftResetBtn, uint rightResetBtn)
+    {
+        SwConnected = true;
+        Send("sw_connect", new { multiplier, smoothing, momentum, invert, lockPitch, lockRoll, lockYaw, leftWalkBtn, rightWalkBtn, leftResetBtn, rightResetBtn });
+    }
+
+    public void SwDisconnect()
+    {
+        SwConnected = false;
+        Send("sw_disconnect");
+        if (!VroConnected && !SfConnected && !StConnected && !FsConnected) Kill();
+    }
+
+    public void SwConfig(float multiplier, float smoothing, float momentum, bool invert, bool lockPitch, bool lockRoll, bool lockYaw,
+        uint leftWalkBtn, uint rightWalkBtn, uint leftResetBtn, uint rightResetBtn)
+        => Send("sw_config", new { multiplier, smoothing, momentum, invert, lockPitch, lockRoll, lockYaw, leftWalkBtn, rightWalkBtn, leftResetBtn, rightResetBtn });
+
+    public void SwReset() => Send("sw_reset");
 
     public void FsConnect(uint leftButton, uint rightButton, string outputDeviceId, string outputDeviceName, int activationRadius,
                           uint leftRecordButton, uint rightRecordButton,
@@ -450,7 +481,7 @@ public sealed class VRSubprocessHost : IDisposable
     {
         FsConnected = false;
         Send("fs_disconnect");
-        if (!VroConnected && !SfConnected && !StConnected) Kill();
+        if (!VroConnected && !SfConnected && !StConnected && !SwConnected) Kill();
     }
 
     public void FsConfig(uint leftButton, uint rightButton, int activationRadius,
@@ -502,8 +533,9 @@ public sealed class VRSubprocessHost : IDisposable
     public event Action? OnVroQuit;
     public bool SfConnected  { get; private set; }
     public bool StConnected  { get; private set; }
+    public bool SwConnected  { get; private set; }
     public bool FsConnected  { get; private set; }
-    public bool AnyConnected => VroConnected || SfConnected || StConnected || FsConnected;
+    public bool AnyConnected => VroConnected || SfConnected || StConnected || SwConnected || FsConnected;
 
     public int InputMode { get; set; }
     public void ApplyInputMode(int mode)
@@ -691,7 +723,7 @@ public sealed class VRSubprocessHost : IDisposable
         => Send(new JObject { ["t"] = "vro_set_online_friends", ["entries"] = JArray.FromObject(entries.Select(e => new { friendId=e.Item1, friendName=e.Item2, friendImageUrl=e.Item3, status=e.Item4, statusDescription=e.Item5, location=e.Item6, worldName=e.Item7 })) });
     public void SetSelfUser(string userId, string imageUrl, string status) => Send(new JObject { ["t"]="vro_set_self", ["userId"]=userId, ["imageUrl"]=imageUrl, ["status"]=status });
     public void UpdateMediaInfo(string a, string b, double c, double d, bool e) => Send(new JObject { ["t"]="vro_update_media", ["title"]=a, ["artist"]=b, ["position"]=c, ["duration"]=d, ["playing"]=e });
-    public void SetToolStates(bool a, bool b, bool c, bool d, bool e, bool f, bool g, bool h = false) => Send(new JObject { ["t"]="vro_tool_states", ["discord"]=a, ["voice"]=b, ["kikitan"]=c, ["space"]=d, ["relay"]=e, ["chatbox"]=f, ["frameShot"]=g, ["spaceTurn"]=h });
+    public void SetToolStates(bool a, bool b, bool c, bool d, bool e, bool f, bool g, bool h = false, bool i = false) => Send(new JObject { ["t"]="vro_tool_states", ["discord"]=a, ["voice"]=b, ["kikitan"]=c, ["space"]=d, ["relay"]=e, ["chatbox"]=f, ["frameShot"]=g, ["spaceTurn"]=h, ["spaceWalk"]=i });
     public void SetKikitanState(string a, string b, bool c, string d, string e, string f, bool g) => Send(new JObject { ["t"]="vro_kikitan", ["sourceText"]=a, ["translatedText"]=b, ["isFinal"]=c, ["sourceLang"]=d, ["targetLang"]=e, ["engine"]=f, ["translateEnabled"]=g });
     public void SfConnect(float multiplier, bool lockX, bool lockY, bool lockZ, uint leftResetBtn, uint rightResetBtn, uint leftDragBtn, uint rightDragBtn, uint leftGravityBtn, uint rightGravityBtn, float gravity)
     {
@@ -727,6 +759,12 @@ public sealed class VRSubprocessHost : IDisposable
         => Send(new JObject { ["t"] = "st_config", ["multiplier"] = multiplier, ["snapDegrees"] = snapDegrees, ["invert"] = invert, ["smoothing"] = smoothing,
             ["leftTurnBtn"] = leftTurnBtn, ["rightTurnBtn"] = rightTurnBtn, ["leftResetBtn"] = leftResetBtn, ["rightResetBtn"] = rightResetBtn });
     public void StReset() => Send(new JObject { ["t"] = "st_reset" });
+
+    public void SwConnect(float a, float b, float b2, bool c, bool d, bool e, bool f, uint g, uint h, uint i, uint j) { }
+    public void SwDisconnect() { }
+    public void SwConfig(float a, float b, float b2, bool c, bool d, bool e, bool f, uint g, uint h, uint i, uint j) { }
+    public void SwReset() { }
+
     public void FsConnect(uint a, uint b, string c, string c2, int d, uint e, uint f, int g, int h, bool i, uint j, uint k, string l, string m, int n2, string n, string o, int p, uint q = 0, uint r = 0) { }
     public void FsDisconnect() { }
     public void FsConfig(uint a, uint b, int c, uint d, uint e, int f, int g, bool h, uint i, uint j, string k, string l, int m2, string m, string n, int o, uint p = 0, uint q = 0) { }

@@ -189,7 +189,7 @@
                 <div class="fp-header">
                     <div class="fp-av-wrap">
                         ${avatarInner}
-                        ${(typeof iconFrameHtml === 'function') ? iconFrameHtml(f.iconFrameUrl) : ''}
+                        ${(typeof iconFrameHtml === 'function') ? iconFrameHtml(f.iconFrameUrl, true) : ''}
                         <span class="fp-av-dot ${dotCls} ${statusCls}"></span>
                     </div>
                     <div class="fp-header-info">

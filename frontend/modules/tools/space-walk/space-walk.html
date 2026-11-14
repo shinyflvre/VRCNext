@@ -1,0 +1,129 @@
+                <div class="sf-layout">
+                    <div class="vrcn-panel-card status">
+                        <div class="sf-status-row">
+                            <div class="sf-status"><span class="sf-dot offline" id="swDot"></span><span id="swStatusText" data-i18n="steamvr.status.not_connected">Not connected</span></div>
+                            <button class="vrcn-button" id="swConnBtn" onclick="swConnect()"><span class="msi" style="font-size:16px;">link</span> <span data-i18n="common.connect">Connect</span></button>
+                        </div>
+                    </div>
+                    <div class="vrcn-panel-card">
+                        <div class="vrcn-panel-card-header"><span class="msi">power_settings_new</span> <span data-i18n="steamvr.launch.title">Launch</span></div>
+                        <div class="sf-toggle-row"><span data-i18n="common.start_with_vrchat_vr">Start when launching VRChat in VR</span><label class="toggle"><input type="checkbox" id="setSwAutoStartVR" onchange="swAutoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                    </div>
+                    <div class="vrcn-panel-card">
+                        <div class="vrcn-panel-card-header"><span class="msi">orbit</span> <span data-i18n="spacewalk.orientation.title">Current Orientation</span></div>
+                        <div class="sf-offset">
+                            <div class="sf-offset-values">
+                                <div class="sf-axis"><span class="sf-axis-label" data-i18n="spacewalk.orientation.pitch">Pitch</span><span class="sf-axis-val" id="swPitch">0.0°</span></div>
+                                <div class="sf-axis"><span class="sf-axis-label" data-i18n="spacewalk.orientation.roll">Roll</span><span class="sf-axis-val" id="swRoll">0.0°</span></div>
+                                <div class="sf-axis"><span class="sf-axis-label" data-i18n="spaceturn.rotation.yaw">Yaw</span><span class="sf-axis-val" id="swYaw">0.0°</span></div>
+                            </div>
+                        </div>
+                        <div class="set-desc" id="swTiltNote" style="display:none;color:var(--warn);margin-top:8px;" data-i18n="spacewalk.orientation.tilt_unsupported">Your SteamVR version does not allow tilting. Only turning works.</div>
+                        <div class="sf-controllers">
+                            <div class="sf-ctrl" id="swCtrlL"><span class="msi" style="font-size:14px;">back_hand</span> <span data-i18n="common.left">Left</span></div>
+                            <div class="sf-ctrl" id="swCtrlR"><span class="msi" style="font-size:14px;">front_hand</span> <span data-i18n="common.right">Right</span></div>
+                        </div>
+                        <div style="margin-top:10px;">
+                            <button class="vrcn-button" onclick="swReset()" style="width:100%;justify-content:center;"><span class="msi" style="font-size:16px;">restart_alt</span> <span data-i18n="steamvr.actions.reset">Reset</span></button>
+                        </div>
+                    </div>
+                    <div class="vrcn-panel-card">
+                        <div class="vrcn-panel-card-header"><span class="msi">tune</span> <span data-i18n="steamvr.settings.title">Settings</span></div>
+                        <div class="sf-row"><label data-i18n="spacewalk.settings.multiplier">Rotation Multiplier</label><input type="range" id="swMultiplier" min="0.1" max="10" step="0.1" value="1" oninput="document.getElementById('swMultVal').textContent=this.value+'x';swAutoSave()"><span id="swMultVal" style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);min-width:28px;text-align:right;">1x</span></div>
+                        <div class="sf-row"><label data-i18n="spacewalk.settings.smoothness">Smoothness</label><input type="range" id="swSmoothing" min="0" max="100" step="1" value="0" oninput="document.getElementById('swSmoothVal').textContent=this.value+'%';swAutoSave()"><span id="swSmoothVal" style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);min-width:28px;text-align:right;">0%</span></div>
+                        <div class="sf-row"><label data-i18n="spacewalk.settings.momentum">Momentum</label><input type="range" id="swMomentum" min="0" max="100" step="1" value="0" oninput="document.getElementById('swMomentumVal').textContent=this.value+'%';swAutoSave()"><span id="swMomentumVal" style="font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);min-width:28px;text-align:right;">0%</span></div>
+                        <div class="sf-toggle-row"><span data-i18n="spaceturn.settings.invert">Invert direction</span><label class="toggle"><input type="checkbox" id="swInvert" onchange="swAutoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                        <div class="sf-toggle-row"><span data-i18n="spacewalk.settings.lock_pitch">Lock Pitch</span><label class="toggle"><input type="checkbox" id="swLockPitch" onchange="swAutoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                        <div class="sf-toggle-row"><span data-i18n="spacewalk.settings.lock_roll">Lock Roll</span><label class="toggle"><input type="checkbox" id="swLockRoll" onchange="swAutoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                        <div class="sf-toggle-row"><span data-i18n="spacewalk.settings.lock_yaw">Lock Yaw</span><label class="toggle"><input type="checkbox" id="swLockYaw" onchange="swAutoSave()"><div class="toggle-track"><div class="toggle-knob"></div></div></label></div>
+                    </div>
+
+                    <div class="vrcn-panel-card">
+                        <div class="vrcn-panel-card-header"><span class="msi">gamepad</span> <span data-i18n="steamvr.controls.title">Controls</span>
+                            <select class="vrcn-select vro-input-mode" onchange="vriSetMode(this.value)"><option value="0" data-i18n="vri.mode.legacy">Legacy (Default)</option><option value="1" data-i18n="vri.mode.steamvr">SteamVR (Index)</option></select>
+                            <button class="vrcn-button vro-view-toggle" onclick="swToggleView(this)" title="Toggle legacy view" data-i18n-title="vro.keybind.toggle_view">
+                                <span class="msi" style="font-size:15px;">format_list_bulleted</span>
+                            </button>
+                        </div>
+
+                        <div class="fd-tabs" id="swKeybindPills" style="margin-bottom:10px;">
+                            <button class="fd-tab active" id="swModeWalk" onclick="swSetMode('walk')" data-i18n="spacewalk.controls.walk_control">Walk Control</button>
+                            <button class="fd-tab" id="swModeReset" onclick="swSetMode('reset')" data-i18n="spacewalk.controls.reset_orientation">Reset Orientation</button>
+                        </div>
+
+                        <div id="swControllerVisual" class="vro-controller-visual editing">
+                            <div class="vro-ctrl-diagram">
+                                <div class="fs-ctrl-col">
+                                    <div class="vro-controller vro-controller-left">
+                                        <div class="vro-ctrl-base"></div>
+                                        <div class="vro-btn" data-sw-btn-id="2"  data-hl="grip"    data-side="left" title="Grip"       onclick="swKeybindClick(this)"></div>
+                                        <div class="vro-btn" data-sw-btn-id="33" data-hl="trigger" data-side="left" title="Trigger"    onclick="swKeybindClick(this)"></div>
+                                        <div class="vro-btn" data-sw-btn-id="32" data-hl="stick"   data-side="left" title="Thumbstick" onclick="swKeybindClick(this)"></div>
+                                        <div class="vro-btn" data-sw-btn-id="7"  data-hl="a"       data-side="left" title="A / X"      onclick="swKeybindClick(this)"></div>
+                                        <div class="vro-btn" data-sw-btn-id="1"  data-hl="b"       data-side="left" title="B / Y"      onclick="swKeybindClick(this)"></div>
+                                    </div>
+                                    <span class="fs-ctrl-cap" data-i18n="common.left_hand">Left Hand</span>
+                                </div>
+                                <div class="fs-ctrl-col">
+                                    <div class="vro-controller vro-controller-right">
+                                        <div class="vro-ctrl-base"></div>
+                                        <div class="vro-btn" data-sw-btn-id="2"  data-hl="grip"    data-side="right" title="Grip"       onclick="swKeybindClick(this)"></div>
+                                        <div class="vro-btn" data-sw-btn-id="33" data-hl="trigger" data-side="right" title="Trigger"    onclick="swKeybindClick(this)"></div>
+                                        <div class="vro-btn" data-sw-btn-id="32" data-hl="stick"   data-side="right" title="Thumbstick" onclick="swKeybindClick(this)"></div>
+                                        <div class="vro-btn" data-sw-btn-id="7"  data-hl="a"       data-side="right" title="A / X"      onclick="swKeybindClick(this)"></div>
+                                        <div class="vro-btn" data-sw-btn-id="1"  data-hl="b"       data-side="right" title="B / Y"      onclick="swKeybindClick(this)"></div>
+                                    </div>
+                                    <span class="fs-ctrl-cap" data-i18n="common.right_hand">Right Hand</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="swLegacyView" style="display:none;">
+                            <div class="sf-ctrl-grid st-ctrl-grid sf-ctrl-head">
+                                <span></span>
+                                <span data-i18n="spacewalk.controls.walk_control">Walk Control</span>
+                                <span data-i18n="spacewalk.controls.reset_orientation">Reset Orientation</span>
+                            </div>
+
+                            <div class="sf-ctrl-grid st-ctrl-grid">
+                                <label data-i18n="common.left_hand">Left Hand</label>
+                                <select id="swLeftWalk" data-vri-buttons="optional" class="vrcn-select" onchange="swAutoSave();swRenderKeybind()">
+                                    <option value="0"  data-i18n="frameshot.keybind.none">None</option>
+                                    <option value="2"  data-i18n="vro.keybind.button.grip">Grip</option>
+                                    <option value="33" data-i18n="vro.keybind.button.trigger">Trigger</option>
+                                    <option value="32" data-i18n="vro.keybind.button.thumbstick">Thumbstick</option>
+                                    <option value="7"  data-i18n="vro.keybind.button.ax">A / X</option>
+                                    <option value="1"  data-i18n="vro.keybind.button.by">B / Y</option>
+                                </select>
+                                <select id="swLeftReset" data-vri-buttons="optional" class="vrcn-select" onchange="swAutoSave();swRenderKeybind()">
+                                    <option value="0"  data-i18n="frameshot.keybind.none">None</option>
+                                    <option value="2"  data-i18n="vro.keybind.button.grip">Grip</option>
+                                    <option value="33" data-i18n="vro.keybind.button.trigger">Trigger</option>
+                                    <option value="32" data-i18n="vro.keybind.button.thumbstick">Thumbstick</option>
+                                    <option value="7"  data-i18n="vro.keybind.button.ax">A / X</option>
+                                    <option value="1"  data-i18n="vro.keybind.button.by">B / Y</option>
+                                </select>
+                            </div>
+
+                            <div class="sf-ctrl-grid st-ctrl-grid">
+                                <label data-i18n="common.right_hand">Right Hand</label>
+                                <select id="swRightWalk" data-vri-buttons="optional" class="vrcn-select" onchange="swAutoSave();swRenderKeybind()">
+                                    <option value="0"  data-i18n="frameshot.keybind.none">None</option>
+                                    <option value="2"  data-i18n="vro.keybind.button.grip" selected>Grip</option>
+                                    <option value="33" data-i18n="vro.keybind.button.trigger">Trigger</option>
+                                    <option value="32" data-i18n="vro.keybind.button.thumbstick">Thumbstick</option>
+                                    <option value="7"  data-i18n="vro.keybind.button.ax">A / X</option>
+                                    <option value="1"  data-i18n="vro.keybind.button.by">B / Y</option>
+                                </select>
+                                <select id="swRightReset" data-vri-buttons="optional" class="vrcn-select" onchange="swAutoSave();swRenderKeybind()">
+                                    <option value="0"  data-i18n="frameshot.keybind.none">None</option>
+                                    <option value="2"  data-i18n="vro.keybind.button.grip">Grip</option>
+                                    <option value="33" data-i18n="vro.keybind.button.trigger">Trigger</option>
+                                    <option value="32" data-i18n="vro.keybind.button.thumbstick">Thumbstick</option>
+                                    <option value="7"  data-i18n="vro.keybind.button.ax">A / X</option>
+                                    <option value="1"  data-i18n="vro.keybind.button.by">B / Y</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>

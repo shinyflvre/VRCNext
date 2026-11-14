@@ -2200,6 +2200,29 @@ public class AuthController
                 _core.Settings.StLeftResetButton  = SfIn("stLeftResetBtn",  _core.Settings.StLeftResetButton);
                 _core.Settings.StRightResetButton = SfIn("stRightResetBtn", _core.Settings.StRightResetButton);
             }
+
+            _core.Settings.SwMultiplier  = data["swMultiplier"]?.Value<float>() ?? _core.Settings.SwMultiplier;
+            _core.Settings.SwSmoothing   = data["swSmoothing"]?.Value<float>()  ?? _core.Settings.SwSmoothing;
+            _core.Settings.SwMomentum    = data["swMomentum"]?.Value<float>()   ?? _core.Settings.SwMomentum;
+            _core.Settings.SwInvert      = data["swInvert"]?.Value<bool>()      ?? _core.Settings.SwInvert;
+            _core.Settings.SwLockPitch   = data["swLockPitch"]?.Value<bool>()   ?? _core.Settings.SwLockPitch;
+            _core.Settings.SwLockRoll    = data["swLockRoll"]?.Value<bool>()    ?? _core.Settings.SwLockRoll;
+            _core.Settings.SwLockYaw     = data["swLockYaw"]?.Value<bool>()     ?? _core.Settings.SwLockYaw;
+            _core.Settings.SwAutoStartVR = data["swAutoStartVR"]?.Value<bool>() ?? _core.Settings.SwAutoStartVR;
+            if (vrIdx)
+            {
+                _core.Settings.SwIdxLeftWalkButton   = SfIn("swLeftWalkBtn",   _core.Settings.SwIdxLeftWalkButton);
+                _core.Settings.SwIdxRightWalkButton  = SfIn("swRightWalkBtn",  _core.Settings.SwIdxRightWalkButton);
+                _core.Settings.SwIdxLeftResetButton  = SfIn("swLeftResetBtn",  _core.Settings.SwIdxLeftResetButton);
+                _core.Settings.SwIdxRightResetButton = SfIn("swRightResetBtn", _core.Settings.SwIdxRightResetButton);
+            }
+            else
+            {
+                _core.Settings.SwLeftWalkButton   = SfIn("swLeftWalkBtn",   _core.Settings.SwLeftWalkButton);
+                _core.Settings.SwRightWalkButton  = SfIn("swRightWalkBtn",  _core.Settings.SwRightWalkButton);
+                _core.Settings.SwLeftResetButton  = SfIn("swLeftResetBtn",  _core.Settings.SwLeftResetButton);
+                _core.Settings.SwRightResetButton = SfIn("swRightResetBtn", _core.Settings.SwRightResetButton);
+            }
             _core.Settings.ChatboxAutoStart = data["chatboxAutoStart"]?.Value<bool>() ?? false;
             _core.Settings.SfAutoStart = data["sfAutoStart"]?.Value<bool>() ?? false;
             _core.Settings.DiscordPresenceAutoStart = data["discordPresenceAutoStart"]?.Value<bool>() ?? false;
@@ -2308,7 +2331,6 @@ public class AuthController
             _core.Settings.ImgCacheLimitGb         = Math.Clamp(data["imgCacheLimitGb"]?.Value<int>() ?? 5, 5, 30);
             _core.Settings.ImgCacheOptimizeEnabled = data["imgCacheOptimizeEnabled"]?.Value<bool>() ?? true;
             _core.Settings.ImgMemoryOptimizeEnabled = data["imgMemoryOptimizeEnabled"]?.Value<bool>() ?? true;
-            _core.Settings.VrcPlusOptimizeEnabled   = data["vrcPlusOptimizeEnabled"]?.Value<bool>() ?? true;
             ImageCacheHelper.LimitGb         = _core.Settings.ImgCacheLimitGb;
             ImageCacheHelper.OptimizeEnabled = _core.Settings.ImgCacheOptimizeEnabled;
 

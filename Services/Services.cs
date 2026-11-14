@@ -319,7 +319,6 @@ public class AppSettings
     public bool PeopleAlwaysStats { get; set; } = false;
     public bool ModernFolderLayout { get; set; } = true;
     public bool NavSidebarHoverText { get; set; } = true;
-    public bool VrcPlusOptimizeEnabled { get; set; } = true;
     public bool EnableVrcPlusDecorations { get; set; } = false;
     public bool EnableProfileIconFrames { get; set; } = true;
     public bool SquareIconFrames { get; set; } = true;
@@ -526,6 +525,23 @@ public class AppSettings
     public uint  StIdxRightTurnButton { get; set; } = 0;
     public uint  StIdxLeftResetButton { get; set; } = 0;
     public uint  StIdxRightResetButton{ get; set; } = 0;
+
+    public float SwMultiplier   { get; set; } = 1f;
+    public float SwSmoothing    { get; set; } = 0f;
+    public float SwMomentum     { get; set; } = 0f;
+    public bool  SwInvert       { get; set; }
+    public bool  SwLockPitch    { get; set; }
+    public bool  SwLockRoll     { get; set; }
+    public bool  SwLockYaw      { get; set; }
+    public bool  SwAutoStartVR  { get; set; }
+    public uint  SwLeftWalkButton     { get; set; } = 0;
+    public uint  SwRightWalkButton    { get; set; } = 2;
+    public uint  SwLeftResetButton    { get; set; } = 0;
+    public uint  SwRightResetButton   { get; set; } = 0;
+    public uint  SwIdxLeftWalkButton  { get; set; } = 0;
+    public uint  SwIdxRightWalkButton { get; set; } = 0;
+    public uint  SwIdxLeftResetButton { get; set; } = 0;
+    public uint  SwIdxRightResetButton{ get; set; } = 0;
 
     // FrameShot settings
     public uint   FsLeftButton       { get; set; } = 2;  // EVRButtonId.k_EButton_Grip

@@ -117,6 +117,12 @@ static class VRSubprocess
             obj["t"] = "st_update";
             SendLine(obj);
         });
+        sf.SetWalkUpdateCallback(data =>
+        {
+            var obj = JObject.FromObject(data);
+            obj["t"] = "sw_update";
+            SendLine(obj);
+        });
         sf.OnVRQuit += () => Environment.Exit(0);
 
         fs.OnStateUpdate += d =>
@@ -243,7 +249,7 @@ static class VRSubprocess
                 vro.SetToolStates(
                     B(cmd, "discord"), B(cmd, "voice"), B(cmd, "kikitan"),
                     B(cmd, "space"),   B(cmd, "relay"), B(cmd, "chatbox"),
-                    B(cmd, "frameShot"), B(cmd, "spaceTurn"));
+                    B(cmd, "frameShot"), B(cmd, "spaceTurn"), B(cmd, "spaceWalk"));
                 break;
 
             case "vro_add_notif":
@@ -354,7 +360,7 @@ static class VRSubprocess
 
             case "sf_disconnect":
                 sf.DragEnabled = false;
-                if (!sf.TurnEnabled) sf.Disconnect();
+                if (!sf.TurnEnabled && !sf.WalkEnabled) sf.Disconnect();
                 break;
 
             case "st_connect":
@@ -379,7 +385,7 @@ static class VRSubprocess
 
             case "st_disconnect":
                 sf.TurnEnabled = false;
-                if (!sf.DragEnabled) sf.Disconnect();
+                if (!sf.DragEnabled && !sf.WalkEnabled) sf.Disconnect();
                 break;
 
             case "st_config":
@@ -394,6 +400,50 @@ static class VRSubprocess
                 break;
 
             case "st_reset":
+                sf.ResetRotation();
+                break;
+
+            case "sw_connect":
+            {
+                _toolConnected = true;
+                bool ok = sf.Connect();
+                if (ok)
+                {
+                    sf.WalkEnabled = true;
+                    sf.CheckTiltSupport();
+                    sf.ApplyWalkConfig(F(cmd, "multiplier", 1f),
+                        F(cmd, "smoothing", 0f),
+                        F(cmd, "momentum", 0f),
+                        B(cmd, "invert"),
+                        B(cmd, "lockPitch"), B(cmd, "lockRoll"), B(cmd, "lockYaw"),
+                        (uint)I(cmd, "leftWalkBtn",   0),
+                        (uint)I(cmd, "rightWalkBtn",  2),
+                        (uint)I(cmd, "leftResetBtn",  0),
+                        (uint)I(cmd, "rightResetBtn", 0));
+                    sf.StartPolling();
+                }
+                break;
+            }
+
+            case "sw_disconnect":
+                sf.ClearTilt();
+                sf.WalkEnabled = false;
+                if (!sf.DragEnabled && !sf.TurnEnabled) sf.Disconnect();
+                break;
+
+            case "sw_config":
+                sf.ApplyWalkConfig(F(cmd, "multiplier", 1f),
+                    F(cmd, "smoothing", 0f),
+                    F(cmd, "momentum", 0f),
+                    B(cmd, "invert"),
+                    B(cmd, "lockPitch"), B(cmd, "lockRoll"), B(cmd, "lockYaw"),
+                    (uint)I(cmd, "leftWalkBtn",   0),
+                    (uint)I(cmd, "rightWalkBtn",  2),
+                    (uint)I(cmd, "leftResetBtn",  0),
+                    (uint)I(cmd, "rightResetBtn", 0));
+                break;
+
+            case "sw_reset":
                 sf.ResetRotation();
                 break;
 

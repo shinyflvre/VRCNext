@@ -87,6 +87,7 @@ function saveSettings() {
     const _vriReady = typeof vriLoaded !== 'undefined' && vriLoaded;
     const _sfCur = _vriReady && typeof sfReadBtns === 'function' ? sfReadBtns() : {};
     const _stCur = _vriReady && typeof stReadBtns === 'function' ? stReadBtns() : {};
+    const _swCur = _vriReady && typeof swReadBtns === 'function' ? swReadBtns() : {};
     const _fsCur = _vriReady && typeof fsReadBtns === 'function' ? fsReadBtns() : {};
     const _sfLegacy = vrInputMode === 1 ? _sfOtherBtns : _sfCur;
     const _sfIndex = vrInputMode === 1 ? _sfCur : _sfOtherBtns;
@@ -207,6 +208,18 @@ function saveSettings() {
             stIdxLeftResetBtn:  _stIndex.stLeftReset,
             stIdxRightResetBtn: _stIndex.stRightReset,
             stAutoStartVR:   document.getElementById('setStAutoStartVR')?.checked ?? false,
+            swMultiplier:    parseFloat(document.getElementById('swMultiplier')?.value) || 1,
+            swSmoothing:     parseFloat(document.getElementById('swSmoothing')?.value) || 0,
+            swMomentum:      parseFloat(document.getElementById('swMomentum')?.value) || 0,
+            swInvert:        !!document.getElementById('swInvert')?.checked,
+            swLockPitch:     !!document.getElementById('swLockPitch')?.checked,
+            swLockRoll:      !!document.getElementById('swLockRoll')?.checked,
+            swLockYaw:       !!document.getElementById('swLockYaw')?.checked,
+            swLeftWalkBtn:   _swCur.swLeftWalk,
+            swRightWalkBtn:  _swCur.swRightWalk,
+            swLeftResetBtn:  _swCur.swLeftReset,
+            swRightResetBtn: _swCur.swRightReset,
+            swAutoStartVR:   document.getElementById('setSwAutoStartVR')?.checked ?? false,
             chatboxAutoStart: false, // legacy
             chatboxAutoStartVR:       document.getElementById('setCbAutoStartVR')?.checked        ?? false,
             chatboxAutoStartDesktop:  document.getElementById('setCbAutoStartDesktop')?.checked   ?? false,
@@ -329,7 +342,6 @@ function saveSettings() {
             imgCacheLimitGb:         parseInt(document.getElementById('setImgCacheLimit').value) || 5,
             imgCacheOptimizeEnabled: document.getElementById('setImgCacheOptimizeEnabled').checked,
             imgMemoryOptimizeEnabled: document.getElementById('setImgMemoryOptimizeEnabled')?.checked ?? true,
-            vrcPlusOptimizeEnabled: document.getElementById('setVrcPlusOptimize')?.checked ?? true,
             ffcEnabled: document.getElementById('setFfcEnabled').checked,
             memoryTrimEnabled: document.getElementById('setMemoryTrimEnabled').checked,
             mediaFixEnabled: document.getElementById('setMediaFixEnabled')?.checked ?? true,
@@ -431,7 +443,7 @@ function initAutoSave() {
         'setYtAutoStartVR','setYtAutoStartDesktop','setYtAutoStartSteam',
         'setVfAutoStartVR','setVfAutoStartDesktop',
         'setDpAutoStartVR','setDpAutoStartDesktop',
-        'setImgCacheEnabled','setImgCacheLimit','setImgCacheOptimizeEnabled','setImgMemoryOptimizeEnabled','setVrcPlusOptimize','setMemoryTrimEnabled','setRestartAfterCrash',
+        'setImgCacheEnabled','setImgCacheLimit','setImgCacheOptimizeEnabled','setImgMemoryOptimizeEnabled','setMemoryTrimEnabled','setRestartAfterCrash',
         'setPerfGpuAccel','setPerfShaderCache','setPerfV8Heap','setPerfRenderProc',
         'setPerfAnimations','setPerfBlur'];
     ids.forEach(id => {
@@ -842,12 +854,46 @@ function loadSettingsToUI(s) {
     }
     if (typeof stRenderKeybind === 'function') stRenderKeybind();
 
+    const _swRange = (id, valId, value, suffix) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.value = value;
+        const v = document.getElementById(valId);
+        if (v) v.textContent = el.value + suffix;
+    };
+    _swRange('swMultiplier', 'swMultVal', s.SwMultiplier ?? s.swMultiplier ?? 1, 'x');
+    _swRange('swSmoothing', 'swSmoothVal', s.SwSmoothing ?? s.swSmoothing ?? 0, '%');
+    _swRange('swMomentum', 'swMomentumVal', s.SwMomentum ?? s.swMomentum ?? 0, '%');
+    [['swInvert', 'SwInvert'], ['swLockPitch', 'SwLockPitch'], ['swLockRoll', 'SwLockRoll'], ['swLockYaw', 'SwLockYaw']].forEach(([id, key]) => {
+        const el = document.getElementById(id);
+        if (el) el.checked = !!(s[key] ?? s[key.charAt(0).toLowerCase() + key.slice(1)] ?? false);
+    });
+    if (typeof _swOtherBtns !== 'undefined') {
+        const _swIdx = (s.VrInputMode ?? s.vrInputMode ?? 0) === 1;
+        const _swLegacySet = {
+            swLeftWalk:   s.SwLeftWalkButton   ?? s.swLeftWalkButton   ?? 0,
+            swRightWalk:  s.SwRightWalkButton  ?? s.swRightWalkButton  ?? 2,
+            swLeftReset:  s.SwLeftResetButton  ?? s.swLeftResetButton  ?? 0,
+            swRightReset: s.SwRightResetButton ?? s.swRightResetButton ?? 0,
+        };
+        const _swIndexSet = {
+            swLeftWalk:   s.SwIdxLeftWalkButton   ?? s.swIdxLeftWalkButton   ?? 0,
+            swRightWalk:  s.SwIdxRightWalkButton  ?? s.swIdxRightWalkButton  ?? 0,
+            swLeftReset:  s.SwIdxLeftResetButton  ?? s.swIdxLeftResetButton  ?? 0,
+            swRightReset: s.SwIdxRightResetButton ?? s.swIdxRightResetButton ?? 0,
+        };
+        _swOtherBtns = _swIdx ? _swLegacySet : _swIndexSet;
+        if (typeof swWriteBtns === 'function') swWriteBtns(_swIdx ? _swIndexSet : _swLegacySet);
+    }
+    if (typeof swRenderKeybind === 'function') swRenderKeybind();
+
     // Restore VR/Desktop auto-start flags
     const _set = (id, v) => { const el = document.getElementById(id); if (el) el.checked = !!v; };
     _set('setCbAutoStartVR',      s.ChatboxAutoStartVR      ?? s.chatboxAutoStartVR      ?? false);
     _set('setCbAutoStartDesktop', s.ChatboxAutoStartDesktop ?? s.chatboxAutoStartDesktop ?? false);
     _set('setSfAutoStartVR',      s.SfAutoStartVR           ?? s.sfAutoStartVR           ?? false);
     _set('setStAutoStartVR',      s.StAutoStartVR           ?? s.stAutoStartVR           ?? false);
+    _set('setSwAutoStartVR',      s.SwAutoStartVR           ?? s.swAutoStartVR           ?? false);
     _set('setFsAutoStartVR',      s.FsAutoStartVR           ?? s.fsAutoStartVR           ?? false);
     const _fsLeftEl  = document.getElementById('fsLeftButton');
     const _fsRightEl = document.getElementById('fsRightButton');
@@ -1038,9 +1084,6 @@ function loadSettingsToUI(s) {
     imgThumbsEnabled = imgMemoryOptimizeEnabled === true;
     const memOptEl = document.getElementById('setImgMemoryOptimizeEnabled');
     if (memOptEl) memOptEl.checked = imgThumbsEnabled;
-    vrcPlusOptimizeEnabled = (s.VrcPlusOptimizeEnabled ?? s.vrcPlusOptimizeEnabled ?? true) === true;
-    const vpOptEl = document.getElementById('setVrcPlusOptimize');
-    if (vpOptEl) vpOptEl.checked = vrcPlusOptimizeEnabled;
     document.getElementById('setImgCacheLimit').value = imgCacheLimitGb;
     document.getElementById('imgCacheLimitVal').textContent = imgCacheLimitGb + ' GB';
     document.getElementById('setImgCacheOptimizeEnabled').checked = imgCacheOptimizeEnabled;
@@ -1203,19 +1246,6 @@ function onDecoToggle(key, on) {
     autoSave();
     if (typeof applyDecorationsSetting === 'function') applyDecorationsSetting();
     if (typeof updateSquareFrameToggle === 'function') updateSquareFrameToggle();
-}
-
-function onVrcPlusOptimizeToggle() {
-    vrcPlusOptimizeEnabled = document.getElementById('setVrcPlusOptimize')?.checked === true;
-    autoSave();
-    const fl = document.getElementById('vrcFriendsList');
-    if (fl) fl.__lastHtml = null;
-    ['dashFavWorlds', 'dashFriendsFeed', 'dashFriendLocSmallShelf', 'dashGroupActivityGrid', 'dashGroupActivityCards', 'dashGroupActivityShelf'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.__lastHtml = null;
-    });
-    if (typeof renderVrcFriends === 'function' && typeof vrcFriendsData !== 'undefined' && vrcFriendsData.length) renderVrcFriends(vrcFriendsData);
-    if (typeof renderDashboard === 'function') renderDashboard();
 }
 
 function onImgMemoryOptimizeToggle() {

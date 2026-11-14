@@ -87,6 +87,8 @@ const AF_FEATURES = [
         () => sfConnect(), () => sendToCS({ action: 'sfDisconnect' })],
     ['space_turn',       'Space Turn',       () => typeof stConnected    !== 'undefined' && stConnected,
         () => stConnect(), () => sendToCS({ action: 'stDisconnect' })],
+    ['space_walk',       'Space Walk',       () => typeof swConnected    !== 'undefined' && swConnected,
+        () => swConnect(), () => sendToCS({ action: 'swDisconnect' })],
     ['custom_chatbox',   'Custom Chatbox',   () => typeof chatboxEnabled !== 'undefined' && chatboxEnabled,
         () => toggleChatbox(), () => toggleChatbox()],
     ['media_relay',      'Media Relay',      () => typeof relayOn        !== 'undefined' && relayOn,
