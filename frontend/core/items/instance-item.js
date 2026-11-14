@@ -17,14 +17,15 @@ function instanceVibeLabel(title) {
 
 function instanceMetaHtml(meta) {
     if (!meta) return '';
-    const parts = [];
-    if (meta.categoryName) parts.push(instanceCategoryLabel(meta.categoryName));
-    if (meta.vibes && meta.vibes.length) parts.push(meta.vibes.map(instanceVibeLabel).join(', '));
-    if (meta.languages && meta.languages.length) parts.push(meta.languages.map(code => LANG_MAP['language_' + code] || code.toUpperCase()).join(', '));
-    if (!meta.description && !parts.length) return '';
-    const description = meta.description ? `<div style="white-space:pre-wrap;word-break:break-word;">${esc(meta.description)}</div>` : '';
-    const line = parts.length ? `<div>${esc(parts.join(' · '))}</div>` : '';
-    return `<div style="display:grid;gap:4px;padding:0 12px 8px;font-size:calc(11px + var(--fs-off, 0px));color:var(--tx2);">${description}${line}</div>`;
+    const badge = (icon, text) => `<span class="vrcn-badge">${icon ? `<span class="msi" style="font-size:10px;">${icon}</span>` : ''}${esc(text)}</span>`;
+    const tags = [];
+    if (meta.categoryName) tags.push(badge('category', instanceCategoryLabel(meta.categoryName)));
+    (meta.vibes || []).forEach(vibe => tags.push(badge('', instanceVibeLabel(vibe))));
+    (meta.languages || []).forEach(code => tags.push(badge('translate', LANG_MAP['language_' + code] || code.toUpperCase())));
+    if (!meta.description && !tags.length) return '';
+    const description = meta.description ? `<div class="inst-meta-desc">${esc(meta.description)}</div>` : '';
+    const tagRow = tags.length ? `<div class="inst-meta-tags">${tags.join('')}</div>` : '';
+    return `<div class="inst-meta">${description}${tagRow}</div>`;
 }
 
 function _selfInstanceMember() {

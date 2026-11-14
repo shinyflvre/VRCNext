@@ -499,6 +499,7 @@ public partial class AppShell
                     _authCtrl.HandleReady();
                     _sfCtrl.ResendState();
                     _stCtrl.ResendState();
+                    _swCtrl.ResendState();
                     _fsCtrl.ResendState();
                     FlushPendingDeepLink();
                     Services.CrashHandler.ClearPendingCrash();
@@ -3075,6 +3076,13 @@ public partial class AppShell
                 case "stReset":
                 case "stConfig":
                     _stCtrl.HandleMessage(action, msg);
+                    break;
+
+                case "swConnect":
+                case "swDisconnect":
+                case "swReset":
+                case "swConfig":
+                    _swCtrl.HandleMessage(action, msg);
                     break;
 
                 // FrameShot (in-VR photo)

@@ -206,6 +206,7 @@ function vriApplyMode() {
     if (typeof vroApplyInputMode === 'function') vroApplyInputMode();
     if (typeof sfApplyInputMode  === 'function') sfApplyInputMode();
     if (typeof stApplyInputMode  === 'function') stApplyInputMode();
+    if (typeof swApplyInputMode  === 'function') swApplyInputMode();
     if (typeof fsApplyInputMode  === 'function') fsApplyInputMode();
 }
 
@@ -216,6 +217,7 @@ function vriSetMode(mode) {
     if (typeof vroSwapKeybindSets === 'function') vroSwapKeybindSets();
     if (typeof sfSwapButtonSets   === 'function') sfSwapButtonSets();
     if (typeof stSwapButtonSets   === 'function') stSwapButtonSets();
+    if (typeof swSwapButtonSets   === 'function') swSwapButtonSets();
     if (typeof fsSwapButtonSets   === 'function') fsSwapButtonSets();
     document.querySelectorAll('select.vro-input-mode').forEach(sel => {
         sel.value = String(m);

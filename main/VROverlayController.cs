@@ -18,7 +18,7 @@ public class VROverlayController : IDisposable
     public Action<int>?    OnToolToggle    { get; set; }
     public Action<float>?  OnVrScaleChange { get; set; }
     public Action<List<uint>, List<string>, int>? OnVrScaleKeybindRecorded { get; set; }
-    public Func<(bool discord, bool voice, bool kikitan, bool space, bool relay, bool chatbox, bool frameShot, bool spaceTurn)>? GetToolStates { get; set; }
+    public Func<(bool discord, bool voice, bool kikitan, bool space, bool relay, bool chatbox, bool frameShot, bool spaceTurn, bool spaceWalk)>? GetToolStates { get; set; }
 
     public VROverlayController(CoreLibrary core, FriendsController friends)
     {
@@ -459,7 +459,7 @@ public class VROverlayController : IDisposable
     {
         if (_core.VrOverlay == null) return;
         var states = GetToolStates?.Invoke() ?? default;
-        _core.VrOverlay.SetToolStates(states.discord, states.voice, states.kikitan, states.space, states.relay, states.chatbox, states.frameShot, states.spaceTurn);
+        _core.VrOverlay.SetToolStates(states.discord, states.voice, states.kikitan, states.space, states.relay, states.chatbox, states.frameShot, states.spaceTurn, states.spaceWalk);
     }
 
     public void Dispose()
@@ -480,7 +480,7 @@ namespace VRCNext;
 public class VROverlayController : IDisposable
 {
     public Action<int>? OnToolToggle { get; set; }
-    public Func<(bool discord, bool voice, bool kikitan, bool space, bool relay, bool chatbox, bool frameShot, bool spaceTurn)>? GetToolStates { get; set; }
+    public Func<(bool discord, bool voice, bool kikitan, bool space, bool relay, bool chatbox, bool frameShot, bool spaceTurn, bool spaceWalk)>? GetToolStates { get; set; }
 
     public VROverlayController(CoreLibrary core, FriendsController friends) { }
     public Task HandleMessage(string action, Newtonsoft.Json.Linq.JObject msg) => Task.CompletedTask;

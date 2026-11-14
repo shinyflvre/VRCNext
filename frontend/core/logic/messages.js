@@ -106,6 +106,9 @@ window.external.receiveMessage(rawMsg => {
                 ensure(vr && chk('setStAutoStartVR'),
                     () => typeof stConnected !== 'undefined' && stConnected,
                     () => { if (typeof stConnect === 'function') stConnect(); });
+                ensure(vr && chk('setSwAutoStartVR'),
+                    () => typeof swConnected !== 'undefined' && swConnected,
+                    () => { if (typeof swConnect === 'function') swConnect(); });
                 // FrameShot (VR only)
                 ensure(vr && chk('setFsAutoStartVR'),
                     () => typeof fsConnected !== 'undefined' && fsConnected,
@@ -148,6 +151,7 @@ window.external.receiveMessage(rawMsg => {
                 if (typeof sfConnected !== 'undefined' && sfConnected) stop(() => sendToCS({ action: 'sfDisconnect' }));
                 // Space Turn
                 if (typeof stConnected !== 'undefined' && stConnected) stop(() => sendToCS({ action: 'stDisconnect' }));
+                if (typeof swConnected !== 'undefined' && swConnected) stop(() => sendToCS({ action: 'swDisconnect' }));
                 // FrameShot
                 if (typeof fsConnected !== 'undefined' && fsConnected) stop(() => sendToCS({ action: 'fsDisconnect' }));
                 // Media Relay
@@ -1171,6 +1175,9 @@ case 'vrcNews':
                 break;
             case 'stUpdate':
                 if (typeof handleStUpdate === 'function') handleStUpdate(payload);
+                break;
+            case 'swUpdate':
+                if (typeof handleSwUpdate === 'function') handleSwUpdate(payload);
                 break;
             case 'fsUpdate':
                 if (typeof handleFsUpdate === 'function') handleFsUpdate(payload);

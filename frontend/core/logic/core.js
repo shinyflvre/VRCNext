@@ -117,16 +117,39 @@ function applyDecorationsSetting() {
     cls.toggle('deco-dashboard-on', any('showDecorationsOnDashboard'));
     cls.toggle('profile-cards-transparent', any('transparentProfileCards'));
 }
+function _decoImgHtml(cls, url, animated, thumbSize) {
+    if (!url) return '';
+    if (animated) return `<img class="${cls}" src="${url}" loading="lazy" decoding="async" alt="" aria-hidden="true">`;
+    const still = _thumbUrl(url, thumbSize);
+    if (still === url) return `<img class="${cls}" src="${url}" loading="lazy" decoding="async" alt="" aria-hidden="true">`;
+    return `<img class="${cls}" src="${still}" data-still-src="${still}" data-anim-src="${url}" loading="lazy" decoding="async" alt="" aria-hidden="true">`;
+}
 function iconFrameHtml(frameUrl, animated) {
-    if (!frameUrl) return '';
-    const src = (animated || !vrcPlusOptimizeEnabled) ? frameUrl : _thumbUrl(frameUrl, 96);
-    return `<img class="user-frame-deco" src="${src}" loading="lazy" decoding="async" alt="" aria-hidden="true">`;
+    return _decoImgHtml('user-frame-deco', frameUrl, animated, 96);
 }
 function nameplateDecoHtml(url, animated) {
-    if (!url) return '';
-    const src = (animated || !vrcPlusOptimizeEnabled) ? url : _thumbUrl(url, 256);
-    return `<img class="nameplate-deco" src="${src}" loading="lazy" decoding="async" alt="" aria-hidden="true">`;
+    return _decoImgHtml('nameplate-deco', url, animated, 256);
 }
+const _DECO_HOVER_HOSTS = '.vrc-friend-card, .vrc-profile, .vrcn-user-item, .dash-flocs-card';
+let _decoHoverHost = null;
+function _decoSetAnimated(host, on) {
+    host.querySelectorAll('img[data-anim-src]').forEach(img => {
+        const next = on ? img.dataset.animSrc : img.dataset.stillSrc;
+        if (next && img.getAttribute('src') !== next) img.setAttribute('src', next);
+    });
+}
+function _decoHoverTo(host) {
+    if (host === _decoHoverHost) return;
+    if (_decoHoverHost) _decoSetAnimated(_decoHoverHost, false);
+    _decoHoverHost = host;
+    if (host) _decoSetAnimated(host, true);
+}
+document.addEventListener('mouseover', e => {
+    const host = e.target instanceof Element ? e.target.closest(_DECO_HOVER_HOSTS) : null;
+    _decoHoverTo(host && host.querySelector('img[data-anim-src]') ? host : null);
+});
+document.documentElement.addEventListener('mouseleave', () => _decoHoverTo(null));
+window.addEventListener('blur', () => _decoHoverTo(null));
 function profileEffectHtml(url) {
     if (!url) return '';
     return `<img class="profile-effect-deco" src="${url}" loading="lazy" decoding="async" alt="" aria-hidden="true">`;
@@ -413,6 +436,7 @@ function getCreatorBadgeHtml(u) {
 let sfConnected = false;
 // Space Turn
 let stConnected = false;
+let swConnected = false;
 // FrameShot
 let fsConnected = false;
 // Custom Chatbox OSC
@@ -1021,6 +1045,7 @@ function getPageTitle(i) {
         t('page.status_schedule', 'Status Schedule'),
         t('page.space_turn', 'Space Turn'),
         t('page.meet_network', 'Meet Network'),
+        t('page.space_walk', 'Space Walk'),
     ][i] ?? '';
 }
 
@@ -2362,7 +2387,6 @@ function cssUrl(s) {
 }
 
 let imgThumbsEnabled = true;
-let vrcPlusOptimizeEnabled = true;
 
 function _thumbUrl(url, size) {
     if (!url || url.indexOf('/imgcache/') === -1 || url.indexOf('thumb=') !== -1) return url;

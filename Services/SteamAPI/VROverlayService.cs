@@ -205,6 +205,7 @@ namespace VRCNext.Services
         private bool _toolChatbox    = false;
         private bool _toolFrameShot  = false;
         private bool _toolSpaceTurn  = false;
+        private bool _toolSpaceWalk  = false;
 
         // Tools tab scroll state (analog to _locationScrollY)
         private float _toolsScrollY  = 0f;
@@ -425,7 +426,7 @@ namespace VRCNext.Services
             if (_activeTab == TabKikitan) _dirty = true;
         }
 
-        public void SetToolStates(bool discord, bool voiceFight, bool kikitan, bool spaceFlight, bool relay, bool chatbox, bool frameShot, bool spaceTurn = false)
+        public void SetToolStates(bool discord, bool voiceFight, bool kikitan, bool spaceFlight, bool relay, bool chatbox, bool frameShot, bool spaceTurn = false, bool spaceWalk = false)
         {
             _toolDiscord    = discord;
             _toolVoice      = voiceFight;
@@ -435,6 +436,7 @@ namespace VRCNext.Services
             _toolChatbox    = chatbox;
             _toolFrameShot  = frameShot;
             _toolSpaceTurn  = spaceTurn;
+            _toolSpaceWalk  = spaceWalk;
             ClampActiveTab();
             _dirty = true;
         }
@@ -4264,8 +4266,8 @@ namespace VRCNext.Services
         private static int ToolsViewportH => ToolsBottom - ToolsStartY;
 
         private int GetToolsCount() =>
-            // discord, voice, kikitan, space, relay, chatbox, frameshot, spaceturn
-            8;
+            // discord, voice, kikitan, space, relay, chatbox, frameshot, spaceturn, spacewalk
+            9;
 
         private float GetToolsMaxScroll()
         {
@@ -4303,6 +4305,7 @@ namespace VRCNext.Services
                 ("\uE0C9", "Custom Chatbox",   _toolChatbox),
                 ("\uE412", "FrameShot",       _toolFrameShot),
                 ("\uE41A", "Space Turn",      _toolSpaceTurn),
+                ("\uF426", "Space Walk",      _toolSpaceWalk),
             };
 
             for (int i = 0; i < tools.Length; i++)
