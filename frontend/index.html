@@ -218,7 +218,7 @@
                                     <button class="tb-dd-item" data-keep-modal onclick="openImportModal('avatars')"><span class="msi">checkroom</span><span data-i18n="import.avatars">Avatars</span></button>
                                 </div>
                             </div>
-                            <div class="tb-dd-submenu" data-windows-only>
+                            <div class="tb-dd-submenu">
                                 <button class="tb-dd-item"><span class="msi">view_in_ar</span><span data-i18n="tb.tools.vr_tools">VR Tools</span><span class="msi tb-dd-arrow">chevron_right</span></button>
                                 <div class="tb-dd-sub-drop">
                                     <div class="tb-dd-item" onclick="showTab(26)"><span class="msi">photo_camera</span><span data-i18n="nav.frame_shot">FrameShot</span></div>
@@ -238,10 +238,10 @@
                                     <div class="tb-dd-item" onclick="showTab(23)"><span class="msi">gps_fixed</span><span data-i18n="nav.event_snipe">Event Snipe</span></div>
                                 </div>
                             </div>
-                            <div class="tb-dd-sep" data-windows-only></div>
-                            <div class="tb-dd-item" data-windows-only onclick="showTab(6)"><span class="msi">cell_tower</span><span data-i18n="nav.media_relay">Media Relay</span></div>
-                            <div class="tb-dd-item" data-windows-only onclick="showTab(11)"><span class="msi">tune</span><span data-i18n="nav.osc_tool">OSC Tool</span></div>
-                            <div class="tb-dd-item" data-windows-only onclick="showTab(14)"><span class="msi">smart_display</span><span data-i18n="nav.youtube_fix">YouTube Fix</span></div>
+                            <div class="tb-dd-sep"></div>
+                            <div class="tb-dd-item" onclick="showTab(6)"><span class="msi">cell_tower</span><span data-i18n="nav.media_relay">Media Relay</span></div>
+                            <div class="tb-dd-item" onclick="showTab(11)"><span class="msi">tune</span><span data-i18n="nav.osc_tool">OSC Tool</span></div>
+                            <div class="tb-dd-item" onclick="showTab(14)"><span class="msi">smart_display</span><span data-i18n="nav.youtube_fix">YouTube Fix</span></div>
                             <div class="tb-dd-sep"></div>
                             <div class="tb-dd-item" onclick="showTab(8)"><span class="msi">article</span><span data-i18n="nav.activity_log">Activity Log</span></div>
                             <div class="tb-dd-item" onclick="showTab(15)"><span class="msi">hub</span><span data-i18n="nav.mutual_network">Mutual Network</span></div>
@@ -249,9 +249,9 @@
                             <div class="tb-dd-item" onclick="showTab(16)"><span class="msi">schedule</span><span data-i18n="nav.time_spent">Time Spent</span></div>
                             <div class="tb-dd-sep" data-windows-only></div>
                             <div class="tb-dd-item" data-windows-only onclick="showTab(18)"><span class="msi">mic</span><span data-i18n="nav.voice_fight">Voice Fight</span></div>
-                            <div class="tb-dd-item" data-windows-only onclick="showTab(19)"><span class="msi">sensors</span><span data-i18n="nav.discord_presence">Discord Presence</span></div>
+                            <div class="tb-dd-item" onclick="showTab(19)"><span class="msi">sensors</span><span data-i18n="nav.discord_presence">Discord Presence</span></div>
                             <div class="tb-dd-item" data-windows-only onclick="showTab(22)"><span class="msi">translate</span><span data-i18n="nav.kikitan_xd">Kikitan XD</span></div>
-                            <div class="tb-dd-item" data-windows-only onclick="showTab(24)"><span class="msi">height</span><span data-i18n="nav.avatar_scaling">Avatar Scaling</span></div>
+                            <div class="tb-dd-item" onclick="showTab(24)"><span class="msi">height</span><span data-i18n="nav.avatar_scaling">Avatar Scaling</span></div>
                         </div>
                     </div>
                     <div class="tb-menu-item" id="tbMenuPins"><span data-i18n="tb.pins">Pins</span>
@@ -399,9 +399,9 @@
             <!-- Tab 4: Avatars -->
             <div class="tab" id="tab4"></div>
             <!-- Tab 5: Custom Chatbox -->
-            <div class="tab" id="tab5" data-windows-only></div>
+            <div class="tab" id="tab5"></div>
             <!-- Tab 6: Media Relay -->
-            <div class="tab" id="tab6" data-windows-only></div>
+            <div class="tab" id="tab6"></div>
             <!-- Tab 7: Media Library -->
             <div class="tab" id="tab7"></div>
             <!-- Tab 8: Activity Log -->
@@ -409,15 +409,15 @@
             <!-- Tab 9: Settings -->
             <div class="tab" id="tab9"></div>
             <!-- Tab 10: Space Flight -->
-            <div class="tab" id="tab10" data-windows-only></div>
+            <div class="tab" id="tab10"></div>
             <!-- Tab 11: OSC Tool -->
-            <div class="tab" id="tab11" data-windows-only></div>
+            <div class="tab" id="tab11"></div>
             <!-- Tab 12: Timeline -->
             <div class="tab" id="tab12"></div>
             <!-- Tab 13: Inventory -->
             <div class="tab" id="tab13"></div>
             <!-- Tab 14: YouTube Fix / VRCVideoCacher -->
-            <div class="tab" id="tab14" data-windows-only></div>
+            <div class="tab" id="tab14"></div>
 
             <!-- Tab 15: Mutual Network -->
             <div class="tab" id="tab15"></div>
@@ -431,7 +431,7 @@
             <div class="tab" id="tab18" data-windows-only></div>
 
             <!-- Tab 19: Discord Presence -->
-            <div class="tab" id="tab19" data-windows-only></div>
+            <div class="tab" id="tab19"></div>
             <!-- Tab 20: VR Wrist Overlay -->
             <div class="tab" id="tab20" data-windows-only></div>
 
@@ -445,7 +445,7 @@
             <div class="tab" id="tab23"></div>
 
             <!-- Tab 24: Avatar Scaling -->
-            <div class="tab" id="tab24" data-windows-only></div>
+            <div class="tab" id="tab24"></div>
 
             <!-- Tab 25: Action Flow -->
             <div class="tab" id="tab25"></div>
@@ -456,13 +456,13 @@
             <!-- Tab 27: Status Schedule -->
             <div class="tab" id="tab27"></div>
             <!-- Tab 28: Space Turn -->
-            <div class="tab" id="tab28" data-windows-only></div>
+            <div class="tab" id="tab28"></div>
 
             <!-- Tab 29: Meet Network -->
             <div class="tab" id="tab29"></div>
 
             <!-- Tab 30: Space Walk -->
-            <div class="tab" id="tab30" data-windows-only></div>
+            <div class="tab" id="tab30"></div>
 
         </div>
     </div>
