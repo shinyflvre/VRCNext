@@ -13,7 +13,7 @@ With VRCNext you can check the status of your friends, watch their profiles, see
 
 # Performance
 About 60-80% less memory usage compared to VRCX
-About 20-40% less memory usage compared to VRCX-0 (Rust rewrite of VRCX)
+About 15-25% less memory usage compared to VRCX-0 (Rust rewrite of VRCX) (Windows only) VRCN as of right now runs worse on linux.
 
 ---
 
