@@ -7,6 +7,23 @@
 * VRC+ decorations in lists and on your own profile card now only animate while you hover over them.
 * Removed the **Optimize VRC+ Usage** setting since it is now always on.
 
+## Linux
+* **OSC Tool** now works on Linux.
+* **Media Relay** now works on Linux.
+* **Discord Presence** now works on Linux.
+* **Space Flight** and **Space Turn** now work on Linux.
+* **Avatar Scaling** now works on Linux.
+* **YouTube Fix** now works on Linux through Steam and has its own Linux guide.
+* **Efficiency Mode** now works on Linux.
+* You can now start VRChat in VR or desktop mode from VRCNext on Linux.
+* Desktop notifications now work on Linux and show VRCNext images.
+* Added a tray icon on Linux with your profile and a status menu.
+* The **Custom Chatbox** can now show the song that is playing on Linux.
+* The **Custom Chatbox** can now show the active window on Linux with X11, and VRCNext can install the needed tools for you.
+* Improved the Linux installer.
+* Fixed memory growing on Linux while blurred effects are on screen.
+Commits by @hollyntt
+
 ## Performance
 * Groups open about twice as fast.
 * Profiles load faster.
