@@ -584,6 +584,8 @@ public sealed class VRSubprocessHost : IDisposable
     public event Action? OnSfQuit;
     public event Action<JObject>? OnStUpdate;
     public event Action? OnStQuit;
+    public event Action<JObject>? OnSwUpdate;
+    public event Action? OnSwQuit;
 
     public VRSubprocessHost(Action<string> log) => _log = log;
 
@@ -676,6 +678,10 @@ public sealed class VRSubprocessHost : IDisposable
                             StConnected = message["connected"]?.Value<bool>() ?? StConnected;
                             OnStUpdate?.Invoke(message);
                             break;
+                        case "sw_update":
+                            SwConnected = message["connected"]?.Value<bool>() ?? SwConnected;
+                            OnSwUpdate?.Invoke(message);
+                            break;
                     }
                 }
                 catch (Newtonsoft.Json.JsonException ex)
@@ -695,13 +701,16 @@ public sealed class VRSubprocessHost : IDisposable
         var hadVro = VroConnected;
         var hadSf = SfConnected;
         var hadSt = StConnected;
+        var hadSw = SwConnected;
         VroConnected = false;
         SfConnected = false;
         StConnected = false;
+        SwConnected = false;
         lock (_stdinLock) _stdin = null;
         if (hadVro) OnVroQuit?.Invoke();
         if (hadSf) OnSfQuit?.Invoke();
         if (hadSt) OnStQuit?.Invoke();
+        if (hadSw) OnSwQuit?.Invoke();
     }
 
     private void Send(JObject message)
@@ -796,10 +805,50 @@ public sealed class VRSubprocessHost : IDisposable
             ["leftTurnBtn"] = leftTurnBtn, ["rightTurnBtn"] = rightTurnBtn, ["leftResetBtn"] = leftResetBtn, ["rightResetBtn"] = rightResetBtn });
     public void StReset() => Send(new JObject { ["t"] = "st_reset" });
 
-    public void SwConnect(float a, float b, float b2, bool c, bool d, bool e, bool f, uint g, uint h, uint i, uint j) { }
-    public void SwDisconnect() { }
-    public void SwConfig(float a, float b, float b2, bool c, bool d, bool e, bool f, uint g, uint h, uint i, uint j) { }
-    public void SwReset() { }
+    public void SwConnect(float multiplier, float smoothing, float momentum, bool invert, bool lockPitch, bool lockRoll, bool lockYaw,
+        uint leftWalkBtn, uint rightWalkBtn, uint leftResetBtn, uint rightResetBtn)
+    {
+        SwConnected = true;
+        Send(new JObject
+        {
+            ["t"] = "sw_connect",
+            ["multiplier"] = multiplier,
+            ["smoothing"] = smoothing,
+            ["momentum"] = momentum,
+            ["invert"] = invert,
+            ["lockPitch"] = lockPitch,
+            ["lockRoll"] = lockRoll,
+            ["lockYaw"] = lockYaw,
+            ["leftWalkBtn"] = leftWalkBtn,
+            ["rightWalkBtn"] = rightWalkBtn,
+            ["leftResetBtn"] = leftResetBtn,
+            ["rightResetBtn"] = rightResetBtn
+        });
+    }
+    public void SwDisconnect()
+    {
+        SwConnected = false;
+        Send(new JObject { ["t"] = "sw_disconnect" });
+        if (!VroConnected && !SfConnected && !StConnected && !FsConnected) Kill();
+    }
+    public void SwConfig(float multiplier, float smoothing, float momentum, bool invert, bool lockPitch, bool lockRoll, bool lockYaw,
+        uint leftWalkBtn, uint rightWalkBtn, uint leftResetBtn, uint rightResetBtn)
+        => Send(new JObject
+        {
+            ["t"] = "sw_config",
+            ["multiplier"] = multiplier,
+            ["smoothing"] = smoothing,
+            ["momentum"] = momentum,
+            ["invert"] = invert,
+            ["lockPitch"] = lockPitch,
+            ["lockRoll"] = lockRoll,
+            ["lockYaw"] = lockYaw,
+            ["leftWalkBtn"] = leftWalkBtn,
+            ["rightWalkBtn"] = rightWalkBtn,
+            ["leftResetBtn"] = leftResetBtn,
+            ["rightResetBtn"] = rightResetBtn
+        });
+    public void SwReset() => Send(new JObject { ["t"] = "sw_reset" });
 
     public void FsConnect(uint a, uint b, string c, string c2, int d, uint e, uint f, int g, int h, bool i, uint j, uint k, string l, string m, int n2, string n, string o, int p, uint q = 0, uint r = 0) { }
     public void FsDisconnect() { }

@@ -1,4 +1,4 @@
-﻿#if WINDOWS
+#if WINDOWS
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -404,6 +404,32 @@ static class VRSubprocess
                 break;
 
             case "sw_connect":
+                if (!sf.Connect())
+                {
+                    SendLine("sw_update", new { connected = false, walking = false, pitch = 0f, yaw = 0f, roll = 0f, tiltSupported = false, leftController = false, rightController = false, error = sf.LastError });
+                    break;
+                }
+                sf.WalkEnabled = true;
+                sf.CheckTiltSupport();
+                sf.ApplyWalkConfig(F(cmd, "multiplier", 1f), F(cmd, "smoothing"), F(cmd, "momentum"), B(cmd, "invert"), B(cmd, "lockPitch"), B(cmd, "lockRoll"), B(cmd, "lockYaw"), U(cmd, "leftWalkBtn"), U(cmd, "rightWalkBtn", 2), U(cmd, "leftResetBtn"), U(cmd, "rightResetBtn"));
+                sf.StartPolling();
+                break;
+
+            case "sw_disconnect":
+                sf.ClearTilt();
+                sf.WalkEnabled = false;
+                if (!sf.DragEnabled && !sf.TurnEnabled) sf.Disconnect();
+                break;
+
+            case "sw_config":
+                sf.ApplyWalkConfig(F(cmd, "multiplier", 1f), F(cmd, "smoothing"), F(cmd, "momentum"), B(cmd, "invert"), B(cmd, "lockPitch"), B(cmd, "lockRoll"), B(cmd, "lockYaw"), U(cmd, "leftWalkBtn"), U(cmd, "rightWalkBtn", 2), U(cmd, "leftResetBtn"), U(cmd, "rightResetBtn"));
+                break;
+
+            case "sw_reset":
+                sf.ResetRotation();
+                break;
+
+            case "sw_connect":
             {
                 _toolConnected = true;
                 bool ok = sf.Connect();
@@ -620,6 +646,7 @@ static class VRSubprocess
         using var steamVr = new SteamVRService(Log);
         steamVr.SetUpdateCallback(state => SendLine("sf_update", state));
         steamVr.SetTurnUpdateCallback(state => SendLine("st_update", state));
+        steamVr.SetWalkUpdateCallback(state => SendLine("sw_update", state));
         steamVr.OnVRQuit += () => Environment.Exit(0);
 
         string? line;
@@ -655,9 +682,19 @@ static class VRSubprocess
                 steamVr.ApplyTurnConfig(F(cmd,"multiplier",1f), F(cmd,"snapDegrees"), B(cmd,"invert"), F(cmd,"smoothing"), U(cmd,"leftTurnBtn",2), U(cmd,"rightTurnBtn"), U(cmd,"leftResetBtn"), U(cmd,"rightResetBtn"));
                 steamVr.StartPolling();
                 break;
-            case "st_disconnect": steamVr.TurnEnabled = false; if (!steamVr.DragEnabled) steamVr.Disconnect(); break;
+            case "st_disconnect": steamVr.TurnEnabled = false; if (!steamVr.DragEnabled && !steamVr.WalkEnabled) steamVr.Disconnect(); break;
             case "st_config": steamVr.ApplyTurnConfig(F(cmd,"multiplier",1f), F(cmd,"snapDegrees"), B(cmd,"invert"), F(cmd,"smoothing"), U(cmd,"leftTurnBtn",2), U(cmd,"rightTurnBtn"), U(cmd,"leftResetBtn"), U(cmd,"rightResetBtn")); break;
             case "st_reset": steamVr.ResetRotation(); break;
+            case "sw_connect":
+                if (!steamVr.Connect()) { SendLine("sw_update", new { connected = false, walking = false, pitch = 0f, yaw = 0f, roll = 0f, tiltSupported = false, leftController = false, rightController = false, error = steamVr.LastError }); break; }
+                steamVr.WalkEnabled = true;
+                steamVr.CheckTiltSupport();
+                steamVr.ApplyWalkConfig(F(cmd,"multiplier",1f), F(cmd,"smoothing"), F(cmd,"momentum"), B(cmd,"invert"), B(cmd,"lockPitch"), B(cmd,"lockRoll"), B(cmd,"lockYaw"), U(cmd,"leftWalkBtn"), U(cmd,"rightWalkBtn",2), U(cmd,"leftResetBtn"), U(cmd,"rightResetBtn"));
+                steamVr.StartPolling();
+                break;
+            case "sw_disconnect": steamVr.ClearTilt(); steamVr.WalkEnabled = false; if (!steamVr.DragEnabled && !steamVr.TurnEnabled) steamVr.Disconnect(); break;
+            case "sw_config": steamVr.ApplyWalkConfig(F(cmd,"multiplier",1f), F(cmd,"smoothing"), F(cmd,"momentum"), B(cmd,"invert"), B(cmd,"lockPitch"), B(cmd,"lockRoll"), B(cmd,"lockYaw"), U(cmd,"leftWalkBtn"), U(cmd,"rightWalkBtn",2), U(cmd,"leftResetBtn"), U(cmd,"rightResetBtn")); break;
+            case "sw_reset": steamVr.ResetRotation(); break;
         }
     }
 

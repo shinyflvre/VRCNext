@@ -601,6 +601,7 @@ public class RelayController : IDisposable
                     Process.Start(new ProcessStartInfo
                     {
                         FileName = path,
+                        WorkingDirectory = Path.GetDirectoryName(path) ?? "",
                         UseShellExecute = true
                     });
                 }
@@ -882,7 +883,11 @@ public class RelayController : IDisposable
 
     public static bool IsSteamVrRunning()
     {
-        try { return AnyProcessAlive("vrserver"); }
+        try
+        {
+            return AnyProcessAlive("vrserver")
+                || (OperatingSystem.IsLinux() && AnyProcessAlive("vrcompositor-launcher"));
+        }
         catch { return false; }
     }
 
