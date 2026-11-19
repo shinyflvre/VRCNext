@@ -53,8 +53,8 @@ jobs:
 
       - name: Download previous full nupkg (for delta)
         run: |
-          PREV_URL=$(curl -fsSL "https://api.github.com/repos/$GITHUB_REPOSITORY/releases" \
-            | grep -Eo '"browser_download_url": *"[^"]+-full\.nupkg"' | sed -E 's|.*"(https[^"]+)"|\1|' | head -n 1)
+          PREV_URL=$(curl -sSL "https://api.github.com/repos/$GITHUB_REPOSITORY/releases" \
+            | grep -Eo '"browser_download_url": *"[^"]+-full\.nupkg"' | sed -E 's|.*"(https[^"]+)"|\1|' | head -n 1) || true
           if [ -n "$PREV_URL" ]; then
             echo "Using previous full for delta: $PREV_URL"
             curl -fL "$PREV_URL" -o "releases/$(basename "$PREV_URL")"
