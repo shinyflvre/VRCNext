@@ -1,0 +1,151 @@
+name: publish-release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+env:
+  VPK_VERSION: "1.2.161"
+
+jobs:
+  # ============================================================ Windows
+  windows-build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Resolve version
+        id: ver
+        run: echo "version=$(grep -oP 'Version = "\K[^"]+' main/AppInfo.cs)" >> "$GITHUB_OUTPUT"
+
+      - name: Publish win-x64 (self-contained)
+        env:
+          VRCNEXT_VRCNDB_KEY: ${{ secrets.VRCNEXT_VRCNDB_KEY }}
+          VRCNEXT_HYPERATE_API_KEY: ${{ secrets.VRCNEXT_HYPERATE_API_KEY }}
+        run: |
+          dotnet publish VRCNext.csproj -c Release -r win-x64 --self-contained true \
+            -o publish/win \
+            -p:VRCNextVrcndbKey="$VRCNEXT_VRCNDB_KEY" \
+            -p:VRCNextHypeRateApiKey="$VRCNEXT_HYPERATE_API_KEY"
+          [ -f publish/win/VRCNext.exe ] || { echo "[ERROR] Windows publish missing VRCNext.exe"; exit 1; }
+
+      - name: Download Velopack CLI
+        run: |
+          curl -sL -o vpk.zip "https://github.com/velopack/velopack/releases/download/$VPK_VERSION/vpk.$VPK_VERSION.nupkg"
+          mkdir -p vpk-cli
+          unzip -q -o vpk.zip -d vpk-cli
+          echo "VPK_DLL=vpk-cli/tools/net9.0/any/vpk.dll" >> "$GITHUB_ENV"
+
+      - name: Download previous full nupkg (for delta)
+        run: |
+          PREV_URL=$(curl -fsSL "https://api.github.com/repos/$GITHUB_REPOSITORY/releases" \
+            | grep -Eo '"browser_download_url": *"[^"]+-full\.nupkg"' | sed -E 's|.*"(https[^"]+)"|\1|' | head -n 1)
+          if [ -n "$PREV_URL" ]; then
+            echo "Using previous full for delta: $PREV_URL"
+            curl -fL "$PREV_URL" -o "releases/$(basename "$PREV_URL")"
+          else
+            echo "No previous full nupkg in this repo — skipping delta generation"
+          fi
+
+      - name: "Pack Velopack release (app name: VRCNext-hollyntt)"
+        run: |
+          APP_NAME="VRCNext-hollyntt"
+          dotnet "$VPK_DLL" pack \
+            -p publish/win -o releases \
+            -u "$APP_NAME" -v "${{ steps.ver.outputs.version }}" \
+            --packTitle "$APP_NAME" --packAuthors "hollyntt" \
+            -e VRCNext.exe -i logo.ico -c win -r win-x64 -y
+          ls -lh releases
+
+      - name: Upload Windows assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-assets
+          path: |
+            releases/VRCNext-hollyntt-*
+            releases/releases.win.json
+            releases/assets.win.json
+            releases/RELEASES
+
+  # ============================================================ Linux
+  linux-appimage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install native build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config rsync zip \
+            libgtk-3-dev libwebkit2gtk-4.1-dev libnotify-dev \
+            libgstreamer1.0-0 gstreamer1.0-tools gstreamer1.0-plugins-base \
+            gstreamer1.0-plugins-good gstreamer1.0-libav
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Brand desktop entry as VRCNext-hollyntt
+        run: sed -i 's/^Name=VRCNext$/Name=VRCNext-hollyntt/' build/appimage.sh
+
+      - name: Build AppImage
+        env:
+          VRCNEXT_VRCNDB_KEY: ${{ secrets.VRCNEXT_VRCNDB_KEY }}
+          VRCNEXT_HYPERATE_API_KEY: ${{ secrets.VRCNEXT_HYPERATE_API_KEY }}
+        run: bash build/appimage.sh
+
+      - name: Rename AppImage with fork suffix
+        run: |
+          VERSION="$(grep -oP 'Version = "\K[^"]+' main/AppInfo.cs)"
+          mv "publish/linux/VRCNext-$VERSION-x86_64.AppImage" "publish/linux/Linux-VRCNext-hollyntt-$VERSION-x86_64.AppImage"
+          ls -lh publish/linux
+
+      - name: Upload Linux asset
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-appimage
+          path: publish/linux/Linux-VRCNext-hollyntt-*.AppImage
+
+  # ============================================================ Release
+  release:
+    needs: [windows-build, linux-appimage]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-assets
+          path: assets/windows
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-appimage
+          path: assets/linux
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="$(grep -oP 'Version = "\K[^"]+' main/AppInfo.cs)"
+          TAG="v$VERSION"
+          gh release delete "$TAG" --cleanup-tag --yes 2>/dev/null || true
+          FILES=$(find assets -type f | sort)
+          echo "Releasing: $FILES"
+          gh release create "$TAG" \
+            --title "VRCNext-hollyntt v$VERSION" \
+            --notes-file RELEASE_NOTES.md \
+            --target main \
+            $FILES
