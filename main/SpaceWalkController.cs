@@ -9,11 +9,7 @@ public class SpaceWalkController : IDisposable
     private VRSubprocessHost? _swWiredHost;
     private JObject? _swLastState;
 
-#if WINDOWS
     public bool IsConnected => _core.VrOverlay?.SwConnected ?? false;
-#else
-    public bool IsConnected => false;
-#endif
 
     public SpaceWalkController(CoreLibrary core, VROverlayController vroCtrl)
     {
@@ -21,7 +17,6 @@ public class SpaceWalkController : IDisposable
         _vroCtrl = vroCtrl;
     }
 
-#if WINDOWS
     private VRSubprocessHost EnsureHost()
     {
         if (_core.VrOverlay == null)
@@ -87,13 +82,11 @@ public class SpaceWalkController : IDisposable
         }
         _core.SendToJS("swUpdate", DisconnectedState());
     }
-#endif
 
     public void HandleMessage(string action, JObject msg)
     {
         switch (action)
         {
-#if WINDOWS
             case "swConnect":
                 Connect();
                 _vroCtrl.UpdateToolStates();
@@ -124,26 +117,21 @@ public class SpaceWalkController : IDisposable
                 _core.VrOverlay?.SwConfig(mult, smo, mom, inv, lp, lr, ly, lw, rw, lrs, rrs);
                 break;
             }
-#endif
         }
     }
 
     public void ResendState()
     {
-#if WINDOWS
         if (_core.VrOverlay?.SwConnected != true) return;
         if (_swLastState != null) _core.SendToJS("swUpdate", _swLastState);
-#endif
     }
 
     private uint SwBtn(uint legacy, uint index) => _core.Settings.VrInputMode == 1 ? index : legacy;
 
     public void Toggle()
     {
-#if WINDOWS
         if (_core.VrOverlay?.SwConnected == true) Disconnect();
         else Connect();
-#endif
     }
 
     public void Dispose()
