@@ -11,6 +11,7 @@ permissions:
 
 env:
   VPK_VERSION: "1.2.161"
+  APP_NAME: ${{ github.repository == 'shinyflvre/VRCNext' && 'VRCNext' || format('VRCNext-{0}', github.repository_owner) }}
 
 jobs:
   # ============================================================ Windows
@@ -61,13 +62,12 @@ jobs:
             echo "No previous full nupkg in this repo — skipping delta generation"
           fi
 
-      - name: "Pack Velopack release (app name: VRCNext-hollyntt)"
+      - name: "Pack Velopack release ($APP_NAME)"
         run: |
-          APP_NAME="VRCNext-hollyntt"
           dotnet "$VPK_DLL" pack \
             -p publish/win -o releases \
             -u "$APP_NAME" -v "${{ steps.ver.outputs.version }}" \
-            --packTitle "$APP_NAME" --packAuthors "hollyntt" \
+            --packTitle "$APP_NAME" --packAuthors "${{ github.repository_owner }}" \
             -e VRCNext.exe -i logo.ico -c win -r win-x64 -y
           ls -lh releases
 
@@ -76,7 +76,7 @@ jobs:
         with:
           name: windows-assets
           path: |
-            releases/VRCNext-hollyntt-*
+            releases/$APP_NAME-*
             releases/releases.win.json
             releases/assets.win.json
             releases/RELEASES
@@ -101,8 +101,8 @@ jobs:
         with:
           dotnet-version: "9.0.x"
 
-      - name: Brand desktop entry as VRCNext-hollyntt
-        run: sed -i 's/^Name=VRCNext$/Name=VRCNext-hollyntt/' build/appimage.sh
+      - name: Brand desktop entry as $APP_NAME
+        run: sed -i 's/^Name=VRCNext$/Name=$APP_NAME/' build/appimage.sh
 
       - name: Build AppImage
         env:
@@ -111,16 +111,17 @@ jobs:
         run: bash build/appimage.sh
 
       - name: Rename AppImage with fork suffix
+        if: github.repository != 'shinyflvre/VRCNext'
         run: |
           VERSION="$(grep -oP 'Version = "\K[^"]+' main/AppInfo.cs)"
-          mv "publish/linux/VRCNext-$VERSION-x86_64.AppImage" "publish/linux/Linux-VRCNext-hollyntt-$VERSION-x86_64.AppImage"
+          mv "publish/linux/VRCNext-$VERSION-x86_64.AppImage" "publish/linux/Linux-$APP_NAME-$VERSION-x86_64.AppImage"
           ls -lh publish/linux
 
       - name: Upload Linux asset
         uses: actions/upload-artifact@v4
         with:
           name: linux-appimage
-          path: publish/linux/Linux-VRCNext-hollyntt-*.AppImage
+          path: publish/linux/Linux-$APP_NAME-*.AppImage
 
   # ============================================================ Release
   release:
@@ -151,7 +152,7 @@ jobs:
           FILES=$(find assets -type f | sort)
           echo "Releasing: $FILES"
           gh release create "$TAG" \
-            --title "VRCNext-hollyntt v$VERSION" \
+            --title "$APP_NAME v$VERSION" \
             --notes-file RELEASE_NOTES.md \
             --target main \
             $FILES
