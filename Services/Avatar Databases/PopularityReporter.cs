@@ -5,8 +5,8 @@ namespace VRCNext.Services;
 
 public static class PopularityReporter
 {
-    private const string HitEndpoint  = "https://db.vrcnext.com/api/hit.php";
-    private const string LikeEndpoint = "https://db.vrcnext.com/api/like.php";
+    private const string HitEndpoint  = "https://db.vrcnext.com/api/vrcn/hit.php";
+    private const string LikeEndpoint = "https://db.vrcnext.com/api/vrcn/like.php";
     private static readonly HttpClient _client = new(new VrcndbSigningHandler()) { Timeout = TimeSpan.FromSeconds(15) };
 
     private static readonly string _syncFile = Path.Combine(

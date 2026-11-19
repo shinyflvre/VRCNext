@@ -641,6 +641,7 @@ function _buildWeekView() {
             return;
         }
 
+        if (sIdx < 0) return;
         const sMin = start.getHours() * 60 + start.getMinutes();
         const rawEnd = eIdx === sIdx ? end.getHours() * 60 + end.getMinutes() : 24 * 60;
         const eMin = Math.min(24 * 60, Math.max(rawEnd, sMin + 15));

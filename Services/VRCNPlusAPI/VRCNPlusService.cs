@@ -7,7 +7,7 @@ namespace VRCNext.Services.VRCNPlusAPI;
 
 public class VRCNPlusService : IDisposable
 {
-    public const string ApiBase = "https://db.vrcnext.com/api/vrcnplus.php";
+    public const string ApiBase = "https://db.vrcnext.com/api/vrcn/vrcnplus.php";
     private static readonly TimeSpan CacheFreshness = TimeSpan.FromMinutes(15);
 
     private readonly SqliteConnection _db;
@@ -18,7 +18,7 @@ public class VRCNPlusService : IDisposable
     {
         _db = Database.OpenVRCNPlusConnection();
         InitSchema();
-        _http = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+        _http = new HttpClient(new VrcndbSigningHandler()) { Timeout = TimeSpan.FromSeconds(10) };
         _http.DefaultRequestVersion = System.Net.HttpVersion.Version20;
         _http.DefaultVersionPolicy = System.Net.Http.HttpVersionPolicy.RequestVersionOrLower;
         _http.DefaultRequestHeaders.UserAgent.ParseAdd(AppInfo.UserAgent);

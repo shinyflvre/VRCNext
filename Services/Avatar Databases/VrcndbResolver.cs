@@ -7,7 +7,7 @@ public sealed class VrcndbResolver
 {
     public const int MaxBatch = 100;
 
-    private const string Endpoint      = "https://db.vrcnext.com/api/query";
+    private const string Endpoint      = "https://db.vrcnext.com/api/vrcn/query";
     private const int    MinIntervalMs = 1000;
     private const int    CoalesceMs    = 250;
     private const int    CacheLimit    = 4000;

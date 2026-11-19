@@ -365,7 +365,7 @@ public class VoiceFightController : IDisposable
 
     // Toggle (called from VR overlay)
 
-    public void Toggle()
+    public void Toggle(Action? onDone = null)
     {
         RunLifecycle(() =>
         {
@@ -396,12 +396,12 @@ public class VoiceFightController : IDisposable
                 _voiceFight.Start(togIn.Value, togOut.Value);
                 _core.SendToJS("vfState", new { running = true });
             }
-        });
+        }, onDone);
     }
 
     private readonly SemaphoreSlim _lifecycle = new(1, 1);
 
-    private void RunLifecycle(Action work)
+    private void RunLifecycle(Action work, Action? onDone = null)
     {
         _ = Task.Run(async () =>
         {
@@ -409,6 +409,7 @@ public class VoiceFightController : IDisposable
             try { work(); }
             catch (Exception ex) { _core.SendToJS("log", new { msg = $"Voice Fight: {ex.Message}", color = "err" }); }
             finally { _lifecycle.Release(); }
+            try { onDone?.Invoke(); } catch { }
         });
     }
 

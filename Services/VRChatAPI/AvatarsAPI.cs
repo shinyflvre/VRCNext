@@ -293,7 +293,7 @@ public class AvatarsAPI(VRChatApiService ctx)
         if (!string.IsNullOrEmpty(content))  qs.Add($"content={Uri.EscapeDataString(content)}");
         if (ft)                              qs.Add("ft=1");
 
-        var url = "https://db.vrcnext.com/api/search.php?" + string.Join("&", qs);
+        var url = "https://db.vrcnext.com/api/vrcn/search.php?" + string.Join("&", qs);
         using var client = new HttpClient(new VrcndbSigningHandler());
         client.DefaultRequestVersion = System.Net.HttpVersion.Version20;
         client.DefaultVersionPolicy = System.Net.Http.HttpVersionPolicy.RequestVersionOrLower;
@@ -317,7 +317,7 @@ public class AvatarsAPI(VRChatApiService ctx)
     // Direct id lookup against VRCNDb (avatar.php returns the same card shape as search).
     public async Task<JArray> GetAvatarVrcnByIdAsync(string avatarId)
     {
-        var url = $"https://db.vrcnext.com/api/avatar.php?id={Uri.EscapeDataString(avatarId)}";
+        var url = $"https://db.vrcnext.com/api/vrcn/avatar.php?id={Uri.EscapeDataString(avatarId)}";
         using var client = new HttpClient(new VrcndbSigningHandler());
         client.DefaultRequestVersion = System.Net.HttpVersion.Version20;
         client.DefaultVersionPolicy = System.Net.Http.HttpVersionPolicy.RequestVersionOrLower;

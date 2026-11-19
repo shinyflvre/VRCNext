@@ -118,7 +118,7 @@ public partial class AppShell
     private readonly HashSet<string> _avtrIcuSubmittedIds = new();
     private System.Threading.Timer? _avtrIcuSubmitTimer;
 
-    private const string VrcndbBase = "https://db.vrcnext.com/api";
+    private const string VrcndbBase = "https://db.vrcnext.com/api/vrcn";
     private readonly List<string> _vrcndbSubmitQueue = new();
     private readonly HashSet<string> _vrcndbSubmittedIds = new();
     private System.Threading.Timer? _vrcndbSubmitTimer;

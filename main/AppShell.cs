@@ -1321,11 +1321,11 @@ public partial class AppShell
                 break;
 
             case 1: // Voice Fight
-                _vfCtrl.Toggle();
+                _vfCtrl.Toggle(_vroCtrl.UpdateToolStates);
                 break;
 
             case 2: // Kikitan XD
-                _kxdCtrl.Toggle();
+                _kxdCtrl.Toggle(_vroCtrl.UpdateToolStates);
                 break;
 
             case 3: // Space Flight

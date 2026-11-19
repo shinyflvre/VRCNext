@@ -261,7 +261,7 @@ public class KikitanXDController : IDisposable
     private readonly SemaphoreSlim _lifecycle = new(1, 1);
     private int _startPending;
 
-    private void RunLifecycle(Action work)
+    private void RunLifecycle(Action work, Action? onDone = null)
     {
         _ = Task.Run(async () =>
         {
@@ -269,10 +269,11 @@ public class KikitanXDController : IDisposable
             try { work(); }
             catch (Exception ex) { _core.SendToJS("log", new { msg = $"Kikitan XD: {ex.Message}", color = "err" }); }
             finally { _lifecycle.Release(); }
+            try { onDone?.Invoke(); } catch { }
         });
     }
 
-    public void Toggle()
+    public void Toggle(Action? onDone = null)
     {
         RunLifecycle(() =>
         {
@@ -296,7 +297,7 @@ public class KikitanXDController : IDisposable
                     _core.SendToJS("log", new { msg = $"Kikitan XD: {ex.Message}", color = "err" });
                 }
             }
-        });
+        }, onDone);
     }
 
     private void RestartService(string reason)
