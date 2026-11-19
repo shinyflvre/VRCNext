@@ -72,6 +72,13 @@ jobs:
             -e VRCNext.exe -i logo.ico -c win -r win-x64 -y
           ls -lh releases
 
+      - name: Build VRCNextTranslator.exe
+        run: |
+          dotnet publish translations/TranslationEditor.csproj -c Release -r win-x64 \
+            --self-contained true -o publish/translator
+          [ -f publish/translator/VRCNextTranslator.exe ] || { echo "[ERROR] Translator publish missing VRCNextTranslator.exe"; exit 1; }
+          cp publish/translator/VRCNextTranslator.exe releases/VRCNextTranslator.exe
+
       - name: Upload Windows assets
         uses: actions/upload-artifact@v4
         with:
@@ -81,6 +88,7 @@ jobs:
             releases/releases.win.json
             releases/assets.win.json
             releases/RELEASES
+            releases/VRCNextTranslator.exe
 
   # ============================================================ Linux
   linux-appimage:
