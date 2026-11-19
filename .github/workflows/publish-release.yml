@@ -53,6 +53,7 @@ jobs:
 
       - name: Download previous full nupkg (for delta)
         run: |
+          mkdir -p releases
           PREV_URL=$(curl -sSL "https://api.github.com/repos/$GITHUB_REPOSITORY/releases" \
             | grep -Eo '"browser_download_url": *"[^"]+-full\.nupkg"' | sed -E 's|.*"(https[^"]+)"|\1|' | head -n 1) || true
           if [ -n "$PREV_URL" ]; then
@@ -76,7 +77,7 @@ jobs:
         with:
           name: windows-assets
           path: |
-            releases/$APP_NAME-*
+            releases/${{ env.APP_NAME }}-*
             releases/releases.win.json
             releases/assets.win.json
             releases/RELEASES
@@ -121,7 +122,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: linux-appimage
-          path: publish/linux/Linux-$APP_NAME-*.AppImage
+          path: publish/linux/Linux-${{ env.APP_NAME }}-*.AppImage
 
   # ============================================================ Release
   release:
