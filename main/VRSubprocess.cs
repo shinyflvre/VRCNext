@@ -404,32 +404,6 @@ static class VRSubprocess
                 break;
 
             case "sw_connect":
-                if (!sf.Connect())
-                {
-                    SendLine("sw_update", new { connected = false, walking = false, pitch = 0f, yaw = 0f, roll = 0f, tiltSupported = false, leftController = false, rightController = false, error = sf.LastError });
-                    break;
-                }
-                sf.WalkEnabled = true;
-                sf.CheckTiltSupport();
-                sf.ApplyWalkConfig(F(cmd, "multiplier", 1f), F(cmd, "smoothing"), F(cmd, "momentum"), B(cmd, "invert"), B(cmd, "lockPitch"), B(cmd, "lockRoll"), B(cmd, "lockYaw"), U(cmd, "leftWalkBtn"), U(cmd, "rightWalkBtn", 2), U(cmd, "leftResetBtn"), U(cmd, "rightResetBtn"));
-                sf.StartPolling();
-                break;
-
-            case "sw_disconnect":
-                sf.ClearTilt();
-                sf.WalkEnabled = false;
-                if (!sf.DragEnabled && !sf.TurnEnabled) sf.Disconnect();
-                break;
-
-            case "sw_config":
-                sf.ApplyWalkConfig(F(cmd, "multiplier", 1f), F(cmd, "smoothing"), F(cmd, "momentum"), B(cmd, "invert"), B(cmd, "lockPitch"), B(cmd, "lockRoll"), B(cmd, "lockYaw"), U(cmd, "leftWalkBtn"), U(cmd, "rightWalkBtn", 2), U(cmd, "leftResetBtn"), U(cmd, "rightResetBtn"));
-                break;
-
-            case "sw_reset":
-                sf.ResetRotation();
-                break;
-
-            case "sw_connect":
             {
                 _toolConnected = true;
                 bool ok = sf.Connect();
