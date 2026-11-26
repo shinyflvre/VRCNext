@@ -211,6 +211,26 @@ public sealed class VRSubprocessHost : IDisposable
         catch (Exception ex) { _log($"[VRSub] Reader crashed: {ex.Message}"); }
     }
 
+    private const int SubLogLinesPerSecond = 40;
+    private long _subLogWindowStart;
+    private int  _subLogInWindow;
+    private int  _subLogSuppressed;
+
+    private void ForwardSubprocessLog(string text)
+    {
+        var now = Environment.TickCount64;
+        if (now - _subLogWindowStart >= 1000)
+        {
+            if (_subLogSuppressed > 0) _log($"[VRSub] {_subLogSuppressed} log lines suppressed");
+            _subLogWindowStart = now;
+            _subLogInWindow    = 0;
+            _subLogSuppressed  = 0;
+        }
+        if (_subLogInWindow >= SubLogLinesPerSecond) { _subLogSuppressed++; return; }
+        _subLogInWindow++;
+        _log(text);
+    }
+
     private void Dispatch(JObject msg)
     {
         var t = msg["t"]?.Value<string>() ?? "";
@@ -219,7 +239,7 @@ public sealed class VRSubprocessHost : IDisposable
         switch (t)
         {
             case "log":
-                _log(msg["text"]?.Value<string>() ?? "");
+                ForwardSubprocessLog(msg["text"]?.Value<string>() ?? "");
                 break;
             case "vro_state":
                 VroConnected = msg["connected"]?.Value<bool>() ?? VroConnected;
