@@ -31,7 +31,6 @@ public class UnifiedTimeEngine : IDisposable
     private DateTime? _worldSessionStart;
     private string _currentWorldId = "";
     private string _currentLocation = "";
-    private string _currentGroupId = "";
 
     private readonly SqliteConnection _db;
     private readonly object _lock = new();
@@ -84,10 +83,6 @@ public class UnifiedTimeEngine : IDisposable
 
             _currentWorldId = worldId ?? "";
             _currentLocation = location ?? "";
-            _currentGroupId = ParseGroupId(_currentLocation);
-
-            if (!string.IsNullOrEmpty(_currentGroupId))
-                BumpGroupJoinLocked(_currentGroupId, now);
 
             if (!string.IsNullOrEmpty(_currentWorldId) && _currentWorldId.StartsWith("wrld_"))
             {
@@ -112,7 +107,6 @@ public class UnifiedTimeEngine : IDisposable
         {
             _currentWorldId = worldId ?? "";
             _currentLocation = location ?? "";
-            _currentGroupId = ParseGroupId(_currentLocation);
             if (!_worldSessionStart.HasValue)
                 _worldSessionStart = DateTime.UtcNow;
             PersistActiveSessionLocked();
@@ -268,87 +262,65 @@ public class UnifiedTimeEngine : IDisposable
     private const string TsPersonWhere = "total_seconds > 0 AND display_name <> '' AND user_id <> $self";
     private const string TsMeetsExpr   = "meet_again_count + CASE WHEN first_meet_date <> '' THEN 1 ELSE 0 END";
 
-    private const string TsGroupWhere = "(time_total_seconds > 0 OR time_join_count > 0)";
-
     public TimeSpentGroupPage GetTimeSpentGroupPage(string query, int page, int pageSize)
     {
         var result = new TimeSpentGroupPage();
-        var filter = string.IsNullOrEmpty(query)
-            ? ""
-            : " AND (instr(lower(name), $q) > 0 OR instr(lower(short_code), $q) > 0)";
+        var all = new List<TimeSpentGroupRow>();
 
         lock (_lock)
         {
             if (_disposed) return result;
             try
             {
-                using (var cmd = _db.CreateCommand())
+                using var cmd = _db.CreateCommand();
+                cmd.CommandText = @"WITH visits AS (
+                        SELECT substr(location, instr(location, '~group(') + 7) AS rest, timestamp,
+                               COALESCE(left_at, '') AS left_at
+                        FROM events
+                        WHERE type = 'instance_join' AND instr(location, '~group(') > 0
+                    ), per_group AS (
+                        SELECT substr(rest, 1, instr(rest, ')') - 1) AS gid,
+                               COUNT(*) AS joins,
+                               CAST(SUM(MAX(0, (julianday(CASE WHEN left_at <> '' THEN left_at ELSE 'now' END)
+                                                - julianday(timestamp)) * 86400)) AS INTEGER) AS secs
+                        FROM visits
+                        GROUP BY gid
+                    )
+                    SELECT p.gid, COALESCE(t.name, ''), COALESCE(t.icon_url, ''), COALESCE(t.short_code, ''),
+                           COALESCE(p.secs, 0), p.joins
+                    FROM per_group p
+                    LEFT JOIN group_tracking t ON t.group_id = p.gid
+                    WHERE p.gid LIKE 'grp_%'
+                    ORDER BY COALESCE(p.secs, 0) DESC, p.gid ASC";
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
                 {
-                    cmd.CommandText = $@"SELECT COUNT(*), COALESCE(SUM(time_total_seconds),0),
-                                                COALESCE(SUM(time_join_count),0), COALESCE(MAX(time_total_seconds),0)
-                        FROM group_tracking WHERE {TsGroupWhere}";
-                    using var r = cmd.ExecuteReader();
-                    if (r.Read())
+                    all.Add(new TimeSpentGroupRow
                     {
-                        result.TotalAll     = r.GetInt32(0);
-                        result.TotalSeconds = r.GetInt64(1);
-                        result.TotalJoins   = r.GetInt64(2);
-                        result.MaxSeconds   = r.GetInt64(3);
-                    }
-                }
-
-                using (var cmd = _db.CreateCommand())
-                {
-                    cmd.CommandText = $"SELECT name FROM group_tracking WHERE {TsGroupWhere} ORDER BY time_total_seconds DESC LIMIT 1";
-                    result.TopGroupName = cmd.ExecuteScalar() as string ?? "";
-                }
-
-                if (string.IsNullOrEmpty(query))
-                    result.TotalFiltered = result.TotalAll;
-                else
-                {
-                    using var cmd = _db.CreateCommand();
-                    cmd.CommandText = $"SELECT COUNT(*) FROM group_tracking WHERE {TsGroupWhere}{filter}";
-                    cmd.Parameters.AddWithValue("$q", query);
-                    result.TotalFiltered = Convert.ToInt32(cmd.ExecuteScalar() ?? 0);
-                }
-
-                var skip = Math.Max(0, page) * (long)pageSize;
-                using (var cmd = _db.CreateCommand())
-                {
-                    cmd.CommandText = string.IsNullOrEmpty(query)
-                        ? $@"SELECT group_id, name, icon_url, short_code, time_total_seconds, time_join_count, 0
-                            FROM group_tracking WHERE {TsGroupWhere}
-                            ORDER BY time_total_seconds DESC, group_id ASC LIMIT $take OFFSET $skip"
-                        : $@"SELECT group_id, name, icon_url, short_code, time_total_seconds, time_join_count, rnk FROM (
-                                SELECT group_id, name, icon_url, short_code, time_total_seconds, time_join_count,
-                                       ROW_NUMBER() OVER (ORDER BY time_total_seconds DESC, group_id ASC) AS rnk
-                                FROM group_tracking WHERE {TsGroupWhere}
-                             ) WHERE instr(lower(name), $q) > 0 OR instr(lower(short_code), $q) > 0
-                            ORDER BY rnk LIMIT $take OFFSET $skip";
-                    if (!string.IsNullOrEmpty(query)) cmd.Parameters.AddWithValue("$q", query);
-                    cmd.Parameters.AddWithValue("$take", pageSize);
-                    cmd.Parameters.AddWithValue("$skip", skip);
-                    using var r = cmd.ExecuteReader();
-                    long fallbackRank = skip;
-                    while (r.Read())
-                    {
-                        fallbackRank++;
-                        result.Rows.Add(new TimeSpentGroupRow
-                        {
-                            GroupId   = r.GetString(0),
-                            GroupName = r.GetString(1),
-                            IconUrl   = r.GetString(2),
-                            ShortCode = r.GetString(3),
-                            Seconds   = r.GetInt64(4),
-                            Joins     = r.GetInt64(5),
-                            Rank      = r.GetInt64(6) > 0 ? r.GetInt64(6) : fallbackRank,
-                        });
-                    }
+                        GroupId   = r.GetString(0),
+                        GroupName = r.GetString(1),
+                        IconUrl   = r.GetString(2),
+                        ShortCode = r.GetString(3),
+                        Seconds   = r.GetInt64(4),
+                        Joins     = r.GetInt64(5),
+                        Rank      = all.Count + 1,
+                    });
                 }
             }
             catch { }
         }
+
+        result.TotalAll     = all.Count;
+        result.TotalSeconds = all.Sum(g => g.Seconds);
+        result.TotalJoins   = all.Sum(g => g.Joins);
+        result.MaxSeconds   = all.Count > 0 ? all[0].Seconds : 0;
+        result.TopGroupName = all.Count > 0 ? (all[0].GroupName.Length > 0 ? all[0].GroupName : all[0].ShortCode) : "";
+
+        var filtered = string.IsNullOrEmpty(query)
+            ? all
+            : all.Where(g => g.GroupName.ToLowerInvariant().Contains(query) || g.ShortCode.ToLowerInvariant().Contains(query)).ToList();
+        result.TotalFiltered = filtered.Count;
+        result.Rows.AddRange(filtered.Skip(Math.Max(0, page) * pageSize).Take(pageSize));
         return result;
     }
 
@@ -1937,7 +1909,6 @@ public class UnifiedTimeEngine : IDisposable
                         {
                             _currentWorldId = worldId;
                             _currentLocation = currentLocation;
-                            _currentGroupId = ParseGroupId(currentLocation);
                             _worldSessionStart = now; // start from NOW — DB already has flushed time
                         }
                     }
@@ -2129,12 +2100,6 @@ public class UnifiedTimeEngine : IDisposable
                 UpsertWorldLocked(_currentWorldId, rec);
                 var wName = rec.WorldName.Length > 0 ? rec.WorldName : _currentWorldId;
                 _logger?.Invoke($"[TIMER] World Time saved: +{delta}s — overall time in \"{wName}\": {FormatDuration(rec.TotalSeconds)}");
-                if (!string.IsNullOrEmpty(_currentGroupId))
-                {
-                    var (gName, gTotal) = AddGroupSecondsLocked(_currentGroupId, delta, now);
-                    if (gName.Length == 0) gName = _currentGroupId;
-                    _logger?.Invoke($"[TIMER] Group Time saved: +{delta}s — overall time in \"{gName}\": {FormatDuration(gTotal)}");
-                }
             }
             _worldSessionStart = now;
         }
@@ -2179,7 +2144,6 @@ public class UnifiedTimeEngine : IDisposable
         EndWorldSessionLocked(endTime);
         _currentWorldId = "";
         _currentLocation = "";
-        _currentGroupId = "";
         ClearActiveSessionLocked();
         try { _monitoredVrcProcess?.Dispose(); } catch { }
         _monitoredVrcProcess = null;
@@ -2233,12 +2197,6 @@ public class UnifiedTimeEngine : IDisposable
         _worldSessionStart = null;
     }
 
-    internal static string ParseGroupId(string? location)
-    {
-        if (string.IsNullOrEmpty(location)) return "";
-        var m = System.Text.RegularExpressions.Regex.Match(location, @"~group\((grp_[0-9A-Za-z-]+)\)");
-        return m.Success ? m.Groups[1].Value : "";
-    }
 
     public void SaveGroupTimeIdentity(string groupId, string name, string shortCode, string iconUrl)
     {
@@ -2263,51 +2221,6 @@ public class UnifiedTimeEngine : IDisposable
             }
             catch { }
         }
-    }
-
-    private void BumpGroupJoinLocked(string groupId, DateTime now)
-    {
-        try
-        {
-            using var cmd = _db.CreateCommand();
-            cmd.CommandText = @"INSERT INTO group_tracking(group_id,time_join_count,time_last_visited)
-                VALUES($gid,1,$lv)
-                ON CONFLICT(group_id) DO UPDATE SET
-                    time_join_count = time_join_count + 1,
-                    time_last_visited = excluded.time_last_visited";
-            cmd.Parameters.AddWithValue("$gid", groupId);
-            cmd.Parameters.AddWithValue("$lv", now.ToString("o"));
-            cmd.ExecuteNonQuery();
-        }
-        catch { }
-    }
-
-    private (string name, long total) AddGroupSecondsLocked(string groupId, long seconds, DateTime now)
-    {
-        try
-        {
-            using (var cmd = _db.CreateCommand())
-            {
-                cmd.CommandText = @"INSERT INTO group_tracking(group_id,time_total_seconds,time_last_visited)
-                    VALUES($gid,$sec,$lv)
-                    ON CONFLICT(group_id) DO UPDATE SET
-                        time_total_seconds = time_total_seconds + excluded.time_total_seconds,
-                        time_last_visited = excluded.time_last_visited";
-                cmd.Parameters.AddWithValue("$gid", groupId);
-                cmd.Parameters.AddWithValue("$sec", seconds);
-                cmd.Parameters.AddWithValue("$lv", now.ToString("o"));
-                cmd.ExecuteNonQuery();
-            }
-            using (var q = _db.CreateCommand())
-            {
-                q.CommandText = "SELECT name, time_total_seconds FROM group_tracking WHERE group_id=$gid";
-                q.Parameters.AddWithValue("$gid", groupId);
-                using var r = q.ExecuteReader();
-                if (r.Read()) return (r.GetString(0), r.GetInt64(1));
-            }
-        }
-        catch { }
-        return ("", 0);
     }
 
     // DB persistence
@@ -2467,9 +2380,6 @@ public class UnifiedTimeEngine : IDisposable
             "is_representing    INTEGER NOT NULL DEFAULT 0",
             "last_post_json     TEXT NOT NULL DEFAULT ''",
             "last_event_json    TEXT NOT NULL DEFAULT ''",
-            "time_total_seconds INTEGER NOT NULL DEFAULT 0",
-            "time_join_count    INTEGER NOT NULL DEFAULT 0",
-            "time_last_visited  TEXT NOT NULL DEFAULT ''",
         })
         {
             try { using var mc = _db.CreateCommand(); mc.CommandText = $"ALTER TABLE group_tracking ADD COLUMN {col}"; mc.ExecuteNonQuery(); } catch { }

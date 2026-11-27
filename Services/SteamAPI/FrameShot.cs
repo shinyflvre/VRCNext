@@ -150,6 +150,15 @@ namespace VRCNext.Services
         private ID3D11Device?        _d3dDevice;
         private ID3D11DeviceContext? _d3dContext;
         private readonly object _d3dLock = new();
+        private readonly object _captureLock = new();
+        private volatile bool _deviceLost;
+        private volatile bool _captureFailed;
+        private int _captureBusy;
+        private long _deviceRebuildAfterMs;
+        private long _captureErrorLogAfterMs;
+        private const int GPU_READBACK_TIMEOUT_MS = 1000;
+        private const int DEVICE_REBUILD_RETRY_MS = 5000;
+        private const int CAPTURE_ERROR_LOG_INTERVAL_MS = 5000;
         private ID3D11Texture2D?     _overlayTex;
         private VrDraw.D2DRenderer?  _d2d;
         private Vortice.Direct2D1.ID2D1Bitmap1? _frameTarget;
@@ -243,29 +252,47 @@ namespace VRCNext.Services
             }
         }
 
+        private readonly object _recordSoundLock = new();
+        private int _recordSoundGen;
+
         private void StartRecordSoundLoop(string fileName)
         {
             var path = Path.Combine(SoundDir, fileName);
             if (!File.Exists(path)) return;
             var sel = _outputSelection;
+            int gen;
+            lock (_recordSoundLock) gen = ++_recordSoundGen;
             // Run on thread pool so file IO + device init doesn't stall the poll loop.
             _ = Task.Run(() =>
             {
                 try
                 {
-                    StopRecordSoundLoop(); // safety: kill any previous loop
                     var devIdx = VRCNext.Services.Helpers.AudioDeviceManager.ResolveOutputIndex(sel);
                     if (devIdx == null) { _log($"[FrameShot] Output '{sel.DisplayName}' unavailable, record sound skipped (selection kept)."); return; }
-                    _recordWaveReader = new LoopWaveStream(new WaveFileReader(path));
-                    _recordWaveOut    = new WaveOut { DeviceNumber = devIdx.Value };
-                    _recordWaveOut.Init(_recordWaveReader);
-                    _recordWaveOut.Play();
+                    lock (_recordSoundLock)
+                    {
+                        if (gen != _recordSoundGen) return;
+                        StopRecordSoundLoopLocked();
+                        _recordWaveReader = new LoopWaveStream(new WaveFileReader(path));
+                        _recordWaveOut    = new WaveOut { DeviceNumber = devIdx.Value };
+                        _recordWaveOut.Init(_recordWaveReader);
+                        _recordWaveOut.Play();
+                    }
                 }
                 catch (Exception ex) { _log($"[FrameShot] Record loop sound: {ex.Message}"); }
             });
         }
 
         private void StopRecordSoundLoop()
+        {
+            lock (_recordSoundLock)
+            {
+                _recordSoundGen++;
+                StopRecordSoundLoopLocked();
+            }
+        }
+
+        private void StopRecordSoundLoopLocked()
         {
             try { _recordWaveOut?.Stop();    } catch { }
             try { _recordWaveOut?.Dispose(); } catch { }
@@ -335,20 +362,8 @@ namespace VRCNext.Services
 
                 try
                 {
-                    D3D11.D3D11CreateDevice(null, DriverType.Hardware, DeviceCreationFlags.BgraSupport,
-                        [FeatureLevel.Level_11_0, FeatureLevel.Level_10_1],
-                        out _d3dDevice, out _d3dContext);
-
-                    _overlayTex = _d3dDevice!.CreateTexture2D(new Texture2DDescription
-                    {
-                        Width = FRAME_TEX_W, Height = FRAME_TEX_H, MipLevels = 1, ArraySize = 1,
-                        Format = Format.B8G8R8A8_UNorm,
-                        SampleDescription = new SampleDescription(1, 0),
-                        Usage = ResourceUsage.Default,
-                        BindFlags = BindFlags.ShaderResource | BindFlags.RenderTarget,
-                    });
-                    _d2d = new VrDraw.D2DRenderer(_d3dDevice);
-                    _frameTarget = _d2d.CreateTargetBitmap(_overlayTex);
+                    lock (_d3dLock) CreateD3DResourcesLocked();
+                    _deviceLost = false;
                     OpenVR.Overlay.SetOverlayFlag(_overlayHandle, VROverlayFlags.IsPremultiplied, true);
                     _log("[FrameShot] D3D11 device + Direct2D target ready");
                 }
@@ -391,23 +406,8 @@ namespace VRCNext.Services
                 _overlayHandle = 0;
             }
 
-            lock (_d3dLock)
-            {
-                try { _mirrorStaging?.Dispose();   } catch { } _mirrorStaging   = null;
-                try { _mirrorTexCached?.Dispose(); } catch { } _mirrorTexCached = null;
-                try { _mirrorSrvObj?.Dispose();    } catch { } _mirrorSrvObj    = null;
-                if (_mirrorSrv != IntPtr.Zero && OpenVR.Compositor != null)
-                {
-                    try { OpenVR.Compositor.ReleaseMirrorTextureD3D11(_mirrorSrv); } catch { }
-                }
-                _mirrorSrv = IntPtr.Zero;
-
-                _frameTarget?.Dispose(); _frameTarget = null;
-                _d2d?.Dispose();        _d2d        = null;
-                _overlayTex?.Dispose(); _overlayTex = null;
-                _d3dContext?.Dispose(); _d3dContext = null;
-                _d3dDevice?.Dispose();  _d3dDevice  = null;
-            }
+            lock (_d3dLock) ReleaseD3DResourcesLocked();
+            _deviceLost = false;
 
             if (_ownedInit)
             {
@@ -420,6 +420,98 @@ namespace VRCNext.Services
             _vrSystem   = null;
             _log("[FrameShot] Disconnected");
             EmitState();
+        }
+
+        private void CreateD3DResourcesLocked()
+        {
+            D3D11.D3D11CreateDevice(null, DriverType.Hardware, DeviceCreationFlags.BgraSupport,
+                [FeatureLevel.Level_11_0, FeatureLevel.Level_10_1],
+                out _d3dDevice, out _d3dContext);
+
+            try
+            {
+                using var mt = _d3dContext!.QueryInterface<ID3D11Multithread>();
+                mt.SetMultithreadProtected(true);
+            }
+            catch { }
+
+            _overlayTex = _d3dDevice!.CreateTexture2D(new Texture2DDescription
+            {
+                Width = FRAME_TEX_W, Height = FRAME_TEX_H, MipLevels = 1, ArraySize = 1,
+                Format = Format.B8G8R8A8_UNorm,
+                SampleDescription = new SampleDescription(1, 0),
+                Usage = ResourceUsage.Default,
+                BindFlags = BindFlags.ShaderResource | BindFlags.RenderTarget,
+            });
+            _d2d = new VrDraw.D2DRenderer(_d3dDevice);
+            _frameTarget = _d2d.CreateTargetBitmap(_overlayTex);
+        }
+
+        private void ReleaseD3DResourcesLocked()
+        {
+            try { _mirrorStaging?.Dispose();   } catch { } _mirrorStaging   = null;
+            try { _mirrorTexCached?.Dispose(); } catch { } _mirrorTexCached = null;
+            try { _mirrorSrvObj?.Dispose();    } catch { } _mirrorSrvObj    = null;
+            if (_mirrorSrv != IntPtr.Zero && OpenVR.Compositor != null)
+            {
+                try { OpenVR.Compositor.ReleaseMirrorTextureD3D11(_mirrorSrv); } catch { }
+            }
+            _mirrorSrv = IntPtr.Zero;
+
+            try { _frameTarget?.Dispose(); } catch { } _frameTarget = null;
+            try { _d2d?.Dispose();         } catch { } _d2d         = null;
+            try { _overlayTex?.Dispose();  } catch { } _overlayTex  = null;
+            try { _d3dContext?.Dispose();  } catch { } _d3dContext  = null;
+            try { _d3dDevice?.Dispose();   } catch { } _d3dDevice   = null;
+        }
+
+        private static bool IsDeviceLostError(Exception ex) =>
+            ex.HResult == unchecked((int)0x887A0005) || ex.HResult == unchecked((int)0x887A0006) ||
+            ex.HResult == unchecked((int)0x887A0007) || ex.HResult == unchecked((int)0x887A0020);
+
+        private void MarkDeviceLost(string where)
+        {
+            if (_deviceLost) return;
+            string reason = "";
+            try { reason = _d3dDevice?.DeviceRemovedReason.ToString() ?? ""; } catch { }
+            _deviceLost = true;
+            _deviceRebuildAfterMs = 0;
+            _log($"[FrameShot] Graphics device lost in {where} ({reason}), rebuilding it");
+        }
+
+        private void LogCaptureError(string where, Exception ex)
+        {
+            if (IsDeviceLostError(ex)) { MarkDeviceLost(where); return; }
+            var now = Environment.TickCount64;
+            if (now < _captureErrorLogAfterMs) return;
+            _captureErrorLogAfterMs = now + CAPTURE_ERROR_LOG_INTERVAL_MS;
+            _log($"[FrameShot] {where}: {ex.Message}");
+        }
+
+        private void TryRebuildDevice()
+        {
+            if (!_deviceLost || IsRecording || IsVideoRecording) return;
+            if (Volatile.Read(ref _captureBusy) != 0 || Volatile.Read(ref _qrScanBusy) != 0) return;
+            var now = Environment.TickCount64;
+            if (now < _deviceRebuildAfterMs) return;
+            lock (_d3dLock)
+            {
+                ReleaseD3DResourcesLocked();
+                try
+                {
+                    CreateD3DResourcesLocked();
+                    _deviceLost    = false;
+                    _captureFailed = false;
+                    _log("[FrameShot] Graphics device rebuilt");
+                }
+                catch (Exception ex)
+                {
+                    _deviceRebuildAfterMs = now + DEVICE_REBUILD_RETRY_MS;
+                    _log($"[FrameShot] Graphics device rebuild failed: {ex.Message}");
+                }
+            }
+            _lastDrawnW = 0;
+            _lastDrawnH = 0;
         }
 
         public void StartPolling()
@@ -502,6 +594,7 @@ namespace VRCNext.Services
         private void ProcessFrame()
         {
             if (_vrSystem == null) return;
+            TryRebuildDevice();
 
             var evt = new VREvent_t();
             while (_vrSystem.PollNextEvent(ref evt, (uint)Marshal.SizeOf<VREvent_t>()))
@@ -564,8 +657,8 @@ namespace VRCNext.Services
             if (!IsFraming) _framingBasisLocked = false;
             if (!recHeld) _gifAutoStop = false;
             if (!vidHeld) _videoAutoStop = false;
-            bool nowRecording      = IsFraming && recHeld && !_gifAutoStop && !IsVideoRecording;
-            bool nowVideoRecording = IsFraming && vidHeld && !_videoAutoStop && !IsRecording;
+            bool nowRecording      = IsFraming && recHeld && !_gifAutoStop && !wasVideoRecording;
+            bool nowVideoRecording = IsFraming && vidHeld && !_videoAutoStop && !nowRecording && !wasRecording;
             IsRecording      = nowRecording;
             IsVideoRecording = nowVideoRecording;
 
@@ -899,11 +992,22 @@ namespace VRCNext.Services
                     if (elapsedMs > GIF_MAX_MS) { _gifAutoStop = true; break; }
                     if (frameIdx >= GifMaxFrames) { _gifAutoStop = true; break; }
                     var crop = ComputeRecordingCrop(_mirrorW, _mirrorH);
+                    _captureFailed = false;
                     var bmp = CaptureMirrorCrop(crop);
                     if (bmp != null)
                     {
                         lock (_recordFrames) _recordFrames.Add(bmp);
                         frameIdx++;
+                    }
+                    else if (_captureFailed || _deviceLost)
+                    {
+                        _gifAutoStop = true;
+                        break;
+                    }
+                    else
+                    {
+                        await Task.Delay((int)Math.Max(1, GifFrameMs), ct);
+                        continue;
                     }
 
                     double nextAt = frameIdx * GifFrameMs;
@@ -1008,59 +1112,109 @@ namespace VRCNext.Services
 
         private Bitmap? CaptureMirrorCrop(System.Drawing.Rectangle crop, bool applyGifDownscale)
         {
+            if (_deviceLost) { _captureFailed = true; return null; }
+            Interlocked.Increment(ref _captureBusy);
             try
             {
-                Bitmap? bmp = null;
-                lock (_d3dLock)
+                lock (_captureLock)
                 {
-                    if (_d3dContext == null || _mirrorStaging == null || _mirrorTexCached == null) return null;
-                    var srcBox = new Vortice.Mathematics.Box(crop.X, crop.Y, 0, crop.X + crop.Width, crop.Y + crop.Height, 1);
-                    _d3dContext.CopySubresourceRegion(_mirrorStaging, 0, (uint)crop.X, (uint)crop.Y, 0, _mirrorTexCached, 0, srcBox);
-                    var box = _d3dContext.Map(_mirrorStaging, 0, MapMode.Read, Vortice.Direct3D11.MapFlags.None);
+                    crop = System.Drawing.Rectangle.Intersect(crop, new System.Drawing.Rectangle(0, 0, _mirrorW, _mirrorH));
+                    if (crop.Width < 2 || crop.Height < 2) return null;
+
+                    bool swapRB;
+                    lock (_d3dLock)
+                    {
+                        if (_d3dContext == null || _mirrorStaging == null || _mirrorTexCached == null) { _captureFailed = true; return null; }
+                        swapRB = !_mirrorSrvFormat.ToString().StartsWith("B8G8R8A8", StringComparison.Ordinal);
+                        var srcBox = new Vortice.Mathematics.Box(crop.X, crop.Y, 0, crop.X + crop.Width, crop.Y + crop.Height, 1);
+                        _d3dContext.CopySubresourceRegion(_mirrorStaging, 0, (uint)crop.X, (uint)crop.Y, 0, _mirrorTexCached, 0, srcBox);
+                        _d3dContext.Flush();
+                    }
+
+                    var bmp = new Bitmap(crop.Width, crop.Height, PixelFormat.Format32bppArgb);
+                    bool ok = false;
                     try
                     {
-                        bmp = new Bitmap(crop.Width, crop.Height, PixelFormat.Format32bppArgb);
-                        var rect  = new System.Drawing.Rectangle(0, 0, crop.Width, crop.Height);
-                        var bData = bmp.LockBits(rect, ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+                        var bData = bmp.LockBits(new System.Drawing.Rectangle(0, 0, crop.Width, crop.Height), ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
                         try
                         {
-                            var fmtName = _mirrorSrvFormat.ToString();
-                            bool swapRB = !fmtName.StartsWith("B8G8R8A8", StringComparison.Ordinal);
-                            var rowBuf  = new byte[crop.Width * 4];
-                            for (int y = 0; y < crop.Height; y++)
-                            {
-                                var srcRowPtr = box.DataPointer
-                                                + (nint)((long)(y + crop.Y) * box.RowPitch)
-                                                + (nint)(crop.X * 4);
-                                Marshal.Copy(srcRowPtr, rowBuf, 0, crop.Width * 4);
-                                if (swapRB)
-                                {
-                                    for (int x = 0; x < crop.Width; x++)
-                                    {
-                                        byte r = rowBuf[x * 4 + 0];
-                                        byte b = rowBuf[x * 4 + 2];
-                                        rowBuf[x * 4 + 0] = b;
-                                        rowBuf[x * 4 + 2] = r;
-                                        rowBuf[x * 4 + 3] = 255;
-                                    }
-                                }
-                                else
-                                {
-                                    for (int x = 0; x < crop.Width; x++) rowBuf[x * 4 + 3] = 255;
-                                }
-                                Marshal.Copy(rowBuf, 0, bData.Scan0 + (nint)(y * bData.Stride), crop.Width * 4);
-                            }
+                            ok = ReadStagingRows(crop, bData);
+                            if (ok) FixMirrorPixels(bData, crop.Width, crop.Height, swapRB);
                         }
                         finally { bmp.UnlockBits(bData); }
                     }
-                    finally { _d3dContext.Unmap(_mirrorStaging, 0); }
+                    finally
+                    {
+                        if (!ok) bmp.Dispose();
+                    }
+                    if (!ok) { _captureFailed = true; return null; }
+                    return applyGifDownscale ? DownscaleIfNeeded(bmp, _gifMaxDim) : bmp;
                 }
-                return applyGifDownscale ? DownscaleIfNeeded(bmp, _gifMaxDim) : bmp;
             }
             catch (Exception ex)
             {
-                _log($"[FrameShot] CaptureMirrorCrop: {ex.Message}");
+                _captureFailed = true;
+                LogCaptureError("CaptureMirrorCrop", ex);
                 return null;
+            }
+            finally
+            {
+                Interlocked.Decrement(ref _captureBusy);
+            }
+        }
+
+        private unsafe bool ReadStagingRows(System.Drawing.Rectangle crop, BitmapData dst)
+        {
+            var deadline = Environment.TickCount64 + GPU_READBACK_TIMEOUT_MS;
+            while (true)
+            {
+                lock (_d3dLock)
+                {
+                    if (_d3dContext == null || _mirrorStaging == null) return false;
+                    var hr = _d3dContext.Map(_mirrorStaging, 0, MapMode.Read, Vortice.Direct3D11.MapFlags.DoNotWait, out var box);
+                    if (hr.Success)
+                    {
+                        try
+                        {
+                            long rowBytes = (long)crop.Width * 4;
+                            for (int y = 0; y < crop.Height; y++)
+                            {
+                                byte* src = (byte*)box.DataPointer + (long)(y + crop.Y) * box.RowPitch + (long)crop.X * 4;
+                                byte* dstRow = (byte*)dst.Scan0 + (long)y * dst.Stride;
+                                Buffer.MemoryCopy(src, dstRow, rowBytes, rowBytes);
+                            }
+                        }
+                        finally { _d3dContext.Unmap(_mirrorStaging, 0); }
+                        return true;
+                    }
+                    if (hr.Code != unchecked((int)0x887A000A)) hr.CheckError();
+                }
+                if (Environment.TickCount64 > deadline)
+                {
+                    MarkDeviceLost("mirror read-back timeout");
+                    return false;
+                }
+                Thread.Sleep(1);
+            }
+        }
+
+        private static unsafe void FixMirrorPixels(BitmapData data, int width, int height, bool swapRB)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                var row = new Span<uint>((byte*)data.Scan0 + (long)y * data.Stride, width);
+                if (swapRB)
+                {
+                    for (int x = 0; x < row.Length; x++)
+                    {
+                        uint p = row[x];
+                        row[x] = 0xFF000000u | ((p & 0xFFu) << 16) | (p & 0xFF00u) | ((p >> 16) & 0xFFu);
+                    }
+                }
+                else
+                {
+                    for (int x = 0; x < row.Length; x++) row[x] |= 0xFF000000u;
+                }
             }
         }
 
@@ -1220,6 +1374,7 @@ namespace VRCNext.Services
                         Math.Clamp(crop.X, 0, _mirrorW - nativeW),
                         Math.Clamp(crop.Y, 0, _mirrorH - nativeH),
                         nativeW, nativeH);
+                    _captureFailed = false;
                     var bytes = CaptureMirrorCropRaw(lockedCrop, nativeW, nativeH);
                     if (bytes != null)
                     {
@@ -1228,6 +1383,16 @@ namespace VRCNext.Services
                             try { _videoFfmpegStdin?.Write(bytes, 0, bytes.Length); _videoFrameCount++; frameIdx++; }
                             catch (Exception ex) { _log($"[FrameShot] Video write: {ex.Message}"); _videoAutoStop = true; break; }
                         }
+                    }
+                    else if (_captureFailed || _deviceLost)
+                    {
+                        _videoAutoStop = true;
+                        break;
+                    }
+                    else
+                    {
+                        await Task.Delay(Math.Max(1, _videoFrameMs), ct);
+                        continue;
                     }
 
                     double nextAt = frameIdx * _videoFrameMs;
@@ -1269,7 +1434,8 @@ namespace VRCNext.Services
             }
             catch (Exception ex)
             {
-                _log($"[FrameShot] VideoFrame: {ex.Message}");
+                _captureFailed = true;
+                LogCaptureError("VideoFrame", ex);
                 return null;
             }
         }
@@ -1736,7 +1902,7 @@ namespace VRCNext.Services
 
         private void DrawFrameTexture(int drawW, int drawH, bool recording)
         {
-            if (_d2d == null || _frameTarget == null || _overlayTex == null) return;
+            if (_deviceLost || _d2d == null || _frameTarget == null || _overlayTex == null) return;
 
             Color borderColor;
             if (IsVideoRecording)       borderColor = Color.FromArgb(255, 255, 170,  60); // orange (video)
@@ -1744,47 +1910,59 @@ namespace VRCNext.Services
             else if (_qrLabel.Length>0) borderColor = Color.FromArgb(255,  90, 220, 120); // green (QR found)
             else                        borderColor = Color.FromArgb(255, 130, 210, 255); // light-blue (idle)
 
-            lock (_d3dLock)
-            {
-                if (_d3dContext == null || _overlayTex == null || _d2d == null || _frameTarget == null) return;
-                using var g = _d2d.CreateGraphics(_frameTarget);
-                g.SmoothingMode = VrDraw.SmoothingMode.AntiAlias;
-                g.Clear(Color.Transparent);
-
-                int inset = 4;
-                using var pen = new VrDraw.Pen(borderColor, 8f);
-                g.DrawRectangle(pen, inset, inset, drawW - inset * 2 - 1, drawH - inset * 2 - 1);
-
-                // Subtle inner shadow line for definition
-                using var pen2 = new VrDraw.Pen(Color.FromArgb(120, 255, 255, 255), 1.5f);
-                g.DrawRectangle(pen2, inset + 6, inset + 6, drawW - inset * 2 - 13, drawH - inset * 2 - 13);
-
-                if (!recording && !IsVideoRecording) DrawQrBanner(g, drawW, drawH, borderColor);
-            }
-
             var bounds = new VRTextureBounds_t
             {
                 uMin = 0f, vMin = 0f,
                 uMax = (float)drawW / FRAME_TEX_W,
                 vMax = (float)drawH / FRAME_TEX_H,
             };
-            OpenVR.Overlay?.SetOverlayTextureBounds(_overlayHandle, ref bounds);
 
-            var vrTex = new Texture_t
+            try
             {
-                handle      = _overlayTex.NativePointer,
-                eType       = ETextureType.DirectX,
-                eColorSpace = EColorSpace.Auto,
-            };
-            OpenVR.Overlay?.SetOverlayTexture(_overlayHandle, ref vrTex);
-            lock (_d3dLock) { if (_d3dContext != null) _d3dContext.Flush(); }
+                lock (_d3dLock)
+                {
+                    if (_d3dContext == null || _overlayTex == null || _d2d == null || _frameTarget == null) return;
+                    using (var g = _d2d.CreateGraphics(_frameTarget))
+                    {
+                        g.SmoothingMode = VrDraw.SmoothingMode.AntiAlias;
+                        g.Clear(Color.Transparent);
+
+                        int inset = 4;
+                        using var pen = new VrDraw.Pen(borderColor, 8f);
+                        g.DrawRectangle(pen, inset, inset, drawW - inset * 2 - 1, drawH - inset * 2 - 1);
+
+                        // Subtle inner shadow line for definition
+                        using var pen2 = new VrDraw.Pen(Color.FromArgb(120, 255, 255, 255), 1.5f);
+                        g.DrawRectangle(pen2, inset + 6, inset + 6, drawW - inset * 2 - 13, drawH - inset * 2 - 13);
+
+                        if (!recording && !IsVideoRecording) DrawQrBanner(g, drawW, drawH, borderColor);
+                    }
+
+                    OpenVR.Overlay?.SetOverlayTextureBounds(_overlayHandle, ref bounds);
+
+                    var vrTex = new Texture_t
+                    {
+                        handle      = _overlayTex.NativePointer,
+                        eType       = ETextureType.DirectX,
+                        eColorSpace = EColorSpace.Auto,
+                    };
+                    OpenVR.Overlay?.SetOverlayTexture(_overlayHandle, ref vrTex);
+                    _d3dContext.Flush();
+                }
+            }
+            catch (Exception ex)
+            {
+                if (IsDeviceLostError(ex)) MarkDeviceLost("overlay drawing");
+                else LogCaptureError("Overlay drawing", ex);
+            }
         }
 
         private void CaptureAndSave()
         {
+            Interlocked.Increment(ref _captureBusy);
             try
             {
-                if (_d3dDevice == null || _d3dContext == null || OpenVR.Compositor == null)
+                if (_deviceLost || _d3dDevice == null || _d3dContext == null || OpenVR.Compositor == null)
                 {
                     _log("[FrameShot] Capture skipped: no compositor/device");
                     return;
@@ -1801,49 +1979,14 @@ namespace VRCNext.Services
                 int outW = Math.Max(2, (int)Math.Round(Math.Max(topLen, leftLen * _lastFrameWidth  / Math.Max(0.001f, _lastFrameHeight))));
                 int outH = Math.Max(2, (int)Math.Round(outW * _lastFrameHeight / Math.Max(0.001f, _lastFrameWidth)));
 
-                Bitmap? mirrorBmp = null;
-                lock (_d3dLock)
-                {
-                    if (_d3dContext == null || _mirrorStaging == null || _mirrorTexCached == null) return;
-                    _d3dContext.CopyResource(_mirrorStaging, _mirrorTexCached);
-                    var box = _d3dContext.Map(_mirrorStaging, 0, MapMode.Read, Vortice.Direct3D11.MapFlags.None);
-                    try
-                    {
-                        mirrorBmp = new Bitmap(_mirrorW, _mirrorH, PixelFormat.Format32bppArgb);
-                        var rect = new Rectangle(0, 0, _mirrorW, _mirrorH);
-                        var bData = mirrorBmp.LockBits(rect, ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
-                        try
-                        {
-                            var fmtName = _mirrorSrvFormat.ToString();
-                            bool swapRB = !fmtName.StartsWith("B8G8R8A8", StringComparison.Ordinal);
-                            var rowBuf = new byte[_mirrorW * 4];
-                            for (int y = 0; y < _mirrorH; y++)
-                            {
-                                Marshal.Copy(box.DataPointer + (nint)((long)y * box.RowPitch), rowBuf, 0, _mirrorW * 4);
-                                if (swapRB)
-                                {
-                                    for (int x = 0; x < _mirrorW; x++)
-                                    {
-                                        byte r = rowBuf[x * 4 + 0];
-                                        byte b = rowBuf[x * 4 + 2];
-                                        rowBuf[x * 4 + 0] = b;
-                                        rowBuf[x * 4 + 2] = r;
-                                        rowBuf[x * 4 + 3] = 255;
-                                    }
-                                }
-                                else
-                                {
-                                    for (int x = 0; x < _mirrorW; x++) rowBuf[x * 4 + 3] = 255;
-                                }
-                                Marshal.Copy(rowBuf, 0, bData.Scan0 + (nint)(y * bData.Stride), _mirrorW * 4);
-                            }
-                        }
-                        finally { mirrorBmp.UnlockBits(bData); }
-                    }
-                    finally { _d3dContext.Unmap(_mirrorStaging, 0); }
-                }
-
+                var crop = BoundingCrop(corners, _mirrorW, _mirrorH);
+                crop = System.Drawing.Rectangle.Intersect(System.Drawing.Rectangle.Inflate(crop, 4, 4), new System.Drawing.Rectangle(0, 0, _mirrorW, _mirrorH));
+                var mirrorBmp = CaptureMirrorCrop(crop, false);
                 if (mirrorBmp == null) return;
+                var offset = new PointF(crop.X, crop.Y);
+                tl = new PointF(tl.X - offset.X, tl.Y - offset.Y);
+                tr = new PointF(tr.X - offset.X, tr.Y - offset.Y);
+                bl = new PointF(bl.X - offset.X, bl.Y - offset.Y);
 
                 using var outBmp = new Bitmap(outW, outH, PixelFormat.Format32bppArgb);
                 using (var g = Graphics.FromImage(outBmp))
@@ -1869,7 +2012,12 @@ namespace VRCNext.Services
             }
             catch (Exception ex)
             {
-                _log($"[FrameShot] Capture failed: {ex.Message}");
+                if (IsDeviceLostError(ex)) MarkDeviceLost("photo capture");
+                else _log($"[FrameShot] Capture failed: {ex.Message}");
+            }
+            finally
+            {
+                Interlocked.Decrement(ref _captureBusy);
             }
         }
 
@@ -1881,38 +2029,50 @@ namespace VRCNext.Services
 
         private bool EnsureMirrorPipeline()
         {
-            if (_mirrorStaging != null && _mirrorTexCached != null && _mirrorSrvObj != null)
-                return true;
-            if (_d3dDevice == null || OpenVR.Compositor == null) return false;
-
-            var srv = IntPtr.Zero;
-            var cErr = OpenVR.Compositor.GetMirrorTextureD3D11(EVREye.Eye_Left, _d3dDevice.NativePointer, ref srv);
-            if (cErr != EVRCompositorError.None || srv == IntPtr.Zero)
+            if (_deviceLost) return false;
+            try
             {
-                _log($"[FrameShot] GetMirrorTextureD3D11 failed: {cErr}");
+                lock (_d3dLock)
+                {
+                    if (_mirrorStaging != null && _mirrorTexCached != null && _mirrorSrvObj != null)
+                        return true;
+                    if (_d3dDevice == null || OpenVR.Compositor == null) return false;
+
+                    var srv = IntPtr.Zero;
+                    var cErr = OpenVR.Compositor.GetMirrorTextureD3D11(EVREye.Eye_Left, _d3dDevice.NativePointer, ref srv);
+                    if (cErr != EVRCompositorError.None || srv == IntPtr.Zero)
+                    {
+                        _log($"[FrameShot] GetMirrorTextureD3D11 failed: {cErr}");
+                        return false;
+                    }
+                    _mirrorSrv = srv;
+                    _mirrorSrvObj = new ID3D11ShaderResourceView(srv);
+                    _mirrorSrvFormat = _mirrorSrvObj.Description.Format; // typed
+                    var resource = _mirrorSrvObj.Resource;
+                    _mirrorTexCached = resource.QueryInterface<ID3D11Texture2D>();
+                    var desc = _mirrorTexCached.Description;
+                    _mirrorW = (int)desc.Width;
+                    _mirrorH = (int)desc.Height;
+                    _mirrorTexFormat = desc.Format;
+
+                    _mirrorStaging = _d3dDevice.CreateTexture2D(new Texture2DDescription
+                    {
+                        Width = (uint)_mirrorW, Height = (uint)_mirrorH, MipLevels = 1, ArraySize = 1,
+                        Format = desc.Format,
+                        SampleDescription = new SampleDescription(1, 0),
+                        Usage = ResourceUsage.Staging,
+                        CPUAccessFlags = CpuAccessFlags.Read,
+                    });
+
+                    _log($"[FrameShot] Mirror pipeline ready {_mirrorW}x{_mirrorH} texFmt={_mirrorTexFormat} srvFmt={_mirrorSrvFormat}");
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                LogCaptureError("Mirror pipeline", ex);
                 return false;
             }
-            _mirrorSrv = srv;
-            _mirrorSrvObj = new ID3D11ShaderResourceView(srv);
-            _mirrorSrvFormat = _mirrorSrvObj.Description.Format; // typed
-            var resource = _mirrorSrvObj.Resource;
-            _mirrorTexCached = resource.QueryInterface<ID3D11Texture2D>();
-            var desc = _mirrorTexCached.Description;
-            _mirrorW = (int)desc.Width;
-            _mirrorH = (int)desc.Height;
-            _mirrorTexFormat = desc.Format;
-
-            _mirrorStaging = _d3dDevice.CreateTexture2D(new Texture2DDescription
-            {
-                Width = (uint)_mirrorW, Height = (uint)_mirrorH, MipLevels = 1, ArraySize = 1,
-                Format = desc.Format,
-                SampleDescription = new SampleDescription(1, 0),
-                Usage = ResourceUsage.Staging,
-                CPUAccessFlags = CpuAccessFlags.Read,
-            });
-
-            _log($"[FrameShot] Mirror pipeline ready {_mirrorW}x{_mirrorH} texFmt={_mirrorTexFormat} srvFmt={_mirrorSrvFormat}");
-            return true;
         }
 
 

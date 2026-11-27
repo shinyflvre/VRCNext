@@ -912,6 +912,42 @@ public class InstanceController
                         }));
                     }
 
+                    if (tsView == "groups")
+                    {
+                        var missingGroupIds = groupData.Rows
+                            .Where(g => string.IsNullOrEmpty(g.GroupName)
+                                && !PermafailHelper.IsPermafailed(g.GroupId, PfType.Entity))
+                            .Select(g => g.GroupId).Distinct().Take(20).ToList();
+                        foreach (var gid in missingGroupIds)
+                        {
+                            try
+                            {
+                                var (grp, status) = await _core.Groups.GetGroupWithStatusAsync(gid);
+                                if (grp != null)
+                                {
+                                    var gName = grp["name"]?.ToString() ?? "";
+                                    var gCode = grp["shortCode"]?.ToString() ?? "";
+                                    var gIcon = grp["iconUrl"]?.ToString() ?? "";
+                                    _core.TimeEngine.SaveGroupTimeIdentity(gid, gName, gCode, gIcon);
+                                    var row = groupData.Rows.FirstOrDefault(x => x.GroupId == gid);
+                                    if (row != null)
+                                    {
+                                        row.GroupName = gName;
+                                        row.ShortCode = gCode;
+                                        row.IconUrl   = gIcon;
+                                        anyResolved = true;
+                                    }
+                                }
+                                else if (status == 403 || status == 404)
+                                {
+                                    PermafailHelper.Add(gid, PfType.Entity, status);
+                                }
+                                await Task.Delay(250);
+                            }
+                            catch { }
+                        }
+                    }
+
                     if (anyResolved)
                     {
                         SendPage();

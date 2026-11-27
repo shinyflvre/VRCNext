@@ -5,8 +5,27 @@ function fmtAvatarTag(tag) {
     const raw = tag.startsWith('author_tag_') ? tag.slice(11) : tag;
     return raw.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
+
+const AV_CONTENT_TAGS = [
+    ['content_sex',      'avatars.content.sexual',   'Sexually Suggestive'],
+    ['content_adult',    'avatars.content.adult',    'Adult Themes'],
+    ['content_violence', 'avatars.content.violence', 'Graphic Violence'],
+    ['content_gore',     'avatars.content.gore',     'Excessive Gore'],
+    ['content_horror',   'avatars.content.horror',   'Extreme Horror'],
+];
+
+function isAvContentTag(tag) {
+    return typeof tag === 'string' && tag.startsWith('content_');
+}
+
+function avContentTagLabel(tag) {
+    const entry = AV_CONTENT_TAGS.find(c => c[0] === tag);
+    return entry ? t(entry[1], entry[2]) : fmtAvatarTag(tag);
+}
+
 let _avDetailData = null;
 let _avEditTags   = [];
+let _avEditContent = [];
 let _avGalleryLoaded = false;
 let _avGalleryImages = [];
 
@@ -42,6 +61,7 @@ const _avFieldIds = {
     desc:       { view: 'avfDescView',       edit: 'avfDescEdit'       },
     visibility: { view: 'avfVisView',        edit: 'avfVisEdit'        },
     tags:       { view: 'avfTagsView',       edit: 'avfTagsEdit'       },
+    content:    { view: 'avfContentView',    edit: 'avfContentEdit'    },
     styles:     { view: 'avfInfoView',       edit: 'avfStylesEdit'     },
     impostor:   { view: 'avfImpostorView',   edit: 'avfImpostorEdit'   },
 };
@@ -71,9 +91,12 @@ function editAvField(field) {
     } else if (field === 'visibility') {
         _avVisState = (_avDetailData?.releaseStatus === 'public') ? 'public' : 'private';
     } else if (field === 'tags') {
-        _avEditTags = [...(_avDetailData?.tags || [])];
+        _avEditTags = (_avDetailData?.tags || []).filter(tag => !isAvContentTag(tag));
         avRenderTagChips();
         document.getElementById('avTagInput')?.focus();
+    } else if (field === 'content') {
+        _avEditContent = (_avDetailData?.tags || []).filter(isAvContentTag);
+        avRenderContentToggles();
     } else if (field === 'styles') {
         if (_avStyles) avFillStyleSelects();
         else sendToCS({ action: 'vrcGetAvatarStyles' });
@@ -133,6 +156,21 @@ function avRemoveTag(idx) {
     avRenderTagChips();
 }
 
+function avRenderContentToggles() {
+    const box = document.getElementById('avContentToggles');
+    if (!box) return;
+    box.innerHTML = AV_CONTENT_TAGS.map(([tag, key, fallback]) =>
+        `<button class="vrcn-button-round${_avEditContent.includes(tag) ? ' active' : ''}" onclick="avToggleContentTag('${tag}')">${esc(t(key, fallback))}</button>`
+    ).join('');
+}
+
+function avToggleContentTag(tag) {
+    const idx = _avEditContent.indexOf(tag);
+    if (idx >= 0) _avEditContent.splice(idx, 1);
+    else _avEditContent.push(tag);
+    avRenderContentToggles();
+}
+
 
 function renderAvatarDetail(a) {
     if (a.id && a.rawJson) _avRawJsonCache[a.id] = a.rawJson;
@@ -167,9 +205,14 @@ function renderAvatarDetail(a) {
         ? `<span onclick="navOpenModal('friend','${jsq(a.authorId)}','${jsq(a.authorName || '')}')" style="display:inline-flex;align-items:center;padding:1px 8px;border-radius:20px;background:var(--badge-bg);font-size:calc(11px + var(--fs-off, 0px));font-weight:600;color:var(--badge-tx);cursor:pointer;line-height:1.8;">${esc(a.authorName || a.authorId)}</span>`
         : esc(a.authorName || '');
 
-    const tagsViewHtml = (a.tags && a.tags.length)
-        ? `<div class="fd-lang-tags">${a.tags.map(tag => `<span class="vrcn-badge">${esc(fmtAvatarTag(tag))}</span>`).join('')}</div>`
+    const plainTags = (a.tags || []).filter(tag => !isAvContentTag(tag));
+    const contentTags = (a.tags || []).filter(isAvContentTag);
+    const tagsViewHtml = plainTags.length
+        ? `<div class="fd-lang-tags">${plainTags.map(tag => `<span class="vrcn-badge">${esc(fmtAvatarTag(tag))}</span>`).join('')}</div>`
         : `<div class="myp-empty">${t('avatars.detail.empty_tags', 'No tags')}</div>`;
+    const contentViewHtml = contentTags.length
+        ? `<div class="fd-lang-tags">${contentTags.map(tag => `<span class="vrcn-badge">${esc(avContentTagLabel(tag))}</span>`).join('')}</div>`
+        : `<div class="myp-empty">${t('avatars.detail.empty_content_tags', 'No content tags')}</div>`;
 
     const _avIdRow = `<div class="fd-badges-row fd-bio-badges-row" style="margin:0 0 10px;">${idBadge(a.id)}</div>`;
 
@@ -204,6 +247,21 @@ function renderAvatarDetail(a) {
             <div class="myp-edit-actions">
                 <button class="vrcn-button" onclick="cancelAvField('tags')">${t('common.cancel', 'Cancel')}</button>
                 <button class="vrcn-button vrcn-btn-primary" onclick="saveAvField('tags','${aid}')">${t('common.save', 'Save')}</button>
+            </div>
+        </div>` : ''}
+    </div>`;
+
+    const _contentCard = `<div class="fd-info-card">
+        <div class="myp-section-header">
+            <span class="myp-section-title">${t('avatars.detail.sections.content_tags', 'Content Tags')}</span>
+            ${isOwn ? `<button class="myp-edit-btn" onclick="editAvField('content')"><span class="msi" style="font-size:14px;">edit</span></button>` : ''}
+        </div>
+        <div id="avfContentView">${contentViewHtml}</div>
+        ${isOwn ? `<div id="avfContentEdit" style="display:none;">
+            <div id="avContentToggles" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>
+            <div class="myp-edit-actions">
+                <button class="vrcn-button" onclick="cancelAvField('content')">${t('common.cancel', 'Cancel')}</button>
+                <button class="vrcn-button vrcn-btn-primary" onclick="saveAvField('content','${aid}')">${t('common.save', 'Save')}</button>
             </div>
         </div>` : ''}
     </div>`;
@@ -308,6 +366,7 @@ function renderAvatarDetail(a) {
                     <div class="fd-left-id"><div class="fd-left-name-wrap">${_avNameAuthor}</div></div>
                     ${_infosCard}
                     ${_tagsCard}
+                    ${_contentCard}
                 </div>
             </div>
             <div class="fd-right"><div class="fd-right-scroll">
@@ -535,7 +594,12 @@ function saveAvField(field, avatarId) {
     const name = field === 'name' ? (document.getElementById('avNameInput')?.value.trim() || '') : (a.name || '');
     const description = field === 'desc' ? (document.getElementById('avDescInput')?.value ?? '') : (a.description || '');
     const releaseStatus = field === 'visibility' ? _avVisState : (a.releaseStatus || 'private');
-    const tags = field === 'tags' ? [..._avEditTags] : (a.tags || []);
+    const currentTags = a.tags || [];
+    const tags = field === 'tags'
+        ? [..._avEditTags, ...currentTags.filter(isAvContentTag)]
+        : field === 'content'
+            ? [...currentTags.filter(tag => !isAvContentTag(tag)), ..._avEditContent]
+            : currentTags;
     const msg = { action: 'vrcUpdateAvatar', avatarId, name, description, releaseStatus, tags };
     if (field === 'styles') {
         msg.primaryStyle   = document.getElementById('avPrimaryStyleSelect')?.value || '';
@@ -605,6 +669,7 @@ function onAvatarUpdateResult(data) {
         desc: avatarDetailFieldLabel('desc'),
         visibility: avatarDetailFieldLabel('visibility'),
         tags: avatarDetailFieldLabel('tags'),
+        content: avatarDetailFieldLabel('content'),
         styles: avatarDetailFieldLabel('styles'),
     };
     if (data.ok) {
@@ -615,6 +680,13 @@ function onAvatarUpdateResult(data) {
             if (data.tags != null) _avDetailData.tags = data.tags;
             if (data.stylePrimary != null) _avDetailData.stylePrimary = data.stylePrimary;
             if (data.styleSecondary != null) _avDetailData.styleSecondary = data.styleSecondary;
+        }
+        const listEntry = (typeof avatarsData !== 'undefined') ? avatarsData.find(x => x.id === data.avatarId) : null;
+        if (listEntry) {
+            if (data.name != null) listEntry.name = data.name;
+            if (data.description != null) listEntry.description = data.description;
+            if (data.releaseStatus != null) listEntry.releaseStatus = data.releaseStatus;
+            if (data.tags != null) listEntry.tags = data.tags;
         }
         const label = fieldLabels[_avSavingField] || avatarDetailFieldLabel('');
         showToast(true, tf('avatars.detail.toast.saved', { field: label }, '{field} saved'));

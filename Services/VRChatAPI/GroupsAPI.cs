@@ -84,6 +84,20 @@ public class GroupsAPI(VRChatApiService ctx)
         return null;
     }
 
+    public async Task<(JObject? result, int status)> GetGroupWithStatusAsync(string groupId)
+    {
+        if (!ctx.IsLoggedIn || string.IsNullOrEmpty(groupId)) return (null, 0);
+        try
+        {
+            var resp = await ctx._http.GetAsync($"{VRChatApiService.BASE}/groups/{groupId}");
+            if (!resp.IsSuccessStatusCode) return (null, (int)resp.StatusCode);
+            using var reader = new Newtonsoft.Json.JsonTextReader(new System.IO.StringReader(await resp.Content.ReadAsStringAsync())) { DateParseHandling = Newtonsoft.Json.DateParseHandling.None };
+            return (JObject.Load(reader), (int)resp.StatusCode);
+        }
+        catch (Exception ex) { ctx.Log($"GetGroup exception: {ex.Message}"); }
+        return (null, 0);
+    }
+
     public async Task<bool> JoinGroupAsync(string groupId)
     {
         if (!ctx.IsLoggedIn) return false;

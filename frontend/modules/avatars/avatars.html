@@ -143,5 +143,15 @@
                             </div>
                         </div>
                     </div>
+                    <div style="position:relative;" id="avatarEditContentWrap">
+                        <button class="vrcn-button av-edit-action" disabled onclick="avEditShowContentPanel(this)"><span class="msi" style="font-size:14px;">shield</span> <span data-i18n="avatars.edit.bulk_content_tag">Bulk Content Tag</span></button>
+                        <div id="avatarEditContentPanel" class="vn-select-panel" style="display:none;min-width:220px;z-index:1200;padding:8px;">
+                            <div id="avatarEditContentList"></div>
+                            <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:6px;">
+                                <button class="vrcn-button" onclick="avEditCloseContentPanel()" data-i18n="common.cancel">Cancel</button>
+                                <button class="vrcn-button vrcn-btn-primary" onclick="avEditApplyContentSelected()" data-i18n="common.apply">Apply</button>
+                            </div>
+                        </div>
+                    </div>
                     <button id="avatarEditDeleteBtn" class="vrcn-button vrcn-btn-danger av-edit-action" disabled onclick="avEditDeleteSelected()"><span class="msi" style="font-size:14px;">delete</span> <span data-i18n="avatars.edit.bulk_delete">Bulk Delete</span></button>
                 </div>

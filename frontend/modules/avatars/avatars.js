@@ -64,6 +64,7 @@ function avatarDetailFieldLabel(field) {
         desc: t('avatars.detail.sections.description', 'Description'),
         visibility: t('avatars.detail.sections.visibility', 'Visibility'),
         tags: t('avatars.detail.sections.tags', 'Tags'),
+        content: t('avatars.detail.sections.content_tags', 'Content Tags'),
         styles: t('avatars.detail.fields.styles', 'Styles'),
     };
     return labels[field] || t('avatars.detail.fields.avatar', 'Avatar');
@@ -986,6 +987,7 @@ function exitAvEditMode() {
     });
     avatarCancelCreateLocalGroup();
     avEditCloseTagPanel();
+    avEditCloseContentPanel();
     _avEditRerender();
 }
 
@@ -1607,6 +1609,7 @@ function _avEditSyncButtons() {
     show('avatarEditDeleteBtn', isOwn);
     show('avatarEditStatusWrap', isOwn);
     show('avatarEditTagWrap', isOwn);
+    show('avatarEditContentWrap', isOwn);
 }
 
 lvEditRegister('avatars', {
@@ -1754,6 +1757,56 @@ function avEditCloseTagPanel() {
     if (panel) panel.style.display = 'none';
 }
 
+function avEditShowContentPanel(btn) {
+    if (_avEditSelected.size === 0) return;
+    const panel = document.getElementById('avatarEditContentPanel');
+    const list = document.getElementById('avatarEditContentList');
+    if (!panel || !list) return;
+    if (panel.style.display === 'block') { avEditCloseContentPanel(); return; }
+    const selected = [..._avEditSelected]
+        .map(id => avatarsData.find(a => a.id === id))
+        .filter(a => a && Array.isArray(a.tags));
+    list.innerHTML = AV_CONTENT_TAGS.map(([tag, key, fallback]) =>
+        `<label class="av-cf-item"><input type="checkbox" value="${tag}"> <span>${esc(t(key, fallback))}</span></label>`
+    ).join('');
+    list.querySelectorAll('input').forEach(input => {
+        const count = selected.filter(a => a.tags.includes(input.value)).length;
+        input.checked = count > 0 && count === selected.length;
+        input.indeterminate = count > 0 && count < selected.length;
+    });
+    panel.style.display = 'block';
+    setTimeout(() => {
+        const close = (e) => {
+            if (!panel.contains(e.target) && !btn.contains(e.target)) {
+                panel.style.display = 'none';
+                document.removeEventListener('click', close);
+            }
+        };
+        document.addEventListener('click', close);
+    }, 0);
+}
+
+function avEditCloseContentPanel() {
+    const panel = document.getElementById('avatarEditContentPanel');
+    if (panel) panel.style.display = 'none';
+}
+
+function avEditApplyContentSelected() {
+    const list = document.getElementById('avatarEditContentList');
+    if (!list) return;
+    const add = [];
+    const remove = [];
+    list.querySelectorAll('input').forEach(input => {
+        if (input.indeterminate) return;
+        (input.checked ? add : remove).push(input.value);
+    });
+    avEditCloseContentPanel();
+    _avBulkUpdate('content', a => ({
+        releaseStatus: a.releaseStatus || 'private',
+        tags: [...a.tags.filter(tag => !remove.includes(tag)), ...add.filter(tag => !a.tags.includes(tag))],
+    }));
+}
+
 function _avBulkUpdate(kind, patch) {
     const targets = [..._avEditSelected]
         .map(id => avatarsData.find(a => a.id === id))
@@ -1808,7 +1861,9 @@ function avBulkUpdateConsume(p) {
         const count = _avBulkUpdateOk;
         showToast(count > 0, _avBulkUpdateKind === 'tag'
             ? tf('avatars.edit.bulk_tag_done', { count }, 'Added the tag to {count} avatars')
-            : tf('avatars.edit.bulk_status_done', { count }, 'Changed the status of {count} avatars'));
+            : _avBulkUpdateKind === 'content'
+                ? tf('avatars.edit.bulk_content_done', { count }, 'Updated the content tags of {count} avatars')
+                : tf('avatars.edit.bulk_status_done', { count }, 'Changed the status of {count} avatars'));
         if (avatarFilter === 'own') filterOwnAvatars();
     }
     return true;
