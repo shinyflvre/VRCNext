@@ -1,6 +1,7 @@
 ﻿# **2027.2.5**
 
 ## Changes
+* Enabled **Space Walk** on Linux and fixed startup app behavior.
 * You can now set content tags like Sexually Suggestive or Graphic Violence on your own avatars in the avatar details.
 * Added **Bulk Content Tag** to the edit mode in **Avatars** to set content tags on several avatars at once.
 
